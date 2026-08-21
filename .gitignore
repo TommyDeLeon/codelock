@@ -11,3 +11,12 @@ release/
 .DS_Store
 next-env.d.ts
 .cache/
+
+# Signing material. Never in the repo — see docs/SIGNING-KEYS.md.
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.cer
+*.crt
+*.key
