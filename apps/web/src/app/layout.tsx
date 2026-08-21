@@ -2,12 +2,35 @@ import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
 import './globals.css';
 
+// Set NEXT_PUBLIC_SITE_URL in production so Open Graph image URLs resolve
+// absolutely; relative ones are ignored by most crawlers.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
 export const metadata: Metadata = {
-  title: { default: 'CodeLock', template: '%s · CodeLock' },
-  description: 'Earn your screen time. Solve a problem to unlock.',
+  metadataBase: new URL(siteUrl),
+  title: { default: 'CodeLock — earn your screen time', template: '%s · CodeLock' },
+  description:
+    'A focus timer that locks your device until you solve a programming problem — correctly and fast enough.',
   manifest: '/manifest.webmanifest',
   applicationName: 'CodeLock',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'CodeLock' },
+  openGraph: {
+    type: 'website',
+    siteName: 'CodeLock',
+    title: 'CodeLock — earn your screen time',
+    description:
+      'A focus timer that locks your device until you solve a programming problem — correctly and fast enough.',
+    images: [{ url: '/og.png', width: 512, height: 512, alt: 'CodeLock' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'CodeLock — earn your screen time',
+    description: 'Solve a programming problem, fast enough, to unlock your device.',
+    images: ['/og.png'],
+  },
+  // The app is behind auth and has nothing to index; the marketing site, if
+  // there ever is one, would be a separate deployment.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
