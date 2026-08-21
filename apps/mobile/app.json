@@ -14,17 +14,20 @@
       "resizeMode": "contain",
       "backgroundColor": "#0e0e0d"
     },
-    "assetBundlePatterns": ["**/*"],
-
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dev.codelock.app",
       "infoPlist": {
-        "UIBackgroundModes": ["fetch", "processing"],
+        "UIBackgroundModes": [
+          "fetch",
+          "processing"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "android": {
       "package": "dev.codelock.app",
       "adaptiveIcon": {
@@ -41,7 +44,6 @@
         "android.permission.SCHEDULE_EXACT_ALARM"
       ]
     },
-
     "plugins": [
       "expo-router",
       "expo-secure-store",
@@ -55,19 +57,26 @@
       [
         "expo-build-properties",
         {
-          "android": { "minSdkVersion": 26, "compileSdkVersion": 35, "targetSdkVersion": 35 },
-          "ios": { "deploymentTarget": "15.1" }
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
         }
-      ],
-      "./plugins/with-android-overlay"
+      ]
     ],
-
-    "experiments": { "typedRoutes": true },
-
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
       "apiUrl": "https://api.codelock.dev",
       "webUrl": "https://app.codelock.dev",
-      "eas": { "projectId": "00000000-0000-0000-0000-000000000000" }
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
     }
   }
 }

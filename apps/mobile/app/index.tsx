@@ -17,8 +17,12 @@ import {
   enforcementLevel,
   ensureNotificationPermission,
   ensureOverlayPermission,
+  offerBatteryExemption,
   scheduleLockNotification,
 } from '@/lock-permissions';
+import { NativeLock } from '../modules/codelock-lock';
+import { getAccessToken } from '@/session';
+import Constants from 'expo-constants';
 
 const PRESETS = [15, 30, 60, 90];
 
@@ -55,8 +59,22 @@ export default function HomeScreen() {
   async function refreshLock() {
     try {
       const { session } = await mobileApi.activeLock();
-      if (!session) return setRemaining(null);
-      if (session.state === 'LOCKED') return router.replace('/lock');
+      if (!session) {
+        // The server says nothing is locked, so any overlay still up is
+        // stale — from a crash, or a session resolved on another device.
+        if (NativeLock.isLocked()) NativeLock.release();
+        return setRemaining(null);
+      }
+      if (session.state === 'LOCKED') {
+        // Raise the real overlay where the platform allows it. It survives
+        // Recents, a process kill, and a reboot; the in-app route below is the
+        // soft lock, and is all iOS can offer.
+        if (NativeLock.isSupported && NativeLock.canDrawOverlay()) {
+          const webUrl = (Constants.expoConfig?.extra?.webUrl as string) ?? '';
+          NativeLock.engage(session.id, webUrl, getAccessToken() ?? '');
+        }
+        return router.replace('/lock');
+      }
       setRemaining(session.secondsRemaining);
     } catch {
       // Offline: keep whatever is on screen rather than flashing an error.
@@ -70,7 +88,13 @@ export default function HomeScreen() {
       await mobileApi.login(email.trim(), password);
       setSignedIn(true);
       await ensureNotificationPermission();
-      if (enforcementLevel() === 'overlay') await ensureOverlayPermission();
+      // Ask on Android whether or not it is already granted; the helper is a
+      // no-op when it is, and this is the only moment the user has context for
+      // why a screen-covering permission is being requested.
+      if (NativeLock.isSupported) {
+        const granted = await ensureOverlayPermission();
+        if (granted) offerBatteryExemption();
+      }
       await refreshLock();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in');

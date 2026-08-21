@@ -6,6 +6,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import Constants from 'expo-constants';
 import { colors } from '@/theme';
 import { getAccessToken } from '@/session';
+import { NativeLock } from '../modules/codelock-lock';
 
 /**
  * The lock screen, rendered as the web app inside a WebView.
@@ -62,6 +63,10 @@ export default function LockScreen() {
       // which it cannot mint itself.
       if (payload.type === 'codelock:unlocked') {
         setUnlocked(true);
+        // Drop the native overlay too. Without this the in-app screen closes
+        // and the system overlay stays up over the launcher — the worst of
+        // both, and the user would have no way back.
+        NativeLock.release();
         router.replace('/');
       }
     } catch {

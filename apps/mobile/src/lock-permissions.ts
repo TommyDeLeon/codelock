@@ -1,30 +1,34 @@
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { NativeLock, enforcement, type Enforcement } from '../modules/codelock-lock';
 
 /**
  * What each platform can actually enforce.
  *
- * This module exists mostly to be honest in code rather than only in docs, so
- * the UI can tell the user the truth about their device instead of implying a
- * guarantee it cannot keep.
+ * The answer comes from the native module rather than from `Platform.OS`, so
+ * "we can block" is reported by the code that would have to do the blocking.
+ * A user who has not granted the overlay permission is on the soft lock too,
+ * and the UI says so — an Android device without that grant is not meaningfully
+ * different from an iPhone here.
  */
-export type EnforcementLevel = 'overlay' | 'notification-only';
+export type EnforcementLevel = Enforcement;
 
 export function enforcementLevel(): EnforcementLevel {
-  // Android can draw over other apps with SYSTEM_ALERT_WINDOW. iOS has no
-  // equivalent public API — not a missing feature, a deliberate platform
-  // restriction — so the honest answer there is "we can nag, not block".
-  return Platform.OS === 'android' ? 'overlay' : 'notification-only';
+  return enforcement();
 }
 
 export const ENFORCEMENT_COPY: Record<EnforcementLevel, string> = {
   overlay:
-    'CodeLock can cover other apps once you grant "Display over other apps". ' +
-    'Force-stopping the app from Settings still gets past it.',
-  'notification-only':
-    'iOS does not let any app block another. CodeLock will take over its own ' +
-    'screen and keep reminding you, but it cannot stop you switching apps. ' +
-    'Use Screen Time alongside it if you want a hard limit.',
+    'CodeLock will cover other apps when the timer fires, and comes back after ' +
+    'a reboot. Force-stopping it from Settings, booting into Safe Mode, or ' +
+    'uninstalling still gets past it.',
+  soft:
+    Platform.OS === 'ios'
+      ? 'iOS does not let any app block another. CodeLock takes over its own ' +
+        'screen and keeps reminding you, but it cannot stop you switching apps. ' +
+        'Use Screen Time alongside it if you want a hard limit.'
+      : 'Without "Display over other apps", CodeLock can only lock its own ' +
+        'screen. Grant the permission to have it cover other apps.',
 };
 
 export async function ensureNotificationPermission(): Promise<boolean> {
@@ -39,23 +43,50 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
 /**
  * Overlay permission cannot be requested with a dialog — Android only allows it
- * through a Settings screen the user has to visit themselves.
+ * through a Settings screen the user has to visit themselves. Explain first,
+ * then hand them over; an unexplained jump to a system settings page is how
+ * people decide an app is malware.
  */
-export async function ensureOverlayPermission(): Promise<void> {
-  if (Platform.OS !== 'android') return;
+export async function ensureOverlayPermission(): Promise<boolean> {
+  if (!NativeLock.isSupported) return false;
+  if (NativeLock.canDrawOverlay()) return true;
 
+  return new Promise((resolve) => {
+    Alert.alert(
+      'Allow CodeLock to cover other apps',
+      'Android needs you to turn this on in Settings. Without it, the lock ' +
+        'screen can only appear while CodeLock is already open.',
+      [
+        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+        {
+          text: 'Open Settings',
+          onPress: () => {
+            NativeLock.openOverlaySettings();
+            resolve(false);
+          },
+        },
+      ],
+    );
+  });
+}
+
+/**
+ * Ask for a battery-optimisation exemption.
+ *
+ * Xiaomi, Huawei, Samsung and OnePlus kill unexempted foreground services
+ * within minutes. On those devices the lock quietly ends early, which is worse
+ * than never having locked — the user believes they are committed when they
+ * are not.
+ */
+export function offerBatteryExemption(): void {
+  if (!NativeLock.isSupported) return;
   Alert.alert(
-    'Allow CodeLock to cover other apps',
-    'Android needs you to turn this on in Settings. Without it, the lock ' +
-      'screen can only appear while CodeLock is already open.',
+    'Keep CodeLock running',
+    'Some phones stop background apps to save battery, which would end a lock ' +
+      'early. Exempting CodeLock keeps the timer honest.',
     [
       { text: 'Not now', style: 'cancel' },
-      {
-        text: 'Open Settings',
-        onPress: () => {
-          void Linking.openSettings();
-        },
-      },
+      { text: 'Open Settings', onPress: () => NativeLock.openBatterySettings() },
     ],
   );
 }

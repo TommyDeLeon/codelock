@@ -1,0 +1,27 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'dev.codelock.lock'
+version = '0.1.0'
+
+android {
+  namespace 'dev.codelock.lock'
+  compileSdk 35
+
+  defaultConfig {
+    minSdk 26
+    targetSdk 35
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+  kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+  implementation 'androidx.webkit:webkit:1.11.0'
+}
