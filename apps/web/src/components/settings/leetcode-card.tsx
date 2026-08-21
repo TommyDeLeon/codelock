@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Code2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { failureOf } from '@/lib/query-result';
 import { Button } from '@/components/ui/button';
 import { Badge, Card, CardBody, CardHeader, CardTitle, Field, Input } from '@/components/ui/primitives';
 import { formatRelative } from '@/lib/utils';
@@ -22,6 +23,10 @@ export function LeetCodeCard() {
     enabled: Boolean(leetcode),
     retry: false,
   });
+
+  // A paused retry has no `error` set; `failureOf` sees it. Without this a
+  // hidden tab sits on the empty state through an outage.
+  const statsFailure = stats.data ? null : failureOf(stats);
 
   const link = useMutation({
     mutationFn: (name: string) => api.integrations.linkLeetcode(name),
@@ -97,7 +102,7 @@ export function LeetCodeCard() {
           </form>
         ) : (
           <div className="space-y-4">
-            {stats.isError ? (
+            {statsFailure ? (
               <p role="alert" className="rounded-sm bg-danger-soft px-3 py-2 text-[13px] text-danger">
                 Could not load stats. LeetCode&apos;s endpoint is unofficial and occasionally
                 changes; CodeLock keeps working regardless.

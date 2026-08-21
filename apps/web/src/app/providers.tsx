@@ -1,10 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { useAuth } from '@/lib/auth-store';
+import { ConnectionBanner } from '@/components/connection-banner';
+
+/**
+ * CodeLock keeps working while nobody is looking at it.
+ *
+ * query-core pauses a *retry* unless `focusManager.isFocused()`, and its default
+ * focus manager reports `document.visibilityState !== 'hidden'`. A backgrounded
+ * tab that fails one request therefore parks at `status: 'pending'`,
+ * `fetchStatus: 'paused'`, `error: null` — forever, until someone looks at it.
+ * `networkMode: 'always'` cannot override this: focus is AND-ed outside the
+ * networkMode clause in `canContinue()`.
+ *
+ * That is wrong for this product. A lock timer runs in the background by
+ * definition, so pinning "focused" true is the accurate description of the app,
+ * not a workaround. Refetch-on-return is re-implemented below against
+ * `visibilitychange`, which is what we actually wanted from it.
+ */
+focusManager.setFocused(true);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // One client per browser session, created lazily so it is never shared
@@ -15,26 +33,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 10_000,
-            // Refetching on focus matters here: a user returning to the tab
-            // needs the true lock state immediately.
-            refetchOnWindowFocus: true,
+            // Handled by the visibility effect below, since focusManager is
+            // pinned and will never fire a focus change.
+            refetchOnWindowFocus: false,
             retry: 1,
             // Never pause on a perceived offline state: a paused query reports
             // `data: undefined, error: null, isLoading: false`, which is
             // indistinguishable from "loaded fine, nothing to show".
-            //
-            // KNOWN ISSUE: this did NOT fix the observed bug where an
-            // unreachable API renders as "No active session" instead of an
-            // error — requests demonstrably fire and return 503, yet the hooks
-            // still report error: null. Root cause not identified; see
-            // PRE-LAUNCH-CHECKLIST.md. The setting is kept because it is
-            // correct on its own terms, not because it resolved that.
             networkMode: 'always',
           },
           mutations: { networkMode: 'always' },
         },
       }),
   );
+
+  // A tab that slept for an hour must not render a stale "45:00 remaining".
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void queryClient.refetchQueries({ type: 'active' });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [queryClient]);
 
   const hydrate = useAuth((s) => s.hydrate);
   useEffect(() => {
@@ -44,6 +66,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ConnectionBanner />
         {children}
         <Toaster position="top-center" richColors closeButton />
       </ThemeProvider>

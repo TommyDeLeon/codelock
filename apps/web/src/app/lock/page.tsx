@@ -20,9 +20,8 @@ import {
 export default function LockPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session, secondsRemaining, expired, isLoading, error, refetch } = useLockSession({
-    pollMs: 5_000,
-  });
+  const { session, secondsRemaining, expired, isLoading, unreachable, failure, refetch } =
+    useLockSession({ pollMs: 5_000 });
   const [unlocked, setUnlocked] = useState(false);
 
   /**
@@ -67,10 +66,16 @@ export default function LockPage() {
     );
   }
 
-  if (error) {
+  // Fail closed. An unreachable server is never evidence that nothing is
+  // locked — the shell stays up and this screen says so, rather than falling
+  // through to "Nothing is locked right now" and offering a way out.
+  if (unreachable) {
     return (
       <main id="main" className="flex h-dvh items-center justify-center p-4">
-        <ErrorState message={error.message} retry={() => void refetch()} />
+        <ErrorState
+          message={`${failure?.message ?? 'Could not reach CodeLock.'} Staying locked until it answers — retrying.`}
+          retry={() => void refetch()}
+        />
       </main>
     );
   }

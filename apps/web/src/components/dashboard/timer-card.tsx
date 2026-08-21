@@ -16,7 +16,8 @@ const PRESETS = [15, 30, 60, 90] as const;
 export function TimerCard() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session, secondsRemaining, expired, isLoading, error, refetch } = useLockSession();
+  const { session, secondsRemaining, expired, isLoading, unreachable, failure, refetch } =
+    useLockSession();
 
   const timerQuery = useQuery({
     queryKey: ['settings', 'timer'],
@@ -51,13 +52,15 @@ export function TimerCard() {
 
   // An unreachable API must not render as "No active session". A user whose
   // timer is actually armed would otherwise be told they have none, and might
-  // start a second one on top of it.
-  if (error) {
+  // start a second one on top of it. `unreachable` covers a settled error *and*
+  // a retry that query-core has paused — the latter reports no error at all,
+  // which is exactly how this used to slip through. See use-lock-session.ts.
+  if (unreachable) {
     return (
       <Card>
         <CardBody>
           <ErrorState
-            message={`${error.message} Your session, if you have one, is still running on the server.`}
+            message={`${failure?.message ?? 'Could not reach CodeLock.'} Your session, if you have one, is still running on the server.`}
             retry={() => void refetch()}
           />
         </CardBody>

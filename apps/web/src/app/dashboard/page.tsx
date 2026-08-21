@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { failureOf } from '@/lib/query-result';
 import { AppHeader } from '@/components/app-header';
 import { SiteFooter } from '@/components/site-footer';
 import { TimerCard } from '@/components/dashboard/timer-card';
@@ -28,6 +29,10 @@ export default function DashboardPage() {
     enabled: status === 'authenticated',
   });
 
+  // Not `stats.isError`: a paused retry carries a failure with no error set,
+  // and reading only `isError` leaves the page on skeletons through an outage.
+  const statsFailure = stats.data ? null : failureOf(stats);
+
   return (
     <div className="flex min-h-dvh flex-col">
       <AppHeader />
@@ -39,13 +44,10 @@ export default function DashboardPage() {
           Start a block, work, then earn your way back in.
         </p>
 
-        {stats.isError ? (
+        {statsFailure ? (
           <Card className="mt-6">
             <CardBody>
-              <ErrorState
-                message={(stats.error as Error).message}
-                retry={() => void stats.refetch()}
-              />
+              <ErrorState message={statsFailure.message} retry={() => void stats.refetch()} />
             </CardBody>
           </Card>
         ) : (

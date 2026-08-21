@@ -1,3 +1,4 @@
+import { apiFailure, type ApiFailure } from '@codelock/shared';
 import type {
   ApiErrorBody,
   Integration,
@@ -48,6 +49,14 @@ export const tokenStore = {
 };
 
 export class ApiClientError extends Error {
+  /**
+   * The same failure expressed as the shared contract. Every client hook reads
+   * this rather than sniffing `status` or `code` itself, so "the server said
+   * no" and "we never reached the server" can never be confused for each other
+   * — or for "loaded fine, nothing to show".
+   */
+  readonly failure: ApiFailure;
+
   constructor(
     readonly status: number,
     readonly code: string,
@@ -56,6 +65,7 @@ export class ApiClientError extends Error {
   ) {
     super(message);
     this.name = 'ApiClientError';
+    this.failure = apiFailure(status, message, code, details);
   }
 }
 
@@ -166,6 +176,13 @@ interface AuthResponse {
 }
 
 export const api = {
+  /**
+   * Unauthenticated dependency check. Used by the connection banner to tell
+   * 'the API is down' apart from 'you have no data'.
+   */
+  health: () =>
+    request<{ ok: boolean; database: 'up' | 'down'; latencyMs?: number }>('/v1/health'),
+
   auth: {
     async register(input: {
       email: string;
