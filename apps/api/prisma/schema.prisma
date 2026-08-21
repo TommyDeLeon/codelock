@@ -1,0 +1,376 @@
+// CodeLock database schema
+// Postgres + Prisma. Run `npx prisma migrate dev` after editing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Language {
+  JAVASCRIPT
+  PYTHON
+  JAVA
+  CPP
+  GO
+}
+
+/// Lifecycle of one "your device is locked" episode.
+enum LockState {
+  /// Timer is counting down; nothing is blocked yet.
+  ARMED
+  /// Timer hit zero. Overlay is up, problem assigned.
+  LOCKED
+  /// Solved. Unlock token issued.
+  UNLOCKED
+  /// Escape hatch used (see LockSession.escapeReason).
+  BYPASSED
+  /// Never completed; superseded or cleaned up by the reaper job.
+  ABANDONED
+}
+
+enum SubmissionStatus {
+  QUEUED
+  RUNNING
+  ACCEPTED
+  /// Every test passed, but slower than the performance gate. Does not unlock.
+  ACCEPTED_TOO_SLOW
+  WRONG_ANSWER
+  COMPILE_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  INTERNAL_ERROR
+}
+
+enum Platform {
+  WEB
+  WINDOWS
+  MACOS
+  LINUX
+  ANDROID
+  IOS
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String   @id @default(uuid()) @db.Uuid
+  email             String   @unique
+  passwordHash      String
+  displayName       String
+  preferredLanguage Language @default(JAVASCRIPT)
+  timezone          String   @default("UTC")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  progress      UserProgress?
+  timerConfig   TimerConfig?
+  submissions   Submission[]
+  lockSessions  LockSession[]
+  devices       Device[]
+  refreshTokens RefreshToken[]
+  integrations  Integration[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the opaque token. The raw value is never stored.
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Device {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform   Platform
+  label      String
+  pushToken  String?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  lockSessions LockSession[]
+
+  @@index([userId])
+  @@map("devices")
+}
+
+// ---------------------------------------------------------------------------
+// Timer configuration
+// ---------------------------------------------------------------------------
+
+model TimerConfig {
+  id      String  @id @default(uuid()) @db.Uuid
+  userId  String  @unique @db.Uuid
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled Boolean @default(true)
+  /// Minutes of uninterrupted use before the lock fires.
+  durationMinutes Int @default(60)
+  /// Seconds of warning shown before the overlay appears.
+  graceSeconds    Int @default(60)
+  /// Bitmask, Sunday = bit 0. 127 = every day.
+  activeDaysMask  Int @default(127)
+  /// Local-time window in minutes past midnight. Outside it the timer never arms.
+  activeFromMinute Int @default(0)
+  activeToMinute   Int @default(1440)
+  /// How many "skip this one" escapes per day. 0 disables the escape hatch.
+  dailySkipAllowance Int @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@map("timer_configs")
+}
+
+// ---------------------------------------------------------------------------
+// Problem bank
+// ---------------------------------------------------------------------------
+
+model Problem {
+  id             String     @id @default(uuid()) @db.Uuid
+  slug           String     @unique
+  title          String
+  difficulty     Difficulty
+  promptMarkdown String
+  tags           String[]   @default([])
+  /// { "JAVASCRIPT": "function solve(...) {}", ... } — per-language stubs.
+  starterCode Json
+  /// Harness that reads stdin, calls the solution function, prints the result.
+  /// Same shape as starterCode. Keeps test cases language-agnostic.
+  driverCode Json
+  /// Runtime of the canonical optimal solution, per language, in ms:
+  /// { "JAVASCRIPT": 45, "CPP": 8, ... }. Language-specific because a JVM
+  /// cold start dwarfs a C++ whole-program run; one global number would make
+  /// the gate unwinnable in Java and trivial in C++.
+  referenceRuntimeMs Json
+  /// Fastest accepted runtime ever observed, per language. Ratchets down as
+  /// users beat the reference. Same shape as referenceRuntimeMs.
+  bestRuntimeMs Json @default("{}")
+  cpuTimeLimit  Float @default(2.0)
+  memoryLimitKb Int   @default(128000)
+  /// Rolling mean of accepted solve times; the promotion rule compares against it.
+  avgSolveSeconds Int  @default(600)
+  solveCount      Int  @default(0)
+  attemptCount    Int  @default(0)
+  /// Slug of the equivalent LeetCode problem, when there is one.
+  leetcodeSlug    String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  testCases    TestCase[]
+  submissions  Submission[]
+  lockSessions LockSession[]
+
+  @@index([difficulty, isActive])
+  @@map("problems")
+}
+
+model TestCase {
+  id             String  @id @default(uuid()) @db.Uuid
+  problemId      String  @db.Uuid
+  problem        Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  ordinal        Int
+  stdin          String
+  expectedStdout String
+  /// Sample cases are shown in the UI; the rest stay hidden.
+  isSample Boolean @default(false)
+
+  @@unique([problemId, ordinal])
+  @@map("test_cases")
+}
+
+// ---------------------------------------------------------------------------
+// Progression
+// ---------------------------------------------------------------------------
+
+model UserProgress {
+  id                String     @id @default(uuid()) @db.Uuid
+  userId            String     @unique @db.Uuid
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentDifficulty Difficulty @default(EASY)
+  /// Consecutive *fast* solves at the current tier. Resets on promote/demote/fail.
+  consecutiveFastSolves Int @default(0)
+  /// Consecutive failed or abandoned lock sessions at the current tier.
+  consecutiveFailures Int @default(0)
+  totalSolved         Int @default(0)
+  totalFailed         Int @default(0)
+  /// Exponential moving average of solve time, seconds.
+  emaSolveSeconds Int @default(600)
+  /// EMA of first-submission acceptance as fixed point, 0..1000.
+  firstTryRate    Int @default(500)
+  lastPromotedAt DateTime?
+  lastDemotedAt  DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@map("user_progress")
+}
+
+// ---------------------------------------------------------------------------
+// Lock sessions + submissions
+// ---------------------------------------------------------------------------
+
+model LockSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId  String?  @db.Uuid
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  problemId String?  @db.Uuid
+  problem   Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+
+  state      LockState  @default(ARMED)
+  difficulty Difficulty @default(EASY)
+  armedAt    DateTime   @default(now())
+  /// Server-computed moment the overlay must appear. Clients trust this over
+  /// their own clock, so suspending the device does not buy extra time.
+  fireAt     DateTime
+  lockedAt   DateTime?
+  resolvedAt DateTime?
+  attempts   Int        @default(0)
+  /// Set when state = BYPASSED: "skip_allowance" | "admin" | "emergency".
+  escapeReason String?
+  /// SHA-256 of the issued unlock token. The raw JWT is returned exactly once.
+  unlockTokenHash String?
+
+  submissions Submission[]
+
+  @@index([userId, state])
+  @@index([state, fireAt])
+  @@map("lock_sessions")
+}
+
+model Submission {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @db.Uuid
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     String       @db.Uuid
+  problem       Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  lockSessionId String?      @db.Uuid
+  lockSession   LockSession? @relation(fields: [lockSessionId], references: [id], onDelete: SetNull)
+
+  language    Language
+  sourceCode  String
+  status      SubmissionStatus @default(QUEUED)
+  passedCount Int              @default(0)
+  totalCount  Int              @default(0)
+  /// Best-of-N worst-case runtime across the test cases, in ms.
+  runtimeMs   Int?
+  memoryKb    Int?
+  /// The gate this submission had to beat. Stored so history stays explicable
+  /// after the gate ratchets down for everyone else.
+  gateMs      Int?
+  /// Compiler or stderr output, truncated before storage.
+  message     String?
+  /// Judge0 tokens, one per test case, for audit and re-polling.
+  judgeTokens String[] @default([])
+  /// Seconds from lock start to this submission. Feeds the difficulty engine.
+  elapsedSeconds Int?
+  createdAt      DateTime @default(now())
+
+  syncs SyncRecord[]
+
+  @@index([userId, createdAt])
+  @@index([lockSessionId])
+  @@map("submissions")
+}
+
+// ---------------------------------------------------------------------------
+// External integrations
+// ---------------------------------------------------------------------------
+
+enum IntegrationProvider {
+  /// OAuth. CodeLock commits accepted solutions to a repo the user picks,
+  /// which produces real contribution-graph activity.
+  GITHUB
+  /// Read-only. LeetCode exposes no public write API, so progress can be
+  /// imported for display but never pushed back. Linked by username only.
+  LEETCODE
+}
+
+enum SyncStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  /// Provider refused permanently (revoked token, repo deleted). Do not retry.
+  DISABLED
+}
+
+model Integration {
+  id       String              @id @default(uuid()) @db.Uuid
+  userId   String              @db.Uuid
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider IntegrationProvider
+
+  /// The provider-side identity: GitHub login, or LeetCode username.
+  externalUsername String
+  /// AES-256-GCM ciphertext of the OAuth access token. Null for LEETCODE,
+  /// which needs no credential. Never leaves the server.
+  accessTokenCipher String?
+  /// OAuth scopes actually granted, so the UI can explain what will happen.
+  scopes   String[] @default([])
+
+  /// GITHUB only: "owner/name" of the repo that receives solutions.
+  repoFullName String?
+  /// GITHUB only: branch to commit to.
+  repoBranch   String  @default("main")
+
+  enabled     Boolean    @default(true)
+  lastSyncAt  DateTime?
+  lastError   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  syncs SyncRecord[]
+  /// Cached provider stats (LeetCode solved counts, GitHub streak) as returned
+  /// by the last successful fetch. Avoids hammering unofficial endpoints.
+  cachedStats Json?
+
+  @@unique([userId, provider])
+  @@map("integrations")
+}
+
+/// One attempt to mirror one submission outward. Kept so a failed push can be
+/// retried without re-running the judge, and so the UI can show what synced.
+model SyncRecord {
+  id            String      @id @default(uuid()) @db.Uuid
+  integrationId String      @db.Uuid
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  submissionId  String      @db.Uuid
+  submission    Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  status    SyncStatus @default(PENDING)
+  /// Commit SHA on success; provider error message on failure.
+  detail    String?
+  /// Web URL of the created commit, for the "view on GitHub" link.
+  externalUrl String?
+  attempts  Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([integrationId, submissionId])
+  @@index([status])
+  @@map("sync_records")
+}
