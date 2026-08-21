@@ -159,14 +159,42 @@ a single client cannot sustain them for long.
 | Active days / hours enforced | FIXED | ,  and  existed in the schema and were validated on input, but **nothing read them** — the schedule had no effect at all. Now enforced at arm time in the user's own timezone, with 14 tests covering timezones and windows that cross midnight. |
 | Schedule UI | FIXED | Day toggles and a time range on the settings page, with Weekdays / Every day presets. |
 
+## Phase 4 — Device lock
+
+Added 22 August 2026. Full escape-attempt results live in
+[`docs/ESCAPE-MATRIX.md`](docs/ESCAPE-MATRIX.md); this table is the summary.
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 4.1 | Lock survives a process kill | FIXED | Lock state persisted to `userData/lock-state.json`, written before the window changes and restored on boot. `will-quit` relaunches while a lock is live and no verified release happened. Previously End Task was a one-click bypass. |
+| 4.2 | Lock survives a crash or OOM | FIXED | Same mechanism. Atomic write-then-rename, so a power cut mid-write cannot leave a half-written file that parses as "unlocked". |
+| 4.3 | Lock covers every display | FIXED | Opaque cover windows at `screen-saver` level on all non-lock displays. Previously the second monitor kept showing the desktop, which made the lock decorative on any multi-monitor desk. |
+| 4.4 | Display hotplug during a lock | FIXED | `display-added`, `display-removed` and `display-metrics-changed` all re-sync covers and re-assert the barrier. |
+| 4.5 | Sleep / wake / OS screen-lock | FIXED | `powerMonitor` `resume` and `unlock-screen` re-assert kiosk state, always-on-top level, and covers, rather than only calling `focus()`. Kiosk state does not reliably survive display sleep on Windows. |
+| 4.6 | DevTools in production | FIXED | `devTools: isDev`. An open console next to the unlock IPC channel is an invitation. |
+| 4.7 | Documented kill switch | FIXED | Hold Escape for ten seconds. On screen the whole time the lock is up, counts down while held, and resolves the session as `ABANDONED` — a recorded failure for adaptive difficulty. Pure state machine, 6 tests. |
+| 4.8 | Reboot escapes the desktop lock | **FLAGGED** | The lock file survives a reboot but nothing launches CodeLock at login, so power-cycling is a complete escape. Closing it needs a login-item registration, deliberately not wired until the relaunch loop (4.1) has been exercised on hardware — an app that adds itself to startup and covers the screen on boot is one bad state from bricking a machine. |
+| 4.9 | Android overlay service exists | FIXED | `plugins/with-android-overlay.js` declared a `.LockOverlayService` class that **existed nowhere in the repo** — arming a lock would have crashed on `startForegroundService`. Replaced by a local Expo module (`modules/codelock-lock`) carrying the real Kotlin service, so it auto-links on prebuild with no hand-edits after. |
+| 4.10 | Android lock survives reboot and update | FIXED (uncompiled) | `BootReceiver` on `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED`, restoring from `SharedPreferences`. |
+| 4.11 | Android lock survives a low-memory kill | FIXED (uncompiled) | `START_STICKY` plus recovery from stored state on a null-intent restart. `onDestroy` deliberately does **not** clear lock state: it also runs when the system reclaims the service, and clearing there would turn an OOM kill into an unlock. |
+| 4.12 | Android permission prompts documented | FIXED | Notifications (dialog), Display over other apps (Settings only, never a dialog), battery-optimisation exemption. Explained in-app before each hand-off and in `apps/mobile/README.md`. |
+| 4.13 | Android native code compiled or run | **FLAGGED — NOT VERIFIED** | No JDK and no Android SDK on the development machine, and no EAS build has been run. Every Kotlin file is written but has never been compiled. Treat all Android rows as claims about code, not observations. |
+| 4.14 | iOS overclaiming | FIXED | The native module reports `isSupported: false` and every enforcement call returns false, so the UI branches on the module rather than on `Platform.OS`. Copy says CodeLock cannot block another app, because it cannot. |
+| 4.15 | Desktop escape matrix executed on hardware | **FLAGGED — NOT VERIFIED** | The matrix is written and every row reasoned through, but nothing has been exercised on a real desktop. macOS and Linux have no hardware available at all. |
+
 ## Open items, in priority order
 
-1. **`2.16` — legal documents not reviewed by a lawyer.**
-2. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
-3. **`2.17` — registration confirms whether an email is registered.**
-4. **`1.25` — placeholder identifiers** in `electron-builder.yml` and `eas.json`.
-5. **`1.5` — footer link tap targets** under 44px.
-6. **`3.9` — per-second countdown re-render** not profiled.
+1. **`4.13` — Android native code has never been compiled.** No JDK or
+   Android SDK available; needs an EAS build before any Android claim stands.
+2. **`4.15` — desktop escape matrix not run on hardware.**
+3. **`4.8` — rebooting escapes the desktop lock.** Needs login-item
+   registration, gated on 4.15.
+4. **`2.16` — legal documents not reviewed by a lawyer.**
+5. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
+6. **`2.17` — registration confirms whether an email is registered.**
+7. **`1.25` — placeholder identifiers** in `electron-builder.yml` and `eas.json`.
+8. **`1.5` — footer link tap targets** under 44px.
+9. **`3.9` — per-second countdown re-render** not profiled.
 
 ## Not covered by this audit
 
