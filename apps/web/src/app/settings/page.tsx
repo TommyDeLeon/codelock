@@ -4,13 +4,14 @@ import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AppHeader } from '@/components/app-header';
+import { SiteFooter } from '@/components/site-footer';
 import { GitHubCard } from '@/components/settings/github-card';
 import { LeetCodeCard } from '@/components/settings/leetcode-card';
 import { Skeleton } from '@/components/ui/primitives';
 
 export default function SettingsPage() {
   return (
-    <>
+    <div className="flex min-h-dvh flex-col">
       <AppHeader />
       <main id="main" className="mx-auto max-w-3xl px-4 py-7">
         <h1 className="text-xl font-semibold tracking-tight">Connections</h1>
@@ -32,7 +33,8 @@ export default function SettingsPage() {
           </Suspense>
         </div>
       </main>
-    </>
+      <SiteFooter />
+    </div>
   );
 }
 

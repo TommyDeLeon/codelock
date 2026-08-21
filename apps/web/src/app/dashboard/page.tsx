@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { AppHeader } from '@/components/app-header';
+import { SiteFooter } from '@/components/site-footer';
 import { TimerCard } from '@/components/dashboard/timer-card';
 import { ProgressCard } from '@/components/dashboard/progress-card';
 import { SessionHistory } from '@/components/dashboard/session-history';
@@ -28,7 +29,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <>
+    <div className="flex min-h-dvh flex-col">
       <AppHeader />
       <main id="main" className="mx-auto max-w-5xl px-4 py-7">
         <h1 className="text-xl font-semibold tracking-tight">
@@ -100,7 +101,8 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
-    </>
+      <SiteFooter />
+    </div>
   );
 }
 

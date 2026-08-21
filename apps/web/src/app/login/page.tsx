@@ -112,6 +112,13 @@ export default function LoginPage() {
           </CardBody>
         </Card>
 
+        <p className="mt-6 text-center text-[13px] text-faint">
+          By continuing you agree to the{' '}
+          <a href="/terms" className="underline underline-offset-4 hover:text-fg">terms</a>{' '}
+          and{' '}
+          <a href="/privacy" className="underline underline-offset-4 hover:text-fg">privacy policy</a>.
+        </p>
+
         <p className="mt-4 text-center text-[13px] text-muted">
           {mode === 'login' ? 'No account yet?' : 'Already have an account?'}{' '}
           <button
