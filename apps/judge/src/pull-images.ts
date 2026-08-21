@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { env } from './env.js';
 import { LANGUAGES } from './languages.js';
 
 /**
@@ -9,7 +10,7 @@ import { LANGUAGES } from './languages.js';
  *
  *   npm run pull -w @codelock/judge
  */
-const docker = process.env.DOCKER_BIN ?? 'docker';
+const docker = env.DOCKER_BIN;
 let failed = 0;
 
 for (const spec of Object.values(LANGUAGES)) {

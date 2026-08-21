@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { LANGUAGES, STATUS } from './languages.js';
 import { runInSandbox, type RunResult } from './sandbox.js';
 import { logger } from './logger.js';
+import { env } from './env.js';
 
 /**
  * A Judge0-compatible execution service backed by Docker.
@@ -16,9 +17,9 @@ import { logger } from './logger.js';
  * take the host down more reliably than any single submission could.
  */
 
-const PORT = Number(process.env.PORT ?? 2358);
+const PORT = env.PORT;
 /** Concurrent containers. Each one gets a full core, so this is a CPU budget. */
-const CONCURRENCY = Number(process.env.JUDGE_CONCURRENCY ?? 4);
+const CONCURRENCY = env.JUDGE_CONCURRENCY;
 /** Finished results are kept this long for polling, then dropped. */
 const RESULT_TTL_MS = 10 * 60_000;
 const MAX_BODY_BYTES = 2 * 1024 * 1024;

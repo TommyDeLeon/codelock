@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { env } from './env.js';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -54,7 +55,7 @@ export interface RunResult {
   memory: number;
 }
 
-const DOCKER = process.env.DOCKER_BIN ?? 'docker';
+const DOCKER = env.DOCKER_BIN;
 /** Grace added to the CPU limit before the host force-kills the container. */
 const KILL_GRACE_MS = 5_000;
 /** Output beyond this is truncated; a print loop must not exhaust our memory. */
