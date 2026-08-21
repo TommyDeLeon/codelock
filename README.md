@@ -89,33 +89,89 @@ API, so solving a problem here cannot mark it solved there. What works is
 importing your public profile stats (solved counts, streak, calendar) for
 display next to your CodeLock progress. Username only, no password, nothing sent.
 
-## Quick start
+## Running it locally
+
+Needs Docker (for Postgres and the sandbox) and Node 24.
 
 ```bash
-cp apps/api/.env.example apps/api/.env
+npm install
 ```
 
-Fill in `DATABASE_URL` and four secrets (`openssl rand -base64 48` each:
-`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_UNLOCK_SECRET`,
-`ENCRYPTION_KEY`), then:
+**1. Database.**
 
 ```bash
-npm install && npm run db:migrate && npm run db:seed && npm run dev:api
+docker run -d --name codelock-pg -e POSTGRES_USER=codelock -e POSTGRES_PASSWORD=codelock -e POSTGRES_DB=codelock -p 5433:5432 postgres:16-alpine
 ```
 
-Web app, in a second terminal:
+**2. Config.** Copy `apps/api/.env.example` to `apps/api/.env` and fill in the
+four secrets (`openssl rand -base64 48` each). Point `DATABASE_URL` at
+`postgresql://codelock:codelock@localhost:5433/codelock?schema=public`. Then
+copy `apps/web/.env.example` to `apps/web/.env.local`.
+
+**3. Schema and problems.**
 
 ```bash
-cp apps/web/.env.example apps/web/.env.local && npm run dev -w @codelock/web
+npm run db:reset
 ```
 
-Desktop shell against local web:
+**4. Sandbox images**, once. Skipping this makes the first submission in each
+language look like a hang while the image downloads.
 
 ```bash
-npm run dev -w @codelock/desktop
+npm run pull -w @codelock/judge
 ```
 
-Everything at once — Postgres, API, and the sandbox:
+**5. Three processes, three terminals.**
+
+```bash
+npm run dev:judge
+```
+
+```bash
+npm run dev:api
+```
+
+```bash
+npm run dev:web
+```
+
+**6. Calibrate the speed gate for your hardware.** The seeded reference runtimes
+are estimates; without this the gate is measuring someone else's machine.
+
+```bash
+npm run calibrate -- --write
+```
+
+Then open http://localhost:3000.
+
+### Seeing the lock screen without waiting
+
+The shortest session the API accepts is five minutes, deliberately — anything
+shorter is not a focus block. To trigger a lock immediately, start a block on
+the dashboard, then:
+
+```bash
+npm run dev:expire
+```
+
+Reload the dashboard and it will hand you the lock screen. This writes straight
+to the database and is not reachable through the API, so it cannot be used to
+skip a real lock.
+
+### Worth trying
+
+Submit a **correct but slow** answer first — a nested loop for Two Sum, or an
+O(n²) scan for the substring problem. Every test passes, the verdict reads
+*"Correct, but too slow"*, and the device stays locked. Then submit the hash-map
+or sliding-window version and watch it open. That contrast is the whole product.
+
+Desktop shell against the running web app:
+
+```bash
+npm run dev:desktop
+```
+
+Or run Postgres, the API, and the sandbox together:
 
 ```bash
 docker compose up

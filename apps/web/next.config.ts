@@ -2,6 +2,10 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // Next 16 drops generated tooling docs into the app directory on dev and
+  // build. They are not part of this project, so opt out at the source rather
+  // than ignoring the files after the fact.
+  agentRules: false,
   // The shared contract package ships TypeScript source, not a build.
   transpilePackages: ['@codelock/shared'],
   async headers() {
