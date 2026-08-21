@@ -66,7 +66,7 @@ code alone. Where something is marked FIXED, it was observed working.
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1.24 | No placeholder text | FIXED | No lorem ipsum, TODO, or dummy names in application code. Template domains (`app.codelock.dev`) remain in `.env.example` and `render.yaml`, which is what those files are for. |
-| 1.25 | Placeholder identifiers in config | FLAGGED | `electron-builder.yml` has `owner: your-github-username`; `eas.json` has `you@example.com` / `ascAppId: 0000000000`. Harmless until you publish or submit to a store, at which point they must be real. |
+| 1.25 | Placeholder identifiers in config | PARTLY FIXED | The `electron-builder.yml` placeholder (`owner: your-github-username`) is **gone** — it would have pointed every installed app's updater at a stranger's releases. The publish target now comes from the repository at release time (6.3). `eas.json` still carries `you@example.com` / `ascAppId: 0000000000`, which only matter on App Store submission. |
 | 1.26 | Dynamic copyright year | FIXED | `{new Date().getFullYear()}` in the footer. |
 | 1.27 | Success messages | FIXED | Toasts on: default duration saved, GitHub connected/repo chosen/disconnected, LeetCode linked, skip used, promotion/demotion. Unlock has its own screen. |
 | 1.28 | Error messages, specific and human | FIXED | Every mutation has an `onError` toast carrying the server's message. Network and timeout failures now produce readable text instead of a raw `TypeError`. |
@@ -209,24 +209,48 @@ Added 22 August 2026. Deployment guide: [`docs/DEPLOY.md`](docs/DEPLOY.md).
 | 5.19 | Release checksums | FIXED | `SHA256SUMS.txt` generated across all installers, basenames only, attached to the release. |
 | 5.20 | Android direct-install profile | FIXED | `production-apk` EAS profile — signed release APK, internal distribution, for the owner's own devices. `production` still builds an app-bundle for Play. |
 | 5.21 | Deploy tested on a real VPS | **FLAGGED — NOT VERIFIED** | The stack was brought up, migrated, health-checked, backed up and restored locally against Docker 29.7.2. Caddy and its TLS provisioning were **not** exercised: that needs public DNS and port 80/443 on a real host. |
-| 5.22 | Installers built | **FLAGGED — NOT VERIFIED** | No installer has been produced on any platform. `electron-builder` has never been run here, and the auto-update path (install v1, publish v2, confirm it updates) is untested. |
+| 5.22 | Installers built | SUPERSEDED | See 6.1: an unsigned Windows installer now builds and has been inspected. macOS and Linux remain unbuilt (6.13). |
+
+## Phase 6 — Trusted installation
+
+Added 22 August 2026. Full guide: [`docs/TRUSTED-INSTALL.md`](docs/TRUSTED-INSTALL.md).
+Key inventory: [`docs/SIGNING-KEYS.md`](docs/SIGNING-KEYS.md).
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 6.1 | An installer can be built at all | FIXED | Never attempted before. Unsigned NSIS x64: **82 MB, builds, `Get-AuthenticodeSignature` reports `NotSigned`** as expected. |
+| 6.2 | Packaged contents correct | FIXED | Verified inside `app.asar`: every main-process module (`main`, `preload`, `lock-state`, `kill-switch`, `display-cover`, `updater`, `unlock-verifier`) plus `electron-updater`. Confirms 5.15’s dependencies-not-devDependencies fix was load-bearing. |
+| 6.3 | Local build needs no environment | FIXED | The `publish:` block read the owner from an env macro, and electron-builder treats an undefined macro as a **hard error** — `npm run dist` could not build without it set. The block is gone; the release workflow supplies the target on the command line, derived from the repository being built. |
+| 6.4 | Local build’s updater is inert | FIXED | With no `publish:` block electron-builder writes no `app-update.yml`. Verified absent from `win-unpacked/resources`. A local build cannot poll a stranger’s releases. |
+| 6.5 | Windows signing script | FIXED | `apps/desktop/scripts/sign-windows.ps1`. SHA-256 with **mandatory RFC 3161 timestamping** — without it every signature dies on the certificate’s expiry date, turning every installed copy into an untrusted binary at once. Reads the password as a SecureString so it never reaches shell history. |
+| 6.6 | Signing integrated into CI | FIXED | The release job verifies each Windows artifact is `Valid`, **timestamped**, and signed with a CN matching `CODELOCK_PUBLISHER_CN`; macOS runs `codesign --verify` plus `spctl --assess` (Gatekeeper, not merely a valid signature). Gated on `REQUIRE_SIGNING` so a dry run stays possible before certificates exist. |
+| 6.7 | Signing-key inventory | FIXED | `docs/SIGNING-KEYS.md` — what key, where the backup lives, expiry, and what breaks if lost. States plainly that the Android keystore is the one **unrecoverable** loss. |
+| 6.8 | Key material cannot be committed | FIXED | `.gitignore` covers `*.pfx`, `*.p12`, `*.jks`, `*.keystore`, `*.cer`, `*.crt`, `*.key`. |
+| 6.9 | Windows local-build quirks documented | FIXED | Two environment traps, both with useless error messages: caches on C: while the project is on D: fail an internal cross-drive rename, and extracting `winCodeSign` needs symlink privilege for two macOS dylibs a Windows build never uses. Workarounds recorded; GitHub runners are unaffected. |
+| 6.10 | Certificate generated and trusted | **FLAGGED — NOT DONE** | Every command is written and unexecuted. Creating a signing key and importing a trusted root are the owner’s decisions; neither was run on their behalf. |
+| 6.11 | A signed installer produced | **FLAGGED — NOT VERIFIED** | Follows from 6.10. `sign-windows.ps1` parses but has never signed anything. |
+| 6.12 | Auto-update proven end to end | **FLAGGED — NOT VERIFIED** | Install v1, publish v2, confirm it updates without a prompt. Needs a published GitHub Release. This is the last thing standing between here and “done”. |
+| 6.13 | macOS / Linux artifacts | **FLAGGED — NOT VERIFIED** | No hardware available. Neither target has ever been built. |
+| 6.14 | Track B started | **FLAGGED — NOT STARTED** | Windows OV/EV and Azure Trusted Signing all need a verifiable business entity, which is the real blocker for a solo project — not the cost. Apple Developer Program ($99/yr) is required for any permanent iOS install; there is no free path. |
 
 ## Open items, in priority order
 
-1. **`5.22` — no installer has ever been built**, and the auto-update path
-   is untested end to end.
-2. **`5.21` — the deploy stack has not run on a real VPS**; TLS untested.
-3. **`4.13` — Android native code has never been compiled.** No JDK or
+1. **`6.12` — auto-update never proven end to end.** Everything else in the
+   release path now works; this is the one that decides whether installed
+   devices stay current.
+2. **`6.10` / `6.11` — no certificate generated, nothing signed yet.**
+3. **`5.21` — the deploy stack has not run on a real VPS**; TLS untested.
+4. **`4.13` — Android native code has never been compiled.** No JDK or
    Android SDK available; needs an EAS build before any Android claim stands.
-4. **`4.15` — desktop escape matrix not run on hardware.**
-5. **`4.8` — rebooting escapes the desktop lock.** Needs login-item
+5. **`4.15` — desktop escape matrix not run on hardware.**
+6. **`4.8` — rebooting escapes the desktop lock.** Needs login-item
    registration, gated on 4.15.
-6. **`2.16` — legal documents not reviewed by a lawyer.**
-7. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
-8. **`2.17` — registration confirms whether an email is registered.**
-9. **`1.25` — placeholder identifiers** in `electron-builder.yml` and `eas.json`.
-10. **`1.5` — footer link tap targets** under 44px.
-11. **`3.9` — per-second countdown re-render** not profiled.
+7. **`2.16` — legal documents not reviewed by a lawyer.**
+8. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
+9. **`2.17` — registration confirms whether an email is registered.**
+10. **`1.25` — placeholder identifiers** remaining in `eas.json` only.
+11. **`1.5` — footer link tap targets** under 44px.
+12. **`3.9` — per-second countdown re-render** not profiled.
 
 ## Not covered by this audit
 
