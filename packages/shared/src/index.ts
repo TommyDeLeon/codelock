@@ -10,7 +10,7 @@
 export const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 
-export const LANGUAGES = ['JAVASCRIPT', 'PYTHON', 'JAVA', 'CPP', 'GO'] as const;
+export const LANGUAGES = ['JAVASCRIPT', 'TYPESCRIPT', 'PYTHON', 'JAVA', 'CPP', 'GO'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export const LOCK_STATES = ['ARMED', 'LOCKED', 'UNLOCKED', 'BYPASSED', 'ABANDONED'] as const;
@@ -33,6 +33,7 @@ export type Platform = 'WEB' | 'WINDOWS' | 'MACOS' | 'LINUX' | 'ANDROID' | 'IOS'
 /** Human-facing labels. Keeps enum-to-copy mapping in one place. */
 export const LANGUAGE_LABELS: Record<Language, string> = {
   JAVASCRIPT: 'JavaScript',
+  TYPESCRIPT: 'TypeScript',
   PYTHON: 'Python',
   JAVA: 'Java',
   CPP: 'C++',
@@ -42,6 +43,7 @@ export const LANGUAGE_LABELS: Record<Language, string> = {
 /** Monaco language ids, which differ from ours for two of the five. */
 export const MONACO_LANGUAGE_IDS: Record<Language, string> = {
   JAVASCRIPT: 'javascript',
+  TYPESCRIPT: 'typescript',
   PYTHON: 'python',
   JAVA: 'java',
   CPP: 'cpp',

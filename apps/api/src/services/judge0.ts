@@ -18,6 +18,7 @@ import { logger } from '../lib/logger.js';
  */
 export const JUDGE0_LANGUAGE_IDS: Record<Language, number> = {
   JAVASCRIPT: env.JUDGE0_LANG_JAVASCRIPT, // 1.13.1: 63 = Node.js 12.14.0
+  TYPESCRIPT: env.JUDGE0_LANG_TYPESCRIPT, // 1.13.1: 74 = TypeScript 3.7.4
   PYTHON: env.JUDGE0_LANG_PYTHON, // 71 = Python 3.8.1
   JAVA: env.JUDGE0_LANG_JAVA, // 62 = OpenJDK 13.0.1
   CPP: env.JUDGE0_LANG_CPP, // 54 = GCC 9.2.0

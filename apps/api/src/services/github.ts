@@ -23,6 +23,7 @@ export const GITHUB_SCOPES = ['public_repo', 'read:user'] as const;
 
 const FILE_EXTENSIONS: Record<Language, string> = {
   JAVASCRIPT: 'js',
+  TYPESCRIPT: 'ts',
   PYTHON: 'py',
   JAVA: 'java',
   CPP: 'cpp',

@@ -26,6 +26,7 @@ const schema = z.object({
   // Language ids differ per Judge0 release; defaults match judge0:1.13.1 as
   // pinned in docker-compose.yml. See services/judge0.ts.
   JUDGE0_LANG_JAVASCRIPT: z.coerce.number().int().positive().default(63),
+  JUDGE0_LANG_TYPESCRIPT: z.coerce.number().int().positive().default(74),
   JUDGE0_LANG_PYTHON: z.coerce.number().int().positive().default(71),
   JUDGE0_LANG_JAVA: z.coerce.number().int().positive().default(62),
   JUDGE0_LANG_CPP: z.coerce.number().int().positive().default(54),

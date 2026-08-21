@@ -22,6 +22,7 @@ enum Difficulty {
 
 enum Language {
   JAVASCRIPT
+  TYPESCRIPT
   PYTHON
   JAVA
   CPP

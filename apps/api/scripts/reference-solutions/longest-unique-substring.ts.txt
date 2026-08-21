@@ -1,0 +1,13 @@
+function solve(s: string): number {
+  const last = new Map<string, number>();
+  let best = 0;
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch: string = s[i];
+    const seenAt = last.get(ch);
+    if (seenAt !== undefined && seenAt >= start) start = seenAt + 1;
+    last.set(ch, i);
+    if (i - start + 1 > best) best = i - start + 1;
+  }
+  return best;
+}

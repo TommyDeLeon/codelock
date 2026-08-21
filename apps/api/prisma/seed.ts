@@ -24,6 +24,14 @@ const __nums = __lines[0].trim().split(/[ ,]+/).map(Number);
 const __target = Number(__lines[1]);
 console.log(solve(__nums, __target).join(' '));`,
 
+  // Node 24 strips the annotations at run time, so the driver is the JavaScript
+  // one with types added — no build step and no separate image.
+  TYPESCRIPT: `{{SOLUTION}}
+const __lines: string[] = require('fs').readFileSync(0, 'utf8').split('\\n');
+const __nums: number[] = __lines[0].trim().split(/[ ,]+/).map(Number);
+const __target: number = Number(__lines[1]);
+console.log(solve(__nums, __target).join(' '));`,
+
   PYTHON: `import sys
 {{SOLUTION}}
 __data = sys.stdin.read().split('\\n')
@@ -97,6 +105,10 @@ const singleStringDrivers = (print: {
 }): Record<string, string> => ({
   JAVASCRIPT: `{{SOLUTION}}
 const __input = require('fs').readFileSync(0, 'utf8').split('\\n')[0];
+console.log(${print.js});`,
+
+  TYPESCRIPT: `{{SOLUTION}}
+const __input: string = require('fs').readFileSync(0, 'utf8').split('\\n')[0];
 console.log(${print.js});`,
 
   PYTHON: `import sys
@@ -182,6 +194,8 @@ Output: 0 1
 \`\`\``,
     starterCode: {
       JAVASCRIPT: 'function solve(nums, target) {\n  // return [i, j]\n}',
+      TYPESCRIPT:
+        'function solve(nums: number[], target: number): number[] {\n  // return [i, j]\n  return [0, 0];\n}',
       PYTHON: 'def solve(nums, target):\n    # return [i, j]\n    pass',
       JAVA: '    static int[] solve(int[] nums, int target) {\n        // return new int[]{i, j};\n        return new int[]{0, 0};\n    }',
       CPP: 'vector<int> solve(vector<int>& nums, int target) {\n    // return {i, j};\n    return {0, 0};\n}',
@@ -220,6 +234,8 @@ Output: true
 \`\`\``,
     starterCode: {
       JAVASCRIPT: 'function solve(s) {\n  // return true or false\n}',
+      TYPESCRIPT:
+        'function solve(s: string): boolean {\n  // return true or false\n  return false;\n}',
       PYTHON: 'def solve(s):\n    # return True or False\n    pass',
       JAVA: '    static boolean solve(String s) {\n        return false;\n    }',
       CPP: 'bool solve(string s) {\n    return false;\n}',
@@ -266,6 +282,7 @@ A correct O(n) sliding-window solution is expected; O(n^2) may exceed the limit
 on the largest hidden case.`,
     starterCode: {
       JAVASCRIPT: 'function solve(s) {\n  // return a number\n}',
+      TYPESCRIPT: 'function solve(s: string): number {\n  // return a number\n  return 0;\n}',
       PYTHON: 'def solve(s):\n    # return an int\n    pass',
       JAVA: '    static int solve(String s) {\n        return 0;\n    }',
       CPP: 'int solve(string s) {\n    return 0;\n}',

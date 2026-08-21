@@ -29,6 +29,19 @@ export const LANGUAGES: Record<number, LanguageSpec> = {
     command: 'node /work/main.js',
     compiled: false,
   },
+  74: {
+    id: 74,
+    name: 'TypeScript',
+    image: 'node:24-alpine',
+    filename: 'main.ts',
+    // Node 24 strips type annotations natively (no --experimental flag), so
+    // this runs the source directly. The limit is that only erasable syntax
+    // works: annotations, interfaces and type aliases are fine; enums,
+    // namespaces and decorators are not, because those need real
+    // transformation rather than deletion.
+    command: 'node /work/main.ts',
+    compiled: false,
+  },
   71: {
     id: 71,
     name: 'Python 3',

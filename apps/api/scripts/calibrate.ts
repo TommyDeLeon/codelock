@@ -32,6 +32,7 @@ const SAMPLES = 3;
 
 const EXTENSIONS: Record<string, Language> = {
   js: Language.JAVASCRIPT,
+  ts: Language.TYPESCRIPT,
   py: Language.PYTHON,
   java: Language.JAVA,
   cpp: Language.CPP,
