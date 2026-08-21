@@ -1,0 +1,112 @@
+import { Router } from 'express';
+import { LockState, SubmissionStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
+import { ApiError } from '../lib/errors.js';
+import { asyncHandler } from '../middleware/error.js';
+import { requireAuth, currentUser } from '../middleware/auth.js';
+import { PROMOTE_AFTER_FAST_SOLVES, DEMOTE_AFTER_FAILURES } from '../services/difficulty.js';
+
+export const statsRouter = Router();
+statsRouter.use(requireAuth);
+
+/** GET /stats/summary — everything the dashboard header needs, in one query set. */
+statsRouter.get(
+  '/summary',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+
+    const [progress, totals, accepted, byDifficulty, recentLocks] = await Promise.all([
+      prisma.userProgress.findUnique({ where: { userId: user.id } }),
+      prisma.submission.count({ where: { userId: user.id } }),
+      prisma.submission.count({
+        where: { userId: user.id, status: SubmissionStatus.ACCEPTED },
+      }),
+      prisma.submission.groupBy({
+        by: ['status'],
+        where: { userId: user.id, createdAt: { gte: thirtyDaysAgo } },
+        _count: { _all: true },
+      }),
+      prisma.lockSession.findMany({
+        where: { userId: user.id, resolvedAt: { not: null } },
+        orderBy: { resolvedAt: 'desc' },
+        take: 30,
+        select: {
+          id: true,
+          state: true,
+          difficulty: true,
+          lockedAt: true,
+          resolvedAt: true,
+          attempts: true,
+          problem: { select: { slug: true, title: true } },
+        },
+      }),
+    ]);
+
+    if (!progress) throw ApiError.notFound('User progress missing');
+
+    const unlocked = recentLocks.filter((l) => l.state === LockState.UNLOCKED);
+    const medianUnlockSeconds = median(
+      unlocked
+        .filter((l) => l.lockedAt && l.resolvedAt)
+        .map((l) => (l.resolvedAt!.getTime() - l.lockedAt!.getTime()) / 1000),
+    );
+
+    res.json({
+      progress: {
+        ...progress,
+        // Surface the ladder rules so the UI can render "2 of 3 fast solves"
+        // rather than hard-coding thresholds that live in the backend.
+        promoteAfterFastSolves: PROMOTE_AFTER_FAST_SOLVES,
+        demoteAfterFailures: DEMOTE_AFTER_FAILURES,
+      },
+      submissions: {
+        total: totals,
+        accepted,
+        acceptanceRate: totals === 0 ? 0 : Math.round((accepted / totals) * 100),
+        last30DaysByStatus: Object.fromEntries(
+          byDifficulty.map((row) => [row.status, row._count._all]),
+        ),
+      },
+      locks: {
+        recent: recentLocks,
+        unlockedCount: unlocked.length,
+        medianUnlockSeconds,
+      },
+    });
+  }),
+);
+
+/** GET /stats/activity — daily counts for the last 90 days (heatmap). */
+statsRouter.get(
+  '/activity',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const rows = await prisma.$queryRaw<Array<{ day: Date; solved: bigint; attempted: bigint }>>`
+      SELECT date_trunc('day', "createdAt") AS day,
+             COUNT(*) FILTER (WHERE status = 'ACCEPTED') AS solved,
+             COUNT(*) AS attempted
+      FROM submissions
+      WHERE "userId" = ${user.id}::uuid
+        AND "createdAt" >= NOW() - INTERVAL '90 days'
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `;
+    res.json({
+      days: rows.map((r) => ({
+        date: r.day.toISOString().slice(0, 10),
+        solved: Number(r.solved),
+        attempted: Number(r.attempted),
+      })),
+    });
+  }),
+);
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return Math.round(
+    sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!,
+  );
+}
