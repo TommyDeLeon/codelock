@@ -159,12 +159,42 @@ export async function bypassLock(params: {
 }
 
 export async function getActiveSession(userId: string): Promise<LockSessionView | null> {
+  // One query, not three. This is the most-polled endpoint in the product — the
+  // lock screen hits it every 5 seconds and the dashboard every 15 — and the
+  // previous shape was session, then problem, then sample test cases in series.
   const session = await prisma.lockSession.findFirst({
     where: { userId, state: { in: [LockState.ARMED, LockState.LOCKED] } },
     orderBy: { armedAt: 'desc' },
+    include: {
+      problem: {
+        include: {
+          testCases: {
+            where: { isSample: true },
+            orderBy: { ordinal: 'asc' },
+            select: { ordinal: true, stdin: true, expectedStdout: true },
+          },
+        },
+      },
+    },
   });
   if (!session) return null;
-  return toView(session, await loadProblem(session.problemId));
+
+  return {
+    ...(await toView(session, null)),
+    problem: session.problem
+      ? {
+          id: session.problem.id,
+          slug: session.problem.slug,
+          title: session.problem.title,
+          difficulty: session.problem.difficulty,
+          promptMarkdown: session.problem.promptMarkdown,
+          tags: session.problem.tags,
+          starterCode: session.problem.starterCode as Record<string, string>,
+          sampleCases: session.problem.testCases,
+          avgSolveSeconds: session.problem.avgSolveSeconds,
+        }
+      : null,
+  };
 }
 
 /** Background sweep: close out sessions nobody ever resolved. */
