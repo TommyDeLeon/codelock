@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "CodeLock",
+    "slug": "codelock",
+    "version": "0.1.0",
+    "orientation": "default",
+    "scheme": "codelock",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "backgroundColor": "#0e0e0d",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0e0e0d"
+    },
+    "assetBundlePatterns": ["**/*"],
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.codelock.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch", "processing"],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+
+    "android": {
+      "package": "dev.codelock.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0e0e0d"
+      },
+      "permissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
+    },
+
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#b3441b",
+          "defaultChannel": "codelock-timer"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": { "minSdkVersion": 26, "compileSdkVersion": 35, "targetSdkVersion": 35 },
+          "ios": { "deploymentTarget": "15.1" }
+        }
+      ],
+      "./plugins/with-android-overlay"
+    ],
+
+    "experiments": { "typedRoutes": true },
+
+    "extra": {
+      "apiUrl": "https://api.codelock.dev",
+      "webUrl": "https://app.codelock.dev",
+      "eas": { "projectId": "00000000-0000-0000-0000-000000000000" }
+    }
+  }
+}

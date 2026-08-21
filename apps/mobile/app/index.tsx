@@ -1,0 +1,234 @@
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useColorScheme,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { colors, radius, spacing } from '@/theme';
+import { clearSession, loadSession, mobileApi } from '@/session';
+import {
+  ENFORCEMENT_COPY,
+  enforcementLevel,
+  ensureNotificationPermission,
+  ensureOverlayPermission,
+  scheduleLockNotification,
+} from '@/lock-permissions';
+
+const PRESETS = [15, 30, 60, 90];
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const scheme = useColorScheme() ?? 'dark';
+  const theme = colors[scheme];
+
+  const [ready, setReady] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const has = await loadSession();
+      setSignedIn(has);
+      setReady(true);
+      if (has) await refreshLock();
+    })();
+  }, []);
+
+  // Poll rather than trust a local countdown: the server owns the deadline, and
+  // a backgrounded phone stops running timers anyway.
+  useEffect(() => {
+    if (!signedIn) return;
+    const id = setInterval(() => void refreshLock(), 20_000);
+    return () => clearInterval(id);
+  }, [signedIn]);
+
+  async function refreshLock() {
+    try {
+      const { session } = await mobileApi.activeLock();
+      if (!session) return setRemaining(null);
+      if (session.state === 'LOCKED') return router.replace('/lock');
+      setRemaining(session.secondsRemaining);
+    } catch {
+      // Offline: keep whatever is on screen rather than flashing an error.
+    }
+  }
+
+  async function signIn() {
+    setBusy(true);
+    setError(null);
+    try {
+      await mobileApi.login(email.trim(), password);
+      setSignedIn(true);
+      await ensureNotificationPermission();
+      if (enforcementLevel() === 'overlay') await ensureOverlayPermission();
+      await refreshLock();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startSession(minutes: number) {
+    setBusy(true);
+    try {
+      const session = await mobileApi.arm(minutes);
+      await scheduleLockNotification(new Date(session.fireAt));
+      setRemaining(session.secondsRemaining);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start a session');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!ready) {
+    return (
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator color={theme.accent} />
+      </View>
+    );
+  }
+
+  if (!signedIn) {
+    return (
+      <ScrollView
+        contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={[styles.title, { color: theme.fg }]}>Sign in</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>
+          Use the same account as the web and desktop apps.
+        </Text>
+
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor={theme.faint}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          accessibilityLabel="Email"
+          style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
+        />
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor={theme.faint}
+          secureTextEntry
+          autoComplete="current-password"
+          accessibilityLabel="Password"
+          style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
+        />
+
+        {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
+
+        <Pressable
+          onPress={() => void signIn()}
+          disabled={busy}
+          accessibilityRole="button"
+          style={[styles.button, { backgroundColor: theme.fg, opacity: busy ? 0.6 : 1 }]}
+        >
+          <Text style={[styles.buttonText, { color: theme.bg }]}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}>
+      {remaining === null ? (
+        <>
+          <Text style={[styles.title, { color: theme.fg }]}>Start a focus block</Text>
+          <View style={styles.row}>
+            {PRESETS.map((minutes) => (
+              <Pressable
+                key={minutes}
+                onPress={() => void startSession(minutes)}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel={`Start a ${minutes} minute session`}
+                style={[styles.preset, { borderColor: theme.border, backgroundColor: theme.surface }]}
+              >
+                <Text style={[styles.presetText, { color: theme.fg }]}>{minutes}m</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : (
+        <>
+          <Text style={[styles.label, { color: theme.muted }]}>Locks in</Text>
+          <Text style={[styles.countdown, { color: theme.fg }]}>
+            {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
+          </Text>
+        </>
+      )}
+
+      {/* The platform's real capability, stated on the device it applies to. */}
+      <View style={[styles.notice, { backgroundColor: theme.surface2 }]}>
+        <Text style={[styles.noticeText, { color: theme.muted }]}>
+          {ENFORCEMENT_COPY[enforcementLevel()]}
+        </Text>
+      </View>
+
+      <Pressable
+        onPress={() => void clearSession().then(() => setSignedIn(false))}
+        accessibilityRole="button"
+        style={styles.signOut}
+      >
+        <Text style={[styles.body, { color: theme.muted }]}>Sign out</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { padding: spacing.lg, gap: spacing.md, flexGrow: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 20, fontWeight: '600', letterSpacing: -0.3 },
+  label: { fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  countdown: { fontSize: 48, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  body: { fontSize: 14 },
+  input: {
+    height: 44,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    fontSize: 15,
+  },
+  button: {
+    height: 46,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: { fontSize: 15, fontWeight: '600' },
+  row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+  preset: {
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  presetText: { fontSize: 15, fontWeight: '600' },
+  notice: { padding: spacing.md, borderRadius: radius.sm, marginTop: spacing.md },
+  noticeText: { fontSize: 13, lineHeight: 19 },
+  error: { fontSize: 13 },
+  signOut: { marginTop: 'auto', paddingVertical: spacing.md },
+});
