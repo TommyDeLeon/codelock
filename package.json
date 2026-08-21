@@ -1,0 +1,28 @@
+{
+  "name": "codelock",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:api": "npm run dev -w @codelock/api",
+    "build": "npm run typecheck -w @codelock/shared && npm run build -w @codelock/api && npm run build -w @codelock/web && npm run build -w @codelock/desktop",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run db:migrate -w @codelock/api",
+    "db:seed": "npm run db:seed -w @codelock/api",
+    "dev:web": "npm run dev -w @codelock/web",
+    "dev:desktop": "npm run dev -w @codelock/desktop",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "calibrate": "npm run calibrate -w @codelock/api",
+    "dist:desktop": "npm run dist -w @codelock/desktop"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
