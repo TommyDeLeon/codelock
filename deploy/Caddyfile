@@ -1,0 +1,35 @@
+# TLS is automatic: Caddy provisions and renews Let's Encrypt certificates for
+# both names on first boot. Nothing to run, nothing to cron.
+#
+# The judge is deliberately absent. It has no authentication and must never be
+# reachable from outside the compose network.
+
+{
+	email {$TLS_EMAIL}
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# The lock screen must never be embeddable: a hostile iframe host could
+		# otherwise overlay a fake "unlock" control.
+		X-Frame-Options DENY
+		-Server
+	}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api:4000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}

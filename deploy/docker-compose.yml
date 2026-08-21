@@ -1,0 +1,123 @@
+# CodeLock, whole stack, one VPS.
+#
+# Everything a self-hosted install needs: Postgres with nightly dumps, the API,
+# the sandbox, the web app, and Caddy terminating TLS in front. Start it with
+# ./deploy.sh — that script checks the environment before letting compose run,
+# because half of these services fail in confusing ways when a secret is absent
+# rather than wrong.
+#
+# Only Caddy publishes ports. Everything else talks over the internal network,
+# which matters most for the judge: it has no authentication by design.
+
+name: codelock
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+      TLS_EMAIL: ${TLS_EMAIL:?set TLS_EMAIL in .env}
+    depends_on: [api, web]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-codelock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-codelock}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-codelock}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Nightly pg_dump with retention. A backup nobody has restored is a rumour,
+  # so restore.sh exists alongside it and DEPLOY.md asks you to run it once.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-codelock}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:-codelock}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backup.sh:/usr/local/bin/backup.sh:ro
+      - backups:/backups
+    entrypoint: ['/bin/sh', '/usr/local/bin/backup.sh', '--loop']
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-codelock}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-codelock}?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
+      JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set in .env}
+      JUDGE0_URL: http://judge:2358
+      APP_URL: https://${APP_DOMAIN}
+      CORS_ORIGINS: https://${APP_DOMAIN}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: https://${API_DOMAIN}/v1/integrations/github/callback
+      PERF_TOLERANCE: ${PERF_TOLERANCE:-1.35}
+      PERF_FLOOR_MS: ${PERF_FLOOR_MS:-40}
+      PERF_BEST_OF: ${PERF_BEST_OF:-2}
+    depends_on:
+      postgres: { condition: service_healthy }
+      judge: { condition: service_started }
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Build args, not environment: NEXT_PUBLIC_* is inlined into the client
+        # bundle at build time. Changing these needs a rebuild, not a restart.
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+        NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+    restart: unless-stopped
+
+  # SECURITY: the socket mount is root-equivalent on this host. Anyone who
+  # compromises the judge process controls the box. See apps/judge/README.md and
+  # docs/DEPLOY.md — this is the single biggest trade-off in the deployment.
+  judge:
+    build:
+      context: ..
+      dockerfile: apps/judge/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 2358
+      JUDGE_CONCURRENCY: ${JUDGE_CONCURRENCY:-4}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Sources are written to the host temp dir and bind-mounted into each
+      # sandbox, so the path must mean the same thing to judge and daemon.
+      - /tmp:/tmp
+
+volumes:
+  pgdata:
+  backups:
+  caddy_data:
+  caddy_config:
