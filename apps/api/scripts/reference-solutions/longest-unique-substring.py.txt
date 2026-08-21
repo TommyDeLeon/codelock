@@ -1,0 +1,11 @@
+def solve(s):
+    last = {}
+    best = 0
+    start = 0
+    for i, ch in enumerate(s):
+        seen_at = last.get(ch)
+        if seen_at is not None and seen_at >= start:
+            start = seen_at + 1
+        last[ch] = i
+        best = max(best, i - start + 1)
+    return best
