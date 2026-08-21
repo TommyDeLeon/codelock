@@ -37,12 +37,12 @@ win:
   # Unsigned builds trigger SmartScreen. Supply CSC_LINK / CSC_KEY_PASSWORD in
   # CI to sign; without them the installer still works but warns on first run.
   signAndEditExecutable: true
-  # MUST be exactly the CN of the signing certificate. electron-updater checks
-  # the publisher name on the downloaded installer against this string, and a
-  # mismatch makes every update fail *silently* — no error, no dialog, no
-  # update, forever. Set CODELOCK_PUBLISHER_CN to the CN you signed with; see
-  # docs/TRUSTED-INSTALL.md. Left unset for unsigned local builds.
-  publisherName: ${env.CODELOCK_PUBLISHER_CN}
+  # publisherName is NOT set here. It must be exactly the CN of the signing
+  # certificate — electron-updater checks the publisher on the downloaded
+  # installer against it, and a mismatch makes every update fail *silently*:
+  # no error, no dialog, no update, ever. It is passed at release time by
+  # .github/workflows/release-desktop.yml, so an unsigned local build does not
+  # need it. See docs/TRUSTED-INSTALL.md.
 
 nsis:
   oneClick: false
@@ -92,15 +92,14 @@ linux:
       Comment: Solve a problem to unlock your device
       Categories: Utility;Education;
 
-# Auto-update from GitHub Releases.
+# No `publish:` block on purpose.
 #
-# Taken from the environment rather than hardcoded: there is no git remote on
-# the development machine, and a wrong owner here produces an updater that
-# silently checks someone else's releases. Set both before publishing:
+# It used to hardcode `owner: your-github-username`, which produces an installed
+# app whose updater polls a stranger's releases. Reading it from `${env.GH_OWNER}`
+# instead was worse: electron-builder treats an undefined macro as a hard error,
+# so `npm run dist` could not build at all without the variable set.
 #
-#   GH_OWNER=<your github username or org>
-#   GH_REPO=codelock
-publish:
-  provider: github
-  owner: ${env.GH_OWNER}
-  repo: ${env.GH_REPO}
+# Without this block electron-builder writes no app-update.yml, and the updater
+# is simply inert — the right default for a local build. The release workflow
+# supplies the real target on the command line, where it is derived from the
+# repository being built rather than guessed.
