@@ -148,6 +148,14 @@ a single client cannot sustain them for long.
 
 ---
 
+## Added after the initial audit
+
+| Item | Status | Notes |
+|---|---|---|
+| TypeScript as a solvable language | FIXED | Runs on Node 24 native type stripping — no extra image, no compile step. Only erasable syntax works (annotations, interfaces, type aliases); enums, namespaces and decorators do not. |
+| Active days / hours enforced | FIXED | ,  and  existed in the schema and were validated on input, but **nothing read them** — the schedule had no effect at all. Now enforced at arm time in the user's own timezone, with 14 tests covering timezones and windows that cross midnight. |
+| Schedule UI | FIXED | Day toggles and a time range on the settings page, with Weekdays / Every day presets. |
+
 ## Open items, in priority order
 
 1. **`3.5` — DB-down UI shows "nothing here" instead of an error.** Unresolved,

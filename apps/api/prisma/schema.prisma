@@ -136,7 +136,8 @@ model TimerConfig {
   graceSeconds    Int @default(60)
   /// Bitmask, Sunday = bit 0. 127 = every day.
   activeDaysMask  Int @default(127)
-  /// Local-time window in minutes past midnight. Outside it the timer never arms.
+  /// Local-time window in minutes past midnight, evaluated in the user's
+  /// timezone. Outside it, arming is refused. from > to wraps past midnight.
   activeFromMinute Int @default(0)
   activeToMinute   Int @default(1440)
   /// How many "skip this one" escapes per day. 0 disables the escape hatch.

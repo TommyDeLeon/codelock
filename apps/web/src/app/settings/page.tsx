@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AppHeader } from '@/components/app-header';
 import { SiteFooter } from '@/components/site-footer';
+import { ScheduleCard } from '@/components/settings/schedule-card';
 import { GitHubCard } from '@/components/settings/github-card';
 import { LeetCodeCard } from '@/components/settings/leetcode-card';
 import { Skeleton } from '@/components/ui/primitives';
@@ -16,7 +17,8 @@ export default function SettingsPage() {
       <main id="main" className="mx-auto max-w-3xl px-4 py-7">
         <h1 className="text-xl font-semibold tracking-tight">Connections</h1>
         <p className="mt-1 text-sm text-muted">
-          Mirror your solved problems outward so the work counts where you already track it.
+          Choose when CodeLock is allowed to interrupt you, and mirror your solved
+          problems outward so the work counts where you already track it.
         </p>
 
         {/* useSearchParams forces a suspense boundary during prerender. */}
@@ -25,6 +27,9 @@ export default function SettingsPage() {
         </Suspense>
 
         <div className="mt-6 space-y-4">
+          <Suspense fallback={<Skeleton className="h-72" />}>
+            <ScheduleCard />
+          </Suspense>
           <Suspense fallback={<Skeleton className="h-52" />}>
             <GitHubCard />
           </Suspense>

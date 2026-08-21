@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
+import { isWithinActiveWindow } from './schedule.js';
 
 /** A session left LOCKED longer than this is reaped as ABANDONED. */
 export const SESSION_MAX_AGE_HOURS = 12;
@@ -49,11 +50,21 @@ export async function armSession(params: {
   });
   if (existing) return toView(existing, await loadProblem(existing.problemId));
 
-  const [config, progress] = await Promise.all([
+  const [config, progress, user] = await Promise.all([
     prisma.timerConfig.findUnique({ where: { userId } }),
     prisma.userProgress.findUnique({ where: { userId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } }),
   ]);
   if (!config?.enabled) throw ApiError.conflict('Timer is disabled for this account');
+
+  // The schedule is enforced here, at arm time, rather than at fire time. A
+  // session that starts inside the window is allowed to finish even if it runs
+  // past the end — being locked out mid-session because the clock struck 17:00
+  // would be worse than the occasional overrun.
+  const window = isWithinActiveWindow(config, user?.timezone ?? 'UTC');
+  if (!window.active) {
+    throw new ApiError(409, 'OUTSIDE_ACTIVE_HOURS', window.reason ?? 'Outside your active hours');
+  }
 
   const minutes = params.durationMinutesOverride ?? config.durationMinutes;
   const session = await prisma.lockSession.create({
