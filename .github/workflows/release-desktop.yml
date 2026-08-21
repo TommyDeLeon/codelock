@@ -11,7 +11,26 @@ permissions:
   contents: write
 
 jobs:
+  # Nothing ships without the suite that guards it. A tagged release that
+  # silently regressed the sandbox or the lock state machine is worse than no
+  # release: it auto-updates onto every installed device.
+  verify:
+    name: Tests, typecheck, containment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test --workspace @codelock/desktop
+      - run: npm run test --workspace @codelock/web
+      - run: npm run test:containment --workspace @codelock/judge
+
   build:
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +63,13 @@ jobs:
           # Only the public key ships — users cannot forge unlock tokens from it.
           CODELOCK_UNLOCK_PUBLIC_KEY: ${{ secrets.CODELOCK_UNLOCK_PUBLIC_KEY }}
           CODELOCK_WEB_URL: ${{ vars.CODELOCK_WEB_URL }}
+          # Where electron-updater looks for new versions. Wrong values here
+          # produce an updater that silently polls someone else's releases.
+          GH_OWNER: ${{ github.repository_owner }}
+          GH_REPO: ${{ github.event.repository.name }}
+          # Must be exactly the CN of the signing certificate, or every update
+          # fails silently. See docs/TRUSTED-INSTALL.md.
+          CODELOCK_PUBLISHER_CN: ${{ vars.CODELOCK_PUBLISHER_CN }}
           # Code signing. Builds succeed without these but warn on first launch:
           # SmartScreen on Windows, Gatekeeper on macOS.
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -60,6 +86,8 @@ jobs:
             apps/desktop/release/*.dmg
             apps/desktop/release/*.AppImage
             apps/desktop/release/*.deb
+            apps/desktop/release/*.yml
+            apps/desktop/release/*.blockmap
           if-no-files-found: warn
 
   publish:
@@ -69,8 +97,23 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { path: artifacts }
+
+      # Published on the download page so a user can verify what they got.
+      # One file, so nobody has to open three.
+      - name: Checksums
+        working-directory: artifacts
+        run: |
+          # Basenames only: the per-runner artifact directories are an artefact
+          # of the build matrix and mean nothing to someone verifying a download.
+          for f in $(find . -type f -regex '.*\.\(exe\|dmg\|AppImage\|deb\)$' | sort); do
+            printf '%s  %s\n' "$(sha256sum "$f" | cut -d' ' -f1)" "$(basename "$f")"
+          done > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*
+            artifacts/SHA256SUMS.txt
           draft: true
           generate_release_notes: true

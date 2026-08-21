@@ -68,6 +68,10 @@ jobs:
       # that breaks a client fails here rather than at runtime.
       - run: npm run typecheck --workspace @codelock/shared
       - run: npm run typecheck --workspace @codelock/web
+      # These cover the outage handling: a query whose retry is paused reports
+      # no error at all, and without a test that runs with the tab hidden the
+      # regression is invisible until a user hits it during a real outage.
+      - run: npm run test --workspace @codelock/web
       - run: npm run build --workspace @codelock/web
 
   clients:
@@ -87,6 +91,25 @@ jobs:
       - run: npm run typecheck --workspace @codelock/mobile
       - run: npm run build --workspace @codelock/desktop
       - run: npm run build --workspace @codelock/judge
+      # The lock state machine and the kill switch decide whether a machine
+      # opens, so they are tested on every push, not only on tag.
+      - run: npm run test --workspace @codelock/desktop
+
+  containment:
+    name: Sandbox containment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Fifteen real containers asserting the flags in apps/judge/README.md are
+      # still in place. A hand verification is only true on the day it happened,
+      # and every one of those flags is one careless edit from disappearing.
+      # ubuntu-latest ships a working Docker daemon; the suite skips without one.
+      - run: npm run test:containment --workspace @codelock/judge
 
   docker:
     name: API image builds
