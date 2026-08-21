@@ -1,0 +1,77 @@
+appId: dev.codelock.desktop
+productName: CodeLock
+copyright: Copyright © 2026 CodeLock
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - package.json
+
+# The renderer loads the hosted web app, so nothing else needs bundling.
+asar: true
+
+# --- Windows ---------------------------------------------------------------
+win:
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+  # Unsigned builds trigger SmartScreen. Supply CSC_LINK / CSC_KEY_PASSWORD in
+  # CI to sign; without them the installer still works but warns on first run.
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CodeLock
+
+# --- macOS -----------------------------------------------------------------
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  # Hardened runtime is required for notarization; entitlements below keep the
+  # app able to draw over other windows.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    # Without this the kiosk window sits below the menu bar on macOS.
+    LSUIElement: false
+    NSAppleEventsUsageDescription: CodeLock needs this to keep the lock screen in front.
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# --- Linux -----------------------------------------------------------------
+linux:
+  category: Utility
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: deb
+      arch: [x64, arm64]
+  desktop:
+    entry:
+      Name: CodeLock
+      Comment: Solve a problem to unlock your device
+      Categories: Utility;Education;
+
+# Auto-update from GitHub Releases. Replace owner/repo before publishing.
+publish:
+  provider: github
+  owner: your-github-username
+  repo: codelock
