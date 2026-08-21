@@ -6,6 +6,7 @@ import { env } from '../env.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
+import { integrationLimiter } from '../middleware/rateLimit.js';
 import { encryptSecret, randomToken, safeEqual } from '../lib/crypto.js';
 import {
   authorizeUrl,
@@ -97,6 +98,7 @@ integrationsRouter.delete(
 integrationsRouter.get(
   '/github/authorize',
   requireAuth,
+  integrationLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     res.json({ url: authorizeUrl(rememberState(user.id)), scopes: GITHUB_SCOPES });
@@ -154,6 +156,7 @@ integrationsRouter.get(
 integrationsRouter.get(
   '/github/repos',
   requireAuth,
+  integrationLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const integration = await requireIntegration(user.id, IntegrationProvider.GITHUB);
@@ -173,6 +176,7 @@ const repoSchema = z.object({
 integrationsRouter.patch(
   '/github',
   requireAuth,
+  integrationLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const body = repoSchema.parse(req.body);
@@ -207,6 +211,7 @@ integrationsRouter.patch(
 integrationsRouter.post(
   '/leetcode',
   requireAuth,
+  integrationLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const { username } = z
@@ -242,6 +247,7 @@ integrationsRouter.post(
 integrationsRouter.get(
   '/leetcode/stats',
   requireAuth,
+  integrationLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const force = req.query.refresh === 'true';

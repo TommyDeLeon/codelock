@@ -5,7 +5,7 @@ import { ApiError } from '../lib/errors.js';
 import { env } from '../env.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
-import { authLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, refreshLimiter } from '../middleware/rateLimit.js';
 import { generateRefreshToken, signAccessToken, sha256 } from '../lib/tokens.js';
 import { loginSchema, refreshSchema, registerSchema } from '../validation/schemas.js';
 
@@ -83,6 +83,7 @@ authRouter.post(
 
 authRouter.post(
   '/refresh',
+  refreshLimiter,
   asyncHandler(async (req, res) => {
     const { refreshToken } = refreshSchema.parse(req.body);
     const record = await prisma.refreshToken.findUnique({
