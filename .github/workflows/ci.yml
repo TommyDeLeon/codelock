@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — typecheck, test, migrate
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: codelock
+          POSTGRES_PASSWORD: codelock
+          POSTGRES_DB: codelock_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U codelock"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://codelock:codelock@localhost:5432/codelock_test?schema=public
+      # CI-only throwaway values; env.ts refuses placeholders in production.
+      JWT_ACCESS_SECRET: ci-access-secret-that-is-long-enough-000000
+      JWT_REFRESH_SECRET: ci-refresh-secret-that-is-long-enough-00000
+      JWT_UNLOCK_SECRET: ci-unlock-secret-that-is-long-enough-000000
+      JUDGE0_URL: http://localhost:2358
+      ENCRYPTION_KEY: ci-encryption-key-that-is-long-enough-0000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+
+      # Proves the migrations in the repo actually build the schema the code
+      # expects — a drifted migration is otherwise found in production.
+      - run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+
+      - run: npm run typecheck --workspace @codelock/api
+      - run: npm run test --workspace @codelock/api
+
+  web:
+    name: Web — typecheck and build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The web app imports @codelock/shared as source, so a contract change
+      # that breaks a client fails here rather than at runtime.
+      - run: npm run typecheck --workspace @codelock/shared
+      - run: npm run typecheck --workspace @codelock/web
+      - run: npm run build --workspace @codelock/web
+
+  clients:
+    name: Judge, desktop, mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Both shells consume @codelock/shared as source, so a contract change
+      # that breaks the desktop or mobile client fails here, not at runtime.
+      - run: npm run typecheck --workspace @codelock/judge
+      - run: npm run typecheck --workspace @codelock/desktop
+      - run: npm run typecheck --workspace @codelock/mobile
+      - run: npm run build --workspace @codelock/desktop
+      - run: npm run build --workspace @codelock/judge
+
+  docker:
+    name: API image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
