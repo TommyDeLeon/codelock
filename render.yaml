@@ -1,0 +1,75 @@
+# Render blueprint: API + Postgres.
+# Deploy with: render blueprint launch, or connect the repo in the dashboard.
+#
+# The web app goes to Vercel (apps/web/vercel.json). Judge0 is not deployed here
+# — it needs privileged containers for sandboxing, which Render does not grant.
+# Use a Judge0 VM, or the RapidAPI-hosted instance, and set JUDGE0_URL.
+
+databases:
+  - name: codelock-db
+    databaseName: codelock
+    user: codelock
+    plan: basic-256mb
+    postgresMajorVersion: '16'
+
+services:
+  - type: web
+    name: codelock-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    healthCheckPath: /readyz
+    # Zero-downtime: Render waits for /readyz, which proves the DB is reachable
+    # before any traffic is routed to the new instance.
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '4000'
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: codelock-db
+          property: connectionString
+
+      # Generated once by Render and kept across deploys. Rotating any of these
+      # invalidates existing sessions; rotating ENCRYPTION_KEY additionally
+      # forces every user to reconnect GitHub.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_UNLOCK_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+      - key: APP_URL
+        value: https://app.codelock.dev
+      - key: CORS_ORIGINS
+        value: https://app.codelock.dev
+
+      # Judge0 and GitHub credentials are secrets: set them in the dashboard.
+      - key: JUDGE0_URL
+        sync: false
+      - key: JUDGE0_KEY
+        sync: false
+      - key: JUDGE0_HOST
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CALLBACK_URL
+        value: https://api.codelock.dev/v1/integrations/github/callback
+
+      - key: PERF_TOLERANCE
+        value: '1.35'
+      - key: PERF_FLOOR_MS
+        value: '40'
+      - key: PERF_BEST_OF
+        value: '2'

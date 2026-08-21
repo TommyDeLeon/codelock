@@ -1,0 +1,64 @@
+# Local development stack: Postgres + the API + the execution sandbox.
+#
+# The sandbox is apps/judge, not Judge0. Judge0 1.13.x needs cgroup v1, which
+# Docker Desktop (WSL2, macOS) does not provide — its workers start but every
+# submission fails with "Failed to create control group". Verified: no image
+# upgrade or .wslconfig flag fixes it. To use Judge0 anyway, run it on a
+# cgroup-v1 Linux host and point JUDGE0_URL there (and set JUDGE0_LANG_* to
+# that instance's ids).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: codelock
+      POSTGRES_PASSWORD: codelock
+      POSTGRES_DB: codelock
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U codelock']
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://codelock:codelock@postgres:5432/codelock?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
+      JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
+      CORS_ORIGINS: http://localhost:3000
+      JUDGE0_URL: http://judge:2358
+    ports: ['4000:4000']
+    depends_on:
+      postgres: { condition: service_healthy }
+      judge: { condition: service_started }
+
+  # --- Execution sandbox --------------------------------------------------
+  # apps/judge runs each submission in a throwaway, network-less container.
+  # It replaces Judge0, which needs cgroup v1 and therefore cannot start on
+  # Docker Desktop or any cgroup-v2-only host.
+  #
+  # SECURITY: the socket mount below is root-equivalent on the host. Run this
+  # on a dedicated VM, or front the socket with a proxy restricted to
+  # container create/start/wait/remove. See apps/judge/README.md.
+  judge:
+    build:
+      context: .
+      dockerfile: apps/judge/Dockerfile
+    environment:
+      PORT: 2358
+      JUDGE_CONCURRENCY: 4
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Sources are written to the host temp dir and bind-mounted into each
+      # sandbox, so the path must mean the same thing to judge and daemon.
+      - /tmp:/tmp
+    ports: ["2358:2358"]
+
+volumes:
+  pgdata:
