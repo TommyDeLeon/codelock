@@ -231,3 +231,113 @@ export interface SyncRecord {
   createdAt: string;
   submission: { language: Language; problem: { title: string; slug: string } };
 }
+
+// --- client result contract ------------------------------------------------
+
+/**
+ * Every failure a client can encounter, named.
+ *
+ * `UNREACHABLE` is deliberately distinct from every server-side code: it means
+ * the client never got an answer, so it knows nothing about the user's state.
+ * Collapsing that into "no data" is what let a running lock session render as
+ * "No active session" (PRE-LAUNCH-CHECKLIST 3.5).
+ */
+export type ApiFailureCode =
+  /** No answer at all: DNS, TLS, CORS, offline, or a paused retry. */
+  | 'UNREACHABLE'
+  /** An answer was coming but took too long. */
+  | 'TIMEOUT'
+  /** The API answered, but not with a success. `status` carries the code. */
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'VALIDATION_FAILED'
+  | 'RATE_LIMITED'
+  | 'INTERNAL_ERROR'
+  | 'UNKNOWN';
+
+export interface ApiFailure {
+  ok: false;
+  code: ApiFailureCode;
+  message: string;
+  /** HTTP status, or 0 when no response was received. */
+  status: number;
+  /**
+   * True when trying again later could plausibly succeed without the user
+   * changing anything. Drives "retrying…" copy and automatic re-polling; a
+   * non-retryable failure needs a human decision.
+   */
+  retryable: boolean;
+  details?: unknown;
+}
+
+export interface ApiSuccess<T> {
+  ok: true;
+  data: T;
+}
+
+export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
+
+/** HTTP statuses that are worth trying again on their own. */
+export function isRetryableStatus(status: number): boolean {
+  // 0 = never reached the server. 408/425/429 are explicitly "try later".
+  // 5xx other than 501 are transient by convention.
+  if (status === 0) return true;
+  if (status === 408 || status === 425 || status === 429) return true;
+  return status >= 500 && status !== 501;
+}
+
+/** Map an API error code + status onto the client-facing failure code. */
+export function toFailureCode(status: number, serverCode?: string): ApiFailureCode {
+  const known: ApiFailureCode[] = [
+    'UNREACHABLE',
+    'TIMEOUT',
+    'SERVICE_UNAVAILABLE',
+    'UNAUTHORIZED',
+    'FORBIDDEN',
+    'NOT_FOUND',
+    'CONFLICT',
+    'VALIDATION_FAILED',
+    'RATE_LIMITED',
+    'INTERNAL_ERROR',
+  ];
+  if (serverCode && (known as string[]).includes(serverCode)) {
+    return serverCode as ApiFailureCode;
+  }
+  switch (status) {
+    case 0:
+      return 'UNREACHABLE';
+    case 401:
+      return 'UNAUTHORIZED';
+    case 403:
+      return 'FORBIDDEN';
+    case 404:
+      return 'NOT_FOUND';
+    case 409:
+      return 'CONFLICT';
+    case 429:
+      return 'RATE_LIMITED';
+    case 503:
+      return 'SERVICE_UNAVAILABLE';
+    default:
+      return status >= 500 ? 'INTERNAL_ERROR' : 'UNKNOWN';
+  }
+}
+
+export function apiFailure(
+  status: number,
+  message: string,
+  serverCode?: string,
+  details?: unknown,
+): ApiFailure {
+  return {
+    ok: false,
+    code: toFailureCode(status, serverCode),
+    message,
+    status,
+    retryable: isRetryableStatus(status),
+    details,
+  };
+}
