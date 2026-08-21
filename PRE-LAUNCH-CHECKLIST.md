@@ -110,12 +110,15 @@ code alone. Where something is marked FIXED, it was observed working.
 | 3.2 | Unhandled promise rejections | FIXED | API has a `process.on('unhandledRejection')` handler; the GitHub mirror is explicitly fire-and-forget with its own catch so a push failure cannot block an unlock. |
 | 3.3 | Database-down handling — API | FIXED | Now returns `503 SERVICE_UNAVAILABLE` with a readable message instead of a 500 carrying Prisma internals. Verified with Postgres stopped. |
 | 3.4 | Database-down handling — session survival | FIXED | Hydration cleared tokens on **any** error, so a brief outage logged users out permanently and discarded the refresh token. Now only 401/403 ends a session. Verified: user stayed logged in across a full outage. |
-| 3.5 | Database-down handling — UI | **FLAGGED — UNRESOLVED** | With the API returning 503, the dashboard still renders "No active session" and the lock screen "Nothing is locked right now" rather than an error. Requests demonstrably fire and return 503 (confirmed in the network log), yet the hooks report `error: null`, `isLoading: false`, `data: undefined`. Ruled out: stale bundle (the new code is in the served JS), paused queries (requests do fire), `networkMode` (set to `always`, no change), auth gating. **Root cause not identified.** This is the one item that is worse than cosmetic: a user with a running timer could be told they have none and start a second. |
+| 3.5 | Database-down handling — UI | FIXED | **Root cause: React Query pauses retries while the document is hidden.** `query-core/retryer.js` gates continuation on `focusManager.isFocused() && (networkMode === 'always' || onlineManager.isOnline())` — focus is AND-ed *outside* the networkMode clause, so `networkMode: 'always'` could never override it, and the default focus manager reports `document.visibilityState !== 'hidden'`. A query whose first attempt fails while the tab is backgrounded therefore parks at `status: 'pending'`, `fetchStatus: 'paused'`, `error: null`, `data: undefined` — indefinitely. That state is byte-identical to "loaded fine, nothing to show", which is why the dashboard rendered "No active session". It only ever reproduced with the tab hidden or devtools focused, which is why it looked like a phantom. Fixed in three places: `focusManager.setFocused(true)` in `providers.tsx` (a lock timer runs in the background by definition; refetch-on-return is re-implemented against `visibilitychange`), a `failureOf()` helper that reads `fetchStatus`/`failureReason` and not just `error`, and a shared `ApiResult` discriminated union so "no data" and "no answer" are different types. Regression tests in `apps/web` cover both the visible and hidden tab. |
 | 3.6 | Request timeouts | FIXED | The client had none — an unreachable API left the UI on skeletons forever. Now 15s (120s for grading, which is legitimately slow). |
 | 3.7 | N+1 queries | FIXED | No queries inside loops anywhere. `GET /v1/lock/active` — the most-polled endpoint, hit every 5s by the lock screen — made **three sequential round-trips** (session → problem → sample cases); collapsed into one query with nested includes. |
 | 3.8 | Image optimization end to end | N/A | No content images. Icons are 2–6 KB generated PNGs served as static assets. |
 | 3.9 | Unnecessary re-renders | FLAGGED | The countdown re-renders `TimerCard` once per second by design. It is a small subtree and profiling showed no jank, so it was left alone; memoising would add complexity for no measured gain. Not profiled under React DevTools. |
 | 3.10 | Load test | FIXED | Measured at concurrency 20. See below. |
+| 3.11 | Client can tell "no data" from "no answer" | FIXED | `packages/shared` now exports `ApiResult<T> = { ok: true; data } | ApiFailure`, with `ApiFailure` carrying `code`, `message`, `status` and `retryable`. `ApiClientError` builds one on construction; `failureOf()` derives one from any React Query result *including a paused retry*. The lock screen fails closed on it: an unreachable API renders "staying locked until it answers", never "Nothing is locked right now". |
+| 3.12 | Health endpoint with a dependency check | FIXED | `GET /v1/health` runs `SELECT 1` and returns 503 with `database: "down"` when Postgres is unreachable. Unauthenticated on purpose — a client that cannot authenticate still needs to know why. `/healthz` stays pure liveness for load balancers. |
+| 3.13 | Offline / outage banner | FIXED | `ConnectionBanner` polls `/v1/health` every 20s and distinguishes browser-offline from API-unreachable. Rendered app-wide above every route, not dismissible. |
 
 ### Load test results
 
@@ -158,14 +161,12 @@ a single client cannot sustain them for long.
 
 ## Open items, in priority order
 
-1. **`3.5` — DB-down UI shows "nothing here" instead of an error.** Unresolved,
-   root cause unknown. Reproduce by stopping Postgres with a signed-in session.
-2. **`2.16` — legal documents not reviewed by a lawyer.**
-3. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
-4. **`2.17` — registration confirms whether an email is registered.**
-5. **`1.25` — placeholder identifiers** in `electron-builder.yml` and `eas.json`.
-6. **`1.5` — footer link tap targets** under 44px.
-7. **`3.9` — per-second countdown re-render** not profiled.
+1. **`2.16` — legal documents not reviewed by a lawyer.**
+2. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
+3. **`2.17` — registration confirms whether an email is registered.**
+4. **`1.25` — placeholder identifiers** in `electron-builder.yml` and `eas.json`.
+5. **`1.5` — footer link tap targets** under 44px.
+6. **`3.9` — per-second countdown re-render** not profiled.
 
 ## Not covered by this audit
 
