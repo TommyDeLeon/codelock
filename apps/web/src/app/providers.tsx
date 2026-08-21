@@ -19,7 +19,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
             // needs the true lock state immediately.
             refetchOnWindowFocus: true,
             retry: 1,
+            // Never pause on a perceived offline state: a paused query reports
+            // `data: undefined, error: null, isLoading: false`, which is
+            // indistinguishable from "loaded fine, nothing to show".
+            //
+            // KNOWN ISSUE: this did NOT fix the observed bug where an
+            // unreachable API renders as "No active session" instead of an
+            // error — requests demonstrably fire and return 503, yet the hooks
+            // still report error: null. Root cause not identified; see
+            // PRE-LAUNCH-CHECKLIST.md. The setting is kept because it is
+            // correct on its own terms, not because it resolved that.
+            networkMode: 'always',
           },
+          mutations: { networkMode: 'always' },
         },
       }),
   );

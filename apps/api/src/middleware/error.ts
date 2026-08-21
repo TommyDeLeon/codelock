@@ -36,6 +36,23 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // A database outage is not the user's fault and is not permanent. Give it a
+  // distinct status and a message worth reading, in every environment — the
+  // generic 500 below would otherwise tell someone their request was broken
+  // when the real answer is "come back in a minute". 503 also stops load
+  // balancers and uptime checks from treating it as a healthy response.
+  if (isDatabaseUnavailable(err)) {
+    logger.error({ err }, 'database unavailable');
+    res.status(503).json({
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+        message:
+          'CodeLock cannot reach its database right now. Your progress is safe — try again in a moment.',
+      },
+    });
+    return;
+  }
+
   logger.error({ err }, 'unhandled error');
   res.status(500).json({
     error: {
@@ -43,6 +60,32 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: env.isProd ? 'Something went wrong' : String(err),
     },
   });
+}
+
+/**
+ * Is this a connectivity failure rather than a bad request?
+ *
+ * P1001 unreachable, P1002 timed out, P1008 operation timeout, P1017 server
+ * closed the connection. Initialization and panic errors mean the client never
+ * got a usable connection at all. Everything else is a real query problem and
+ * should keep its 500.
+ */
+function isDatabaseUnavailable(err: unknown): boolean {
+  if (
+    err instanceof Prisma.PrismaClientInitializationError ||
+    err instanceof Prisma.PrismaClientRustPanicError
+  ) {
+    return true;
+  }
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    return ['P1001', 'P1002', 'P1008', 'P1017'].includes(err.code);
+  }
+  // Connection drops surface as an unknown request error with the reason only
+  // in the message, so this is the one place a string check earns its keep.
+  if (err instanceof Prisma.PrismaClientUnknownRequestError) {
+    return /closed the connection|connection reset|ECONNREFUSED/i.test(err.message);
+  }
+  return false;
 }
 
 /** Wrap async handlers so rejected promises reach errorHandler. */

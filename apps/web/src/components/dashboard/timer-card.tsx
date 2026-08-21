@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { formatDuration } from '@/lib/utils';
 import { useLockSession } from '@/hooks/use-lock-session';
 import { Button } from '@/components/ui/button';
-import { Card, CardBody, Skeleton } from '@/components/ui/primitives';
+import { Card, CardBody, ErrorState, Skeleton } from '@/components/ui/primitives';
 
 /** Offered durations. Matches the spec's 30/60/90 plus a short focus block. */
 const PRESETS = [15, 30, 60, 90] as const;
@@ -16,7 +16,7 @@ const PRESETS = [15, 30, 60, 90] as const;
 export function TimerCard() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session, secondsRemaining, expired, isLoading } = useLockSession();
+  const { session, secondsRemaining, expired, isLoading, error, refetch } = useLockSession();
 
   const timerQuery = useQuery({
     queryKey: ['settings', 'timer'],
@@ -44,6 +44,22 @@ export function TimerCard() {
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-12 w-40" />
           <Skeleton className="h-9 w-full" />
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // An unreachable API must not render as "No active session". A user whose
+  // timer is actually armed would otherwise be told they have none, and might
+  // start a second one on top of it.
+  if (error) {
+    return (
+      <Card>
+        <CardBody>
+          <ErrorState
+            message={`${error.message} Your session, if you have one, is still running on the server.`}
+            retry={() => void refetch()}
+          />
         </CardBody>
       </Card>
     );

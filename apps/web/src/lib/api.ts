@@ -103,14 +103,35 @@ async function request<T>(
   retryOn401 = true,
 ): Promise<T> {
   const access = tokenStore.access;
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(access ? { Authorization: `Bearer ${access}` } : {}),
-      ...(init.headers ?? {}),
-    },
-  });
+
+  // Grading is synchronous and can legitimately take ~30s; everything else
+  // should fail fast. Without a timeout, an unreachable API leaves the UI on
+  // skeletons indefinitely, which reads as "still loading" rather than "broken".
+  const timeoutMs = path.startsWith('/v1/submissions') ? 120_000 : 15_000;
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...init,
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(access ? { Authorization: `Bearer ${access}` } : {}),
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (err) {
+    // fetch rejects for network failure and abort alike; neither carries a
+    // status code, so give them one the UI can actually render.
+    const timedOut = err instanceof DOMException && err.name === 'TimeoutError';
+    throw new ApiClientError(
+      0,
+      timedOut ? 'TIMEOUT' : 'NETWORK',
+      timedOut
+        ? 'The server took too long to respond. Try again in a moment.'
+        : 'Could not reach CodeLock. Check your connection and try again.',
+    );
+  }
 
   if (res.status === 401 && retryOn401 && (await refreshTokens())) {
     return request<T>(path, init, false);

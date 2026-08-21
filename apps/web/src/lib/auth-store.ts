@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import type { AuthUser } from '@codelock/shared';
-import { api, tokenStore } from './api';
+import { ApiClientError, api, tokenStore } from './api';
 
 interface AuthState {
   user: AuthUser | null;
@@ -34,9 +34,21 @@ export const useAuth = create<AuthState>((set) => ({
         },
         status: 'authenticated',
       });
-    } catch {
-      tokenStore.clear();
-      set({ status: 'anonymous', user: null });
+    } catch (err) {
+      // Only a rejected credential should end the session. Clearing tokens on
+      // *any* failure meant a brief API outage, a dropped connection, or being
+      // offline for a moment logged the user out for good — the refresh token
+      // was discarded, so there was nothing left to recover with.
+      const rejected = err instanceof ApiClientError && (err.status === 401 || err.status === 403);
+      if (rejected) {
+        tokenStore.clear();
+        set({ status: 'anonymous', user: null });
+        return;
+      }
+
+      // Keep the session and let the page's own queries report the outage.
+      // `user` stays null so nothing renders stale identity.
+      set({ status: 'authenticated', user: null });
     }
   },
 
