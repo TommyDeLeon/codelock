@@ -1,0 +1,31 @@
+# Build context hygiene. Two reasons this file matters beyond speed:
+#
+#   - .env / .env.local would otherwise be baked into the image. The web build
+#     reads .env.local and it would override the build args the deployment
+#     passes in, silently pointing a production image at localhost.
+#   - Copying host node_modules over a Linux image brings platform-specific
+#     native builds with it (argon2, next-swc), which fail at runtime in ways
+#     that look nothing like the cause.
+
+**/node_modules
+**/.next
+**/dist
+**/release
+**/.turbo
+**/tsconfig.tsbuildinfo
+
+# Secrets and local overrides.
+**/.env
+**/.env.*
+!**/.env.example
+
+.git
+.github
+**/*.log
+**/coverage
+
+# Native shells are never part of a server image.
+apps/desktop
+apps/mobile
+docs
+deploy/backups*

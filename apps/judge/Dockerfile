@@ -20,9 +20,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends docker.io ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# npm workspaces hoist everything to the root; there is no
+# apps/judge/node_modules to copy.
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/judge/dist ./apps/judge/dist
-COPY --from=build /app/apps/judge/node_modules ./apps/judge/node_modules
+COPY package.json ./
 COPY apps/judge/package.json apps/judge/
 
 WORKDIR /app/apps/judge

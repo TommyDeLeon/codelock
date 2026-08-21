@@ -14,7 +14,9 @@ import type {
   TimerConfig,
 } from '@codelock/shared';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+// `||` not `??`: an unset Docker build arg arrives as the empty string, which
+// would make every request resolve against the page's own origin.
+const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 /**
  * Token storage.

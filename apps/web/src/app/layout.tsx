@@ -4,7 +4,11 @@ import './globals.css';
 
 // Set NEXT_PUBLIC_SITE_URL in production so Open Graph image URLs resolve
 // absolutely; relative ones are ignored by most crawlers.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+//
+// `||` rather than `??`: an unset build arg arrives as the empty string, not as
+// undefined, and `new URL('')` throws. That failed the Docker build with
+// "Failed to collect page data for /lock" and no mention of the variable.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

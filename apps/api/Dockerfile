@@ -1,11 +1,18 @@
 # syntax=docker/dockerfile:1.7
-# Multi-stage: the runtime image carries no toolchain and no source.
+#
+# Multi-stage: the runtime image carries the compiled output, not the source.
+#
+# It does keep the full dependency tree rather than pruning to production only,
+# because the container runs `prisma migrate deploy` at boot and the Prisma CLI
+# is a devDependency. Pruning it saves a few hundred MB and breaks every deploy.
 
 FROM node:24-bookworm-slim AS base
 WORKDIR /app
-ENV NODE_ENV=production
 
 # --- deps ---------------------------------------------------------------
+# NODE_ENV is deliberately not "production" here. npm would prune the
+# devDependencies, and the build needs prisma and tsc — the failure is an
+# exit code 127 from `npm run build` with no hint of what is missing.
 FROM base AS deps
 # argon2 builds a native addon; python3/make/g++ are needed only here.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,18 +24,25 @@ RUN npm ci --workspace @codelock/api --include-workspace-root
 
 # --- build --------------------------------------------------------------
 FROM deps AS build
-ENV NODE_ENV=development
 COPY apps/api ./apps/api
 RUN npm run build --workspace @codelock/api
 
 # --- runtime ------------------------------------------------------------
 FROM base AS runtime
+ENV NODE_ENV=production
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=deps /app/node_modules ./node_modules
+# From `build`, not `deps`. `prisma generate` writes the generated client into
+# node_modules/.prisma during the build stage; copying the deps tree instead
+# leaves it out, and the container starts, runs its migrations, and only then
+# dies with "@prisma/client did not initialize yet".
+#
+# npm workspaces hoist everything to the root, so there is no
+# apps/api/node_modules to copy either.
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
+COPY package.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/api/prisma ./apps/api/prisma
 
