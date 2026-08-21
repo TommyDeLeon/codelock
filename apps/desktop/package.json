@@ -28,5 +28,8 @@
   "author": {
     "name": "TommyDeLeon",
     "email": "tommydeleon104@gmail.com"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

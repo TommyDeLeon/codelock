@@ -6,6 +6,7 @@ import { canVerifyUnlocks, configPath, loadConfig } from './config.js';
 import { fileLockStore, isLive, newLock, type LockStateStore } from './lock-state.js';
 import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
+import { initUpdater, installIfIdle } from './updater.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -228,6 +229,11 @@ function releaseLock(): void {
   }
 
   globalShortcut.unregisterAll();
+
+  // An update that arrived mid-session lands now rather than waiting for the
+  // next six-hourly check. Never during a lock: restarting the shell under a
+  // live overlay is the one thing the updater must not do.
+  installIfIdle(() => locked);
 }
 
 /**
@@ -336,6 +342,10 @@ void app.whenReady().then(() => {
   }
 
   mainWindow = createWindow();
+
+  // Packaged builds only; a dev build pointed at the release feed would try to
+  // "upgrade" itself to the last published version.
+  initUpdater(() => locked);
 
   // A lock that was live when the process died comes straight back up. The
   // renderer re-checks with the server once it loads, and either confirms it

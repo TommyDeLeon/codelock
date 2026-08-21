@@ -16,14 +16,17 @@ files:
   - dist/**/*
   - package.json
 
-# The renderer loads the hosted web app, so nothing else needs bundling.
+# The renderer loads the hosted web app, so nothing else needs bundling — but
+# electron-builder always copies the tree implied by "dependencies", which is
+# how electron-updater reaches the packaged main process. Keep it in
+# dependencies, not devDependencies, or auto-update fails at require() time.
 asar: true
 
 # In an npm workspace this MUST stay false. electron-builder otherwise runs a
 # production install in appDir, which npm resolves against the hoisted root
 # node_modules and prunes every devDependency — including electron-builder and
-# its own app-builder binary, mid-build. The app bundles no runtime deps (see
-# files: above), so there is nothing to rebuild anyway.
+# its own app-builder binary, mid-build. The only runtime dep is
+# electron-updater, which is pure JS and has nothing to rebuild.
 npmRebuild: false
 
 # --- Windows ---------------------------------------------------------------
@@ -34,6 +37,12 @@ win:
   # Unsigned builds trigger SmartScreen. Supply CSC_LINK / CSC_KEY_PASSWORD in
   # CI to sign; without them the installer still works but warns on first run.
   signAndEditExecutable: true
+  # MUST be exactly the CN of the signing certificate. electron-updater checks
+  # the publisher name on the downloaded installer against this string, and a
+  # mismatch makes every update fail *silently* — no error, no dialog, no
+  # update, forever. Set CODELOCK_PUBLISHER_CN to the CN you signed with; see
+  # docs/TRUSTED-INSTALL.md. Left unset for unsigned local builds.
+  publisherName: ${env.CODELOCK_PUBLISHER_CN}
 
 nsis:
   oneClick: false
@@ -83,8 +92,15 @@ linux:
       Comment: Solve a problem to unlock your device
       Categories: Utility;Education;
 
-# Auto-update from GitHub Releases. Replace owner/repo before publishing.
+# Auto-update from GitHub Releases.
+#
+# Taken from the environment rather than hardcoded: there is no git remote on
+# the development machine, and a wrong owner here produces an updater that
+# silently checks someone else's releases. Set both before publishing:
+#
+#   GH_OWNER=<your github username or org>
+#   GH_REPO=codelock
 publish:
   provider: github
-  owner: your-github-username
-  repo: codelock
+  owner: ${env.GH_OWNER}
+  repo: ${env.GH_REPO}
