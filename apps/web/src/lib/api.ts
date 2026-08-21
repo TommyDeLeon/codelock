@@ -1,0 +1,246 @@
+import type {
+  ApiErrorBody,
+  Integration,
+  IntegrationProvider,
+  LeetCodeStats,
+  SyncRecord,
+  AuthUser,
+  GradeResult,
+  Language,
+  LockSessionView,
+  PublicProblem,
+  StatsSummary,
+  TimerConfig,
+} from '@codelock/shared';
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+/**
+ * Token storage.
+ *
+ * localStorage is the pragmatic choice here: the desktop and mobile shells load
+ * this same app from a non-browser origin where cookies are awkward, and the
+ * API is a separate origin. The tradeoff is XSS exposure, which is mitigated by
+ * a strict CSP and by the fact that a stolen access token still cannot unlock a
+ * session — unlocking requires a server-signed unlock token bound to that
+ * session, issued only after Judge0 reports a pass.
+ */
+const ACCESS_KEY = 'codelock.access';
+const REFRESH_KEY = 'codelock.refresh';
+
+export const tokenStore = {
+  get access(): string | null {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(ACCESS_KEY);
+  },
+  get refresh(): string | null {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(REFRESH_KEY);
+  },
+  set(access: string, refresh: string): void {
+    window.localStorage.setItem(ACCESS_KEY, access);
+    window.localStorage.setItem(REFRESH_KEY, refresh);
+  },
+  clear(): void {
+    window.localStorage.removeItem(ACCESS_KEY);
+    window.localStorage.removeItem(REFRESH_KEY);
+  },
+};
+
+export class ApiClientError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
+  }
+}
+
+/**
+ * Single-flight refresh: if three queries 401 at once we must not burn three
+ * refresh tokens, because the API rotates and revokes on every use — the second
+ * and third would fail and log the user out mid-lock.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function refreshTokens(): Promise<boolean> {
+  const refresh = tokenStore.refresh;
+  if (!refresh) return false;
+
+  refreshInFlight ??= (async () => {
+    try {
+      const res = await fetch(`${BASE}/v1/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refresh }),
+      });
+      if (!res.ok) {
+        tokenStore.clear();
+        return false;
+      }
+      const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      tokenStore.set(data.accessToken, data.refreshToken);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      // Cleared on the microtask after all awaiters resolve.
+      queueMicrotask(() => {
+        refreshInFlight = null;
+      });
+    }
+  })();
+
+  return refreshInFlight;
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  retryOn401 = true,
+): Promise<T> {
+  const access = tokenStore.access;
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(access ? { Authorization: `Bearer ${access}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  if (res.status === 401 && retryOn401 && (await refreshTokens())) {
+    return request<T>(path, init, false);
+  }
+
+  if (res.status === 204) return undefined as T;
+
+  const body = (await res.json().catch(() => null)) as ApiErrorBody | T | null;
+
+  if (!res.ok) {
+    const err = (body as ApiErrorBody | null)?.error;
+    throw new ApiClientError(
+      res.status,
+      err?.code ?? 'UNKNOWN',
+      err?.message ?? `Request failed with ${res.status}`,
+      err?.details,
+    );
+  }
+
+  return body as T;
+}
+
+const post = <T>(path: string, payload?: unknown): Promise<T> =>
+  request<T>(path, { method: 'POST', body: payload ? JSON.stringify(payload) : undefined });
+
+// --- endpoints -------------------------------------------------------------
+
+interface AuthResponse {
+  user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export const api = {
+  auth: {
+    async register(input: {
+      email: string;
+      password: string;
+      displayName: string;
+      timezone: string;
+    }): Promise<AuthUser> {
+      const data = await post<AuthResponse>('/v1/auth/register', input);
+      tokenStore.set(data.accessToken, data.refreshToken);
+      return data.user;
+    },
+
+    async login(input: { email: string; password: string }): Promise<AuthUser> {
+      const data = await post<AuthResponse>('/v1/auth/login', input);
+      tokenStore.set(data.accessToken, data.refreshToken);
+      return data.user;
+    },
+
+    async logout(): Promise<void> {
+      await post<void>('/v1/auth/logout').catch(() => undefined);
+      tokenStore.clear();
+    },
+
+    me: () =>
+      request<AuthUser & { preferredLanguage: Language; progress: unknown; timerConfig: TimerConfig }>(
+        '/v1/auth/me',
+      ),
+  },
+
+  lock: {
+    active: () => request<{ session: LockSessionView | null }>('/v1/lock/active'),
+    arm: (input?: { deviceId?: string; durationMinutes?: number }) =>
+      post<LockSessionView>('/v1/lock/arm', input ?? {}),
+    engage: (id: string) => post<LockSessionView>(`/v1/lock/${id}/engage`),
+    skip: (id: string) => post<{ skipsRemaining: number }>(`/v1/lock/${id}/skip`),
+    abandon: (id: string) => post<{ progress: unknown }>(`/v1/lock/${id}/abandon`),
+  },
+
+  problems: {
+    next: () => request<{ problem: PublicProblem; difficulty: string }>('/v1/problems/next'),
+    byId: (id: string) => request<{ problem: PublicProblem }>(`/v1/problems/${id}`),
+  },
+
+  submissions: {
+    create: (input: {
+      problemId: string;
+      lockSessionId?: string;
+      language: Language;
+      sourceCode: string;
+    }) => post<GradeResult>('/v1/submissions', input),
+  },
+
+  settings: {
+    timer: () => request<{ timerConfig: TimerConfig }>('/v1/settings/timer'),
+    updateTimer: (patch: Partial<TimerConfig>) =>
+      request<{ timerConfig: TimerConfig }>('/v1/settings/timer', {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
+  },
+
+  integrations: {
+    list: () =>
+      request<{ integrations: Integration[]; available: { github: boolean; leetcode: boolean } }>(
+        '/v1/integrations',
+      ),
+    disconnect: (provider: IntegrationProvider) =>
+      request<void>(`/v1/integrations/${provider.toLowerCase()}`, { method: 'DELETE' }),
+
+    githubAuthorizeUrl: () =>
+      request<{ url: string; scopes: string[] }>('/v1/integrations/github/authorize'),
+    githubRepos: () =>
+      request<{ repos: Array<{ fullName: string; private: boolean; defaultBranch: string }> }>(
+        '/v1/integrations/github/repos',
+      ),
+    updateGithub: (input: { repoFullName?: string; branch?: string; createRepoNamed?: string }) =>
+      request<{ integration: Integration }>('/v1/integrations/github', {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+
+    linkLeetcode: (username: string) =>
+      post<{ stats: LeetCodeStats }>('/v1/integrations/leetcode', { username }),
+    leetcodeStats: (refresh = false) =>
+      request<{ stats: LeetCodeStats; stale: boolean }>(
+        `/v1/integrations/leetcode/stats${refresh ? '?refresh=true' : ''}`,
+      ),
+
+    syncs: () => request<{ syncs: SyncRecord[] }>('/v1/integrations/syncs'),
+  },
+
+  stats: {
+    summary: () => request<StatsSummary>('/v1/stats/summary'),
+    activity: () =>
+      request<{ days: Array<{ date: string; solved: number; attempted: number }> }>(
+        '/v1/stats/activity',
+      ),
+  },
+};
