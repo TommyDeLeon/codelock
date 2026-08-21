@@ -38,7 +38,7 @@ export function CodeEditor({
           value={language}
           disabled={disabled}
           onChange={(e) => onLanguageChange(e.target.value as Language)}
-          className="h-7 rounded-sm border border-border-strong bg-surface px-2 text-[13px] disabled:opacity-50"
+          className="h-11 rounded-sm border border-border-strong bg-surface px-2 text-base disabled:opacity-50 sm:h-7 sm:text-[13px]"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang} value={lang}>

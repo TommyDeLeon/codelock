@@ -122,7 +122,7 @@ export function GitHubCard() {
                 onChange={(e) =>
                   e.target.value && chooseRepo.mutate({ repoFullName: e.target.value })
                 }
-                className="h-9 w-full rounded-sm border border-border-strong bg-surface px-2 text-sm disabled:opacity-50"
+                className="h-11 w-full rounded-sm border border-border-strong bg-surface px-2 text-base disabled:opacity-50 sm:h-9 sm:text-sm"
               >
                 <option value="">
                   {repos.isLoading ? 'Loading repositories…' : 'Select a repository'}

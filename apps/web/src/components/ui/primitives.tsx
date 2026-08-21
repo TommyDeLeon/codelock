@@ -160,7 +160,10 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
       <input
         ref={ref}
         className={cn(
-          'h-9 w-full rounded-sm border border-border-strong bg-surface px-3 text-sm',
+          // 16px on small screens: iOS Safari zooms the viewport when a focused
+          // input is under 16px, and 44px is the minimum comfortable tap target.
+          'h-11 w-full rounded-sm border border-border-strong bg-surface px-3 text-base',
+          'sm:h-9 sm:text-sm',
           'placeholder:text-faint disabled:opacity-50',
           className,
         )}

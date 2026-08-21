@@ -34,11 +34,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // The lock screen must fill the display and sit under the notch, and users
-  // must not be able to pinch-zoom their way out of a full-screen overlay.
+  // The lock screen fills the display and sits under the notch. Zoom is left
+  // enabled deliberately: capping maximum-scale fails WCAG 1.4.4, and iOS has
+  // ignored it since iOS 10 regardless. Zoom-on-focus is prevented by sizing
+  // inputs at 16px on small screens instead.
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#fbfaf8' },
