@@ -1,4 +1,5 @@
 import { createPublicKey, createVerify, timingSafeEqual, createHmac } from 'node:crypto';
+import { loadConfig } from './config.js';
 
 /**
  * Unlock proof verification, in the main process.
@@ -41,6 +42,14 @@ interface UnlockClaims {
 }
 
 export async function verifyUnlockToken(token: string): Promise<Verdict> {
+  // Read per call rather than at module load: an installed app may have had its
+  // config written after the process started.
+  const config = loadConfig();
+  // PEM newlines survive JSON and env vars as the two characters \n, so undo
+  // that before node's crypto tries to parse the key.
+  const PUBLIC_KEY_PEM = config.unlockPublicKey.split('\\n').join('\n');
+  const SHARED_SECRET = config.unlockSecret;
+
   const parts = token.split('.');
   if (parts.length !== 3) return { ok: false, reason: 'malformed' };
 

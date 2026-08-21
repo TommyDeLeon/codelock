@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, powerMonitor, shell, scree
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyUnlockToken } from './unlock-verifier.js';
+import { canVerifyUnlocks, configPath, loadConfig } from './config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,8 +23,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * not a kernel-level parental control.
  */
 
-const WEB_URL = process.env.CODELOCK_WEB_URL ?? 'https://app.codelock.dev';
+// Electron derives userData from the package name, which in this workspace is
+// '@codelock/desktop' — that would put settings in AppData/Roaming/@codelock/
+// desktop. Set it before anything reads a path.
+app.setName('CodeLock');
+
 const isDev = !app.isPackaged;
+
+// Resolved after app.whenReady(): userData is not available before that.
+let WEB_URL = 'http://localhost:3000';
 
 let mainWindow: BrowserWindow | null = null;
 /** Single source of truth for "is the machine currently locked". */
@@ -211,6 +219,16 @@ ipcMain.handle('codelock:open-external', (_event, url: unknown) => {
 // --- lifecycle ------------------------------------------------------------
 
 void app.whenReady().then(() => {
+  const config = loadConfig();
+  WEB_URL = config.webUrl;
+
+  // A build with no key can never release the lock, which would trap the user
+  // behind an overlay they cannot dismiss. Refuse to arm rather than discover
+  // that at unlock time.
+  if (!canVerifyUnlocks(config)) {
+    logStartupProblem(config.webUrl);
+  }
+
   mainWindow = createWindow();
 
   // Locking the OS session and coming back must not lose the lock overlay.
@@ -235,6 +253,24 @@ app.on('before-quit', (event) => {
 });
 
 app.on('will-quit', () => globalShortcut.unregisterAll());
+
+/**
+ * Tell the user where to fix it, in the one place they will look.
+ *
+ * Silently starting an app that cannot unlock is the worst outcome here: the
+ * timer still fires and the overlay still appears.
+ */
+function logStartupProblem(webUrl: string): void {
+  console.error(
+    [
+      'CodeLock is not configured to verify unlocks.',
+      `Edit ${configPath()}`,
+      "and set unlockSecret (matching the API's JWT_UNLOCK_SECRET) or",
+      'unlockPublicKey, then restart.',
+      `Current webUrl: ${webUrl}`,
+    ].join('\n'),
+  );
+}
 
 // Dev convenience only: never ship a build that trusts a local web server.
 if (isDev) {

@@ -2,9 +2,15 @@ appId: dev.codelock.desktop
 productName: CodeLock
 copyright: Copyright © 2026 CodeLock
 
+# Pinned because electron lives in the workspace root node_modules, where
+# electron-builder does not look; without it the build cannot resolve a version.
+electronVersion: 33.4.11
+
 directories:
   output: release
   buildResources: build
+
+icon: build/icon.png
 
 files:
   - dist/**/*
@@ -12,6 +18,13 @@ files:
 
 # The renderer loads the hosted web app, so nothing else needs bundling.
 asar: true
+
+# In an npm workspace this MUST stay false. electron-builder otherwise runs a
+# production install in appDir, which npm resolves against the hoisted root
+# node_modules and prunes every devDependency — including electron-builder and
+# its own app-builder binary, mid-build. The app bundles no runtime deps (see
+# files: above), so there is nothing to rebuild anyway.
+npmRebuild: false
 
 # --- Windows ---------------------------------------------------------------
 win:
