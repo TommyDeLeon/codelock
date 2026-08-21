@@ -36,7 +36,32 @@ export function createApp(): Express {
   app.use(express.json({ limit: '256kb' }));
   app.use(pinoHttp({ logger }));
 
+  // Liveness: the process is up. Says nothing about whether it can serve.
   app.get('/healthz', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
+
+  /**
+   * Health with a dependency check, for clients rather than load balancers.
+   *
+   * The web and desktop clients poll this to tell 'the server is down' apart
+   * from 'you have no session'. It is deliberately unauthenticated and cheap:
+   * a client that cannot authenticate still needs to know why.
+   */
+  app.get('/v1/health', async (_req, res) => {
+    const startedAt = Date.now();
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.json({ ok: true, database: 'up', latencyMs: Date.now() - startedAt });
+    } catch {
+      res.status(503).json({
+        ok: false,
+        database: 'down',
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'CodeLock cannot reach its database right now.',
+        },
+      });
+    }
+  });
 
   // Readiness proves the DB is actually reachable, so a rolling deploy does not
   // send traffic to an instance that cannot serve a single request.
