@@ -13,8 +13,12 @@ const codelock = {
   /** True when running inside the desktop shell rather than a plain browser. */
   isDesktop: true,
 
-  /** Ask the shell to take over the screen. */
-  lock: (): Promise<{ locked: boolean }> => ipcRenderer.invoke('codelock:lock'),
+  /**
+   * Ask the shell to take over the screen. The session id is recorded to disk
+   * so a crash or a kill re-engages the same lock on the next start.
+   */
+  lock: (sessionId?: string): Promise<{ locked: boolean }> =>
+    ipcRenderer.invoke('codelock:lock', sessionId),
 
   /**
    * Ask the shell to release. The token is verified against the API's key in
@@ -23,12 +27,39 @@ const codelock = {
   unlock: (unlockToken: string): Promise<{ ok: boolean; reason?: string }> =>
     ipcRenderer.invoke('codelock:unlock', unlockToken),
 
-  state: (): Promise<{ locked: boolean; platform: string }> =>
-    ipcRenderer.invoke('codelock:state'),
+  state: (): Promise<{
+    locked: boolean;
+    sessionId: string | null;
+    platform: string;
+    holdToReleaseMs: number;
+  }> => ipcRenderer.invoke('codelock:state'),
 
   /** Open a URL in the user's real browser (needed for the OAuth flow). */
   openExternal: (url: string): Promise<boolean> =>
     ipcRenderer.invoke('codelock:open-external', url),
+
+  /**
+   * Progress of the hold-Escape kill switch, so the lock screen can count it
+   * down on screen. Discoverability is the point: an escape hatch nobody can
+   * find is the same as no escape hatch.
+   */
+  onHoldProgress: (
+    handler: (progress: { holding: boolean; fraction: number; msRemaining: number }) => void,
+  ): (() => void) => {
+    const listener = (_e: unknown, progress: Parameters<typeof handler>[0]) => handler(progress);
+    ipcRenderer.on('codelock:hold-progress', listener);
+    return () => ipcRenderer.removeListener('codelock:hold-progress', listener);
+  },
+
+  /**
+   * The kill switch fired locally. The renderer's job is to tell the server,
+   * so the session is resolved as abandoned rather than left dangling.
+   */
+  onKillSwitch: (handler: (info: { sessionId: string | null }) => void): (() => void) => {
+    const listener = (_e: unknown, info: { sessionId: string | null }) => handler(info);
+    ipcRenderer.on('codelock:kill-switch', listener);
+    return () => ipcRenderer.removeListener('codelock:kill-switch', listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('codelock', codelock);

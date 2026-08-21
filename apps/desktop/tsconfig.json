@@ -3,7 +3,10 @@
     "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2023", "DOM"],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
@@ -11,5 +14,11 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["src/**/*.ts", "src/**/*.cts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.cts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }

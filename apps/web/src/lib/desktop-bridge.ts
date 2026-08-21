@@ -13,12 +13,25 @@
  * locked.
  */
 
+export interface HoldProgress {
+  holding: boolean;
+  fraction: number;
+  msRemaining: number;
+}
+
 export interface CodeLockBridge {
   isDesktop: true;
-  lock(): Promise<{ locked: boolean }>;
+  lock(sessionId?: string): Promise<{ locked: boolean }>;
   unlock(unlockToken: string): Promise<{ ok: boolean; reason?: string }>;
-  state(): Promise<{ locked: boolean; platform: string }>;
+  state(): Promise<{
+    locked: boolean;
+    sessionId: string | null;
+    platform: string;
+    holdToReleaseMs: number;
+  }>;
   openExternal(url: string): Promise<boolean>;
+  onHoldProgress(handler: (progress: HoldProgress) => void): () => void;
+  onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void;
 }
 
 declare global {
@@ -34,9 +47,29 @@ export function getBridge(): CodeLockBridge | null {
 
 export const isDesktop = (): boolean => getBridge() !== null;
 
-/** Take over the screen. No-op in a browser, where the route is the lock. */
-export async function engageDesktopLock(): Promise<void> {
-  await getBridge()?.lock();
+/**
+ * Take over the screen. No-op in a browser, where the route is the lock.
+ *
+ * The session id travels with it so the shell can write the lock to disk: a
+ * crash or a kill then re-engages the same lock on the next start instead of
+ * handing the machine back.
+ */
+export async function engageDesktopLock(sessionId?: string): Promise<void> {
+  await getBridge()?.lock(sessionId);
+}
+
+/**
+ * Subscribe to the hold-Escape kill switch firing in the shell.
+ *
+ * Returns an unsubscribe function, or a no-op outside the desktop app.
+ */
+export function onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void {
+  return getBridge()?.onKillSwitch(handler) ?? (() => {});
+}
+
+/** Progress of the hold-Escape countdown, for rendering it on screen. */
+export function onHoldProgress(handler: (progress: HoldProgress) => void): () => void {
+  return getBridge()?.onHoldProgress(handler) ?? (() => {});
 }
 
 /**

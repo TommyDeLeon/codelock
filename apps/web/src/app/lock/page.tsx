@@ -7,6 +7,7 @@ import { CircleCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useLockSession } from '@/hooks/use-lock-session';
 import { LockWorkspace } from '@/components/lock/lock-workspace';
+import { KillSwitchHint } from '@/components/lock/kill-switch-hint';
 import { Button } from '@/components/ui/button';
 import { ErrorState, Skeleton } from '@/components/ui/primitives';
 import { formatDuration } from '@/lib/utils';
@@ -15,6 +16,7 @@ import {
   releaseDesktopLock,
   isDesktop,
   notifyNativeUnlocked,
+  onKillSwitch,
 } from '@/lib/desktop-bridge';
 
 export default function LockPage() {
@@ -34,17 +36,34 @@ export default function LockPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lock', 'active'] }),
   });
 
+  const abandon = useMutation({
+    mutationFn: (id: string) => api.lock.abandon(id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['lock', 'active'] }),
+  });
+
   useEffect(() => {
     if (session?.state === 'ARMED' && expired && !engage.isPending) {
       engage.mutate(session.id);
     }
   }, [session, expired, engage]);
 
-  // Hand the desktop shell the lock as soon as the server confirms it. In a
-  // browser this is a no-op and the route itself is the only barrier.
+  // Hand the desktop shell the lock as soon as the server confirms it, with
+  // the session id so the shell can persist it. In a browser this is a no-op
+  // and the route itself is the only barrier.
   useEffect(() => {
-    if (session?.state === 'LOCKED' && !unlocked) void engageDesktopLock();
-  }, [session?.state, unlocked]);
+    if (session?.state === 'LOCKED' && !unlocked) void engageDesktopLock(session.id);
+  }, [session?.state, session?.id, unlocked]);
+
+  // The shell's hold-Escape kill switch fired. It has already dropped the
+  // overlay locally; our job is to tell the server, so the session resolves as
+  // abandoned — a recorded failure — rather than dangling until it is reaped.
+  useEffect(() => {
+    return onKillSwitch(({ sessionId }) => {
+      if (sessionId) abandon.mutate(sessionId);
+      router.replace('/dashboard');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // While locked, warn on navigation away. Advisory only in a browser — the
   // desktop shell is what turns this into an actual barrier.
@@ -110,20 +129,23 @@ export default function LockPage() {
 
   if (session.state === 'LOCKED' && session.problem) {
     return (
-      <LockWorkspace
-        session={session}
-        onUnlocked={async (token) => {
-          // On desktop the shell must verify the token before the overlay
-          // drops. If verification fails we stay locked rather than trusting
-          // this renderer's word for it.
-          if (isDesktop()) {
-            const released = await releaseDesktopLock(token);
-            if (!released) return;
-          }
-          notifyNativeUnlocked();
-          setUnlocked(true);
-        }}
-      />
+      <>
+        <LockWorkspace
+          session={session}
+          onUnlocked={async (token) => {
+            // On desktop the shell must verify the token before the overlay
+            // drops. If verification fails we stay locked rather than trusting
+            // this renderer's word for it.
+            if (isDesktop()) {
+              const released = await releaseDesktopLock(token);
+              if (!released) return;
+            }
+            notifyNativeUnlocked();
+            setUnlocked(true);
+          }}
+        />
+        <KillSwitchHint />
+      </>
     );
   }
 
