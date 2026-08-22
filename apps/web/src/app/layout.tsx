@@ -1,6 +1,39 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
+
+/**
+ * Three families, each with a job.
+ *
+ * The default stack was system-ui everywhere, which is the single loudest
+ * signal that nobody chose anything. A serif for display gives the pages the
+ * weight of a written argument rather than a product page; Inter carries the
+ * interface; and the mono is finally a real face rather than a fallback chain,
+ * which matters because runtimes and gate figures are the product's evidence.
+ *
+ * next/font self-hosts and inlines the metrics, so there is no layout shift and
+ * no request to Google at runtime.
+ */
+const sans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans-loaded',
+  display: 'swap',
+});
+
+const display = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-display-loaded',
+  display: 'swap',
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono-loaded',
+  display: 'swap',
+});
 
 // Set NEXT_PUBLIC_SITE_URL in production so Open Graph image URLs resolve
 // absolutely; relative ones are ignored by most crawlers.
@@ -53,7 +86,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+    >
       <body className="min-h-dvh antialiased">
         {/* First stop for keyboard users; required for WCAG 2.4.1. */}
         <a

@@ -41,14 +41,25 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
+  /* Loaded by next/font in layout.tsx, each with a fallback chain so a blocked
+     font request degrades rather than breaks. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
+    var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
   --font-mono:
-    ui-monospace, 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+    var(--font-mono-loaded), ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas,
+    monospace;
+  /* Display only. Never for UI chrome — a serif button is a costume. */
+  --font-display: var(--font-display-loaded), 'Iowan Old Style', Georgia, serif;
 
   --shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
+
+  /* Ink for long-form prose: slightly softer than --color-fg so a full column
+     of text does not vibrate against warm paper. */
+  --color-prose: #2a2723;
+  /* Hairlines for the editorial rules that carry the marketing pages. */
+  --color-rule: #ded9d0;
 }
 
 .dark {
@@ -74,6 +85,9 @@
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-raised: 0 4px 16px -4px rgb(0 0 0 / 0.6);
+
+  --color-prose: #d9d5cd;
+  --color-rule: #302f2b;
 }
 
 @layer base {
@@ -175,4 +189,103 @@
   background: var(--color-surface-2);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-xs);
+}
+
+/* ---------------------------------------------------------------------------
+   Marketing surface.
+
+   Kept in one block and prefixed so it cannot leak into the app chrome. The
+   product UI stays dense and quiet; these pages are allowed to breathe and to
+   read like an argument, because their job is to persuade rather than to be
+   used forty times a day.
+   --------------------------------------------------------------------------- */
+
+/* Display type. Optical sizing is manual on Instrument Serif, so the tracking
+   is tightened by hand as the size grows — the default spacing looks slack
+   above ~40px and is one of the things that makes large type read as a
+   template. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
+}
+.display-lg {
+  font-size: clamp(2.75rem, 6.2vw, 4.75rem);
+  letter-spacing: -0.028em;
+}
+.display-md {
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  letter-spacing: -0.022em;
+}
+.display-sm {
+  font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+  letter-spacing: -0.014em;
+}
+
+/* An italic clause inside a display line. Instrument Serif's italic is much
+   more expressive than its roman, so one phrase set in it carries the emphasis
+   that a colour change or a bold weight would otherwise have to do. */
+.display em {
+  font-style: italic;
+}
+
+/* Section eyebrow: small, wide, mono. Numbers the argument so the page reads
+   as a document with structure rather than a scroll of unrelated bands. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+/* Measured prose column. 66ch is the readable maximum; the marketing pages
+   hold to it even when the surrounding grid is wider. */
+.measure {
+  max-width: 34rem;
+}
+.measure-wide {
+  max-width: 44rem;
+}
+
+.prose-site {
+  color: var(--color-prose);
+  line-height: 1.7;
+}
+.prose-site p + p {
+  margin-top: 1.05em;
+}
+.prose-site strong {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.prose-site a {
+  color: var(--color-fg);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--color-border-strong);
+}
+.prose-site a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* The hairline grid that structures the marketing pages. Borders rather than
+   cards: a page of stacked rounded boxes is the generated-UI house style, and
+   rules give the same separation without the visual weight. */
+.rule-t {
+  border-top: 1px solid var(--color-rule);
+}
+.rule-b {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* Faint dot field, used behind the hero only. Two-tone and very low contrast:
+   enough to stop a large empty area reading as unfinished, not so much that it
+   becomes decoration competing with the type. */
+.dotfield {
+  background-image: radial-gradient(var(--color-rule) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 78%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 78%);
 }
