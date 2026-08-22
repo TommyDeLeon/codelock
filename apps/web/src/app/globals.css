@@ -290,7 +290,21 @@
 /* Faint dot field, used behind the hero only. Two-tone and very low contrast:
    enough to stop a large empty area reading as unfinished, not so much that it
    becomes decoration competing with the type. */
+/* The pattern lives on a pseudo-element, NOT on the section itself.
+   `mask-image` masks an element's entire subtree, so applying it directly to
+   the hero faded out the headline and the buttons along with the dots — the
+   content read as washed out and half-invisible. Painting it behind the
+   content keeps the fade on the dots, where it belongs. */
 .dotfield {
+  position: relative;
+  isolation: isolate;
+}
+.dotfield::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image: radial-gradient(var(--color-rule) 1px, transparent 1px);
   background-size: 22px 22px;
   -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 78%);

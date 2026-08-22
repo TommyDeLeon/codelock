@@ -1,19 +1,31 @@
 'use client';
 
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
-import { DIFFICULTIES, type UserProgress } from '@codelock/shared';
-import { Card, CardBody, CardHeader, CardTitle, DifficultyBadge } from '@/components/ui/primitives';
-import { cn, formatCompact } from '@/lib/utils';
+import { DIFFICULTIES, type StatsSummary, type UserProgress } from '@codelock/shared';
+import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/primitives';
+import { cn } from '@/lib/utils';
 
 /**
- * The difficulty ladder, made legible.
+ * The game layer.
  *
- * Users complain that adaptive systems feel arbitrary. The fix is showing the
- * rule and the current position in it — "2 of 3 fast solves" — rather than a
- * score that moves for unexplained reasons. Thresholds come from the API so the
- * copy cannot drift from the backend rules.
+ * Three mechanics, all of them real fields rather than invented currency: the
+ * tier you are on, the streak that moves you, and how close you run to the best
+ * known answer. No XP, no coins, no levels beyond the three the backend has.
+ *
+ * Rendered as instrumentation — thin bars, pips and mono figures — because
+ * these numbers mean something and should look like measurements. Colour is
+ * reward-only: green is the thing the user is trying to make appear, and a
+ * monochrome panel is one that has not earned it yet.
+ *
+ * Every threshold comes from the API so this copy cannot drift from the rules
+ * the backend actually enforces.
  */
-export function ProgressCard({ progress }: { progress: UserProgress }) {
+export function ProgressCard({
+  progress,
+  speed,
+}: {
+  progress: UserProgress;
+  speed?: StatsSummary['speed'];
+}) {
   const {
     currentDifficulty,
     consecutiveFastSolves,
@@ -23,120 +35,133 @@ export function ProgressCard({ progress }: { progress: UserProgress }) {
   } = progress;
 
   const atTop = currentDifficulty === 'HARD';
-  const atBottom = currentDifficulty === 'EASY';
+  const tierIndex = DIFFICULTIES.indexOf(currentDifficulty);
+  const nextTier = DIFFICULTIES[tierIndex + 1];
 
   return (
     <Card>
-      <CardHeader className="flex items-center justify-between">
-        <CardTitle>Difficulty</CardTitle>
-        <DifficultyBadge difficulty={currentDifficulty} />
+      <CardHeader className="flex items-baseline justify-between">
+        <CardTitle>Progress</CardTitle>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-faint">
+          {currentDifficulty.toLowerCase()}
+        </span>
       </CardHeader>
 
-      <CardBody className="space-y-4">
-        <ol className="flex items-center gap-1" aria-label="Difficulty ladder">
-          {DIFFICULTIES.map((tier) => {
-            const isCurrent = tier === currentDifficulty;
-            return (
+      <CardBody className="space-y-6">
+        {/* --- 1. Tier ladder -------------------------------------------- */}
+        <section>
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">Tier</p>
+          <ol className="mt-2 flex items-center gap-1" aria-label="Difficulty ladder">
+            {DIFFICULTIES.map((tier, i) => (
               <li key={tier} className="flex-1">
                 <div
                   className={cn(
-                    'h-1 rounded-xs',
-                    isCurrent ? 'bg-fg' : 'bg-surface-2',
+                    'h-1 rounded-xs transition-colors duration-500',
+                    i <= tierIndex ? 'bg-accent' : 'bg-surface-2',
                   )}
                 />
                 <span
                   className={cn(
-                    'mt-1.5 block text-[11px] uppercase tracking-wider',
-                    isCurrent ? 'font-semibold text-fg' : 'text-faint',
+                    'mt-1.5 block font-mono text-[10.5px] uppercase tracking-wider',
+                    i === tierIndex ? 'text-fg' : 'text-faint',
                   )}
                 >
-                  {tier}
-                  {isCurrent && <span className="sr-only"> (current level)</span>}
+                  {tier.toLowerCase()}
                 </span>
               </li>
-            );
-          })}
-        </ol>
+            ))}
+          </ol>
+        </section>
 
-        <div className="space-y-2 border-t border-border pt-3">
-          <LadderRow
-            icon={atTop ? <Minus aria-hidden /> : <ArrowUp aria-hidden />}
-            tone={atTop ? 'neutral' : 'success'}
-            label={
-              atTop
-                ? 'Top of the ladder — nowhere further to climb.'
-                : `${consecutiveFastSolves} of ${promoteAfterFastSolves} fast solves toward a promotion`
-            }
-            filled={consecutiveFastSolves}
-            total={promoteAfterFastSolves}
-            show={!atTop}
-          />
-          <LadderRow
-            icon={atBottom ? <Minus aria-hidden /> : <ArrowDown aria-hidden />}
-            tone={atBottom ? 'neutral' : 'danger'}
-            label={
-              atBottom
-                ? 'Already at the gentlest level.'
-                : `${consecutiveFailures} of ${demoteAfterFailures} misses before easing off`
-            }
-            filled={consecutiveFailures}
-            total={demoteAfterFailures}
-            show={!atBottom}
-          />
-        </div>
+        {/* --- 2. Streak -------------------------------------------------- */}
+        <section>
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">Streak</p>
+          <div className="mt-2 flex items-center gap-3">
+            <div
+              className="flex items-center gap-1.5"
+              role="img"
+              aria-label={`${consecutiveFastSolves} of ${promoteAfterFastSolves} fast solves`}
+            >
+              {Array.from({ length: promoteAfterFastSolves }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    'size-2.5 rounded-full transition-colors duration-500',
+                    i < consecutiveFastSolves
+                      ? 'bg-accent'
+                      : 'border border-border-strong bg-transparent',
+                  )}
+                />
+              ))}
+            </div>
+            {/* The rule in words, always. This product never shows a number the
+                user cannot interrogate. */}
+            <p className="font-mono text-[12px] text-muted">
+              {atTop
+                ? `${consecutiveFastSolves} fast solves in a row`
+                : `${consecutiveFastSolves} / ${promoteAfterFastSolves} fast solves to ${nextTier?.toLowerCase()}`}
+            </p>
+          </div>
 
-        <p className="text-[13px] text-muted">
-          Typical solve time{' '}
-          <strong className="font-medium text-fg tabular">
-            {formatCompact(progress.emaSolveSeconds)}
-          </strong>
-          . A solve counts as fast when it beats the average for that problem.
-        </p>
+          {/* Stated as a fact, never as a threat. This app can take your screen
+              away; loss-aversion pressure on top of that would be coercive. */}
+          <p className="mt-2 text-[12.5px] text-faint">
+            {consecutiveFailures > 0
+              ? `${consecutiveFailures} of ${demoteAfterFailures} failed sessions toward easing back down.`
+              : 'A solve inside the problem’s average time counts as fast. One slow solve resets the streak.'}
+          </p>
+        </section>
+
+        {/* --- 3. Rank ---------------------------------------------------- */}
+        <section>
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            Against the record
+          </p>
+
+          {speed && speed.medianRatio !== null && speed.medianRatio > 0 ? (
+            <>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="tabular font-mono text-2xl font-semibold text-fg">
+                  {speed.medianRatio.toFixed(2)}×
+                </span>
+                <span className="text-[12.5px] text-muted">off the best known answer</span>
+              </div>
+
+              {/* 1.00x is the record, so the bar fills as you approach it. */}
+              <div
+                className="mt-3 h-1 w-full overflow-hidden rounded-xs bg-surface-2"
+                role="progressbar"
+                aria-valuenow={Math.round(Math.min(1, 1 / speed.medianRatio) * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="How close your solves run to the record"
+              >
+                <div
+                  className="h-full bg-accent transition-[width] duration-700 ease-out"
+                  style={{ width: `${Math.min(100, (1 / speed.medianRatio) * 100)}%` }}
+                />
+              </div>
+
+              <p className="mt-2 font-mono text-[12px] text-faint">
+                median of {speed.sampleSize} solve{speed.sampleSize === 1 ? '' : 's'}
+                {speed.recordsHeld > 0 && (
+                  <>
+                    {' · '}
+                    <span className="text-accent">
+                      {speed.recordsHeld} record{speed.recordsHeld === 1 ? '' : 's'} held
+                    </span>
+                  </>
+                )}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-[12.5px] text-faint">
+              No ratio yet. Solve a problem that already has a recorded best and your distance from
+              it appears here.
+            </p>
+          )}
+        </section>
       </CardBody>
     </Card>
-  );
-}
-
-function LadderRow({
-  icon,
-  label,
-  tone,
-  filled,
-  total,
-  show,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  tone: 'success' | 'danger' | 'neutral';
-  filled: number;
-  total: number;
-  show: boolean;
-}) {
-  const toneClass = {
-    success: 'text-success',
-    danger: 'text-danger',
-    neutral: 'text-faint',
-  }[tone];
-
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className={cn('[&_svg]:size-3.5', toneClass)}>{icon}</span>
-      <span className="flex-1 text-[13px] text-muted">{label}</span>
-      {show && (
-        // Pips, not just a number: progress toward a threshold is easier to
-        // read as discrete steps than as text.
-        <span className="flex gap-1" aria-hidden>
-          {Array.from({ length: total }).map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                'size-1.5 rounded-full',
-                i < filled ? toneClass.replace('text-', 'bg-') : 'bg-surface-2',
-              )}
-            />
-          ))}
-        </span>
-      )}
-    </div>
   );
 }

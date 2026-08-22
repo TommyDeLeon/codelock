@@ -56,9 +56,18 @@ function contentSecurityPolicy(): string {
     // Fall through to the local default rather than emitting a broken policy.
   }
 
+  // React's development build uses eval() to reconstruct callstacks and to power
+  // Fast Refresh, so a dev server under this policy throws "eval() is not
+  // supported in this environment" and the page never hydrates. Production React
+  // never calls eval, so the allowance is scoped to development and never ships.
+  const scriptSrc =
+    process.env.NODE_ENV === 'development'
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'";
+
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",

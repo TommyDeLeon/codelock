@@ -45,6 +45,32 @@ statsRouter.get(
 
     if (!progress) throw ApiError.notFound('User progress missing');
 
+    // The rank readout. Computed in JS rather than SQL because bestRuntimeMs is
+    // a per-language JSON map, which SQL would have to unpack awkwardly for a
+    // figure this small.
+    const recentAccepted = await prisma.submission.findMany({
+      where: { userId: user.id, status: SubmissionStatus.ACCEPTED, runtimeMs: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        runtimeMs: true,
+        language: true,
+        problem: { select: { bestRuntimeMs: true } },
+      },
+    });
+
+    const ratios: number[] = [];
+    let recordsHeld = 0;
+    for (const submission of recentAccepted) {
+      const best = (submission.problem.bestRuntimeMs as Record<string, number> | null)?.[
+        submission.language
+      ];
+      // No record yet means no ratio to report — inventing 1.0 would flatter.
+      if (!best || best <= 0 || submission.runtimeMs === null) continue;
+      ratios.push(submission.runtimeMs / best);
+      if (submission.runtimeMs <= best) recordsHeld += 1;
+    }
+
     const unlocked = recentLocks.filter((l) => l.state === LockState.UNLOCKED);
     const medianUnlockSeconds = median(
       unlocked
@@ -59,6 +85,11 @@ statsRouter.get(
         // rather than hard-coding thresholds that live in the backend.
         promoteAfterFastSolves: PROMOTE_AFTER_FAST_SOLVES,
         demoteAfterFailures: DEMOTE_AFTER_FAILURES,
+      },
+      speed: {
+        medianRatio: ratios.length === 0 ? null : Number(median(ratios)!.toFixed(2)),
+        recordsHeld,
+        sampleSize: ratios.length,
       },
       submissions: {
         total: totals,

@@ -61,7 +61,7 @@ export default function DashboardPage() {
               {stats.isLoading || !stats.data ? (
                 <Skeleton className="h-64" />
               ) : (
-                <ProgressCard progress={stats.data.progress} />
+                <ProgressCard progress={stats.data.progress} speed={stats.data.speed} />
               )}
             </div>
 

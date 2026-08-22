@@ -160,6 +160,21 @@ export interface StatsSummary {
     acceptanceRate: number;
     last30DaysByStatus: Partial<Record<SubmissionStatus, number>>;
   };
+  /**
+   * The rank mechanic: how close this user runs to the best known answer.
+   *
+   * Real numbers, not a score. `bestRuntimeMs` on a problem is a genuine global
+   * record that ratchets down whenever anyone beats it, so a ratio against it
+   * means something and can be checked.
+   */
+  speed: {
+    /** Median of runtime / best-known across recent accepted solves. */
+    medianRatio: number | null;
+    /** Accepted solves that currently match or hold the record. */
+    recordsHeld: number;
+    /** How many solves the ratio was computed from. */
+    sampleSize: number;
+  };
   locks: {
     recent: Array<{
       id: string;
