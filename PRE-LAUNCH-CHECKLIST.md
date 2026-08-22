@@ -233,13 +233,42 @@ Key inventory: [`docs/SIGNING-KEYS.md`](docs/SIGNING-KEYS.md).
 | 6.13 | macOS / Linux artifacts | **FLAGGED — NOT VERIFIED** | No hardware available. Neither target has ever been built. |
 | 6.14 | Track B started | **FLAGGED — NOT STARTED** | Windows OV/EV and Azure Trusted Signing all need a verifiable business entity, which is the real blocker for a solo project — not the cost. Apple Developer Program ($99/yr) is required for any permanent iOS install; there is no free path. |
 
+## Phase 7 — Production hardening
+
+Added 22 August 2026.
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 7.1 | Structured logging with request ids | FIXED | Every log line carries a request id and every response echoes it as `x-request-id`. An inbound id from a proxy wins so one trace spans the hop, but only if it matches a strict pattern, since it lands in logs and in an error body the user reads back. Error responses now carry `requestId`, so a bug report is one string instead of a timestamp. |
+| 7.2 | Log level tuned for a polling client | FIXED | pino-http logged every 2xx at info, which buried real events under a lock screen polling every five seconds. 2xx is now debug, 4xx warn, 5xx error. |
+| 7.3 | Error tracking | FIXED | Sentry in the API, loaded by dynamic import **only when `SENTRY_DSN` is set** — a self-hosted install sends nothing and never evaluates the SDK. Request bodies are stripped in `beforeSend` so submitted code cannot leave with an exception. A missing package logs a warning rather than refusing to boot; observability must not become an outage. |
+| 7.4 | Uncaught exceptions reported | FIXED | `unhandledRejection` was logged but not reported, and `uncaughtException` was not handled at all. Both now report, and an uncaught exception exits after a flush window — a lock API limping on with unknown state is worse than one that restarts. |
+| 7.5 | Rate limits on the lock escape hatches | FIXED | Submitting was capped; **engage, skip, abandon and arm were not**, and they are the more interesting target — `abandon` ends a session with no passing submission and `skip` spends a finite daily allowance. Capped at 30/min per user. Verified against a live stack: 36 calls produced 30 x 404 then 6 x 429. |
+| 7.6 | Rate limit on the health endpoint | FIXED | Unauthenticated by design and it touches the database on every call, which made it the cheapest unauthenticated way to generate load. 120/min per IP: enough for the banner poll across many tabs, not enough to spend a connection pool. |
+| 7.7 | Per-user grading concurrency | FIXED | One grade per user at a time, refused with a 409 rather than queued: a second concurrent grade from one account is a double-click or a script, never a real workflow, and "your previous submission is still running" beats a spinner. |
+| 7.8 | Global grading queue | FIXED | Hard ceiling of `GRADE_CONCURRENCY` (4) concurrent grades with a bounded wait queue of `GRADE_QUEUE_DEPTH` (20). Waiting is right when the request is legitimate and the host is merely busy, but an unbounded queue only converts CPU exhaustion into memory exhaustion, so past the depth it refuses with a retryable 503. Slots are reclaimed after a TTL in case one ever leaks. 8 tests. |
+| 7.9 | Audit log of every unlock | FIXED | New `unlock_audits` table: session, problem, outcome, submission, runtime, the gate it had to beat, seconds locked, and reason. Append-only and separate from `LockSession`, which is mutable — a session row says what is true now, this says what happened. It is the only thing that can answer whether a machine ever opened without a passing submission. |
+| 7.10 | Audit covers every exit, not just the happy one | FIXED | SOLVED, SKIPPED, ABANDONED (distinguishing the desktop kill switch from a user giving up) and REAPED. The reaper previously logged only a count; it now names every session it closed. |
+| 7.11 | Audit never blocks an unlock | FIXED | Writes are wrapped and logged-and-dropped on failure. Verified by test: a database rejection resolves rather than throws. The lock releasing matters more than the paperwork about it. |
+| 7.12 | Audit verified end to end | FIXED | Against a live stack: registered, armed, abandoned with reason `kill_switch`, and confirmed both the database row and the structured log line. |
+| 7.13 | Token encryption at rest verified | FIXED | 14 tests: round-trip, no plaintext on disk, a fresh nonce per call so two users sharing a token do not produce identical rows, AES-256-GCM shape, tamper detection on ciphertext / tag / nonce, and that a different key cannot decrypt. The key lives in the environment, never beside the ciphertext, so a database dump alone yields nothing. |
+| 7.14 | Empty-plaintext ciphertext was undecryptable | FIXED | Found by the new tests. `decryptSecret` rejected a payload it had produced itself, because an empty plaintext yields an empty middle part and the guard tested truthiness rather than structure. The result would have been an integration row that could never be decrypted and looked exactly like tampering. |
+| 7.15 | A failed GitHub push cannot block an unlock | FIXED | Was true and untested, which is one refactor from being false. Three tests: the mirror returns `undefined` rather than a promise (so no `await` can be added at the call site), a hanging GitHub does not delay the caller, and a failure is swallowed and logged rather than escaping. |
+| 7.16 | Judge resource ceilings | FIXED (Phase 5) | Memory, swap, pids, cpus, read-only root and a capped tmpfs were already set; 5.13 turned them into 15 executable checks. The memory-bomb check passes on this host. |
+| 7.17 | Containment checks in CI | FIXED (Phase 5) | Own job on every push and gating every tagged release. |
+| 7.18 | Nightly backups and a tested restore | FIXED (Phase 5) | See 5.10 and 5.11. The restore was actually performed, not merely scripted. |
+| 7.19 | Privacy page matches the code | FIXED | Updated for what this phase added: the audit trail, server logs and what is redacted from them, the error tracker (off by default, request bodies stripped), and that backups retain deleted data for fourteen days. |
+| 7.20 | Memory-bomb check on the deploy host | **FLAGGED — NOT VERIFIED** | Passes on this development machine against Docker 29.7.2. cgroup behaviour differs between hosts, so it needs re-running on the real VPS — the CI job covers ubuntu-latest, not your box. |
+| 7.21 | Sentry verified against a real DSN | **FLAGGED — NOT VERIFIED** | The disabled path is exercised: the API boots and logs "error tracking disabled". No DSN was configured, so nothing has ever been sent or received. |
+
 ## Open items, in priority order
 
 1. **`6.12` — auto-update never proven end to end.** Everything else in the
    release path now works; this is the one that decides whether installed
    devices stay current.
 2. **`6.10` / `6.11` — no certificate generated, nothing signed yet.**
-3. **`5.21` — the deploy stack has not run on a real VPS**; TLS untested.
+3. **`5.21` — the deploy stack has not run on a real VPS**; TLS untested,
+   and 7.20 (the memory-bomb check) needs re-running there.
 4. **`4.13` — Android native code has never been compiled.** No JDK or
    Android SDK available; needs an EAS build before any Android claim stands.
 5. **`4.15` — desktop escape matrix not run on hardware.**
@@ -258,5 +287,6 @@ Key inventory: [`docs/SIGNING-KEYS.md`](docs/SIGNING-KEYS.md).
 - Real-device testing on iOS and Android hardware.
 - The desktop and mobile shells; this pass covered the web app and API.
 - Backup and restore procedures for the database.
-- Uptime monitoring and alerting — `error.tsx` logs to the console, which
-  nobody watches in production. Wire a reporter before launch.
+- Uptime monitoring and alerting. Error *tracking* is wired (7.3) but nothing
+  watches whether the service is up; `/v1/health` exists for a monitor to poll,
+  and no monitor polls it.
