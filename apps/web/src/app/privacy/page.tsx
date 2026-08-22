@@ -11,7 +11,7 @@ const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '';
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy" updated="21 August 2026">
+    <LegalPage title="Privacy" updated="22 August 2026">
       <Section heading="What is stored">
         <ul>
           <li>
@@ -22,6 +22,19 @@ export default function PrivacyPage() {
           <li>
             <strong>Activity</strong> — your focus sessions, which problems were assigned, the code
             you submitted, its runtime, and whether it passed.
+          </li>
+          <li>
+            <strong>Lock audit trail</strong> — one row each time a lock ends, recording the
+            session, the problem, the outcome (solved, skipped, abandoned, or swept up after
+            being left open), how long it was locked, and for a solve the runtime and the speed
+            gate it had to beat. This is what makes it possible to answer whether a machine ever
+            unlocked without a passing submission. It is append-only and is deleted with your
+            account.
+          </li>
+          <li>
+            <strong>Server logs</strong> — each request produces a log line with a request id, the
+            route, and the status. Authorization headers, passwords, and submitted source code are
+            stripped before anything is written.
           </li>
           <li>
             <strong>Connected accounts</strong> — if you connect GitHub, an access token encrypted
@@ -48,6 +61,12 @@ export default function PrivacyPage() {
             profile. Nothing is sent to LeetCode about your CodeLock activity.
           </li>
           <li>
+            <strong>An error tracker (Sentry)</strong>, only if the operator has configured one.
+            It is off by default and a self-hosted install sends nothing at all. When enabled it
+            receives exception details, the request id, and the route — request bodies are
+            discarded before sending, so your code never leaves with them.
+          </li>
+          <li>
             <strong>OpenAI</strong>, only if the operator has enabled hybrid problem selection. In
             that case problem titles and tags are sent — never your code, email, or submissions.
           </li>
@@ -67,6 +86,11 @@ export default function PrivacyPage() {
           submissions, progress, and connected-account tokens; problems remain because they are
           shared and not yours. Disconnecting GitHub deletes the stored token immediately. Commits
           already pushed to your repository belong to you and are not touched.
+        </p>
+        <p>
+          Server logs are not stored in the database and live only as long as whoever runs this
+          instance keeps them. Database backups are taken nightly and kept for fourteen days by
+          default, so deleted data can survive in a backup until it ages out.
         </p>
       </Section>
 
