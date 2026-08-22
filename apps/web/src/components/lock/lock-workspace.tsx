@@ -107,7 +107,10 @@ export function LockWorkspace({
   return (
     <div className="flex h-dvh flex-col bg-bg">
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
-        <span className="flex size-7 items-center justify-center rounded-sm bg-accent text-accent-fg">
+        {/* Ink, not the accent. The accent is now the brand green, and a green
+            padlock would say the opposite of what this badge means. Locked is
+            deliberately hueless — the gravity comes from the absence of colour. */}
+        <span className="flex size-7 items-center justify-center rounded-sm bg-fg text-bg">
           <Lock className="size-3.5" aria-hidden />
         </span>
         <div className="min-w-0">

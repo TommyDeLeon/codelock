@@ -200,7 +200,7 @@ export default function LandingPage() {
                   >
                     <dt className="font-mono text-[13px] text-fg">{row.platform}</dt>
                     <dd className="text-[14px] text-muted">
-                      {row.detail} <span className="text-accent">{row.escape}</span>
+                      {row.detail} <span className="text-warning">{row.escape}</span>
                     </dd>
                   </div>
                 ))}

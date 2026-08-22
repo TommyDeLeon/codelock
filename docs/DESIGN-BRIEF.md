@@ -30,12 +30,22 @@ COLOR
 - Text primary (light): Ink #171614 · (dark) #f2f0ec
 - Text secondary (light): #6b6862 · (dark) #9a968e
 - Text faint (light): #98948c · (dark) #706c65
-- ACCENT — Terracotta #b3441b light / #e2653a dark.
-  RESERVED MEANING: this colour means "locked". Never use it for ordinary
-  emphasis, links or decoration. Seeing it must tell the user something.
-- Success (passed / within budget): #2f6f4e light, #56b283 dark
-- Warning: #8a6410 light, #d5a03f dark
+- ACCENT — Pine #1b6b4a light / Spring #4ed18f dark.
+  Accent foreground: #ffffff light, #0d1a13 dark.
+  Soft tint: #e4efe9 light, #10241b dark.
+  This is the BRAND colour and it also means "you cleared it". Use it for the
+  mark, primary buttons, links, focus rings and a passing verdict.
+- Success (passed / within budget): the SAME green, #1b6b4a / #4ed18f.
+  One green, one meaning. Two greens a shade apart measure 1.08:1 against each
+  other — indistinguishable — so do not introduce a second one.
+- Warning (locked, too slow, an escape that works): #8a6410 light, #d5a03f dark
 - Danger (wrong answer): #a12d20 light, #e0685a dark
+
+- LOCKED IS NOT A HUE. The lock screen is stark ink on paper with mono type and
+  hairline rules; its gravity comes from the absence of colour, not from an
+  alarm shade. States that genuinely need attention — "time is up", "too
+  slow", "this escape defeats it" — use the warning amber, sparingly. Never
+  green: green means you are through.
 
 NO gradients. NO purple. NO glassmorphism. NO decorative blobs.
 
@@ -116,10 +126,11 @@ glance, before any text is read:
      case named. Compiler or stderr output in a truncated mono block.
 
   c) CORRECT BUT TOO SLOW — the hardest and most important state in the entire
-     product. Every test case shows PASS in success colour, and the screen still
-     says locked in the accent colour. Show a horizontal meter: a success-tinted
-     budget region, a labelled "gate" threshold line, and the user's runtime bar
-     overshooting it in accent. Beneath it, in mono:
+     product. Every test case shows PASS in the green, and the screen still says
+     locked — in warning amber, never green and never the brand colour. Show a
+     horizontal meter: a green-tinted budget region, a labelled "gate" threshold
+     line, and the user's runtime bar overshooting it in amber. Beneath it, in
+     mono:
      "412 ms against a 189 ms budget. Correct, but roughly 2.2x slower than the
      best known solution. Look for a better algorithm."
      This must read as FAIR AND ACTIONABLE, never arbitrary or punitive. The

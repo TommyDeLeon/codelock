@@ -116,7 +116,7 @@ export function GateMeter() {
 
           <div
             className={`absolute inset-y-2 left-0 rounded-r-xs transition-[width,background-color] duration-700 ease-out ${
-              passed ? 'bg-success' : 'bg-accent'
+              passed ? 'bg-success' : 'bg-warning'
             }`}
             style={{ width: `${pct(measured)}%` }}
             aria-hidden
@@ -139,11 +139,11 @@ export function GateMeter() {
             <span className="text-faint">
               {attempt.runs[0]}ms / {attempt.runs[1]}ms →{' '}
             </span>
-            <span className={passed ? 'text-success' : 'text-accent'}>{measured}ms</span>
+            <span className={passed ? 'text-success' : 'text-warning'}>{measured}ms</span>
           </span>
         </div>
 
-        <p className={`mt-3 font-mono text-[13px] ${passed ? 'text-success' : 'text-accent'}`}>
+        <p className={`mt-3 font-mono text-[13px] ${passed ? 'text-success' : 'text-warning'}`}>
           {passed
             ? `unlocked · ${ratio.toFixed(2)}× the best known answer`
             : `still locked · roughly ${ratio.toFixed(1)}× slower than the best known answer`}

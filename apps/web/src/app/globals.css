@@ -22,13 +22,20 @@
   --color-muted: #6b6862;
   --color-faint: #98948c;
 
-  /* Reserved for the lock. Seeing it means the device is blocked. */
-  --color-accent: #b3441b;
+  /* The brand, and "you cleared it". Deliberately the same value as
+     --color-success below: one green, one meaning. Two greens a shade apart
+     measured 1.08:1 against each other — indistinguishable — and would have
+     made "locked" and "passed" look identical on the screen where that
+     distinction matters most. So "locked" is no longer a hue at all; states
+     that need attention use --color-warning. */
+  --color-accent: #1b6b4a;
   --color-accent-fg: #ffffff;
-  --color-accent-soft: #fbe9e1;
+  --color-accent-soft: #e4efe9;
 
-  --color-success: #2f6f4e;
-  --color-success-soft: #e4f0e8;
+  /* A separate name so call sites can say which they mean, same value on
+     purpose. */
+  --color-success: #1b6b4a;
+  --color-success-soft: #e4efe9;
   --color-danger: #a12d20;
   --color-danger-soft: #fbe6e3;
   --color-warning: #8a6410;
@@ -72,12 +79,12 @@
   --color-muted: #9a968e;
   --color-faint: #706c65;
 
-  --color-accent: #e2653a;
-  --color-accent-fg: #17120f;
-  --color-accent-soft: #2e1b12;
+  --color-accent: #4ed18f;
+  --color-accent-fg: #0d1a13;
+  --color-accent-soft: #10241b;
 
-  --color-success: #56b283;
-  --color-success-soft: #13251c;
+  --color-success: #4ed18f;
+  --color-success-soft: #10241b;
   --color-danger: #e0685a;
   --color-danger-soft: #2b1613;
   --color-warning: #d5a03f;

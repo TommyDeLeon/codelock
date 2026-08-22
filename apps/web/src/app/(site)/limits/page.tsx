@@ -130,7 +130,7 @@ const ANDROID: Row[] = [
 
 const VERDICT_STYLE: Record<Verdict, { label: string; className: string }> = {
   holds: { label: 'holds', className: 'text-success' },
-  defeated: { label: 'defeated', className: 'text-accent' },
+  defeated: { label: 'defeated', className: 'text-warning' },
   intended: { label: 'by design', className: 'text-muted' },
 };
 
