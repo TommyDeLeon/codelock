@@ -72,9 +72,9 @@ export function TimerCard() {
   // rather than offering a dismissible prompt.
   if (session && (expired || session.state === 'LOCKED')) {
     return (
-      <Card className="border-warning">
+      <Card className="border-fg">
         <CardBody className="flex flex-col items-start gap-3">
-          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-warning">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-fg">
             <TriangleAlert className="size-4" aria-hidden />
             Time is up
           </span>
@@ -105,7 +105,7 @@ export function TimerCard() {
           </div>
 
           <p
-            className={`tabular text-5xl font-semibold tracking-tight ${urgent ? 'text-warning' : ''}`}
+            className={`tabular text-5xl font-semibold tracking-tight ${urgent ? 'text-fg' : ''}`}
             // Announce each minute, not each second — per-second updates would
             // make a screen reader unusable.
             aria-live={urgent ? 'assertive' : 'off'}
@@ -122,7 +122,7 @@ export function TimerCard() {
             className="h-1 w-full overflow-hidden rounded-xs bg-surface-2"
           >
             <div
-              className={`h-full transition-[width] duration-1000 ease-linear ${urgent ? 'bg-warning' : 'bg-fg'}`}
+              className={`h-full transition-[width] duration-1000 ease-linear ${urgent ? 'bg-fg' : 'bg-border-strong'}`}
               style={{ width: `${progress}%` }}
             />
           </div>

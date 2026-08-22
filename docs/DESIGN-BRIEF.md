@@ -18,9 +18,15 @@ DESIGN SYSTEM (REQUIRED — do not substitute):
 Platform: Responsive web. Design desktop-first at 1280px, then define the 768px
 and 375px behaviour explicitly. Every screen must be usable at 320px.
 
-Theme: Dual light and dark, both first-class. Warm and editorial rather than
-cold and corporate. Technical, calm, confident — a well-set technical
-publication, not a SaaS landing page.
+Theme: Dual light and dark, both first-class. Hyper-minimal and modular, in
+the register of Linear and Perplexity — dense functional blocks, precise
+typography, restrained surfaces, real information per square inch. Warm paper
+rather than cold grey, so it reads considered rather than clinical.
+
+It is also a GAME, and the game is rendered as INSTRUMENTATION, not as toys.
+Think a pilot's HUD or a lap timer: tiers, streaks, ranks and personal bests
+shown as precise readouts in mono, never as cartoon badges, mascots or
+confetti. See THE GAME LAYER below — it is the core of this brief.
 
 COLOR
 - Background (light): Warm Paper #fbfaf8 · (dark) Near Black #0e0e0d
@@ -38,14 +44,17 @@ COLOR
 - Success (passed / within budget): the SAME green, #1b6b4a / #4ed18f.
   One green, one meaning. Two greens a shade apart measure 1.08:1 against each
   other — indistinguishable — so do not introduce a second one.
-- Warning (locked, too slow, an escape that works): #8a6410 light, #d5a03f dark
+- Warning (a caveat — "this escape defeats it"): #8a6410 light, #d5a03f dark.
+  Rare. Documentation pages only, never on the lock screen.
 - Danger (wrong answer): #a12d20 light, #e0685a dark
 
-- LOCKED IS NOT A HUE. The lock screen is stark ink on paper with mono type and
-  hairline rules; its gravity comes from the absence of colour, not from an
-  alarm shade. States that genuinely need attention — "time is up", "too
-  slow", "this escape defeats it" — use the warning amber, sparingly. Never
-  green: green means you are through.
+- LOCKED HAS NO HUE AT ALL. Not amber, not red — ink #171614 on paper, or paper
+  on ink. The locked state, the "time is up" card, the urgent countdown and the
+  too-slow verdict are all monochrome. Its gravity comes from the ABSENCE of
+  colour: on a screen where green means "through", plain ink means "not yet",
+  and that contrast is harder than any alarm shade.
+  Colour is therefore reward-only. Green is the single thing the user is trying
+  to make appear.
 
 NO gradients. NO purple. NO glassmorphism. NO decorative blobs.
 
@@ -82,6 +91,66 @@ ACCESSIBILITY (non-negotiable — this is a lock screen)
 - Touch targets minimum 44px on mobile; inputs at least 16px so iOS does not
   zoom the viewport on focus.
 - Countdowns announce per minute, not per second.
+```
+
+---
+
+## 1b. THE GAME LAYER
+
+The most important instruction in this brief. CodeLock is a game about getting
+faster, and the interface should make that legible — but every mechanic below
+already exists in the data model. **Do not invent currency.** Points, coins,
+gems and XP with no referent are what makes gamified products feel cheap, and
+this product's entire proposition is that its numbers mean something.
+
+```
+THE FIVE REAL MECHANICS — render these, invent nothing else:
+
+1. TIER (a real field: Easy / Medium / Hard)
+   A three-segment horizontal ladder, current segment filled green, future
+   segments hairline-outlined. Mono label. No stars, no gem icons.
+
+2. STREAK (a real counter: consecutive fast solves, 3 promotes)
+   Three pips. Filled pips green, empty ones hairline circles. Beside them, in
+   mono: "2 / 3 fast solves to Medium". The rule is always stated in words next
+   to the indicator — this product never shows a number you cannot interrogate.
+   One slow solve empties it. State that plainly; do NOT dramatise the loss.
+
+3. RANK (real: bestRuntimeMs, a global best per problem per language)
+   A genuine leaderboard, and the best mechanic in the product. Show:
+   "your 110ms · best known 89ms · you are 1.24x off the record".
+   Rank PROBLEMS, never people. Nobody is ranked by volume or hours.
+
+4. PERSONAL BEST (real: the user's own previous runtime on that problem)
+   When a re-solve beats their own time, show the delta in green: "-38ms on
+   your previous best". Small, precise, earned.
+
+5. THE RECORD BREAK (real: beating bestRuntimeMs ratchets the gate for everyone)
+   The ONE moment that deserves celebration — genuinely rare, and it makes the
+   problem harder for every future solver. A brief restrained full-width flash
+   and a mono line: "New best. The budget for this problem just moved to 160ms."
+   No confetti. A precise, cold, impressive moment.
+
+VISUAL LANGUAGE FOR THE GAME LAYER
+- Progress drawn as thin bars, rings and pips — 2-4px stroke, never chunky.
+- Every number in JetBrains Mono with tabular figures.
+- Achievement chips are small mono rectangles, 3px radius, hairline border.
+  Not circular medallions, not gradient shields.
+- Motion: a bar fills over ~600ms ease-out. A tier change gets one crisp
+  transition. Nothing bounces, springs or wobbles.
+- Reward = colour appearing on a monochrome field. That is the whole dopamine
+  mechanism and it is enough.
+
+NEVER (these break the product, not merely the aesthetic)
+- No invented currency: no XP, coins, gems, hearts, or levels beyond the three
+  real tiers.
+- No loss-aversion pressure. This app can take a user's screen away; "don't
+  lose your 12-day streak!" attached to a device lock is coercive rather than
+  motivating. State streaks as facts, never as threats.
+- No leaderboard ranking people by volume, hours or sessions — that rewards
+  grinding, and this tool exists to get someone back to work, not into it.
+- No daily-login rewards, no mascots, no anthropomorphised characters.
+- No celebration on an ordinary solve. Getting the machine back IS the reward.
 ```
 
 ---
@@ -126,20 +195,23 @@ glance, before any text is read:
      case named. Compiler or stderr output in a truncated mono block.
 
   c) CORRECT BUT TOO SLOW — the hardest and most important state in the entire
-     product. Every test case shows PASS in the green, and the screen still says
-     locked — in warning amber, never green and never the brand colour. Show a
-     horizontal meter: a green-tinted budget region, a labelled "gate" threshold
-     line, and the user's runtime bar overshooting it in amber. Beneath it, in
-     mono:
+     product. Every test case shows PASS in green, and the screen still says
+     locked — in PLAIN INK, no hue at all. Show a horizontal meter: a
+     green-tinted budget region, a labelled "gate" threshold line, and the
+     user's runtime bar overshooting it in solid ink. The green stops exactly
+     where the budget ends and the ink carries on past it: the picture is "you
+     ran out of green". Beneath it, in mono:
      "412 ms against a 189 ms budget. Correct, but roughly 2.2x slower than the
      best known solution. Look for a better algorithm."
      This must read as FAIR AND ACTIONABLE, never arbitrary or punitive. The
      user should immediately understand it is a complexity problem rather than
      bad luck or a micro-optimisation puzzle.
 
-  d) ACCEPTED — success colour, restrained. A brief confirmation and a single
-     Continue button. NO confetti, NO celebration animation, NO sound. The
-     reward is getting the machine back.
+  d) ACCEPTED — green, restrained. A brief confirmation, the run's readouts
+     (runtime, ratio to the record, and a personal-best delta when there is one)
+     and a single Continue button. NO confetti and NO sound on an ordinary
+     solve — the reward is the colour arriving and the machine returning.
+     Only a RECORD BREAK (game layer, mechanic 5) earns a moment of its own.
 
 Also design SERVER UNREACHABLE: the lock stays on and says "Cannot reach
 CodeLock. Staying locked until it answers — retrying," with a retry affordance.
@@ -165,16 +237,24 @@ Page Structure:
      jitter, a thin horizontal progress rule, and the wall-clock time it fires.
      Turns accent-coloured in the final minute.
    - Fired: accent-bordered, "Time is up", one button into the lock screen.
-4. PROGRESS PANEL, right column, full height: current difficulty tier and the
-   ladder rule stated in words — "2 of 3 fast solves to Medium" — with a small
-   segmented indicator. Never show an opaque score. The user must always be able
-   to tell what happens next.
-5. THREE STAT TILES: problems solved, locks cleared, median unlock time. Large
-   mono figures with a faint one-line explanation beneath each. Plain — no
-   sparklines, no percentage-change badges.
-6. SESSION HISTORY: a rules-separated list, newest first. Each row carries date,
-   problem title, an outcome chip (solved / too slow / abandoned) and the
-   runtime in mono.
+4. PROGRESS PANEL, right column, full height. This is the game's home and
+   should be the most satisfying block on the page:
+   - The three-segment TIER ladder, current segment filled.
+   - STREAK pips with the rule in words: "2 / 3 fast solves to Medium".
+   - A compact RANK readout: the user's median ratio to the best known answer,
+     as one mono figure with a thin bar.
+   Never show an opaque score. The user must always be able to tell exactly what
+   happens next and why.
+5. THREE STAT TILES as structured modular blocks in the Linear register:
+   problems solved, locks cleared, median unlock time. Large mono figures with a
+   faint one-line explanation beneath each, and a thin trend rule only where a
+   trend is real. Equal heights, hairline dividers, no card shadows. No
+   sparklines as decoration, no percentage-change badges.
+6. RUN LOG: a rules-separated list, newest first — read as a race history, not
+   an audit table. Each row carries date, problem title, a small mono outcome
+   chip (solved / too slow / abandoned), the runtime, and the ratio to the
+   record. Rows that set a personal best carry a single green marker in the
+   gutter. Dense, scannable, one line each.
 
 Also design: loading skeletons, an empty history state for a new account, and a
 full-width error state for an unreachable server.
@@ -300,7 +380,9 @@ generated.
 - No centred hero with three feature cards beneath it.
 - No stock photography, no 3D illustrations, no abstract atmospheric imagery.
 - No emoji used as iconography.
-- No confetti or celebration animation anywhere — this is a discipline tool.
+- No confetti, mascots, cartoon badges or bouncing motion. The game layer is
+  instrumentation (§1b); celebration is reserved for a record break.
+- No invented currency: no XP, coins, gems or hearts.
 - No streak-guilt copy and no dark patterns that keep the user locked.
 - No fabricated testimonials, no logo wall, no "trusted by" strip.
 - Do not describe a feature in the UI when the control already says it.
