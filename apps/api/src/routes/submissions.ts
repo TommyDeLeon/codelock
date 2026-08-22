@@ -6,6 +6,7 @@ import { requireAuth, currentUser } from '../middleware/auth.js';
 import { submitLimiter } from '../middleware/rateLimit.js';
 import { listQuerySchema, submitSchema, idParamSchema } from '../validation/schemas.js';
 import { gradeSubmission } from '../services/grading.js';
+import { acquireGradeSlot } from '../services/gradeQueue.js';
 
 export const submissionsRouter = Router();
 submissionsRouter.use(requireAuth);
@@ -25,13 +26,24 @@ submissionsRouter.post(
     const user = currentUser(req);
     const body = submitSchema.parse(req.body);
 
-    const result = await gradeSubmission({
-      userId: user.id,
-      problemId: body.problemId,
-      lockSessionId: body.lockSessionId ?? null,
-      language: body.language,
-      sourceCode: body.sourceCode,
-    });
+    // Admission control before any work. The rate limiter caps how often one
+    // user may ask; this caps how many grades run at once, which is what
+    // actually protects the host — each one holds a full CPU core.
+    const release = await acquireGradeSlot(user.id);
+    let result;
+    try {
+      result = await gradeSubmission({
+        userId: user.id,
+        problemId: body.problemId,
+        lockSessionId: body.lockSessionId ?? null,
+        language: body.language,
+        sourceCode: body.sourceCode,
+      });
+    } finally {
+      // A slot that is never released permanently shrinks capacity, so this is
+      // a finally and not a trailing call.
+      release();
+    }
 
     res.status(201).json(result);
   }),

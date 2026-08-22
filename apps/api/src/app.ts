@@ -6,7 +6,8 @@ import { env } from './env.js';
 import { logger } from './lib/logger.js';
 import { prisma } from './lib/prisma.js';
 import { errorHandler, notFoundHandler, asyncHandler } from './middleware/error.js';
-import { generalLimiter } from './middleware/rateLimit.js';
+import { requestIdFor, tagResponse } from './lib/observability.js';
+import { generalLimiter, healthLimiter } from './middleware/rateLimit.js';
 import { authRouter } from './routes/auth.js';
 import { lockRouter } from './routes/lock.js';
 import { problemsRouter } from './routes/problems.js';
@@ -34,7 +35,26 @@ export function createApp(): Express {
     }),
   );
   app.use(express.json({ limit: '256kb' }));
-  app.use(pinoHttp({ logger }));
+  // Every log line carries a request id, and the client gets it back in a
+  // header. When someone says "it failed at 3pm" that id is the difference
+  // between finding the request and grepping an hour of traffic.
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId(req, res) {
+        const id = requestIdFor(req as never);
+        tagResponse(res as never, id);
+        return id;
+      },
+      // The default logs every 2xx at info, which buries the interesting lines
+      // under a lock screen polling every five seconds.
+      customLogLevel(_req, res, err) {
+        if (err || res.statusCode >= 500) return 'error';
+        if (res.statusCode >= 400) return 'warn';
+        return 'debug';
+      },
+    }),
+  );
 
   // Liveness: the process is up. Says nothing about whether it can serve.
   app.get('/healthz', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
@@ -46,7 +66,7 @@ export function createApp(): Express {
    * from 'you have no session'. It is deliberately unauthenticated and cheap:
    * a client that cannot authenticate still needs to know why.
    */
-  app.get('/v1/health', async (_req, res) => {
+  app.get('/v1/health', healthLimiter, async (_req, res) => {
     const startedAt = Date.now();
     try {
       await prisma.$queryRaw`SELECT 1`;

@@ -31,4 +31,11 @@ export class ApiError extends Error {
   static upstream(message: string) {
     return new ApiError(502, 'UPSTREAM_FAILURE', message);
   }
+  /**
+   * We are up, but temporarily cannot do this. Distinct from 500: the client
+   * should retry, and the shared ApiFailure contract marks 503 as retryable.
+   */
+  static unavailable(message: string) {
+    return new ApiError(503, 'SERVICE_UNAVAILABLE', message);
+  }
 }

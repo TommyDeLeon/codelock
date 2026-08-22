@@ -63,3 +63,43 @@ export const generalLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 });
+
+/**
+ * The endpoints that end a lock: engage, skip, abandon.
+ *
+ * Submitting was already capped, but the escape hatches were not, and they are
+ * the more interesting target — `abandon` resolves a session with no passing
+ * submission, and `skip` spends a finite daily allowance. A loop against either
+ * is either a way to churn through the skip counter or a way to make the
+ * difficulty engine record failures that never happened.
+ *
+ * Generous by human standards: nobody legitimately ends thirty locks a minute.
+ */
+export const lockActionLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  keyGenerator: keyByUserOrIp,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many lock actions, slow down' } },
+});
+
+/**
+ * The health endpoint.
+ *
+ * Unauthenticated by design — a client that cannot authenticate still needs to
+ * know why — and it touches the database on every call, which makes it the
+ * cheapest unauthenticated way to generate load. `SELECT 1` is trivial, but
+ * "trivial times unbounded" is still a way to spend a connection pool.
+ *
+ * Keyed by IP rather than user: there is no user here. Generous enough for the
+ * connection banner's 20-second poll across a dozen tabs and devices behind one
+ * NAT, tight enough to stop a flood.
+ */
+export const healthLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many health checks' } },
+});

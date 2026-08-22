@@ -43,6 +43,22 @@ const schema = z.object({
   PERF_BEST_OF: z.coerce.number().int().min(1).max(5).default(2),
   OPENAI_API_KEY: z.string().optional().default(''),
 
+  // --- admission control ---
+  /// Concurrent grades across this process. Each one is a container holding a
+  /// full core, so this is a CPU budget for the host, not a throughput dial.
+  GRADE_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(4),
+  /// How many requests may wait for a slot before we start refusing. An
+  /// unbounded queue only converts CPU exhaustion into memory exhaustion.
+  GRADE_QUEUE_DEPTH: z.coerce.number().int().min(0).max(500).default(20),
+
+  // --- observability ---
+  /// Error tracking. Everything stays local when unset; nothing is sent.
+  SENTRY_DSN: z.string().optional().default(''),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  /// Shown in Sentry and in the health endpoint, so a report can be tied to a
+  /// deployment. CI passes the git sha.
+  RELEASE_SHA: z.string().optional().default('dev'),
+
   // --- integrations ---
   /// Encrypts third-party OAuth tokens at rest. Rotating it invalidates every
   /// stored token, forcing users to reconnect — it is not a routine rotation.
