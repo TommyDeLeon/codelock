@@ -89,7 +89,7 @@ code alone. Where something is marked FIXED, it was observed working.
 | 2.9 | Rate limits on auth | FIXED | `POST /auth/refresh` had **no limit** — an unauthenticated endpoint hitting the database on every call. Added (60 / 15 min). Login and register already capped at 10 / 15 min. Verified: 80 refresh attempts → 80× 429. |
 | 2.10 | Rate limits on expensive/API routes | FIXED | The GitHub and LeetCode endpoints had **no limit**, so one user could burn a shared GitHub quota or get the server IP blocked by LeetCode. Added (20/min). Verified 429s. |
 | 2.11 | Rate limits on submissions | FIXED | Already present (12/min); grading costs real CPU. |
-| 2.12 | Leaked stack traces in production | FIXED | With the DB down, responses leaked the Prisma error class, the failing query, and **absolute filesystem paths** (`D:\Cowork\codelock\...`). Production already masked these, but a DB outage now returns a friendly 503 in every environment. |
+| 2.12 | Leaked stack traces in production | FIXED | With the DB down, responses leaked the Prisma error class, the failing query, and **absolute filesystem paths** (the checkout path). Production already masked these, but a DB outage now returns a friendly 503 in every environment. |
 | 2.13 | No card data stored/logged/passed through | N/A | The product takes no payments and has no payment code path. Stated explicitly in the privacy policy. |
 | 2.14 | Privacy policy present, linked, reachable | FIXED | `/privacy`, linked from the footer and the login screen. Content describes what the app actually stores. |
 | 2.15 | Terms present, linked, reachable | FIXED | `/terms`, same links. States plainly what the lock cannot do on each platform. |

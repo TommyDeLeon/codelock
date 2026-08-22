@@ -1,18 +1,13 @@
-# CodeLock — design prompts
+# CodeLock — design
 
-Copy-paste prompts for a UI generator (Stitch, v0, Lovable, Figma AI) or for a
-human designer. Structured with the `enhance-prompt` pipeline: design system
-first, then one numbered structure per screen.
-
-**Use it like this:** paste §1 unchanged at the top of every screen prompt, then
-append the one screen you want. The system block is what stops eight screens
-looking like eight different products.
+The design system, then one section per screen. §1 is the system every screen
+inherits; it is what stops eight screens looking like eight different products.
+Read it first, then the section for the screen you are working on.
 
 ---
 
-## 1. Design system — prepend to every prompt
+## 1. Design system
 
-```
 DESIGN SYSTEM (REQUIRED — do not substitute):
 
 Platform: Responsive web. Design desktop-first at 1280px, then define the 768px
@@ -26,7 +21,7 @@ rather than cold grey, so it reads considered rather than clinical.
 It is also a GAME, and the game is rendered as INSTRUMENTATION, not as toys.
 Think a pilot's HUD or a lap timer: tiers, streaks, ranks and personal bests
 shown as precise readouts in mono, never as cartoon badges, mascots or
-confetti. See THE GAME LAYER below — it is the core of this brief.
+confetti. See THE GAME LAYER below — it is the core of this document.
 
 COLOR
 - Background (light): Warm Paper #fbfaf8 · (dark) Near Black #0e0e0d
@@ -91,19 +86,17 @@ ACCESSIBILITY (non-negotiable — this is a lock screen)
 - Touch targets minimum 44px on mobile; inputs at least 16px so iOS does not
   zoom the viewport on focus.
 - Countdowns announce per minute, not per second.
-```
 
 ---
 
 ## 1b. THE GAME LAYER
 
-The most important instruction in this brief. CodeLock is a game about getting
+The most important section in this document. CodeLock is a game about getting
 faster, and the interface should make that legible — but every mechanic below
 already exists in the data model. **Do not invent currency.** Points, coins,
 gems and XP with no referent are what makes gamified products feel cheap, and
 this product's entire proposition is that its numbers mean something.
 
-```
 THE FIVE REAL MECHANICS — render these, invent nothing else:
 
 1. TIER (a real field: Easy / Medium / Hard)
@@ -151,7 +144,6 @@ NEVER (these break the product, not merely the aesthetic)
   grinding, and this tool exists to get someone back to work, not into it.
 - No daily-login rewards, no mascots, no anthropomorphised characters.
 - No celebration on an ordinary solve. Getting the machine back IS the reward.
-```
 
 ---
 
@@ -160,7 +152,6 @@ NEVER (these break the product, not merely the aesthetic)
 The product's centre of gravity, seen at the user's least patient moment. Every
 other screen can be merely adequate; this one cannot.
 
-```
 A full-screen coding workspace that has taken over the user's device at the
 moment a focus timer expired. Dense, calm and scannable — the user is mildly
 annoyed and needs to act immediately with no navigation available.
@@ -216,13 +207,11 @@ glance, before any text is read:
 Also design SERVER UNREACHABLE: the lock stays on and says "Cannot reach
 CodeLock. Staying locked until it answers — retrying," with a retry affordance.
 This must read as deliberate, not as a crash.
-```
 
 ---
 
 ## 3. Dashboard
 
-```
 A quiet, scannable home screen for a focus tool opened several times a day.
 Dense rather than airy. The timer is what most visits are for and must lead.
 
@@ -258,13 +247,11 @@ Page Structure:
 
 Also design: loading skeletons, an empty history state for a new account, and a
 full-width error state for an unreachable server.
-```
 
 ---
 
 ## 4. Landing page
 
-```
 A landing page aimed at developers who distrust productivity software. It must
 read as an argument rather than a brochure: the mechanism stated plainly, and
 the product's limits admitted before the visitor discovers them.
@@ -291,13 +278,11 @@ Page Structure:
    trust-building move; do not soften it.
 5. CLOSING — heading, one paragraph, one button. No newsletter capture, no
    testimonials, no logo wall, no pricing table.
-```
 
 ---
 
 ## 5. Interactive demo
 
-```
 A no-account sandbox that runs the visitor's real code and returns a real
 verdict, while making unmistakably clear that nothing is locked.
 
@@ -317,13 +302,11 @@ Page Structure:
    would have unlocked a real session. Here it unlocks nothing — this is a
    browser tab, and a tab you can close was never a lock," plus an Install
    button. Do not render a triumphant "Unlocked" state; it would be a lie.
-```
 
 ---
 
 ## 6. Settings
 
-```
 A quiet configuration screen. Three independent panels separated by rules, each
 self-contained and each showing its own connected or disconnected state.
 
@@ -342,16 +325,14 @@ Page Structure:
    time range, and Weekdays / Every day presets.
 
 Every panel needs loading, empty, connected and error states.
-```
 
 ---
 
 ## 7. Mobile — 375px
 
-Not an afterthought. Specify these explicitly or the generator will squash the
-desktop layout.
+Not an afterthought. These are specified explicitly because the desktop layout
+does not squash cleanly into a phone.
 
-```
 - Lock screen: the two panes stack. The problem statement collapses to a header
   carrying the title and difficulty chip, expandable on tap. The editor takes
   the remaining viewport above a fixed action bar. The verdict opens as a bottom
@@ -364,16 +345,14 @@ desktop layout.
   full-width. The three-idea row becomes three rule-separated blocks.
 - Navigation collapses to a hamburger opening a full-height panel with 44px rows.
 - Nothing may scroll horizontally at 320px.
-```
 
 ---
 
 ## 8. What to avoid
 
 Hard constraints. These are the difference between looking designed and looking
-generated.
+templated.
 
-```
 - No purple, no gradient meshes, no glassmorphism, no decorative blobs.
 - No cards inside cards.
 - No uniform 16px border-radius on everything.
@@ -386,7 +365,6 @@ generated.
 - No streak-guilt copy and no dark patterns that keep the user locked.
 - No fabricated testimonials, no logo wall, no "trusted by" strip.
 - Do not describe a feature in the UI when the control already says it.
-```
 
 ---
 
@@ -398,8 +376,3 @@ it. Marketing language anywhere contradicts the thing being sold.
 
 Write like a good README, not like a landing page.
 
----
-
-For consistency across many generated screens, promote §1 into a `DESIGN.md` at
-the repository root using the `design-md` skill and reference it, rather than
-pasting it into every prompt.

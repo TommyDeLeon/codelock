@@ -242,7 +242,7 @@ default caches under `C:\Users\...\AppData\Local`, electron-builder fails with
 find the file specified"*. Put both caches on the same volume as the project:
 
 ```bash
-ELECTRON_CACHE=D:/Cowork/.electron-cache ELECTRON_BUILDER_CACHE=D:/Cowork/.eb-cache npm run dist -w @codelock/desktop
+ELECTRON_CACHE=<project-volume>/.electron-cache ELECTRON_BUILDER_CACHE=<project-volume>/.eb-cache npm run dist -w @codelock/desktop
 ```
 
 **2. Symlink privilege.** Extracting electron-builder's `winCodeSign` bundle

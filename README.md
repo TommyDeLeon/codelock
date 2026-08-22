@@ -200,9 +200,8 @@ behind.
 
 | Doc | What it covers |
 |---|---|
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Paste-into-a-fresh-chat context brief for picking this project up cold |
 | [docs/LAUNCH.md](docs/LAUNCH.md) | **Start here.** Everything still standing between this repo and a working install, in order. |
-| [docs/DESIGN-BRIEF.md](docs/DESIGN-BRIEF.md) | Design system and per-screen prompts for a UI generator or a designer |
+| [docs/DESIGN.md](docs/DESIGN.md) | Design system and the structure of every screen |
 | [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) | Running the whole stack for nothing: which free tiers work, and why the judge rules most of them out |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | One-command VPS deploy, backups, and the Docker-socket trade-off |
 | [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
