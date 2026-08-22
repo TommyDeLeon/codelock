@@ -142,6 +142,8 @@ export interface GradeResult {
   performance: PerformanceVerdict | null;
   /** Correct AND within the speed budget. Only this releases the lock. */
   accepted: boolean;
+  /** Rank, personal best and record break. Present whenever the answer was correct. */
+  standing: SolveStanding | null;
   /** Present only when this submission resolved a lock session. */
   unlockToken: string | null;
   progress: ProgressUpdate | null;
@@ -167,6 +169,20 @@ export interface StatsSummary {
    * record that ratchets down whenever anyone beats it, so a ratio against it
    * means something and can be checked.
    */
+  /**
+   * One row per problem and language the user has solved, carrying their own
+   * fastest time and how it sits against the record. Records first.
+   */
+  personalBests: Array<{
+    slug: string;
+    title: string;
+    language: string;
+    runtimeMs: number;
+    /** Null when nobody has set a record in this language yet. */
+    bestKnownMs: number | null;
+    ratio: number | null;
+    holdsRecord: boolean;
+  }>;
   speed: {
     /** Median of runtime / best-known across recent accepted solves. */
     medianRatio: number | null;
@@ -202,6 +218,31 @@ export interface ApiErrorBody {
  * this problem in this language, and `gateMs` is that plus a tolerance band,
  * which exists because judge timings are noisy.
  */
+/**
+ * Where one correct run stands: against the record, and against the user's own
+ * previous attempt at the same problem.
+ *
+ * Every field is a measurement, not a score. This is the whole of the game
+ * layer's reward vocabulary — there is deliberately no XP, currency or level
+ * here, because a number with no referent is exactly what this product is not.
+ */
+export interface SolveStanding {
+  /** The best known time before this run — the bar it was measured against. */
+  bestKnownMs: number;
+  /** runtimeMs / bestKnownMs. 1.24 means 24% off the record. */
+  ratio: number;
+  /** The user's own fastest correct run before this one, if there was one. */
+  previousBestMs: number | null;
+  /** Signed: negative is an improvement. Null when there was no previous run. */
+  personalBestDeltaMs: number | null;
+  /** This run is the user's fastest correct answer to this problem so far. */
+  personalBest: boolean;
+  /** This run beat the global record, so the gate just moved for everyone. */
+  recordBroken: boolean;
+  /** The budget every future solver now faces. Null unless the record broke. */
+  newGateMs: number | null;
+}
+
 export interface PerformanceVerdict {
   runtimeMs: number;
   targetMs: number;

@@ -10,10 +10,12 @@ import { mirrorSubmission } from './integrations.js';
 import {
   bestOfRuns,
   evaluatePerformance,
+  evaluateStanding,
   withNewBest,
   worstCaseRuntime,
   type PerformanceVerdict,
   type RuntimeMap,
+  type SolveStanding,
 } from './performance.js';
 
 /** Hard cap on stored source. Generous for a solution, hostile to a payload. */
@@ -42,6 +44,8 @@ export interface GradeResult {
   performance: PerformanceVerdict | null;
   /** True only when correct AND fast enough. This is what releases the lock. */
   accepted: boolean;
+  /** Rank, personal best and record break. Present whenever the answer was correct. */
+  standing: SolveStanding | null;
   unlockToken: string | null;
   progress: ProgressUpdate | null;
 }
@@ -172,6 +176,7 @@ export async function gradeSubmission(params: {
       cases: caseViews,
       correct: false,
       performance: null,
+      standing: null,
       accepted: false,
       unlockToken: null,
       progress: null,
@@ -222,6 +227,28 @@ export async function gradeSubmission(params: {
     },
   });
 
+  // The user's own bar, from before this run. Both correct statuses count: a
+  // solve that was right but too slow is still a time they beat.
+  const previous = await prisma.submission.findFirst({
+    where: {
+      userId,
+      problemId,
+      language,
+      id: { not: submission.id },
+      runtimeMs: { not: null },
+      status: { in: [SubmissionStatus.ACCEPTED, SubmissionStatus.ACCEPTED_TOO_SLOW] },
+    },
+    orderBy: { runtimeMs: 'asc' },
+    select: { runtimeMs: true },
+  });
+
+  const standing = evaluateStanding({
+    runtimeMs,
+    bestKnownMs: performance.targetMs,
+    previousBestMs: previous?.runtimeMs ?? null,
+    accepted: performance.passed,
+  });
+
   const base: GradeResult = {
     submissionId: submission.id,
     status,
@@ -233,6 +260,7 @@ export async function gradeSubmission(params: {
     cases: caseViews,
     correct: true,
     performance,
+    standing,
     accepted: performance.passed,
     unlockToken: null,
     progress: null,

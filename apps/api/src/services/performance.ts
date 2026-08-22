@@ -64,6 +64,17 @@ export function targetRuntimeMs(
   return bestSoFar === undefined ? ref : Math.min(ref, bestSoFar);
 }
 
+/**
+ * The budget derived from a target time.
+ *
+ * The floor absorbs measurement noise on very fast problems, where a 35%
+ * tolerance on an 8 ms target would be a 3 ms band — smaller than the jitter of
+ * the judge itself.
+ */
+export function gateFor(targetMs: number): number {
+  return Math.ceil(targetMs * env.PERF_TOLERANCE) + env.PERF_FLOOR_MS;
+}
+
 export function evaluatePerformance(params: {
   runtimeMs: number;
   reference: RuntimeMap;
@@ -72,10 +83,7 @@ export function evaluatePerformance(params: {
 }): PerformanceVerdict {
   const targetMs = targetRuntimeMs(params.reference, params.best, params.language);
 
-  // The floor absorbs measurement noise on very fast problems, where a 35%
-  // tolerance on an 8 ms target would be a 3 ms band — smaller than the jitter
-  // of the judge itself.
-  const gateMs = Math.ceil(targetMs * env.PERF_TOLERANCE) + env.PERF_FLOOR_MS;
+  const gateMs = gateFor(targetMs);
   const passed = params.runtimeMs <= gateMs;
   const ratio = targetMs === 0 ? 1 : params.runtimeMs / targetMs;
 
@@ -111,4 +119,58 @@ export function worstCaseRuntime(perCaseMs: number[]): number {
 /** Best of N independent measurements, to reject transient scheduler spikes. */
 export function bestOfRuns(runs: number[]): number {
   return runs.length === 0 ? 0 : Math.min(...runs);
+}
+
+/**
+ * Where one correct run stands: against the record, and against the user's own
+ * previous attempt at the same problem.
+ *
+ * These are the three numbers the interface is allowed to celebrate, and all
+ * three are measurements rather than points. `ratio` is the rank readout,
+ * `personalBestDeltaMs` is the private one, and `recordBroken` is the only
+ * event rare enough to earn a moment of its own — it moves the budget for
+ * everyone who attempts the problem afterwards.
+ */
+export interface SolveStanding {
+  /** The best known time before this run, i.e. the bar it was measured against. */
+  bestKnownMs: number;
+  /** runtimeMs / bestKnownMs. 1.24 means 24% off the record. */
+  ratio: number;
+  /** The user's own fastest correct run before this one, if there was one. */
+  previousBestMs: number | null;
+  /** Signed: negative is an improvement. Null when there was no previous run. */
+  personalBestDeltaMs: number | null;
+  /** This run is the user's fastest correct answer to this problem so far. */
+  personalBest: boolean;
+  /** This run beat the global record, so the gate just moved for everyone. */
+  recordBroken: boolean;
+  /** The budget every future solver now faces. Null unless the record broke. */
+  newGateMs: number | null;
+}
+
+export function evaluateStanding(params: {
+  runtimeMs: number;
+  /** Best known before this submission — evaluatePerformance's targetMs. */
+  bestKnownMs: number;
+  /** The user's fastest prior correct run on this problem in this language. */
+  previousBestMs: number | null;
+  /** Whether the run cleared the gate. Only an accepted run moves the record. */
+  accepted: boolean;
+}): SolveStanding {
+  const { runtimeMs, bestKnownMs, previousBestMs, accepted } = params;
+  const recordBroken = accepted && runtimeMs < bestKnownMs;
+
+  return {
+    bestKnownMs,
+    ratio: bestKnownMs === 0 ? 1 : Number((runtimeMs / bestKnownMs).toFixed(2)),
+    previousBestMs,
+    // A first solve has nothing to improve on. Reporting a delta of zero there
+    // would read as "no progress" rather than "no comparison".
+    personalBestDeltaMs: previousBestMs === null ? null : runtimeMs - previousBestMs,
+    // Deliberately not gated on `accepted`: beating your own time by 40 ms is
+    // worth stating even when the answer is still too slow to unlock.
+    personalBest: previousBestMs === null || runtimeMs < previousBestMs,
+    recordBroken,
+    newGateMs: recordBroken ? gateFor(runtimeMs) : null,
+  };
 }

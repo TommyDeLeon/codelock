@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bestOfRuns,
   evaluatePerformance,
+  evaluateStanding,
   targetRuntimeMs,
   withNewBest,
   worstCaseRuntime,
@@ -87,5 +88,47 @@ describe('measurement', () => {
     expect(withNewBest({ CPP: 10 }, 'CPP', 14)).toEqual({ CPP: 10 });
     expect(withNewBest({ CPP: 10 }, 'CPP', 7)).toEqual({ CPP: 7 });
     expect(withNewBest({}, 'GO', 5)).toEqual({ GO: 5 });
+  });
+});
+
+describe('evaluateStanding', () => {
+  const base = { runtimeMs: 110, bestKnownMs: 89, previousBestMs: null, accepted: true };
+
+  it('reports the rank as a ratio against the record', () => {
+    expect(evaluateStanding(base).ratio).toBe(1.24);
+  });
+
+  it('treats a first solve as a personal best with no delta to report', () => {
+    const standing = evaluateStanding(base);
+    expect(standing.personalBest).toBe(true);
+    expect(standing.personalBestDeltaMs).toBeNull();
+  });
+
+  it('reports a signed delta against the user own previous time', () => {
+    expect(evaluateStanding({ ...base, previousBestMs: 148 }).personalBestDeltaMs).toBe(-38);
+    expect(evaluateStanding({ ...base, previousBestMs: 100 }).personalBestDeltaMs).toBe(10);
+  });
+
+  it('counts beating your own time even when the answer is still too slow', () => {
+    const standing = evaluateStanding({ ...base, previousBestMs: 148, accepted: false });
+    expect(standing.personalBest).toBe(true);
+    expect(standing.recordBroken).toBe(false);
+  });
+
+  it('breaks the record and moves the budget for everyone', () => {
+    const standing = evaluateStanding({ ...base, runtimeMs: 80, bestKnownMs: 89 });
+    expect(standing.recordBroken).toBe(true);
+    // 80 * 1.35 = 108, + 40 ms floor.
+    expect(standing.newGateMs).toBe(148);
+  });
+
+  it('does not move the record on a run that did not clear the gate', () => {
+    const standing = evaluateStanding({ ...base, runtimeMs: 80, accepted: false });
+    expect(standing.recordBroken).toBe(false);
+    expect(standing.newGateMs).toBeNull();
+  });
+
+  it('matching the record exactly is not a break', () => {
+    expect(evaluateStanding({ ...base, runtimeMs: 89 }).recordBroken).toBe(false);
   });
 });

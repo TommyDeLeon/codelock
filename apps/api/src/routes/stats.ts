@@ -55,7 +55,7 @@ statsRouter.get(
       select: {
         runtimeMs: true,
         language: true,
-        problem: { select: { bestRuntimeMs: true } },
+        problem: { select: { slug: true, title: true, bestRuntimeMs: true } },
       },
     });
 
@@ -69,6 +69,29 @@ statsRouter.get(
       if (!best || best <= 0 || submission.runtimeMs === null) continue;
       ratios.push(submission.runtimeMs / best);
       if (submission.runtimeMs <= best) recordsHeld += 1;
+    }
+
+    // Personal bests: the user's own fastest run per problem and language, and
+    // how it sits against the record. One row per pairing — a second, slower
+    // solve of the same problem is not a separate achievement.
+    const bests = new Map<string, PersonalBest>();
+    for (const submission of recentAccepted) {
+      if (submission.runtimeMs === null) continue;
+      const key = `${submission.problem.slug}:${submission.language}`;
+      const existing = bests.get(key);
+      if (existing && existing.runtimeMs <= submission.runtimeMs) continue;
+      const best = (submission.problem.bestRuntimeMs as Record<string, number> | null)?.[
+        submission.language
+      ];
+      bests.set(key, {
+        slug: submission.problem.slug,
+        title: submission.problem.title,
+        language: submission.language,
+        runtimeMs: submission.runtimeMs,
+        bestKnownMs: best && best > 0 ? best : null,
+        ratio: best && best > 0 ? Number((submission.runtimeMs / best).toFixed(2)) : null,
+        holdsRecord: Boolean(best && best > 0 && submission.runtimeMs <= best),
+      });
     }
 
     const unlocked = recentLocks.filter((l) => l.state === LockState.UNLOCKED);
@@ -86,6 +109,11 @@ statsRouter.get(
         promoteAfterFastSolves: PROMOTE_AFTER_FAST_SOLVES,
         demoteAfterFailures: DEMOTE_AFTER_FAILURES,
       },
+      personalBests: [...bests.values()].sort((a, b) => {
+        // Records first, then closest to the record: the rows worth reading.
+        if (a.holdsRecord !== b.holdsRecord) return a.holdsRecord ? -1 : 1;
+        return (a.ratio ?? Infinity) - (b.ratio ?? Infinity);
+      }),
       speed: {
         medianRatio: ratios.length === 0 ? null : Number(median(ratios)!.toFixed(2)),
         recordsHeld,
@@ -132,6 +160,16 @@ statsRouter.get(
     });
   }),
 );
+
+interface PersonalBest {
+  slug: string;
+  title: string;
+  language: string;
+  runtimeMs: number;
+  bestKnownMs: number | null;
+  ratio: number | null;
+  holdsRecord: boolean;
+}
 
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
