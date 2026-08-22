@@ -97,6 +97,7 @@ services:
         NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
         NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
         NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+        NEXT_PUBLIC_REPO_URL: ${REPO_URL:-}
     restart: unless-stopped
 
   # SECURITY: the socket mount is root-equivalent on this host. Anyone who

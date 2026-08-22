@@ -196,6 +196,16 @@ database and nowhere in TypeScript: the compound unique that `upsert` depends
 on, and the cascade that stops a deleted user leaving an encrypted GitHub token
 behind.
 
+## Documentation
+
+| Doc | What it covers |
+|---|---|
+| [docs/LAUNCH.md](docs/LAUNCH.md) | **Start here.** Everything still standing between this repo and a working install, in order. |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | One-command VPS deploy, backups, and the Docker-socket trade-off |
+| [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
+| [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |
+| [docs/ESCAPE-MATRIX.md](docs/ESCAPE-MATRIX.md) | Every way we tried to defeat the lock, per platform, and what worked |
+
 ## Deploying
 
 | Target | Config |

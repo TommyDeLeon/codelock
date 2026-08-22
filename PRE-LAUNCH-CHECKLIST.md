@@ -66,7 +66,7 @@ code alone. Where something is marked FIXED, it was observed working.
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 1.24 | No placeholder text | FIXED | No lorem ipsum, TODO, or dummy names in application code. Template domains (`app.codelock.dev`) remain in `.env.example` and `render.yaml`, which is what those files are for. |
-| 1.25 | Placeholder identifiers in config | PARTLY FIXED | The `electron-builder.yml` placeholder (`owner: your-github-username`) is **gone** — it would have pointed every installed app's updater at a stranger's releases. The publish target now comes from the repository at release time (6.3). `eas.json` still carries `you@example.com` / `ascAppId: 0000000000`, which only matter on App Store submission. |
+| 1.25 | Placeholder identifiers in config | PARTLY FIXED | The `electron-builder.yml` placeholder is gone (6.3), and the GitHub owner is now known: `TommyDeLeon/codelock` is wired into `apps/web/.env.example`, `deploy/.env.example`, `apps/desktop/.env.example` and the `origin` remote. Remaining: `eas.json` still carries `appleId: you@example.com` and `ascAppId: 0000000000`, and `app.json` an all-zero EAS `projectId` — all three are filled in by `eas init` and an Apple account, so they cannot be set from here. |
 | 1.26 | Dynamic copyright year | FIXED | `{new Date().getFullYear()}` in the footer. |
 | 1.27 | Success messages | FIXED | Toasts on: default duration saved, GitHub connected/repo chosen/disconnected, LeetCode linked, skip used, promotion/demotion. Unlock has its own screen. |
 | 1.28 | Error messages, specific and human | FIXED | Every mutation has an `onError` toast carrying the server's message. Network and timeout failures now produce readable text instead of a raw `TypeError`. |
@@ -277,7 +277,8 @@ Added 22 August 2026.
 7. **`2.16` — legal documents not reviewed by a lawyer.**
 8. **`1.18` — no contact address published.** Set `NEXT_PUBLIC_CONTACT_EMAIL`.
 9. **`2.17` — registration confirms whether an email is registered.**
-10. **`1.25` — placeholder identifiers** remaining in `eas.json` only.
+10. **`1.25` — placeholder identifiers** remaining in `eas.json` and `app.json`,
+    both filled in by `eas init`. See [docs/LAUNCH.md](docs/LAUNCH.md) step 7.
 11. **`1.5` — footer link tap targets** under 44px.
 12. **`3.9` — per-second countdown re-render** not profiled.
 
