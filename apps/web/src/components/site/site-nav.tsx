@@ -16,9 +16,9 @@ import { Menu, X } from 'lucide-react';
  * Called by: src/app/(site)/layout.tsx
  */
 
-/** Only routes that exist. /how-it-works is still to come. */
 const LINKS = [
   { href: '/demo', label: 'Demo' },
+  { href: '/how-it-works', label: 'How it works' },
   { href: '/limits', label: 'Limits' },
   { href: '/install', label: 'Install' },
 ];

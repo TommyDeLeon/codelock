@@ -17,6 +17,9 @@ export function SiteFooter() {
         <p>© {new Date().getFullYear()} CodeLock</p>
 
         <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:ml-auto">
+          <Link href="/support" className="hover:text-fg">
+            Support
+          </Link>
           <Link href="/privacy" className="hover:text-fg">
             Privacy
           </Link>
