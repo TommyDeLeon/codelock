@@ -20,3 +20,6 @@ next-env.d.ts
 *.cer
 *.crt
 *.key
+
+# Expo local state, regenerated on every start.
+.expo/
