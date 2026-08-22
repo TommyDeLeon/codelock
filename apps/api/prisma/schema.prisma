@@ -87,6 +87,7 @@ model User {
   devices       Device[]
   refreshTokens RefreshToken[]
   integrations  Integration[]
+  unlockAudits  UnlockAudit[]
 
   @@map("users")
 }
@@ -375,4 +376,60 @@ model SyncRecord {
   @@unique([integrationId, submissionId])
   @@index([status])
   @@map("sync_records")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+enum UnlockOutcome {
+  /// Solved within the speed gate; a server-signed unlock token was issued.
+  SOLVED
+  /// A daily skip allowance was spent.
+  SKIPPED
+  /// The user gave up, or the desktop kill switch fired.
+  ABANDONED
+  /// Never resolved by anyone; closed out by the reaper.
+  REAPED
+}
+
+/// Every lock that ended, and why.
+///
+/// Deliberately append-only and separate from LockSession, which is mutable
+/// and can be reused: a session row tells you the *current* state, this tells
+/// you what happened. It is the only place that can answer "did this machine
+/// ever unlock without a passing submission", which is the question worth being
+/// able to answer about a lock.
+///
+/// Rows survive the problem being deleted (SetNull) but not the user being
+/// deleted (Cascade) — an audit trail for an account that no longer exists is
+/// personal data with no owner and no purpose.
+model UnlockAudit {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Not a relation: the audit row must outlive the session row.
+  lockSessionId String  @db.Uuid
+  problemId     String? @db.Uuid
+
+  outcome UnlockOutcome
+
+  /// Populated for SOLVED. The submission that cleared the gate.
+  submissionId String? @db.Uuid
+  /// Measured runtime of that submission, in ms.
+  runtimeMs    Int?
+  /// The gate it had to beat. Stored so the verdict stays explicable after the
+  /// gate ratchets for everyone else.
+  gateMs       Int?
+  /// Seconds from the overlay appearing to this outcome.
+  secondsLocked Int?
+  /// "skip_allowance", "kill_switch", "user_gave_up", "stale_sweep".
+  reason       String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([outcome, createdAt])
+  @@map("unlock_audits")
 }

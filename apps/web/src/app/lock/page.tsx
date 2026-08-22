@@ -37,7 +37,8 @@ export default function LockPage() {
   });
 
   const abandon = useMutation({
-    mutationFn: (id: string) => api.lock.abandon(id),
+    mutationFn: (input: { id: string; reason: 'user_gave_up' | 'kill_switch' }) =>
+      api.lock.abandon(input.id, input.reason),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['lock', 'active'] }),
   });
 
@@ -59,7 +60,9 @@ export default function LockPage() {
   // abandoned — a recorded failure — rather than dangling until it is reaped.
   useEffect(() => {
     return onKillSwitch(({ sessionId }) => {
-      if (sessionId) abandon.mutate(sessionId);
+      // Recorded distinctly in the audit trail: a kill switch is a different
+      // event from a user pressing 'give up' in the UI.
+      if (sessionId) abandon.mutate({ id: sessionId, reason: 'kill_switch' });
       router.replace('/dashboard');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

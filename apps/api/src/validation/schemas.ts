@@ -42,6 +42,12 @@ export const armSessionSchema = z.object({
   durationMinutes: z.number().int().min(5).max(600).optional(),
 });
 
+export const abandonSchema = z.object({
+  /// Why the lock ended without a solve. Recorded in the audit trail, so it is
+  /// a closed set rather than free text a client can write anything into.
+  reason: z.enum(['user_gave_up', 'kill_switch']).optional(),
+});
+
 export const submitSchema = z.object({
   problemId: z.string().uuid(),
   lockSessionId: z.string().uuid().optional(),

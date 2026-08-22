@@ -275,7 +275,15 @@ export async function gradeSubmission(params: {
     firstTry: priorAttempts === 0,
   });
 
-  const { unlockToken } = await releaseLock({ userId, sessionId: session.id });
+  const { unlockToken } = await releaseLock({
+    userId,
+    sessionId: session.id,
+    // Passed through so the audit row can explain *why* this unlocked, not
+    // merely that it did.
+    submissionId: submission.id,
+    runtimeMs,
+    gateMs: performance.gateMs,
+  });
 
   // Push to GitHub only after the lock is released, and never await it: a
   // GitHub outage must not keep anyone locked out of their own machine.

@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { LockState } from '@prisma/client';
+import { LockState, UnlockOutcome } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
-import { armSessionSchema, idParamSchema } from '../validation/schemas.js';
+import { lockActionLimiter } from '../middleware/rateLimit.js';
+import { abandonSchema, armSessionSchema, idParamSchema } from '../validation/schemas.js';
 import {
   armSession,
   bypassLock,
@@ -12,6 +13,7 @@ import {
   requireOwnedSession,
 } from '../services/lockSessions.js';
 import { recordFailure } from '../services/grading.js';
+import { recordUnlock, secondsLocked } from '../services/audit.js';
 
 export const lockRouter = Router();
 lockRouter.use(requireAuth);
@@ -19,6 +21,7 @@ lockRouter.use(requireAuth);
 /** POST /lock/arm — start (or resume) the countdown for a device. */
 lockRouter.post(
   '/arm',
+  lockActionLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const body = armSessionSchema.parse(req.body ?? {});
@@ -48,6 +51,7 @@ lockRouter.get(
 /** POST /lock/:id/engage — timer expired; assign the problem and lock. */
 lockRouter.post(
   '/:id/engage',
+  lockActionLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const { id } = idParamSchema.parse(req.params);
@@ -58,6 +62,7 @@ lockRouter.post(
 /** POST /lock/:id/skip — spend a daily skip allowance, if configured. */
 lockRouter.post(
   '/:id/skip',
+  lockActionLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const { id } = idParamSchema.parse(req.params);
@@ -74,19 +79,34 @@ lockRouter.post(
  */
 lockRouter.post(
   '/:id/abandon',
+  lockActionLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const { id } = idParamSchema.parse(req.params);
+    const body = abandonSchema.parse(req.body ?? {});
     const session = await requireOwnedSession(user.id, id);
 
     const problem = session.problemId
       ? await prisma.problem.findUnique({ where: { id: session.problemId } })
       : null;
 
+    const resolvedAt = new Date();
     await prisma.lockSession.update({
       where: { id: session.id },
-      data: { state: LockState.ABANDONED, resolvedAt: new Date() },
+      data: { state: LockState.ABANDONED, resolvedAt },
     });
+
+    // Giving up is the one path that ends a lock with no passing submission,
+    // which makes it the row an audit exists to capture.
+    await recordUnlock({
+      userId: user.id,
+      lockSessionId: session.id,
+      problemId: session.problemId,
+      outcome: UnlockOutcome.ABANDONED,
+      secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
+      reason: body.reason === 'kill_switch' ? 'kill_switch' : 'user_gave_up',
+    });
+
     const progress = await recordFailure(user.id, problem?.avgSolveSeconds ?? 600);
     res.json({ progress });
   }),

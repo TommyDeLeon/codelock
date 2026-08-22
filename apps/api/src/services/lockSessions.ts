@@ -1,9 +1,16 @@
-import { Difficulty, LockState, type LockSession, type Problem } from '@prisma/client';
+import {
+  Difficulty,
+  LockState,
+  UnlockOutcome,
+  type LockSession,
+  type Problem,
+} from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
 import { isWithinActiveWindow } from './schedule.js';
+import { recordUnlock, secondsLocked } from './audit.js';
 
 /** A session left LOCKED longer than this is reaped as ABANDONED. */
 export const SESSION_MAX_AGE_HOURS = 12;
@@ -118,6 +125,10 @@ export async function engageLock(params: {
 export async function releaseLock(params: {
   userId: string;
   sessionId: string;
+  /** Carried through purely so the audit row can explain the verdict. */
+  submissionId?: string | null;
+  runtimeMs?: number | null;
+  gateMs?: number | null;
 }): Promise<{ unlockToken: string; expiresInSeconds: number }> {
   const session = await requireOwnedSession(params.userId, params.sessionId);
   if (session.state !== LockState.LOCKED) {
@@ -125,13 +136,25 @@ export async function releaseLock(params: {
   }
 
   const unlockToken = signUnlockToken(params.userId, session.id);
+  const resolvedAt = new Date();
   await prisma.lockSession.update({
     where: { id: session.id },
     data: {
       state: LockState.UNLOCKED,
-      resolvedAt: new Date(),
+      resolvedAt,
       unlockTokenHash: sha256(unlockToken),
     },
+  });
+
+  await recordUnlock({
+    userId: params.userId,
+    lockSessionId: session.id,
+    problemId: session.problemId,
+    outcome: UnlockOutcome.SOLVED,
+    submissionId: params.submissionId ?? null,
+    runtimeMs: params.runtimeMs ?? null,
+    gateMs: params.gateMs ?? null,
+    secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
   });
 
   return { unlockToken, expiresInSeconds: 300 };
@@ -161,9 +184,19 @@ export async function bypassLock(params: {
   });
   if (usedToday >= allowance) throw ApiError.forbidden('No skips left today');
 
+  const resolvedAt = new Date();
   await prisma.lockSession.update({
     where: { id: session.id },
-    data: { state: LockState.BYPASSED, resolvedAt: new Date(), escapeReason: 'skip_allowance' },
+    data: { state: LockState.BYPASSED, resolvedAt, escapeReason: 'skip_allowance' },
+  });
+
+  await recordUnlock({
+    userId: params.userId,
+    lockSessionId: session.id,
+    problemId: session.problemId,
+    outcome: UnlockOutcome.SKIPPED,
+    secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
+    reason: 'skip_allowance',
   });
 
   return { skipsRemaining: allowance - usedToday - 1 };
@@ -211,10 +244,33 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
 /** Background sweep: close out sessions nobody ever resolved. */
 export async function reapStaleSessions(): Promise<number> {
   const cutoff = new Date(Date.now() - SESSION_MAX_AGE_HOURS * 3_600_000);
-  const { count } = await prisma.lockSession.updateMany({
+
+  // Read before updating: updateMany returns a count, not rows, and the audit
+  // needs to name each session it closed. A sweep that says "4" and nothing
+  // else is exactly the log entry that is useless at 3am.
+  const stale = await prisma.lockSession.findMany({
     where: { state: { in: [LockState.ARMED, LockState.LOCKED] }, armedAt: { lt: cutoff } },
-    data: { state: LockState.ABANDONED, resolvedAt: new Date() },
+    select: { id: true, userId: true, problemId: true, lockedAt: true },
   });
+  if (stale.length === 0) return 0;
+
+  const resolvedAt = new Date();
+  const { count } = await prisma.lockSession.updateMany({
+    where: { id: { in: stale.map((s) => s.id) } },
+    data: { state: LockState.ABANDONED, resolvedAt },
+  });
+
+  for (const session of stale) {
+    await recordUnlock({
+      userId: session.userId,
+      lockSessionId: session.id,
+      problemId: session.problemId,
+      outcome: UnlockOutcome.REAPED,
+      secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
+      reason: 'stale_sweep',
+    });
+  }
+
   return count;
 }
 

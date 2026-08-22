@@ -220,7 +220,8 @@ export const api = {
       post<LockSessionView>('/v1/lock/arm', input ?? {}),
     engage: (id: string) => post<LockSessionView>(`/v1/lock/${id}/engage`),
     skip: (id: string) => post<{ skipsRemaining: number }>(`/v1/lock/${id}/skip`),
-    abandon: (id: string) => post<{ progress: unknown }>(`/v1/lock/${id}/abandon`),
+    abandon: (id: string, reason?: 'user_gave_up' | 'kill_switch') =>
+      post<{ progress: unknown }>(`/v1/lock/${id}/abandon`, reason ? { reason } : undefined),
   },
 
   problems: {
