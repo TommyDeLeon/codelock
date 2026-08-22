@@ -1,0 +1,24 @@
+# Pull prebuilt images instead of building on the box.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+#
+# Use this on any machine that cannot comfortably build a Next.js production
+# bundle — which is every always-free VM worth having. The images are published
+# by .github/workflows/publish-images.yml for both amd64 and arm64.
+#
+# `!reset` on build: is required. Compose merges these files rather than
+# replacing keys, so without it the build block survives, compose builds anyway,
+# and the image it just pulled is silently ignored.
+
+services:
+  api:
+    build: !reset null
+    image: ghcr.io/${GHCR_OWNER:-tommydeleon}/${GHCR_REPO:-codelock}/api:${IMAGE_TAG:-latest}
+
+  web:
+    build: !reset null
+    image: ghcr.io/${GHCR_OWNER:-tommydeleon}/${GHCR_REPO:-codelock}/web:${IMAGE_TAG:-latest}
+
+  judge:
+    build: !reset null
+    image: ghcr.io/${GHCR_OWNER:-tommydeleon}/${GHCR_REPO:-codelock}/judge:${IMAGE_TAG:-latest}

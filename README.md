@@ -201,6 +201,7 @@ behind.
 | Doc | What it covers |
 |---|---|
 | [docs/LAUNCH.md](docs/LAUNCH.md) | **Start here.** Everything still standing between this repo and a working install, in order. |
+| [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) | Running the whole stack for nothing: which free tiers work, and why the judge rules most of them out |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | One-command VPS deploy, backups, and the Docker-socket trade-off |
 | [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
 | [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |

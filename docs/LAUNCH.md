@@ -24,10 +24,10 @@ Create it at <https://github.com/new> named `codelock`, then:
 git push -u origin main
 ```
 
-Decide public or private deliberately. Private is fine for everything except one
-thing: **electron-updater cannot read releases from a private repository without
-a token**, so if you want silent auto-update on your own machines with no extra
-configuration, the repository has to be public.
+Make it **public**. That is already the decision, and two things depend on it:
+electron-updater cannot read releases from a private repository without a token,
+and GitHub Container Registry is only free for public repos — which is what
+makes the free deployment in [FREE-HOSTING.md](FREE-HOSTING.md) work.
 
 Once pushed, CI runs on every commit: typecheck, tests, the 15 sandbox
 containment checks, and the API image build.
@@ -112,10 +112,15 @@ match the certificate CN, and a private repository with no token.
 
 ## 6. Deploy the server **[you]**
 
-Full guide in [`DEPLOY.md`](DEPLOY.md).
+**No domain and no VPS? Use [`FREE-HOSTING.md`](FREE-HOSTING.md) instead of this
+section.** It is a complete zero-cost path — an always-free VM, a free DuckDNS
+hostname, and prebuilt images so the box never compiles anything — and it
+explains why the judge rules out every free platform-as-a-service.
 
-You need a VPS with at least 2 GB RAM and two DNS A records — `app.` and `api.`
-— resolving to it *before* you start, or Caddy cannot get certificates.
+For a paid VPS with your own domain, the general guide is
+[`DEPLOY.md`](DEPLOY.md). You need at least 2 GB RAM and two DNS A records —
+`app.` and `api.` — resolving to it *before* you start, or Caddy cannot get
+certificates.
 
 ```bash
 git clone https://github.com/TommyDeLeon/codelock && cd codelock/deploy
