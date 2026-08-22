@@ -4,9 +4,8 @@ One VPS runs the whole thing: Postgres, the API, the sandbox, the web app, and
 Caddy terminating TLS in front. Everything below assumes a fresh Debian or
 Ubuntu box you control.
 
-There is also `render.yaml` for the API alone, if you would rather not run a
-server. It cannot host the judge — that needs a Docker socket, which managed
-platforms do not grant.
+For a zero-cost setup, see [FREE-HOSTING.md](FREE-HOSTING.md) instead — the
+judge needs a Docker socket, which no free platform-as-a-service grants.
 
 ---
 

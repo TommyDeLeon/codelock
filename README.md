@@ -213,7 +213,7 @@ behind.
 
 | Target | Config |
 |---|---|
-| API | `apps/api/Dockerfile`, `render.yaml` (Render + Postgres) |
+| API | `apps/api/Dockerfile` — see [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) |
 | Web | `apps/web/vercel.json` (Vercel, with CSP) |
 | Desktop | `.github/workflows/release-desktop.yml` — signed installers for Windows/macOS/Linux on tag push |
 | Mobile | `apps/mobile/eas.json` — `eas build --platform android|ios` |
