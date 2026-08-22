@@ -50,7 +50,7 @@
       [
         "expo-notifications",
         {
-          "color": "#b3441b",
+          "color": "#1b6b4a",
           "defaultChannel": "codelock-timer"
         }
       ],

@@ -9,13 +9,15 @@ export const colors = {
     bg: '#fbfaf8',
     surface: '#ffffff',
     surface2: '#f4f2ee',
-    border: '#e4e1da',
+    border: '#ded9d0',
     fg: '#171614',
     muted: '#6b6862',
     faint: '#98948c',
-    accent: '#b3441b',
+    accent: '#1b6b4a',
     accentFg: '#ffffff',
-    success: '#2f6f4e',
+    accentSoft: '#e4efe9',
+    // The same green as the accent, deliberately. One green, one meaning.
+    success: '#1b6b4a',
     danger: '#a12d20',
     warning: '#8a6410',
   },
@@ -23,19 +25,25 @@ export const colors = {
     bg: '#0e0e0d',
     surface: '#171716',
     surface2: '#1f1f1d',
-    border: '#2b2b28',
+    border: '#302f2b',
     fg: '#f2f0ec',
     muted: '#9a968e',
     faint: '#706c65',
-    accent: '#e2653a',
-    accentFg: '#17120f',
-    success: '#56b283',
+    accent: '#4ed18f',
+    accentFg: '#0d1a13',
+    accentSoft: '#10241b',
+    success: '#4ed18f',
     danger: '#e0685a',
     warning: '#d5a03f',
   },
 } as const;
 
-export type ThemeColors = (typeof colors)['light'];
+/**
+ * Widened to plain strings deliberately. The `as const` above gives every hex a
+ * literal type, which makes the light and dark objects mutually unassignable
+ * and stops a resolved theme from being passed to a component as a prop.
+ */
+export type ThemeColors = { [K in keyof (typeof colors)['light']]: string };
 
 export const radius = { xs: 3, sm: 5, md: 8, lg: 12 } as const;
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

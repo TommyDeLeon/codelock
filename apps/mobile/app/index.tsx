@@ -209,6 +209,23 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      <View style={styles.navRow}>
+        <Pressable
+          onPress={() => router.push('/progress')}
+          accessibilityRole="button"
+          style={[styles.navItem, { borderColor: theme.border, backgroundColor: theme.surface }]}
+        >
+          <Text style={[styles.navText, { color: theme.fg }]}>Progress</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/settings')}
+          accessibilityRole="button"
+          style={[styles.navItem, { borderColor: theme.border, backgroundColor: theme.surface }]}
+        >
+          <Text style={[styles.navText, { color: theme.fg }]}>Settings</Text>
+        </Pressable>
+      </View>
+
       <Pressable
         onPress={() => void clearSession().then(() => setSignedIn(false))}
         accessibilityRole="button"
@@ -254,5 +271,14 @@ const styles = StyleSheet.create({
   notice: { padding: spacing.md, borderRadius: radius.sm, marginTop: spacing.md },
   noticeText: { fontSize: 13, lineHeight: 19 },
   error: { fontSize: 13 },
+  navRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  navItem: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  navText: { fontSize: 14, fontWeight: '600' },
   signOut: { marginTop: 'auto', paddingVertical: spacing.md },
 });

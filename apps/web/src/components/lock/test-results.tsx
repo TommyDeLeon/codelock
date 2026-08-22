@@ -3,6 +3,7 @@
 import { Check, X } from 'lucide-react';
 import { STATUS_LABELS, type DemoGradeResult, type GradeResult } from '@codelock/shared';
 import { SpeedGate } from './speed-gate';
+import { Standing } from './standing';
 import { cn } from '@/lib/utils';
 
 /**
@@ -72,6 +73,9 @@ export function TestResults({
       </div>
 
       {result.performance && <SpeedGate verdict={result.performance} />}
+
+      {/* The demo shape carries no standing — it has no user to hold a record. */}
+      {'standing' in result && result.standing && <Standing standing={result.standing} />}
 
       {result.message && (
         <pre className="max-h-32 overflow-auto bg-danger-soft px-4 py-3 font-mono text-[12px] leading-relaxed text-danger">

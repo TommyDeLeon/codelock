@@ -28,7 +28,7 @@ export default function RootLayout() {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: true,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#b3441b',
+      lightColor: '#1b6b4a',
     });
   }, []);
 
@@ -44,6 +44,8 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ title: 'CodeLock' }} />
+        <Stack.Screen name="progress" options={{ title: 'Progress' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen
           name="lock"
           options={{

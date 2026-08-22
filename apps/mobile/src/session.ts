@@ -1,6 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import type { LockSessionView } from '@codelock/shared';
+import type {
+  Integration,
+  LeetCodeStats,
+  LockSessionView,
+  StatsSummary,
+  TimerConfig,
+} from '@codelock/shared';
 
 /**
  * Native-side session storage.
@@ -105,4 +111,33 @@ export const mobileApi = {
       method: 'POST',
       body: JSON.stringify({ durationMinutes }),
     }),
+
+  stats: () => authed<StatsSummary>('/v1/stats/summary'),
+
+  timer: () => authed<{ timerConfig: TimerConfig }>('/v1/settings/timer'),
+
+  saveTimer: (patch: Partial<TimerConfig>) =>
+    authed<{ timerConfig: TimerConfig }>('/v1/settings/timer', {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  integrations: () =>
+    authed<{ integrations: Integration[]; available: { github: boolean; leetcode: boolean } }>(
+      '/v1/integrations',
+    ),
+
+  linkLeetCode: (username: string) =>
+    authed<{ stats: LeetCodeStats }>('/v1/integrations/leetcode', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }),
+
+  leetcodeStats: (refresh = false) =>
+    authed<{ stats: LeetCodeStats; stale: boolean }>(
+      `/v1/integrations/leetcode/stats${refresh ? '?refresh=true' : ''}`,
+    ),
+
+  disconnect: (provider: 'GITHUB' | 'LEETCODE') =>
+    authed<void>(`/v1/integrations/${provider.toLowerCase()}`, { method: 'DELETE' }),
 };
