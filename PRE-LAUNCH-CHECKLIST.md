@@ -283,10 +283,11 @@ Added 22 August 2026.
 
 ## Not covered by this audit
 
+This list is what the **August 21 audit** did not reach. Phases 4-7 covered the
+desktop and mobile shells (4.x) and backup/restore (5.10, 5.11); what remains:
+
 - Penetration testing, dependency CVE scanning, and SBOM.
 - Real-device testing on iOS and Android hardware.
-- The desktop and mobile shells; this pass covered the web app and API.
-- Backup and restore procedures for the database.
 - Uptime monitoring and alerting. Error *tracking* is wired (7.3) but nothing
   watches whether the service is up; `/v1/health` exists for a monitor to poll,
   and no monitor polls it.
