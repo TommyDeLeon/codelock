@@ -24,8 +24,16 @@ export function encryptSecret(plaintext: string): string {
 }
 
 export function decryptSecret(payload: string): string {
-  const [ivPart, dataPart, tagPart] = payload.split('.');
-  if (!ivPart || !dataPart || !tagPart) throw new Error('Malformed ciphertext');
+  const parts = payload.split('.');
+  // Count the parts rather than testing them for truthiness: an empty
+  // plaintext produces an empty middle part, and `!dataPart` rejected it as
+  // malformed — a value this function had just produced itself. The result
+  // would have been an integration row that could never be decrypted and was
+  // indistinguishable from a tampered one.
+  const [ivPart, dataPart, tagPart] = parts;
+  if (parts.length !== 3 || !ivPart || !tagPart || dataPart === undefined) {
+    throw new Error('Malformed ciphertext');
+  }
 
   const decipher = crypto.createDecipheriv(
     ALGO,
