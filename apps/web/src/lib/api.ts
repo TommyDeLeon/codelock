@@ -1,6 +1,7 @@
 import { apiFailure, type ApiFailure } from '@codelock/shared';
 import type {
   ApiErrorBody,
+  DemoGradeResult,
   Integration,
   IntegrationProvider,
   LeetCodeStats,
@@ -119,7 +120,9 @@ async function request<T>(
   // Grading is synchronous and can legitimately take ~30s; everything else
   // should fail fast. Without a timeout, an unreachable API leaves the UI on
   // skeletons indefinitely, which reads as "still loading" rather than "broken".
-  const timeoutMs = path.startsWith('/v1/submissions') ? 120_000 : 15_000;
+  // The demo runs the same sandbox containers, so it needs the same patience.
+  const grading = path.startsWith('/v1/submissions') || path === '/v1/demo/grade';
+  const timeoutMs = grading ? 120_000 : 15_000;
 
   let res: Response;
   try {
@@ -222,6 +225,17 @@ export const api = {
     skip: (id: string) => post<{ skipsRemaining: number }>(`/v1/lock/${id}/skip`),
     abandon: (id: string, reason?: 'user_gave_up' | 'kill_switch') =>
       post<{ progress: unknown }>(`/v1/lock/${id}/abandon`, reason ? { reason } : undefined),
+  },
+
+  /**
+   * The public demo. No auth, and structurally unable to unlock anything —
+   * DemoGradeResult has no token field, so this path cannot be confused with
+   * the real submission flow even by mistake.
+   */
+  demo: {
+    problem: () => request<{ problem: PublicProblem }>('/v1/demo/problem'),
+    grade: (input: { language: Language; sourceCode: string }) =>
+      post<DemoGradeResult>('/v1/demo/grade', input),
   },
 
   problems: {

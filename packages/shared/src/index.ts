@@ -341,3 +341,37 @@ export function apiFailure(
     details,
   };
 }
+
+// --- demo ------------------------------------------------------------------
+
+/**
+ * The verdict from the public demo.
+ *
+ * Deliberately **not** `GradeResult`. That type carries `unlockToken` and
+ * `progress`; this one has no such fields, so a demo response cannot carry an
+ * unlock token even by accident — the compiler rejects it rather than a code
+ * review having to catch it. The `demo` discriminant is always true, so any
+ * client that mixes the two up fails to typecheck as well.
+ *
+ * Nothing here touches a lock session, because the demo has none.
+ */
+export interface DemoGradeResult {
+  readonly demo: true;
+  status: SubmissionStatus;
+  passedCount: number;
+  totalCount: number;
+  runtimeMs: number | null;
+  message: string | null;
+  cases: Array<{
+    ordinal: number;
+    isSample: boolean;
+    passed: boolean;
+    status: string;
+    timeMs: number;
+  }>;
+  /** Every test passed, whatever the clock said. */
+  correct: boolean;
+  performance: PerformanceVerdict | null;
+  /** Correct and inside the speed budget. In the demo this unlocks nothing. */
+  accepted: boolean;
+}

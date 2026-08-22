@@ -32,7 +32,8 @@
     "jsonwebtoken": "^9.0.2",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@codelock/shared": "*"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.5",

@@ -16,12 +16,9 @@ import { Menu, X } from 'lucide-react';
  * Called by: src/app/(site)/layout.tsx
  */
 
-/**
- * Only routes that exist. /demo and /how-it-works are the next slice of the
- * re-scope; linking to them before they are built would ship a nav full of
- * 404s, which is worse than a short nav.
- */
+/** Only routes that exist. /how-it-works is still to come. */
 const LINKS = [
+  { href: '/demo', label: 'Demo' },
   { href: '/limits', label: 'Limits' },
   { href: '/install', label: 'Install' },
 ];

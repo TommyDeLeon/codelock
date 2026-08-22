@@ -20,10 +20,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/
+# The API consumes @codelock/shared as source (the demo service imports its
+# types). Without the workspace manifest here, npm ci never links it and the
+# build fails with 'Cannot find module @codelock/shared'.
+COPY packages/shared/package.json packages/shared/
 RUN npm ci --workspace @codelock/api --include-workspace-root
 
 # --- build --------------------------------------------------------------
 FROM deps AS build
+COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 RUN npm run build --workspace @codelock/api
 

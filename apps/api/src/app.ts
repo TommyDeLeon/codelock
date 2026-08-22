@@ -15,6 +15,7 @@ import { submissionsRouter } from './routes/submissions.js';
 import { settingsRouter } from './routes/settings.js';
 import { statsRouter } from './routes/stats.js';
 import { integrationsRouter } from './routes/integrations.js';
+import { demoRouter } from './routes/demo.js';
 
 export function createApp(): Express {
   const app = express();
@@ -101,6 +102,9 @@ export function createApp(): Express {
   app.use('/v1/settings', settingsRouter);
   app.use('/v1/stats', statsRouter);
   app.use('/v1/integrations', integrationsRouter);
+  // Unauthenticated on purpose, and the only such route that runs code. Its own
+  // limits live in the router; see the note there for why that is safe.
+  app.use('/v1/demo', demoRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

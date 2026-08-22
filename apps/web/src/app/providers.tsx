@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { useAuth } from '@/lib/auth-store';
-import { ConnectionBanner } from '@/components/connection-banner';
 
 /**
  * CodeLock keeps working while nobody is looking at it.
@@ -66,7 +65,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <ConnectionBanner />
         {children}
         <Toaster position="top-center" richColors closeButton />
       </ThemeProvider>

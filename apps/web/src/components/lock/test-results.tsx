@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
-import { STATUS_LABELS, type GradeResult } from '@codelock/shared';
+import { STATUS_LABELS, type DemoGradeResult, type GradeResult } from '@codelock/shared';
 import { SpeedGate } from './speed-gate';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,22 @@ import { cn } from '@/lib/utils';
  * Hidden cases show pass/fail and nothing else — revealing their inputs would
  * let a user hard-code answers instead of solving the problem.
  */
-export function TestResults({ result, running }: { result: GradeResult | null; running: boolean }) {
+/**
+ * Accepts either a real verdict or a demo one.
+ *
+ * Widened rather than duplicated: the brief for the demo was that it must not
+ * become a second implementation of the lock UI that can drift from the real
+ * one. Everything this component reads is common to both shapes, and
+ * DemoGradeResult deliberately omits the unlock token, so nothing here can
+ * render one by accident.
+ */
+export function TestResults({
+  result,
+  running,
+}: {
+  result: GradeResult | DemoGradeResult | null;
+  running: boolean;
+}) {
   if (running) {
     return (
       <div role="status" className="px-4 py-6 text-center text-[13px] text-muted">

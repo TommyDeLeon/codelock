@@ -73,20 +73,21 @@ export default function LandingPage() {
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
-                  href="/install"
+                  href="/demo"
                   className="inline-flex h-11 items-center rounded-md bg-fg px-5 text-[15px]
                              font-medium text-bg transition-colors hover:bg-fg/90"
                 >
-                  Install CodeLock
+                  Try the lock screen
                 </Link>
                 <Link
-                  href="/limits"
+                  href="/install"
                   className="inline-flex h-11 items-center rounded-md border border-border-strong
                              bg-surface px-5 text-[15px] font-medium transition-colors
                              hover:bg-surface-2"
                 >
-                  What it cannot do
+                  Download
                 </Link>
+                <span className="text-[13px] text-faint">No account needed.</span>
               </div>
             </div>
 
@@ -94,7 +95,10 @@ export default function LandingPage() {
             <div className="lg:col-span-6 lg:pt-2">
               <GateMeter />
               <p className="mt-3 text-[13px] text-faint">
-                The same arithmetic the judge applies, over runs from real submissions.
+                The same arithmetic the judge applies.{' '}
+                <Link href="/demo" className="text-muted underline underline-offset-2">
+                  Run your own code against it →
+                </Link>
               </p>
             </div>
           </div>
