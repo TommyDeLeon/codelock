@@ -200,6 +200,7 @@ behind.
 
 | Doc | What it covers |
 |---|---|
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Paste-into-a-fresh-chat context brief for picking this project up cold |
 | [docs/LAUNCH.md](docs/LAUNCH.md) | **Start here.** Everything still standing between this repo and a working install, in order. |
 | [docs/DESIGN-BRIEF.md](docs/DESIGN-BRIEF.md) | Design system and per-screen prompts for a UI generator or a designer |
 | [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) | Running the whole stack for nothing: which free tiers work, and why the judge rules most of them out |
