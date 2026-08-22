@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 /**
  * Navigation for the public site.
@@ -76,6 +77,7 @@ export function SiteNav() {
               </Link>
             );
           })}
+          <ThemeToggle />
           {/* A styled Link, not <Button asChild> — this Button is a plain
               <button> with no Slot support. */}
           <Link
@@ -120,6 +122,10 @@ export function SiteNav() {
           >
             Download
           </Link>
+          <div className="mt-5 flex items-center justify-between">
+            <span className="text-[13px] text-muted">Theme</span>
+            <ThemeToggle />
+          </div>
         </div>
       )}
     </header>

@@ -73,7 +73,7 @@ const PLATFORMS: Platform[] = [
   },
   {
     name: 'iOS',
-    requirement: 'iOS 15.1 or later',
+    requirement: 'iOS 16.4 or later',
     format: 'TestFlight',
     status: 'blocked',
     warning: null,

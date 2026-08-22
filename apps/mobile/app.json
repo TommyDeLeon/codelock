@@ -63,7 +63,7 @@
             "targetSdkVersion": 35
           },
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "16.4"
           }
         }
       ]
@@ -72,8 +72,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://api.codelock.dev",
-      "webUrl": "https://app.codelock.dev",
+      "apiUrl": "http://192.168.1.44:4000",
+      "webUrl": "http://192.168.1.44:3000",
       "eas": {
         "projectId": "00000000-0000-0000-0000-000000000000"
       }

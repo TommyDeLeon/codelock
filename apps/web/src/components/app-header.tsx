@@ -1,11 +1,11 @@
 'use client';
 
-import { useTheme } from 'next-themes';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Menu, Moon, Sun, X } from 'lucide-react';
+import { Lock, Menu, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
 
@@ -227,36 +227,3 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // The server cannot know the resolved theme, so rendering the icon before
-  // mount guarantees a hydration mismatch.
-  useEffect(() => setMounted(true), []);
-
-  const isDark = resolvedTheme === 'dark';
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      // The label depends on the resolved theme, which the server cannot know.
-      // Gating it on `mounted` alongside the icon keeps the markup identical on
-      // both sides — otherwise React logs a hydration mismatch on every load.
-      aria-label={
-        mounted ? (isDark ? 'Switch to light theme' : 'Switch to dark theme') : 'Toggle theme'
-      }
-      className="flex size-11 items-center justify-center rounded-sm text-muted hover:text-fg"
-    >
-      {mounted ? (
-        isDark ? (
-          <Sun className="size-4" aria-hidden />
-        ) : (
-          <Moon className="size-4" aria-hidden />
-        )
-      ) : (
-        <span className="size-4" />
-      )}
-    </button>
-  );
-}
