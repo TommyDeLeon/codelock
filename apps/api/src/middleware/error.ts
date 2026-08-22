@@ -4,13 +4,17 @@ import { ZodError } from 'zod';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
+import { captureError } from '../lib/observability.js';
 
 export function notFoundHandler(_req: Request, res: Response): void {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No such route' } });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
+  // pino-http puts the generated id here. Echoed in every error body so a user
+  // can quote one string and have it found.
+  const requestId = (req as Request & { id?: string }).id;
   if (err instanceof ZodError) {
     res.status(400).json({
       error: {
@@ -42,22 +46,28 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   // when the real answer is "come back in a minute". 503 also stops load
   // balancers and uptime checks from treating it as a healthy response.
   if (isDatabaseUnavailable(err)) {
-    logger.error({ err }, 'database unavailable');
+    logger.error({ err, requestId }, 'database unavailable');
     res.status(503).json({
       error: {
         code: 'SERVICE_UNAVAILABLE',
         message:
           'CodeLock cannot reach its database right now. Your progress is safe — try again in a moment.',
+        requestId,
       },
     });
     return;
   }
 
-  logger.error({ err }, 'unhandled error');
+  // Only genuinely unexpected failures are reported. A 400 from a bad request
+  // body is not an incident, and a tracker full of them is a tracker nobody
+  // reads.
+  logger.error({ err, requestId }, 'unhandled error');
+  captureError(err, { requestId, path: req.path, method: req.method });
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',
       message: env.isProd ? 'Something went wrong' : String(err),
+      requestId,
     },
   });
 }

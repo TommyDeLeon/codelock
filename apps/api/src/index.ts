@@ -4,6 +4,12 @@ import { logger } from './lib/logger.js';
 import { prisma } from './lib/prisma.js';
 import { reapStaleSessions } from './services/lockSessions.js';
 import { verifyLanguageIds } from './services/judge0.js';
+import { captureError, initErrorTracking } from './lib/observability.js';
+
+// Started before the server binds. The dynamic import inside resolves on the
+// next microtask, long before any request arrives.
+// A no-op unless SENTRY_DSN is set — a self-hosted install sends nothing.
+void initErrorTracking();
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {
@@ -38,4 +44,16 @@ async function shutdown(signal: string): Promise<void> {
 
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
-process.on('unhandledRejection', (err) => logger.error({ err }, 'unhandled rejection'));
+process.on('unhandledRejection', (err) => {
+  logger.error({ err }, 'unhandled rejection');
+  captureError(err, { kind: 'unhandledRejection' });
+});
+
+// An uncaught exception leaves the process in an unknown state. Report it, give
+// the reporter a moment to flush, then die — a lock API limping along with
+// corrupted state is worse than one that restarts.
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'uncaught exception');
+  captureError(err, { kind: 'uncaughtException' });
+  setTimeout(() => process.exit(1), 1000).unref();
+});
