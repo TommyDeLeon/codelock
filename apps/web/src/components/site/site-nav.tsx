@@ -50,14 +50,22 @@ export function SiteNav() {
           href="/"
           className="flex items-baseline gap-2 text-[15px] font-semibold tracking-tight"
         >
-          {/* A drawn mark rather than a padlock from an icon set. The product is
-              about a bar you have to get under, so the mark is that bar: two
-              rules and the accent one you have to cross. */}
-          <span aria-hidden className="relative inline-block h-3 w-4">
-            <span className="absolute inset-x-0 top-0 h-px bg-fg" />
-            <span className="absolute inset-x-0 top-1.5 h-px bg-accent" />
-            <span className="absolute bottom-0 left-0 h-1.5 w-px bg-fg" />
-          </span>
+          {/* The speed gate in miniature: a short green run that came in under
+              budget, a long ink run that did not, and the gate line between
+              them. The product's own instrument at 16px — the previous abstract
+              rules read as nothing at all. */}
+          <svg aria-hidden viewBox="0 0 18 12" className="h-3 w-[18px]" fill="none">
+            <rect x="0" y="1" width="7" height="3" rx="1" className="fill-accent" />
+            <rect x="0" y="8" width="14" height="3" rx="1" className="fill-fg" />
+            <line
+              x1="9.5"
+              y1="0"
+              x2="9.5"
+              y2="12"
+              strokeWidth="1"
+              className="stroke-border-strong"
+            />
+          </svg>
           CodeLock
         </Link>
 

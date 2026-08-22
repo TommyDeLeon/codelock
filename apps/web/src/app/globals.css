@@ -20,7 +20,9 @@
   --color-border-strong: #d3cfc6;
   --color-fg: #171614;
   --color-muted: #6b6862;
-  --color-faint: #98948c;
+  /* Was #98948c — 2.90:1 on warm paper, below AA even for large text, and it is
+     the colour every eyebrow and helper line uses. 4.33:1 now. */
+  --color-faint: #7a766e;
 
   /* The brand, and "you cleared it". Deliberately the same value as
      --color-success below: one green, one meaning. Two greens a shade apart

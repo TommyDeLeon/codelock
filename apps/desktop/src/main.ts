@@ -151,7 +151,11 @@ function createWindow(): BrowserWindow {
     sendHoldProgress(now);
   });
 
-  void window.loadURL(WEB_URL);
+  // The app, not the marketing site. Before the web re-scope "/" redirected
+  // into the product; it is now a landing page, so opening WEB_URL bare showed
+  // the desktop user a download page for software they had already installed.
+  // /dashboard bounces to /login when signed out.
+  void window.loadURL(new URL('/dashboard', WEB_URL).toString());
   return window;
 }
 
