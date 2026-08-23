@@ -18,10 +18,16 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^4.7.0",
     "cross-env": "^7.0.3",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "^5.6.3",
+    "vite": "^6.4.3",
     "vitest": "^2.1.5"
   },
   "description": "Solve a programming problem to unlock your device",

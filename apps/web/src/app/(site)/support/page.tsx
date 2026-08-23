@@ -15,12 +15,14 @@ export const metadata: Metadata = {
  * reading this at 2am with a screen they cannot dismiss needs the way out
  * without scrolling past a changelog.
  *
- * Two values are configuration rather than content, for the same reason the
- * footer treats the contact address that way — this repository has no remote,
- * and inventing a plausible-looking URL would send people somewhere that does
- * not exist. Unset, the page says so.
+ * Two values stay configuration rather than content, for the same reason the
+ * footer treats the contact address that way: a fork or a private deployment is
+ * not this repository, and pointing its users at someone else's issue tracker
+ * would be worse than saying nothing. The default is the canonical repo;
+ * override it, or set it empty, and the page adjusts what it claims.
  */
-const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL || '';
+const REPO_URL =
+  process.env.NEXT_PUBLIC_REPO_URL ?? 'https://github.com/TommyDeLeon/codelock';
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || '';
 
 interface Entry {

@@ -1,0 +1,25 @@
+name: Feature request
+description: Something the product should do and does not.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two things this project will not add, so nobody spends effort on them:
+        invented currency (XP, coins, gems, streak rewards), and any mechanic
+        that pressures a user by threatening to take something away.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do that you cannot?
+      description: The problem, not the solution. The solution is easier to judge once the problem is clear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you have it do?
+    validations:
+      required: false

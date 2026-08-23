@@ -85,6 +85,11 @@ export interface LockSessionView {
   /** Server clock at response time. Clients render countdowns from this. */
   serverNow: string;
   secondsRemaining: number;
+  /**
+   * Set while an armed countdown is paused. `secondsRemaining` freezes for as
+   * long as it is, and `fireAt` is only meaningful again once resumed.
+   */
+  pausedAt: string | null;
   attempts: number;
   problem: PublicProblem | null;
 }

@@ -14,6 +14,10 @@ icon: build/icon.png
 
 files:
   - dist/**/*
+  # The bundled dashboard and settings screens, served over app://.
+  - dist-renderer/**/*
+  # The tray icon is read at runtime, so it has to travel inside the asar.
+  - build/icon.png
   - package.json
 
 # The renderer loads the hosted web app, so nothing else needs bundling — but

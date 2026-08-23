@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { LockState, UnlockOutcome } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
 import { lockActionLimiter } from '../middleware/rateLimit.js';
@@ -58,6 +59,105 @@ lockRouter.post(
     res.json(await engageLock({ userId: user.id, sessionId: id }));
   }),
 );
+
+/**
+ * POST /lock/:id/cancel — stop a countdown that has not fired yet.
+ *
+ * Only ever valid while ARMED. A LOCKED session is refused, and that refusal is
+ * the whole security of this endpoint: if a live lock could be cancelled, the
+ * product would ship with a one-click unlock and the speed gate would be
+ * decorative. Giving up on a *locked* session is `/abandon`, which resolves it
+ * as a failure and leaves the overlay up.
+ *
+ * Cancelling before the lock lands is not a failure and does not touch the
+ * difficulty ladder — no problem was ever assigned, so there was nothing to
+ * fail at. It is just stopping a timer.
+ */
+lockRouter.post(
+  '/:id/cancel',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const session = await requireArmed(user.id, id, 'cancelled');
+
+    const cancelled = await prisma.lockSession.update({
+      where: { id: session.id },
+      data: { state: LockState.ABANDONED, resolvedAt: new Date() },
+      select: { id: true, state: true },
+    });
+
+    res.json({ session: cancelled });
+  }),
+);
+
+/**
+ * POST /lock/:id/pause — hold the countdown where it is.
+ *
+ * ARMED only, like cancel, and for the same reason: pausing a LOCKED session
+ * would be an unlock with extra steps. Pausing before the lock lands is not a
+ * bypass — the session has no problem assigned and nothing has been taken away
+ * yet, so this is the difference between a tool and a trap.
+ */
+lockRouter.post(
+  '/:id/pause',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const session = await requireArmed(user.id, id, 'paused');
+
+    if (session.pausedAt) return res.json({ session: await getActiveSession(user.id) });
+
+    await prisma.lockSession.update({
+      where: { id: session.id },
+      data: { pausedAt: new Date() },
+    });
+    res.json({ session: await getActiveSession(user.id) });
+  }),
+);
+
+/**
+ * POST /lock/:id/resume — start the clock again.
+ *
+ * `fireAt` moves forward by exactly the time spent paused, so the user gets
+ * back the interval they had left and not a minute more.
+ */
+lockRouter.post(
+  '/:id/resume',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const session = await requireArmed(user.id, id, 'resumed');
+
+    if (!session.pausedAt) return res.json({ session: await getActiveSession(user.id) });
+
+    const pausedMs = Date.now() - session.pausedAt.getTime();
+    await prisma.lockSession.update({
+      where: { id: session.id },
+      data: { fireAt: new Date(session.fireAt.getTime() + pausedMs), pausedAt: null },
+    });
+    res.json({ session: await getActiveSession(user.id) });
+  }),
+);
+
+/**
+ * Shared guard for the three controls that only make sense before the lock
+ * lands. Keeping it in one place means a new control cannot accidentally ship
+ * without the LOCKED check.
+ */
+async function requireArmed(userId: string, id: string, verb: string) {
+  const session = await requireOwnedSession(userId, id);
+  if (session.state !== LockState.ARMED) {
+    throw ApiError.conflict(
+      session.state === LockState.LOCKED
+        ? `A locked session cannot be ${verb}. Solve it, or abandon it.`
+        : 'That session has already been resolved.',
+    );
+  }
+  return session;
+}
 
 /** POST /lock/:id/skip — spend a daily skip allowance, if configured. */
 lockRouter.post(

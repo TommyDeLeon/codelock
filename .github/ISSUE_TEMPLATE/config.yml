@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How to get out of a lock right now
+    url: https://github.com/TommyDeLeon/codelock/blob/main/docs/ESCAPE-MATRIX.md
+    about: Every documented way to release the lock, per platform.
+  - name: What CodeLock cannot do
+    url: https://github.com/TommyDeLeon/codelock/blob/main/docs/ESCAPE-MATRIX.md
+    about: Read this before filing "I got around it" — most of them are known.

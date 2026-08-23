@@ -23,6 +23,8 @@ export interface LockSessionView {
   /** Server clock at response time, so clients can correct for drift. */
   serverNow: string;
   secondsRemaining: number;
+  /** Set while an armed countdown is paused; secondsRemaining freezes with it. */
+  pausedAt: string | null;
   attempts: number;
   problem: PublicProblem | null;
 }
@@ -102,6 +104,12 @@ export async function engageLock(params: {
   }
   if (session.state !== LockState.ARMED) {
     throw ApiError.conflict(`Session is ${session.state.toLowerCase()}, cannot lock`);
+  }
+  // A paused countdown has no deadline. Its fireAt is frozen and will sail past
+  // "now" while the user is away from the desk; without this check the sweep
+  // would engage a lock the user had explicitly stopped.
+  if (session.pausedAt) {
+    throw ApiError.conflict('Timer is paused');
   }
   // Trust the server clock, never the client's claim that time is up.
   if (session.fireAt.getTime() > Date.now()) {
@@ -312,13 +320,18 @@ export async function toPublicProblem(problem: Problem): Promise<PublicProblem> 
 
 async function toView(session: LockSession, problem: Problem | null): Promise<LockSessionView> {
   const now = Date.now();
+  // A paused countdown does not advance. Measuring from `pausedAt` rather than
+  // from now is what freezes the figure without having to write to the row on
+  // every poll.
+  const reference = session.pausedAt ? session.pausedAt.getTime() : now;
   return {
     id: session.id,
     state: session.state,
     difficulty: session.difficulty,
     fireAt: session.fireAt.toISOString(),
     serverNow: new Date(now).toISOString(),
-    secondsRemaining: Math.max(0, Math.round((session.fireAt.getTime() - now) / 1000)),
+    pausedAt: session.pausedAt?.toISOString() ?? null,
+    secondsRemaining: Math.max(0, Math.round((session.fireAt.getTime() - reference) / 1000)),
     attempts: session.attempts,
     problem: problem ? await toPublicProblem(problem) : null,
   };

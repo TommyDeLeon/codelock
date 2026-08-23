@@ -29,6 +29,7 @@ export interface CodeLockBridge {
     platform: string;
     holdToReleaseMs: number;
   }>;
+  schedule(session: { sessionId: string; fireAt: string } | null): Promise<{ scheduled: boolean }>;
   openExternal(url: string): Promise<boolean>;
   onHoldProgress(handler: (progress: HoldProgress) => void): () => void;
   onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void;
@@ -56,6 +57,21 @@ export const isDesktop = (): boolean => getBridge() !== null;
  */
 export async function engageDesktopLock(sessionId?: string): Promise<void> {
   await getBridge()?.lock(sessionId);
+}
+
+/**
+ * Hand an armed deadline to the shell.
+ *
+ * Without this the lock only fires while this page is open, which makes closing
+ * the window a one-click way to never be interrupted. The shell holds the
+ * deadline itself and raises the lock screen whether or not anyone is looking.
+ *
+ * A no-op in a browser, where there is nothing to hand it to.
+ */
+export async function scheduleDesktopLock(
+  session: { sessionId: string; fireAt: string } | null,
+): Promise<void> {
+  await getBridge()?.schedule(session);
 }
 
 /**

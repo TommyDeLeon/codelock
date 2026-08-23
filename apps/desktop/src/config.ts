@@ -21,8 +21,10 @@ import path from 'node:path';
  */
 
 export interface DesktopConfig {
-  /** URL of the deployed CodeLock web app. */
+  /** URL of the deployed CodeLock web app. The lock screen is loaded from it. */
   webUrl: string;
+  /** URL of the CodeLock API. The bundled renderer talks to it directly. */
+  apiUrl: string;
   /**
    * Verifies unlock tokens. Either the API's RSA public key (preferred for
    * distributed builds — nothing secret ships) or the shared HS256 secret,
@@ -38,7 +40,12 @@ export interface DesktopConfig {
  * environment, so the values must travel inside the bundle.
  */
 function readBuildDefaults(): DesktopConfig {
-  const fallback: DesktopConfig = { webUrl: 'http://localhost:3000', unlockPublicKey: '', unlockSecret: '' };
+  const fallback: DesktopConfig = {
+    webUrl: 'http://localhost:3000',
+    apiUrl: 'http://localhost:4000',
+    unlockPublicKey: '',
+    unlockSecret: '',
+  };
   try {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const raw = readFileSync(path.join(here, 'build-defaults.json'), 'utf8');
@@ -74,6 +81,7 @@ export function loadConfig(): DesktopConfig {
 
   cached = {
     webUrl: process.env.CODELOCK_WEB_URL || fromFile.webUrl || BUILD_DEFAULTS.webUrl,
+    apiUrl: process.env.CODELOCK_API_URL || fromFile.apiUrl || BUILD_DEFAULTS.apiUrl,
     unlockPublicKey:
       process.env.CODELOCK_UNLOCK_PUBLIC_KEY ||
       fromFile.unlockPublicKey ||

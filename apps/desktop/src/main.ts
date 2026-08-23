@@ -1,4 +1,15 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, powerMonitor, shell, screen } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  net,
+  powerMonitor,
+  protocol,
+  shell,
+  screen,
+} from 'electron';
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyUnlockToken } from './unlock-verifier.js';
@@ -7,6 +18,14 @@ import { fileLockStore, isLive, newLock, type LockStateStore } from './lock-stat
 import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
+import {
+  createTray,
+  destroyTray,
+  refreshTray,
+  setAutoStart,
+  startedInBackground,
+  type TrayActions,
+} from './background.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,8 +57,35 @@ app.setName('CodeLock');
 
 const isDev = !app.isPackaged;
 
+
+/**
+ * Where the bundled renderer lives.
+ *
+ * A custom standard scheme rather than file://, for two reasons: file:// pages
+ * have an opaque origin, so localStorage and a CORS-able fetch to the API both
+ * break; and a real origin lets the navigation guard below name exactly the two
+ * places this window is ever allowed to be.
+ */
+const APP_SCHEME = 'app';
+const APP_ORIGIN = `${APP_SCHEME}://codelock`;
+const APP_ENTRY = `${APP_ORIGIN}/index.html`;
+
+/** Vite's dev server, used in place of the bundle when running `npm run dev`. */
+const DEV_RENDERER = process.env.CODELOCK_RENDERER_URL ?? null;
+
+// Must run before 'ready'. Without `standard` the scheme gets an opaque origin
+// and the renderer loses both localStorage and a usable Origin header.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: APP_SCHEME,
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
+  },
+]);
+
+
 // Resolved after app.whenReady(): userData is not available before that.
 let WEB_URL = 'http://localhost:3000';
+let API_URL = 'http://localhost:4000';
 
 let mainWindow: BrowserWindow | null = null;
 /** Single source of truth for "is the machine currently locked" in memory. */
@@ -49,8 +95,41 @@ let lockStore: LockStateStore | null = null;
 let lockedSessionId: string | null = null;
 /** Set only by a verified unlock or the kill switch; gates the relaunch-on-quit. */
 let releasedIntentionally = false;
+/**
+ * The app now outlives its window, so "no windows left" no longer means "quit".
+ * Only an explicit Quit from the tray sets this.
+ */
+let quitting = false;
 
 const holdToRelease = new HoldToRelease();
+
+/**
+ * The armed deadline, held in the main process.
+ *
+ * The renderer cannot own this. The user closes the window, and a lock that
+ * only fires while a page is open is not a lock — it is a reminder that any
+ * unmotivated person can silence by pressing the X. The renderer reports the
+ * deadline it learned from the server; this process is what actually waits.
+ */
+let fireTimer: NodeJS.Timeout | null = null;
+
+function scheduleLock(sessionId: string, fireAt: number): void {
+  clearScheduledLock();
+  // Already past: fire on the next tick rather than never.
+  const delay = Math.max(0, fireAt - Date.now());
+  fireTimer = setTimeout(() => {
+    fireTimer = null;
+    if (!locked) {
+      showWindow();
+      engageLock(sessionId);
+    }
+  }, delay);
+}
+
+function clearScheduledLock(): void {
+  if (fireTimer) clearTimeout(fireTimer);
+  fireTimer = null;
+}
 
 // Windows and Linux: a second launch focuses the existing window instead of
 // starting a rival instance that would not know about the lock.
@@ -63,6 +142,29 @@ if (!app.requestSingleInstanceLock()) {
       mainWindow.focus();
     }
   });
+}
+
+/**
+ * The only two places this window may navigate: the bundled renderer, and the
+ * web app that serves the lock screen. A dev build also trusts the Vite server
+ * it was told to load.
+ */
+function isOwnOrigin(url: string): boolean {
+  let origin: string;
+  try {
+    origin = new URL(url).origin;
+  } catch {
+    return false;
+  }
+  if (origin === APP_ORIGIN) return true;
+  if (origin === new URL(WEB_URL).origin) return true;
+  return DEV_RENDERER !== null && origin === new URL(DEV_RENDERER).origin;
+}
+
+/** Put the window back on the bundled renderer after a lock resolves. */
+function showRenderer(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  void mainWindow.loadURL(DEV_RENDERER ?? APP_ENTRY);
 }
 
 function createWindow(): BrowserWindow {
@@ -122,9 +224,11 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' };
   });
 
-  // Navigation away from our origin is how a compromised page would escape.
+  // Navigation away from our origins is how a compromised page would escape.
+  // Exactly two are allowed: the bundled renderer, and the web app that serves
+  // the lock screen. Anything else is handed to the real browser.
   window.webContents.on('will-navigate', (event, url) => {
-    if (new URL(url).origin !== new URL(WEB_URL).origin) {
+    if (!isOwnOrigin(url)) {
       event.preventDefault();
       void shell.openExternal(url);
     }
@@ -151,12 +255,32 @@ function createWindow(): BrowserWindow {
     sendHoldProgress(now);
   });
 
-  // The app, not the marketing site. Before the web re-scope "/" redirected
-  // into the product; it is now a landing page, so opening WEB_URL bare showed
-  // the desktop user a download page for software they had already installed.
-  // /dashboard bounces to /login when signed out.
-  void window.loadURL(new URL('/dashboard', WEB_URL).toString());
+  // The bundled renderer owns everything except the lock screen, which is
+  // loaded from the web app only while a lock is live (see engageLock).
+  void window.loadURL(DEV_RENDERER ?? APP_ENTRY);
   return window;
+}
+
+const trayActions: TrayActions = {
+  isLocked: () => locked,
+  onOpen: () => showWindow(),
+  onQuit: () => {
+    // Blocked during a lock by before-quit as well; this is the visible half.
+    if (locked) return;
+    quitting = true;
+    app.quit();
+  },
+};
+
+/** Bring the window back from the tray, creating it if it was closed. */
+function showWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
 }
 
 function sendHoldProgress(now: number): void {
@@ -192,7 +316,12 @@ function engageLock(sessionId: string | null): void {
 
   locked = true;
   releasedIntentionally = false;
+  clearScheduledLock();
   holdToRelease.reset();
+
+  // The lock screen is a code editor and stays on the web app; only this
+  // moment is allowed to put the window there.
+  void mainWindow.loadURL(new URL('/lock', WEB_URL).toString());
 
   mainWindow.setKiosk(true);
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
@@ -204,6 +333,7 @@ function engageLock(sessionId: string | null): void {
 
   syncCovers(mainWindow);
   registerEscapeSuppression();
+  refreshTray(trayActions);
 }
 
 /** Put every barrier back up. Cheap, idempotent, and safe to call often. */
@@ -217,6 +347,7 @@ function reassertLock(): void {
 }
 
 function releaseLock(): void {
+  clearScheduledLock();
   locked = false;
   lockedSessionId = null;
   releasedIntentionally = true;
@@ -233,6 +364,8 @@ function releaseLock(): void {
   }
 
   globalShortcut.unregisterAll();
+  showRenderer();
+  refreshTray(trayActions);
 
   // An update that arrived mid-session lands now rather than waiting for the
   // next six-hourly check. Never during a lock: restarting the shell under a
@@ -314,6 +447,29 @@ ipcMain.handle('codelock:unlock', async (_event, unlockToken: unknown) => {
   return { ok: true };
 });
 
+/**
+ * The renderer hands over the deadline it read from the server.
+ *
+ * Trusted in this direction only, exactly like 'codelock:lock': the worst a
+ * lying renderer can do here is lock the machine sooner than it should, which
+ * is annoying rather than a bypass. Unlocking still requires a signed token.
+ */
+ipcMain.handle('codelock:schedule', (_event, payload: unknown) => {
+  const { sessionId, fireAt } =
+    (payload as { sessionId?: unknown; fireAt?: unknown } | null) ?? {};
+
+  if (typeof sessionId !== 'string' || typeof fireAt !== 'string') {
+    clearScheduledLock();
+    return { scheduled: false };
+  }
+
+  const at = Date.parse(fireAt);
+  if (Number.isNaN(at)) return { scheduled: false };
+
+  scheduleLock(sessionId, at);
+  return { scheduled: true };
+});
+
 ipcMain.handle('codelock:state', () => ({
   locked,
   sessionId: lockedSessionId,
@@ -336,6 +492,8 @@ ipcMain.handle('codelock:open-external', (_event, url: unknown) => {
 void app.whenReady().then(() => {
   const config = loadConfig();
   WEB_URL = config.webUrl;
+  API_URL = config.apiUrl;
+  serveRenderer();
   lockStore = fileLockStore(path.join(app.getPath('userData'), 'lock-state.json'));
 
   // A build with no key can never release the lock, which would trap the user
@@ -345,7 +503,19 @@ void app.whenReady().then(() => {
     logStartupProblem(config.webUrl);
   }
 
+  // Continuous by default. The timer is worthless if it only runs while the
+  // user happens to have the window open, and worse than worthless if it
+  // silently stops at every reboot.
+  setAutoStart(true);
+  createTray(trayActions);
+
   mainWindow = createWindow();
+
+  // Started by the OS at login: keep the window down and just watch the clock.
+  // The tray icon is the handle, and a firing lock raises the window anyway.
+  if (startedInBackground()) {
+    mainWindow.once('ready-to-show', () => mainWindow?.hide());
+  }
 
   // Packaged builds only; a dev build pointed at the release feed would try to
   // "upgrade" itself to the last published version.
@@ -378,8 +548,15 @@ void app.whenReady().then(() => {
   });
 });
 
+/**
+ * Closing the window does NOT quit.
+ *
+ * This is the difference between a focus timer and a reminder: the process has
+ * to be alive at the moment the deadline passes, and the user will close this
+ * window. The tray icon is what keeps that from being a hidden process.
+ */
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (quitting) app.quit();
 });
 
 app.on('before-quit', (event) => {
@@ -397,10 +574,33 @@ app.on('before-quit', (event) => {
  */
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  destroyTray();
   if (locked && !releasedIntentionally) {
     app.relaunch();
   }
 });
+
+/**
+ * Serve the bundled renderer over the app:// scheme.
+ *
+ * Paths are resolved inside the bundle directory and then checked to still be
+ * inside it, so a crafted `app://codelock/../../` cannot read the user's disk.
+ * Unknown paths fall back to index.html, which is what a single-page app needs.
+ */
+function serveRenderer(): void {
+  const root = path.join(__dirname, '..', 'dist-renderer');
+
+  protocol.handle(APP_SCHEME, (request) => {
+    const requested = decodeURIComponent(new URL(request.url).pathname);
+    const resolved = path.normalize(path.join(root, requested));
+    const inside = resolved === root || resolved.startsWith(root + path.sep);
+    const file = inside && path.extname(resolved) ? resolved : path.join(root, 'index.html');
+    return net.fetch(pathToFileURL(file).toString());
+  });
+}
+
+/** The API the bundled renderer talks to, and where the lock screen lives. */
+ipcMain.handle('codelock:config', () => ({ apiUrl: API_URL, webUrl: WEB_URL }));
 
 /**
  * Tell the user where to fix it, in the one place they will look.

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { hasRelease, releaseAsset, releasePageUrl, sourceUrl } from '@/lib/releases';
 
 export const metadata: Metadata = {
   title: 'Install',
@@ -81,6 +82,53 @@ const PLATFORMS: Platform[] = [
   },
 ];
 
+/**
+ * What the Download button does while no release exists.
+ *
+ * Not an apology — a path that works right now. Every command is complete and
+ * in order, because "build from source" is only an answer if the reader does
+ * not have to reconstruct it.
+ */
+/** A platform is only "available" when a real asset URL exists for it. */
+function statusOf(platform: Platform): Status {
+  if (platform.status === 'blocked') return 'blocked';
+  return releaseAsset(platform.name) ? 'available' : 'unpublished';
+}
+
+function BuildFromSource() {
+  const clone = sourceUrl();
+
+  return (
+    <section className="rule-b bg-warning-soft/60">
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-8">
+          <p className="eyebrow shrink-0 text-warning">No binaries yet</p>
+          <p className="prose-site text-[14.5px]">
+            No signed release has been cut, so this page will not offer you a file that does not
+            exist. Building it yourself takes about five minutes, needs Node 24, and produces
+            exactly the same application.
+          </p>
+        </div>
+
+        <pre className="mt-5 overflow-x-auto rounded-md border border-border bg-surface px-4 py-3.5 font-mono text-[12.5px] leading-relaxed">
+{`${clone ? `git clone ${clone}
+cd codelock
+` : ''}npm install
+npm run build
+npm run dist -w @codelock/desktop`}
+        </pre>
+
+        <p className="prose-site mt-3 text-[13.5px] text-muted">
+          The installer lands in <code className="font-mono text-[12.5px]">apps/desktop/release/</code>.
+          {' '}Point it at your server by editing <code className="font-mono text-[12.5px]">config.json</code>{' '}
+          in the app’s data directory on first run — it is created for you, and the app tells you
+          where it is.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 const STATUS_LABEL: Record<Status, { text: string; className: string }> = {
   available: { text: 'available', className: 'text-success' },
   unpublished: { text: 'not published yet', className: 'text-warning' },
@@ -107,19 +155,22 @@ export default function InstallPage() {
         </div>
       </section>
 
-      {/* The honest state of play, above the table rather than in a footnote. */}
-      <section className="rule-b bg-warning-soft/60">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 sm:flex-row sm:items-baseline sm:gap-8 sm:px-8">
-          <p className="eyebrow shrink-0 text-warning">No binaries yet</p>
-          <p className="prose-site text-[14.5px]">
-            No release has been cut, so there is nothing to download from this page today. Building
-            from source works now and is the same code:{' '}
-            <code className="font-mono text-[13px] text-fg">npm run dist -w @codelock/desktop</code>
-            . When the first signed release lands, the installers and their SHA-256 checksums
-            appear here.
-          </p>
-        </div>
-      </section>
+      {hasRelease() ? (
+        <section className="rule-b">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 sm:flex-row sm:items-baseline sm:gap-8 sm:px-8">
+            <p className="eyebrow shrink-0 text-success">Released</p>
+            <p className="prose-site text-[14.5px]">
+              Pick your platform below. SHA-256 checksums for every asset are on the{' '}
+              <a href={releasePageUrl()!} className="underline underline-offset-4">
+                release page
+              </a>
+              . Verify them before running software that intends to take over your screen.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <BuildFromSource />
+      )}
 
       <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="rule-t">
@@ -128,10 +179,12 @@ export default function InstallPage() {
               <div className="grid gap-x-8 gap-y-4 lg:grid-cols-[13rem_1fr]">
                 <div>
                   <h2 className="display display-sm">{platform.name}</h2>
+                  {/* Derived, not declared: the status cannot claim "available"
+                      unless there is an asset URL to back it up. */}
                   <p
-                    className={`mt-1 font-mono text-[12px] ${STATUS_LABEL[platform.status].className}`}
+                    className={`mt-1 font-mono text-[12px] ${STATUS_LABEL[statusOf(platform)].className}`}
                   >
-                    {STATUS_LABEL[platform.status].text}
+                    {STATUS_LABEL[statusOf(platform)].text}
                   </p>
                   <dl className="mt-4 space-y-1 text-[13px] text-faint">
                     <div>
@@ -146,6 +199,20 @@ export default function InstallPage() {
                 </div>
 
                 <div className="prose-site text-[14.5px]">
+                  {releaseAsset(platform.name) && (
+                    <p className="mb-4">
+                      <a
+                        href={releaseAsset(platform.name)!}
+                        className="inline-flex h-11 items-center rounded-md bg-accent px-5 text-[15px]
+                                   font-medium text-accent-fg transition-opacity hover:opacity-90"
+                      >
+                        Download for {platform.name}
+                      </a>
+                      <span className="ml-3 font-mono text-[12px] text-faint">
+                        {platform.format}
+                      </span>
+                    </p>
+                  )}
                   {platform.warning && (
                     <p className="mb-3 border-l-2 border-warning pl-4 text-[14px] text-fg">
                       <strong className="font-semibold">What you will see: </strong>

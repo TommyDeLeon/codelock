@@ -222,6 +222,13 @@ export const api = {
     arm: (input?: { deviceId?: string; durationMinutes?: number }) =>
       post<LockSessionView>('/v1/lock/arm', input ?? {}),
     engage: (id: string) => post<LockSessionView>(`/v1/lock/${id}/engage`),
+    /** Hold the countdown where it is. Refused once the lock is live. */
+    pause: (id: string) => post<{ session: LockSessionView | null }>(`/v1/lock/${id}/pause`),
+    /** Start it again, giving back exactly the interval that was left. */
+    resume: (id: string) => post<{ session: LockSessionView | null }>(`/v1/lock/${id}/resume`),
+    /** Throw the session away entirely. Refused once the lock is live. */
+    cancel: (id: string) =>
+      post<{ session: { id: string; state: string } }>(`/v1/lock/${id}/cancel`),
     skip: (id: string) => post<{ skipsRemaining: number }>(`/v1/lock/${id}/skip`),
     abandon: (id: string, reason?: 'user_gave_up' | 'kill_switch') =>
       post<{ progress: unknown }>(`/v1/lock/${id}/abandon`, reason ? { reason } : undefined),

@@ -34,6 +34,21 @@ const codelock = {
     holdToReleaseMs: number;
   }> => ipcRenderer.invoke('codelock:state'),
 
+  /**
+   * Hand the armed deadline to the main process, so the lock still fires with
+   * the window closed. Pass null to cancel a schedule that no longer exists.
+   */
+  schedule: (session: { sessionId: string; fireAt: string } | null): Promise<{ scheduled: boolean }> =>
+    ipcRenderer.invoke('codelock:schedule', session),
+
+  /**
+   * Where the bundled renderer should send its requests. The main process owns
+   * this, so a repointed config.json takes effect without rebuilding the
+   * renderer bundle.
+   */
+  config: (): Promise<{ apiUrl: string; webUrl: string }> =>
+    ipcRenderer.invoke('codelock:config'),
+
   /** Open a URL in the user's real browser (needed for the OAuth flow). */
   openExternal: (url: string): Promise<boolean> =>
     ipcRenderer.invoke('codelock:open-external', url),

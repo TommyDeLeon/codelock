@@ -1,0 +1,50 @@
+name: Bug report
+description: Something behaves differently from how it is documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If you are locked out right now, do not wait for this issue.
+        Hold **Escape for ten seconds** on desktop to release the lock; it
+        resolves the session as abandoned, which counts as a failed session.
+
+  - type: input
+    id: request-id
+    attributes:
+      label: Request id
+      description: >
+        Every API error carries one. Quoting it is the difference between
+        finding your request in the logs and searching an hour of traffic.
+      placeholder: 01JD3K7X9QW2M4N6P8R0T2V4X6
+    validations:
+      required: false
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did it happen
+      options:
+        - Desktop app
+        - Web app
+        - Mobile app
+        - API / self-hosted server
+        - The demo
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+      description: Steps to reproduce if you have them. Exact numbers beat adjectives.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0, or the short commit sha
+    validations:
+      required: false

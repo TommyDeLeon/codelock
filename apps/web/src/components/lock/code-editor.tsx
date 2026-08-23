@@ -5,12 +5,44 @@ import { useTheme } from 'next-themes';
 import { LANGUAGE_LABELS, LANGUAGES, MONACO_LANGUAGE_IDS, type Language } from '@codelock/shared';
 import { Skeleton } from '@/components/ui/primitives';
 
-// Monaco touches `window` and `navigator` at import time and ships ~2 MB, so
-// it must never be part of the server bundle or the initial payload.
-const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
-  ssr: false,
-  loading: () => <Skeleton className="h-full w-full rounded-none" />,
-});
+/**
+ * Monaco, loaded from this bundle rather than from a CDN.
+ *
+ * `@monaco-editor/react` defaults to pulling the editor from jsdelivr at
+ * runtime. On this app that fails outright — the CSP is `script-src 'self'` —
+ * so the editor never initialised and the lock screen had no way to type into
+ * it. Even with the CSP widened it would be the wrong dependency: a lock screen
+ * that needs a third-party CDN to be reachable is one that traps an offline
+ * user behind an editor that will not load.
+ *
+ * Monaco touches `window` at import time and ships ~2 MB, so all of this stays
+ * inside a dynamic, client-only chunk.
+ */
+const MonacoEditor = dynamic(
+  async () => {
+    const [{ default: Editor, loader }, monaco] = await Promise.all([
+      import('@monaco-editor/react'),
+      import('monaco-editor'),
+    ]);
+
+    // The base worker handles tokenising and editing for every language. The
+    // per-language workers only add IntelliSense, and grading happens on the
+    // server, so their absence costs nothing here.
+    self.MonacoEnvironment = {
+      getWorker: () =>
+        new Worker(new URL('monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url), {
+          type: 'module',
+        }),
+    };
+
+    loader.config({ monaco });
+    return Editor;
+  },
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full rounded-none" />,
+  },
+);
 
 export function CodeEditor({
   language,

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CodeLock</title>
+    <!--
+      Everything this page runs is bundled, so script-src and style-src never
+      leave 'self'. The API origin is not known until the main process hands it
+      over at runtime, so connect-src has to admit http: and https: — that is
+      the one hole, and it is a fetch target rather than an execution one.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src http: https:; frame-src 'none'; object-src 'none'; base-uri 'none'"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

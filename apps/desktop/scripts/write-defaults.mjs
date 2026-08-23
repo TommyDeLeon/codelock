@@ -23,6 +23,7 @@ import path from 'node:path';
 const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const defaults = {
   webUrl: process.env.CODELOCK_BUILD_WEB_URL || 'http://localhost:3000',
+  apiUrl: process.env.CODELOCK_BUILD_API_URL || 'http://localhost:4000',
   unlockPublicKey: process.env.CODELOCK_BUILD_UNLOCK_PUBLIC_KEY || '',
   unlockSecret: process.env.CODELOCK_BUILD_UNLOCK_SECRET || '',
 };

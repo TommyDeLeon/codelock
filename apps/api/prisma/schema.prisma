@@ -252,6 +252,10 @@ model LockSession {
   fireAt     DateTime
   lockedAt   DateTime?
   resolvedAt DateTime?
+  /// Set while the user has paused an ARMED countdown. Resuming shifts fireAt
+  /// forward by the time spent paused, so the remaining interval is preserved
+  /// exactly. Never set on a LOCKED session: a live lock cannot be paused.
+  pausedAt   DateTime?
   attempts   Int        @default(0)
   /// Set when state = BYPASSED: "skip_allowance" | "admin" | "emergency".
   escapeReason String?
