@@ -6,7 +6,7 @@ import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
-import { authLimiter, refreshLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, refreshLimiter, registerLimiter } from '../middleware/rateLimit.js';
 import { generateRefreshToken, signAccessToken, sha256 } from '../lib/tokens.js';
 import { loginSchema, refreshSchema, registerSchema } from '../validation/schemas.js';
 
@@ -34,9 +34,26 @@ export async function issueSession(userId: string, email: string) {
 
 authRouter.post(
   '/register',
-  authLimiter,
+  registerLimiter,
   asyncHandler(async (req, res) => {
     const body = registerSchema.parse(req.body);
+
+    /**
+     * Hash first, unconditionally, before looking the email up.
+     *
+     * The old order returned the 409 without ever hashing, so a taken email
+     * answered in about a millisecond and a free one paid the ~50 ms argon2
+     * cost. That gap is an enumeration oracle on its own, readable even by a
+     * caller who cannot see the status code. Paying the cost on both paths
+     * removes it, and the wasted hash only ever happens on a request that was
+     * going to fail anyway — which registerLimiter already caps.
+     *
+     * The 409 itself remains a weaker oracle, and deliberately so: hiding it
+     * would mean not returning a session on success either, which requires
+     * out-of-band email verification this deployment does not have yet.
+     * registerLimiter is what makes reading it in bulk impractical.
+     */
+    const passwordHash = await argon2.hash(body.password, ARGON_OPTS);
 
     const existing = await prisma.user.findUnique({ where: { email: body.email } });
     if (existing) throw ApiError.conflict('An account with that email already exists');
@@ -46,7 +63,7 @@ authRouter.post(
         email: body.email,
         displayName: body.displayName,
         timezone: body.timezone,
-        passwordHash: await argon2.hash(body.password, ARGON_OPTS),
+        passwordHash,
         // Every user needs both rows from day one; the rest of the API assumes them.
         progress: { create: {} },
         timerConfig: { create: {} },

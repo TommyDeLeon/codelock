@@ -13,6 +13,29 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * Registration, separately from login.
+ *
+ * A 409 from /register still tells an anonymous caller that an email is taken,
+ * and that cannot be hidden while a successful registration hands back a
+ * session — closing it properly needs an emailed verification link. What can be
+ * done is make reading the oracle in bulk pointless: nobody legitimately
+ * creates six accounts an hour from one address, and at this limit enumerating
+ * a list of any useful size takes longer than the list stays interesting.
+ *
+ * Kept apart from authLimiter so tightening it cannot lock people out of
+ * signing in.
+ */
+export const registerLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    error: { code: 'RATE_LIMITED', message: 'Too many sign-up attempts, try again later' },
+  },
+});
+
+/**
  * Refresh tokens are 48 random bytes, so guessing one is infeasible — but this
  * endpoint takes an unauthenticated credential and hits the database on every
  * call, which makes it the cheapest way to load the API from outside. Looser
