@@ -31,6 +31,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [providers, setProviders] = useState<OAuthProviderName[]>([]);
   const { hydrate } = useAuth();
@@ -65,8 +66,17 @@ export default function LoginPage() {
     sessionStorage.removeItem(HANDOFF_KEY);
     window.history.replaceState({}, '', '/login');
 
-    if (outcome !== 'complete' || !handoff) {
+    if (outcome !== 'complete') {
       setError(OAUTH_FAILURES[outcome] ?? OAUTH_FAILURES.error!);
+      return;
+    }
+
+    if (!handoff) {
+      // The provider sent the browser back to a session that never started the
+      // flow. That is the normal desktop and mobile path: the app opened the
+      // system browser, so the handoff lives in the app's own session, not this
+      // tab. The sign-in did succeed — just somewhere this tab cannot see.
+      setNotice('You are signed in — return to the CodeLock app.');
       return;
     }
 
@@ -88,6 +98,7 @@ export default function LoginPage() {
 
   async function startProvider(provider: OAuthProviderName) {
     setError(null);
+    setNotice(null);
     setBusy(true);
     try {
       const { url, handoff } = await api.oauth.start(provider);
@@ -106,6 +117,7 @@ export default function LoginPage() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setNotice(null);
     setBusy(true);
     try {
       if (mode === 'login') await login(email, password);
@@ -209,6 +221,15 @@ export default function LoginPage() {
                 />
               </Field>
 
+              {notice && (
+                <p
+                  role="status"
+                  className="rounded-sm bg-accent-soft px-3 py-2 text-[13px] text-accent"
+                >
+                  {notice}
+                </p>
+              )}
+
               {error && (
                 <p role="alert" className="rounded-sm bg-danger-soft px-3 py-2 text-[13px] text-danger">
                   {error}
@@ -236,6 +257,7 @@ export default function LoginPage() {
             onClick={() => {
               setMode(mode === 'login' ? 'register' : 'login');
               setError(null);
+              setNotice(null);
             }}
             className="font-medium text-fg underline underline-offset-4 hover:text-accent"
           >
