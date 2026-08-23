@@ -103,15 +103,24 @@ git clone https://github.com/TommyDeLeon/codelock && cd codelock/deploy
 ```
 
 ```bash
-cp .env.example .env && nano .env
+./gen-secrets.sh
 ```
 
-Set `APP_DOMAIN` and `API_DOMAIN` to your DuckDNS names, `TLS_EMAIL` to a real
-address, and generate each secret separately:
+That writes `.env` with fresh 64-character secrets for the three JWT keys, the
+encryption key and the database password, and leaves everything it cannot know
+blank. It refuses to overwrite an existing `.env`, because rotating
+`JWT_UNLOCK_SECRET` invalidates every issued unlock token and rotating
+`ENCRYPTION_KEY` makes stored integration credentials undecryptable.
+
+Then fill in the rest by hand:
 
 ```bash
-openssl rand -base64 48
+nano .env
 ```
+
+Set `APP_DOMAIN` and `API_DOMAIN` to your DuckDNS names and `TLS_EMAIL` to a
+real address. `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are optional and
+only power the GitHub mirroring integration.
 
 Then start it **using the prebuilt images**, so the VM never has to build a
 Next.js bundle:
