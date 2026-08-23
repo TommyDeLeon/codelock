@@ -2,8 +2,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
-import { useColorScheme } from 'react-native';
+import { Text, View, useColorScheme } from 'react-native';
 import { colors } from '@/theme';
+import { LockMark } from '@/lock-mark';
 
 // A lock notification must interrupt, even in the foreground — that is the
 // whole point of the timer expiring.
@@ -43,7 +44,20 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: theme.bg },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'CodeLock' }} />
+        <Stack.Screen
+          name="index"
+          options={{
+            title: 'CodeLock',
+            // The same mark the web and desktop apps carry, so the three do not
+            // read as three products that happen to share a name.
+            headerTitle: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <LockMark />
+                <Text style={{ color: theme.fg, fontSize: 15, fontWeight: '600' }}>CodeLock</Text>
+              </View>
+            ),
+          }}
+        />
         <Stack.Screen name="progress" options={{ title: 'Progress' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen

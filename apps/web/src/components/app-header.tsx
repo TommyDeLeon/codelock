@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LockMark } from '@/components/ui/lock-mark';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
@@ -38,9 +39,7 @@ export function AppHeader() {
           aria-label="CodeLock home"
           className="flex items-center gap-2 rounded-sm py-2 hover:opacity-80"
         >
-          <span className="flex size-7 items-center justify-center rounded-sm bg-fg text-bg">
-            <Lock className="size-3.5" aria-hidden />
-          </span>
+          <LockMark className="size-[19px] shrink-0" />
           <span className="hidden text-sm font-semibold tracking-tight min-[400px]:inline">
             CodeLock
           </span>

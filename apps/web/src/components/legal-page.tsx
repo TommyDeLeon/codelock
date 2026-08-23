@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Lock } from 'lucide-react';
+import { LockMark } from '@/components/ui/lock-mark';
 import { SiteFooter } from '@/components/site-footer';
 
 /**
@@ -27,9 +27,7 @@ export function LegalPage({
             aria-label="CodeLock home"
             className="flex items-center gap-2 py-2 hover:opacity-80"
           >
-            <span className="flex size-7 items-center justify-center rounded-sm bg-fg text-bg">
-              <Lock className="size-3.5" aria-hidden />
-            </span>
+            <LockMark className="size-[19px] shrink-0" />
             <span className="text-sm font-semibold tracking-tight">CodeLock</span>
           </Link>
         </div>

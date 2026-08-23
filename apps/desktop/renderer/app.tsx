@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, ApiError, isSignedIn, signOut } from './api';
 import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
+import { LockMark } from './lock-mark';
 
 type Tab = 'dashboard' | 'settings';
 
@@ -33,7 +34,10 @@ export function App() {
           marginBottom: 26,
         }}
       >
-        <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>CodeLock</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LockMark />
+          <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>CodeLock</span>
+        </span>
         <nav style={{ display: 'flex', gap: 4 }}>
           {(['dashboard', 'settings'] as const).map((name) => (
             <button
@@ -92,7 +96,8 @@ function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <main style={{ maxWidth: 340, margin: '18vh auto', padding: '0 24px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, margin: '0 0 4px' }}>Sign in</h1>
+      <LockMark size={26} />
+      <h1 style={{ fontSize: 22, fontWeight: 600, margin: '12px 0 4px' }}>Sign in</h1>
       <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'var(--muted)' }}>
         The same account as the web and mobile apps.
       </p>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { LockMark } from '@/components/ui/lock-mark';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -46,26 +47,8 @@ export function SiteNav() {
   return (
     <header className="rule-b sticky top-0 z-40 bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-5 sm:px-8">
-        <Link
-          href="/"
-          className="flex items-baseline gap-2 text-[15px] font-semibold tracking-tight"
-        >
-          {/* The speed gate in miniature: a short green run that came in under
-              budget, a long ink run that did not, and the gate line between
-              them. The product's own instrument at 16px — the previous abstract
-              rules read as nothing at all. */}
-          <svg aria-hidden viewBox="0 0 18 12" className="h-3 w-[18px]" fill="none">
-            <rect x="0" y="1" width="7" height="3" rx="1" className="fill-accent" />
-            <rect x="0" y="8" width="14" height="3" rx="1" className="fill-fg" />
-            <line
-              x1="9.5"
-              y1="0"
-              x2="9.5"
-              y2="12"
-              strokeWidth="1"
-              className="stroke-border-strong"
-            />
-          </svg>
+        <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
+          <LockMark className="size-[19px] shrink-0" />
           CodeLock
         </Link>
 

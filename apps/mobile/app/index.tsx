@@ -21,6 +21,7 @@ import {
   scheduleLockNotification,
 } from '@/lock-permissions';
 import { NativeLock } from '../modules/codelock-lock';
+import { LockMark } from '@/lock-mark';
 import { getAccessToken } from '@/session';
 import Constants from 'expo-constants';
 
@@ -130,6 +131,7 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}
         keyboardShouldPersistTaps="handled"
       >
+        <LockMark size={28} />
         <Text style={[styles.title, { color: theme.fg }]}>Sign in</Text>
         <Text style={[styles.body, { color: theme.muted }]}>
           Use the same account as the web and desktop apps.
