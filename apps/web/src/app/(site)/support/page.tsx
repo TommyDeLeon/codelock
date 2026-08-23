@@ -294,9 +294,18 @@ export default function SupportPage() {
                   that one string is the difference between finding your request in the logs and
                   searching an hour of traffic.
                 </p>
-                {CONTACT_EMAIL && (
+                {CONTACT_EMAIL ? (
                   <p>
                     Or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+                  </p>
+                ) : (
+                  // Say so, rather than rendering nothing. An absent contact
+                  // line is indistinguishable from a page that forgot one, and
+                  // someone who has just been told to "tell someone" needs to
+                  // know that the tracker above is the whole of the answer.
+                  <p>
+                    There is no published email address for this deployment — the issue tracker is
+                    the way to reach someone.
                   </p>
                 )}
               </div>
