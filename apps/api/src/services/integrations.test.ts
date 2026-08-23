@@ -12,25 +12,39 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 // Hoisted so the vi.mock factories below — which run before the imports — can
 // close over it without hitting the temporal dead zone.
-const { findUnique } = vi.hoisted(() => ({ findUnique: vi.fn() }));
+const { findUnique, update, fetchStats } = vi.hoisted(() => ({
+  findUnique: vi.fn(),
+  update: vi.fn(),
+  fetchStats: vi.fn(),
+}));
 
 vi.mock('../lib/prisma.js', () => ({
   prisma: {
-    integration: { findUnique: (...a: unknown[]) => findUnique(...a) },
+    integration: {
+      findUnique: (...a: unknown[]) => findUnique(...a),
+      update: (...a: unknown[]) => update(...a),
+    },
     submission: { findUnique: vi.fn() },
     syncRecord: { upsert: vi.fn(), update: vi.fn() },
   },
+}));
+
+vi.mock('./leetcode.js', () => ({
+  fetchLeetCodeStats: (...a: unknown[]) => fetchStats(...a),
 }));
 
 vi.mock('../lib/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-import { mirrorSubmission } from './integrations.js';
+import { getLeetCodeStats, mirrorSubmission } from './integrations.js';
 import { logger } from '../lib/logger.js';
 
 beforeEach(() => {
   findUnique.mockReset();
+  update.mockReset();
+  update.mockResolvedValue({});
+  fetchStats.mockReset();
   vi.mocked(logger.warn).mockClear();
 });
 
@@ -78,5 +92,59 @@ describe('mirrorSubmission', () => {
     findUnique.mockResolvedValue(null);
     expect(() => mirrorSubmission('u1', 'sub1')).not.toThrow();
     await new Promise((r) => setTimeout(r, 20));
+  });
+});
+
+/**
+ * "No data" and "no answer" are different things.
+ *
+ * getLeetCodeStats used to return null for both "this user never connected
+ * LeetCode" and "this user is connected, the upstream fetch just failed and
+ * there is no cached snapshot to fall back on". The route turns null into a
+ * 404 reading "LeetCode is not connected", so an upstream outage rendered as
+ * the user having never set it up — the failure-as-empty-state pattern
+ * PRE-LAUNCH-CHECKLIST 3.5 documents.
+ */
+describe('getLeetCodeStats distinguishes an outage from a missing connection', () => {
+  const connected = {
+    id: 'i1',
+    enabled: true,
+    externalUsername: 'someone',
+    lastSyncAt: null,
+    cachedStats: null,
+    lastError: null,
+  };
+
+  it('returns null only when there is genuinely no connection', async () => {
+    findUnique.mockResolvedValue(null);
+    await expect(getLeetCodeStats('u1')).resolves.toBeNull();
+  });
+
+  it('raises an upstream failure rather than reporting "not connected"', async () => {
+    findUnique.mockResolvedValue(connected);
+    fetchStats.mockRejectedValue(new Error('leetcode returned 503'));
+
+    // The distinction that matters: not null, which the route renders as a
+    // 404 "LeetCode is not connected".
+    await expect(getLeetCodeStats('u1')).rejects.toMatchObject({ status: 502 });
+  });
+
+  it('still records the reason on the integration row for later diagnosis', async () => {
+    findUnique.mockResolvedValue(connected);
+    fetchStats.mockRejectedValue(new Error('leetcode returned 503'));
+
+    await expect(getLeetCodeStats('u1')).rejects.toBeTruthy();
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ lastError: 'leetcode returned 503' }),
+      }),
+    );
+  });
+
+  it('prefers a stale cached snapshot over failing, when one exists', async () => {
+    findUnique.mockResolvedValue({ ...connected, cachedStats: { solved: 7 } });
+    fetchStats.mockRejectedValue(new Error('leetcode returned 503'));
+
+    await expect(getLeetCodeStats('u1')).resolves.toEqual({ stats: { solved: 7 }, stale: true });
   });
 });

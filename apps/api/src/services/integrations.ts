@@ -1,5 +1,6 @@
 import { IntegrationProvider, SyncStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { commitSolution } from './github.js';
 import { fetchLeetCodeStats } from './leetcode.js';
@@ -93,7 +94,9 @@ async function runMirror(userId: string, submissionId: string): Promise<void> {
  *
  * The upstream endpoint is unofficial, so we cache aggressively and fall back
  * to the last good snapshot on failure — a dashboard showing slightly stale
- * numbers beats one showing an error.
+ * numbers beats one showing an error. With no snapshot to fall back on there is
+ * nothing honest to show, so this raises rather than returning null: null means
+ * "not connected" to the caller, and an outage is not that.
  */
 export async function getLeetCodeStats(
   userId: string,
@@ -126,6 +129,14 @@ export async function getLeetCodeStats(
       data: { lastError: message.slice(0, 500) },
     });
     if (integration.cachedStats) return { stats: integration.cachedStats, stale: true };
-    return null;
+
+    // No snapshot to fall back on. Returning null here would be indistinguishable
+    // from "this user never connected LeetCode", which is what the route renders
+    // it as — so an outage showed up as an empty, never-configured integration.
+    // The account is connected; it is the answer that is missing.
+    logger.warn({ userId, err }, 'leetcode stats unavailable and no cached snapshot');
+    throw ApiError.upstream(
+      'Could not reach LeetCode just now. Your account is still connected — try again shortly.',
+    );
   }
 }

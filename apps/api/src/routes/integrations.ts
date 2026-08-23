@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { IntegrationProvider } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
@@ -147,7 +148,11 @@ integrationsRouter.get(
       });
 
       res.redirect(`${env.APP_URL}/settings?github=connected`);
-    } catch {
+    } catch (err) {
+      // The user sees ?github=error either way; without this line nobody can
+      // tell whether that was a revoked secret, a GitHub outage, or a failing
+      // write. oauth.ts logs the structurally identical failure.
+      logger.warn({ err, userId }, 'github integration callback failed');
       res.redirect(`${env.APP_URL}/settings?github=error`);
     }
   }),
