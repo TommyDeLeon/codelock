@@ -40,7 +40,7 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.fg,
-          headerTitleStyle: { fontSize: 15, fontWeight: '600' },
+          headerTitleStyle: { fontSize: 16, fontWeight: '700' },
           contentStyle: { backgroundColor: theme.bg },
         }}
       >

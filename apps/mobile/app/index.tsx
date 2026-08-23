@@ -22,6 +22,7 @@ import {
 } from '@/lock-permissions';
 import { NativeLock } from '../modules/codelock-lock';
 import { LockMark } from '@/lock-mark';
+import { PromoBand } from '@/promo-band';
 import { getAccessToken } from '@/session';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
@@ -48,7 +49,10 @@ export default function HomeScreen() {
   // Only offer buttons the server can complete; one with no client id
   // configured would open a broken consent screen in the user's browser.
   useEffect(() => {
-    void mobileApi.oauthProviders().then(setProviders).catch(() => setProviders([]));
+    void mobileApi
+      .oauthProviders()
+      .then(setProviders)
+      .catch(() => setProviders([]));
   }, []);
 
   useEffect(() => {
@@ -181,113 +185,141 @@ export default function HomeScreen() {
   if (!signedIn) {
     return (
       <ScrollView
-        contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}
+        contentContainerStyle={[styles.screenFlush, { backgroundColor: theme.bg }]}
         keyboardShouldPersistTaps="handled"
       >
-        <LockMark size={28} />
-        <Text style={[styles.title, { color: theme.fg }]}>
-          {mode === 'login' ? 'Sign in' : 'Create your account'}
-        </Text>
-        <Text style={[styles.body, { color: theme.muted }]}>
-          Use the same account as the web and desktop apps.
-        </Text>
+        <PromoBand />
+        <View style={styles.screen}>
+          <LockMark size={28} />
+          <Text style={[styles.title, { color: theme.fg }]}>
+            {mode === 'login' ? 'Sign in' : 'Create your account'}
+          </Text>
+          <Text style={[styles.body, { color: theme.muted }]}>
+            Use the same account as the web and desktop apps.
+          </Text>
 
-        {providers.length > 0 && (
-          <>
-            {providers.map((provider) => (
-              <Pressable
-                key={provider}
-                onPress={() => void signInWith(provider)}
-                disabled={busy}
-                accessibilityRole="button"
-                style={[
-                  styles.providerButton,
-                  { borderColor: theme.border, backgroundColor: theme.surface, opacity: busy ? 0.6 : 1 },
-                ]}
-              >
-                <Text style={[styles.buttonText, { color: theme.fg }]}>
-                  Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
-                </Text>
-              </Pressable>
-            ))}
+          {providers.length > 0 && (
+            <>
+              {providers.map((provider) => (
+                <Pressable
+                  key={provider}
+                  onPress={() => void signInWith(provider)}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  style={[
+                    styles.providerButton,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.surface,
+                      opacity: busy ? 0.6 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.buttonText, { color: theme.fg }]}>
+                    Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
+                  </Text>
+                </Pressable>
+              ))}
 
-            <Text style={[styles.hint, { color: theme.faint }]}>
-              Opens your browser. Works for signing in and signing up.
-            </Text>
+              <Text style={[styles.hint, { color: theme.faint }]}>
+                Opens your browser. Works for signing in and signing up.
+              </Text>
 
-            <View style={styles.dividerRow}>
-              <View style={[styles.divider, { backgroundColor: theme.border }]} />
-              <Text style={[styles.hint, { color: theme.faint }]}>or</Text>
-              <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            </View>
-          </>
-        )}
+              <View style={styles.dividerRow}>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <Text style={[styles.hint, { color: theme.faint }]}>or</Text>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              </View>
+            </>
+          )}
 
-        {mode === 'register' && (
+          {mode === 'register' && (
+            <TextInput
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Name"
+              placeholderTextColor={theme.faint}
+              autoComplete="name"
+              accessibilityLabel="Name"
+              style={[
+                styles.input,
+                {
+                  borderColor: theme.border,
+                  color: theme.fg,
+                  backgroundColor: theme.surface,
+                },
+              ]}
+            />
+          )}
+
           <TextInput
-            value={displayName}
-            onChangeText={setDisplayName}
-            placeholder="Name"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
             placeholderTextColor={theme.faint}
-            autoComplete="name"
-            accessibilityLabel="Name"
-            style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            accessibilityLabel="Email"
+            style={[
+              styles.input,
+              {
+                borderColor: theme.border,
+                color: theme.fg,
+                backgroundColor: theme.surface,
+              },
+            ]}
           />
-        )}
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            placeholderTextColor={theme.faint}
+            secureTextEntry
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            accessibilityLabel="Password"
+            style={[
+              styles.input,
+              {
+                borderColor: theme.border,
+                color: theme.fg,
+                backgroundColor: theme.surface,
+              },
+            ]}
+          />
 
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          placeholderTextColor={theme.faint}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          accessibilityLabel="Email"
-          style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
-        />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor={theme.faint}
-          secureTextEntry
-          autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-          accessibilityLabel="Password"
-          style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
-        />
+          {mode === 'register' && (
+            <Text style={[styles.hint, { color: theme.faint }]}>
+              Password must be at least 12 characters.
+            </Text>
+          )}
 
-        {mode === 'register' && (
-          <Text style={[styles.hint, { color: theme.faint }]}>
-            Password must be at least 12 characters.
-          </Text>
-        )}
+          {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
 
-        {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
+          <Pressable
+            onPress={() => void signIn()}
+            disabled={busy}
+            accessibilityRole="button"
+            style={[styles.button, { backgroundColor: theme.accent, opacity: busy ? 0.6 : 1 }]}
+          >
+            <Text style={[styles.buttonText, { color: theme.accentFg }]}>
+              {busy ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            </Text>
+          </Pressable>
 
-        <Pressable
-          onPress={() => void signIn()}
-          disabled={busy}
-          accessibilityRole="button"
-          style={[styles.button, { backgroundColor: theme.accent, opacity: busy ? 0.6 : 1 }]}
-        >
-          <Text style={[styles.buttonText, { color: theme.accentFg }]}>
-            {busy ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
-            setError(null);
-          }}
-          accessibilityRole="button"
-          style={styles.switchMode}
-        >
-          <Text style={[styles.body, { color: theme.muted, textAlign: 'center' }]}>
-            {mode === 'login' ? 'No account yet? Create one' : 'Already have an account? Sign in'}
-          </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => {
+              setMode(mode === 'login' ? 'register' : 'login');
+              setError(null);
+            }}
+            accessibilityRole="button"
+            style={styles.switchMode}
+          >
+            <Text style={[styles.body, { color: theme.muted, textAlign: 'center' }]}>
+              {mode === 'login' ? 'No account yet? Create one' : 'Already have an account? Sign in'}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     );
   }
@@ -305,7 +337,10 @@ export default function HomeScreen() {
                 disabled={busy}
                 accessibilityRole="button"
                 accessibilityLabel={`Start a ${minutes} minute session`}
-                style={[styles.preset, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                style={[
+                  styles.preset,
+                  { borderColor: theme.border, backgroundColor: theme.surface },
+                ]}
               >
                 <Text style={[styles.presetText, { color: theme.fg }]}>{minutes}m</Text>
               </Pressable>
@@ -358,8 +393,10 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.lg, gap: spacing.md, flexGrow: 1 },
+  // The band is full-bleed, so the padding moves to an inner view.
+  screenFlush: { flexGrow: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '600', letterSpacing: -0.3 },
+  title: { fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
   label: { fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
   countdown: { fontSize: 48, fontWeight: '600', fontVariant: ['tabular-nums'] },
   body: { fontSize: 14 },
@@ -387,7 +424,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   presetText: { fontSize: 15, fontWeight: '600' },
-  notice: { padding: spacing.md, borderRadius: radius.sm, marginTop: spacing.md },
+  notice: {
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    marginTop: spacing.md,
+  },
   noticeText: { fontSize: 13, lineHeight: 19 },
   error: { fontSize: 13 },
   providerButton: {

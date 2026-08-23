@@ -84,7 +84,7 @@ export function LockWorkspace({
     mutationFn: () => api.lock.skip(session.id),
     onSuccess: (data) => {
       toast.info(`Skipped. ${data.skipsRemaining} left today.`);
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     },
     onError: (err: Error) => toast.error(err.message),
   });

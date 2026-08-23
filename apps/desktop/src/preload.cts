@@ -35,6 +35,19 @@ const codelock = {
   }> => ipcRenderer.invoke('codelock:state'),
 
   /**
+   * The signed-in session, held by the main process so that the bundled
+   * dashboard and the lock screen — two different origins in one window —
+   * share it. Only the bundled renderer may write; both may read.
+   */
+  setSession: (session: { accessToken: string; refreshToken: string } | null): Promise<{ stored: boolean }> =>
+    ipcRenderer.invoke('codelock:set-session', session),
+
+  session: (): Promise<{ accessToken: string; refreshToken: string } | null> =>
+    ipcRenderer.invoke('codelock:session'),
+
+  clearSession: (): Promise<{ cleared: boolean }> => ipcRenderer.invoke('codelock:clear-session'),
+
+  /**
    * Hand the armed deadline to the main process, so the lock still fires with
    * the window closed. Pass null to cancel a schedule that no longer exists.
    */

@@ -42,8 +42,8 @@ export default function RouteError({
       )}
       <div className="flex gap-2">
         <Button onClick={reset}>Try again</Button>
-        <Button variant="outline" onClick={() => (window.location.href = '/dashboard')}>
-          Back to dashboard
+        <Button variant="outline" onClick={() => (window.location.href = '/')}>
+          Back to CodeLock
         </Button>
       </div>
     </main>

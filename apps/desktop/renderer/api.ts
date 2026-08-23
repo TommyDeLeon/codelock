@@ -43,11 +43,16 @@ export const isSignedIn = (): boolean => localStorage.getItem(ACCESS_KEY) !== nu
 export function signOut(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
+  void window.codelock?.clearSession();
 }
 
 function store(access: string, refresh: string): void {
   localStorage.setItem(ACCESS_KEY, access);
   localStorage.setItem(REFRESH_KEY, refresh);
+  // Hand it to the shell as well. The lock screen runs on the web app's origin
+  // and cannot see this localStorage, so without this the user would be asked
+  // to sign in again from inside a lock screen.
+  void window.codelock?.setSession({ accessToken: access, refreshToken: refresh });
 }
 
 export class ApiError extends Error {}

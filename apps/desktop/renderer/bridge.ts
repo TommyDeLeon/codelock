@@ -17,6 +17,11 @@ export interface CodeLockBridge {
     holdToReleaseMs: number;
   }>;
   schedule(session: { sessionId: string; fireAt: string } | null): Promise<{ scheduled: boolean }>;
+  setSession(
+    session: { accessToken: string; refreshToken: string } | null,
+  ): Promise<{ stored: boolean }>;
+  session(): Promise<{ accessToken: string; refreshToken: string } | null>;
+  clearSession(): Promise<{ cleared: boolean }>;
   config(): Promise<{ apiUrl: string; webUrl: string }>;
   openExternal(url: string): Promise<boolean>;
   onHoldProgress(

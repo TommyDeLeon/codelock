@@ -23,56 +23,64 @@ export function App() {
   if (!signedIn) return <AuthScreen onSignedIn={() => setSignedIn(true)} />;
 
   return (
-    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 28px 40px' }}>
-      <header
-        className="rule"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 20,
-          borderTop: 'none',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: 12,
-          marginBottom: 26,
-        }}
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <LockMark />
-          <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>CodeLock</span>
-        </span>
-        <nav style={{ display: 'flex', gap: 4 }}>
+    <>
+      {/* The same three-tier chrome as the web app: promotional band, brand
+          row, then a dark strip carrying the sections. */}
+      <div className="promo">Free and open source — your sessions never leave your server</div>
+
+      <header style={{ borderBottom: '1px solid var(--border)' }}>
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: '0 auto',
+            padding: '12px 28px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <LockMark size={22} />
+          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em' }}>CodeLock</span>
+        </div>
+      </header>
+
+      <nav className="section-strip" aria-label="Sections">
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: '0 auto',
+            padding: '0 28px',
+            display: 'flex',
+            gap: 28,
+          }}
+        >
           {(['dashboard', 'settings'] as const).map((name) => (
             <button
               key={name}
               type="button"
               onClick={() => setTab(name)}
               aria-current={tab === name ? 'page' : undefined}
-              style={{
-                border: 'none',
-                background: 'none',
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-xs)',
-                color: tab === name ? 'var(--fg)' : 'var(--muted)',
-                textTransform: 'capitalize',
-              }}
+              style={{ textTransform: 'capitalize' }}
             >
               {name}
             </button>
           ))}
-        </nav>
-      </header>
+        </div>
+      </nav>
 
-      {tab === 'dashboard' ? (
-        <DashboardScreen
-          onSignOut={() => {
-            signOut();
-            setSignedIn(false);
-          }}
-        />
-      ) : (
-        <SettingsScreen />
-      )}
-    </div>
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 28px 40px' }}>
+        {tab === 'dashboard' ? (
+          <DashboardScreen
+            onSignOut={() => {
+              signOut();
+              setSignedIn(false);
+            }}
+          />
+        ) : (
+          <SettingsScreen />
+        )}
+      </div>
+    </>
   );
 }
 
@@ -114,7 +122,12 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
     setError(null);
     try {
       if (mode === 'login') await api.login(email.trim(), password);
-      else await api.register({ email: email.trim(), password, displayName: displayName.trim() });
+      else
+        await api.register({
+          email: email.trim(),
+          password,
+          displayName: displayName.trim(),
+        });
       onSignedIn();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not reach CodeLock.');
@@ -150,134 +163,177 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
   const disabled = busy || waiting;
 
   return (
-    <main style={{ maxWidth: 340, margin: '14vh auto', padding: '0 24px' }}>
-      <LockMark size={26} />
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: '12px 0 4px' }}>
-        {mode === 'login' ? 'Sign in' : 'Create your account'}
-      </h1>
-      <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'var(--muted)' }}>
-        The same account as the web and mobile apps.
-      </p>
+    <>
+      <div className="promo">Free and open source — your sessions never leave your server</div>
+      <main style={{ maxWidth: 340, margin: '12vh auto', padding: '0 24px' }}>
+        <LockMark size={26} />
+        <h1 className="display" style={{ fontSize: 26, margin: '12px 0 4px' }}>
+          {mode === 'login' ? 'Sign in' : 'Create your account'}
+        </h1>
+        <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'var(--muted)' }}>
+          The same account as the web and mobile apps.
+        </p>
 
-      {providers.length > 0 && (
-        <>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {providers.map((provider) => (
-              <button
-                key={provider}
-                type="button"
-                disabled={disabled}
-                onClick={() => void startProvider(provider)}
-                style={{
-                  height: 40,
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--fg)',
-                  fontWeight: 600,
-                  opacity: disabled ? 0.6 : 1,
-                }}
-              >
-                Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
-              </button>
-            ))}
-          </div>
+        {providers.length > 0 && (
+          <>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {providers.map((provider) => (
+                <button
+                  key={provider}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => void startProvider(provider)}
+                  style={{
+                    height: 40,
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    color: 'var(--fg)',
+                    fontWeight: 600,
+                    opacity: disabled ? 0.6 : 1,
+                  }}
+                >
+                  Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
+                </button>
+              ))}
+            </div>
 
-          <p
-            style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--faint)', textAlign: 'center' }}
+            <p
+              style={{
+                margin: '8px 0 0',
+                fontSize: 12,
+                color: 'var(--faint)',
+                textAlign: 'center',
+              }}
+            >
+              {waiting
+                ? 'Waiting for your browser...'
+                : 'Opens your browser. Works for signing in and signing up.'}
+            </p>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                margin: '18px 0',
+              }}
+            >
+              <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontSize: 12, color: 'var(--faint)' }}>or</span>
+              <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+          </>
+        )}
+
+        <form onSubmit={submit} style={{ display: 'grid', gap: 10 }}>
+          {mode === 'register' && (
+            <label
+              style={{
+                display: 'grid',
+                gap: 4,
+                fontSize: 12.5,
+                color: 'var(--muted)',
+              }}
+            >
+              Name
+              <input
+                autoComplete="name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+              />
+            </label>
+          )}
+
+          <label
+            style={{
+              display: 'grid',
+              gap: 4,
+              fontSize: 12.5,
+              color: 'var(--muted)',
+            }}
           >
-            {waiting
-              ? 'Waiting for your browser...'
-              : 'Opens your browser. Works for signing in and signing up.'}
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
-            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span style={{ fontSize: 12, color: 'var(--faint)' }}>or</span>
-            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          </div>
-        </>
-      )}
-
-      <form onSubmit={submit} style={{ display: 'grid', gap: 10 }}>
-        {mode === 'register' && (
-          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
-            Name
+            Email
             <input
-              autoComplete="name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </label>
-        )}
 
-        <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
-          Email
-          <input
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </label>
+          <label
+            style={{
+              display: 'grid',
+              gap: 4,
+              fontSize: 12.5,
+              color: 'var(--muted)',
+            }}
+          >
+            Password
+            <input
+              type="password"
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+              minLength={mode === 'register' ? 12 : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {mode === 'register' && (
+              <span style={{ fontSize: 11.5, color: 'var(--faint)' }}>At least 12 characters.</span>
+            )}
+          </label>
 
-        <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
-          Password
-          <input
-            type="password"
-            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-            minLength={mode === 'register' ? 12 : undefined}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {mode === 'register' && (
-            <span style={{ fontSize: 11.5, color: 'var(--faint)' }}>At least 12 characters.</span>
-          )}
-        </label>
+          {error && <p style={{ margin: 0, fontSize: 12.5, color: 'var(--danger)' }}>{error}</p>}
 
-        {error && <p style={{ margin: 0, fontSize: 12.5, color: 'var(--danger)' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={disabled}
+            style={{
+              marginTop: 6,
+              height: 40,
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--accent)',
+              color: 'var(--accent-fg)',
+              fontWeight: 600,
+              opacity: disabled ? 0.6 : 1,
+            }}
+          >
+            {busy ? 'Working...' : mode === 'login' ? 'Sign in' : 'Create account'}
+          </button>
+        </form>
 
-        <button
-          type="submit"
-          disabled={disabled}
+        <p
           style={{
-            marginTop: 6,
-            height: 40,
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--accent)',
-            color: 'var(--accent-fg)',
-            fontWeight: 600,
-            opacity: disabled ? 0.6 : 1,
+            marginTop: 16,
+            fontSize: 13,
+            color: 'var(--muted)',
+            textAlign: 'center',
           }}
         >
-          {busy ? 'Working...' : mode === 'login' ? 'Sign in' : 'Create account'}
-        </button>
-      </form>
-
-      <p style={{ marginTop: 16, fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>
-        {mode === 'login' ? 'No account yet?' : 'Already have an account?'}{' '}
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
-            setError(null);
-          }}
-          style={{
-            border: 'none',
-            background: 'none',
-            color: 'var(--fg)',
-            fontWeight: 600,
-            textDecoration: 'underline',
-            textUnderlineOffset: 3,
-          }}
-        >
-          {mode === 'login' ? 'Create one' : 'Sign in'}
-        </button>
-      </p>
-    </main>
+          {mode === 'login' ? 'No account yet?' : 'Already have an account?'}{' '}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login');
+              setError(null);
+            }}
+            style={{
+              border: 'none',
+              background: 'none',
+              color: 'var(--fg)',
+              fontWeight: 600,
+              textDecoration: 'underline',
+              textUnderlineOffset: 3,
+            }}
+          >
+            {mode === 'login' ? 'Create one' : 'Sign in'}
+          </button>
+        </p>
+      </main>
+    </>
   );
 }

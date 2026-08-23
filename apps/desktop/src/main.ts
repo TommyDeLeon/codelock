@@ -19,6 +19,12 @@ import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
 import {
+  clearSession as clearStoredSession,
+  readSession,
+  writeSession,
+  type StoredSession,
+} from './session-store.js';
+import {
   createTray,
   destroyTray,
   refreshTray,
@@ -468,6 +474,50 @@ ipcMain.handle('codelock:schedule', (_event, payload: unknown) => {
 
   scheduleLock(sessionId, at);
   return { scheduled: true };
+});
+
+/**
+ * The session, shared between the bundled dashboard and the lock screen.
+ *
+ * Writing is restricted to the bundled renderer. The lock screen is remote
+ * content, and a compromised page there being able to *overwrite* the stored
+ * session would let it swap in an attacker's account — or, worse, hand its own
+ * token to the next thing that asked. Reading is allowed from both, because
+ * both are pages this shell put on screen itself.
+ */
+function isBundledRenderer(event: Electron.IpcMainInvokeEvent): boolean {
+  const url = event.senderFrame?.url ?? '';
+  if (DEV_RENDERER && url.startsWith(DEV_RENDERER)) return true;
+  return url.startsWith(APP_ORIGIN);
+}
+
+ipcMain.handle('codelock:set-session', (event, payload: unknown) => {
+  if (!isBundledRenderer(event)) return { stored: false };
+
+  const { accessToken, refreshToken } =
+    (payload as Partial<StoredSession> | null) ?? {};
+  if (typeof accessToken !== 'string' || typeof refreshToken !== 'string') {
+    clearStoredSession();
+    return { stored: false };
+  }
+
+  writeSession({ accessToken, refreshToken });
+  return { stored: true };
+});
+
+ipcMain.handle('codelock:session', (event) => {
+  // Only ever handed to our own two origins; will-navigate guarantees the
+  // window cannot be anywhere else.
+  if (!isBundledRenderer(event) && new URL(event.senderFrame?.url ?? 'about:blank').origin !== new URL(WEB_URL).origin) {
+    return null;
+  }
+  return readSession();
+});
+
+ipcMain.handle('codelock:clear-session', (event) => {
+  if (!isBundledRenderer(event)) return { cleared: false };
+  clearStoredSession();
+  return { cleared: true };
 });
 
 ipcMain.handle('codelock:state', () => ({

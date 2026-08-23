@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import type { AuthUser } from '@codelock/shared';
 import { ApiClientError, api, tokenStore } from './api';
+import { borrowDesktopSession } from './desktop-bridge';
 
 interface AuthState {
   user: AuthUser | null;
@@ -20,8 +21,16 @@ export const useAuth = create<AuthState>((set) => ({
 
   async hydrate() {
     if (!tokenStore.access && !tokenStore.refresh) {
-      set({ status: 'anonymous', user: null });
-      return;
+      // Inside the desktop shell the session lives on the shell's own origin.
+      // The lock screen is served from here and has empty storage of its own,
+      // so borrow rather than presenting a sign-in form the user cannot
+      // navigate away from.
+      const borrowed = await borrowDesktopSession();
+      if (!borrowed) {
+        set({ status: 'anonymous', user: null });
+        return;
+      }
+      tokenStore.set(borrowed.accessToken, borrowed.refreshToken);
     }
     try {
       const me = await api.auth.me();

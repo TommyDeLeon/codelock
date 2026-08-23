@@ -1,5 +1,29 @@
-import { describe, expect, it, afterEach } from 'vitest';
+import { describe, expect, it, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+
+/**
+ * Injected filesystem failures, for the write-path tests at the bottom.
+ *
+ * A module mock rather than vi.spyOn: lock-state.ts imports renameSync and
+ * writeFileSync as named bindings, which ESM resolves once at load, so
+ * patching the namespace object afterwards has no effect on them.
+ */
+const failures = vi.hoisted(() => ({ rename: null as Error | null, write: null as Error | null }));
+
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+  return {
+    ...actual,
+    renameSync: (...args: Parameters<typeof actual.renameSync>) => {
+      if (failures.rename) throw failures.rename;
+      return actual.renameSync(...args);
+    },
+    writeFileSync: (...args: Parameters<typeof actual.writeFileSync>) => {
+      if (failures.write) throw failures.write;
+      return actual.writeFileSync(...args);
+    },
+  };
+});
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileLockStore, isLive, newLock, MAX_LOCK_LIFETIME_MS } from './lock-state.js';
@@ -83,5 +107,42 @@ describe('fileLockStore', () => {
     store.write(newLock('sess-42'));
     writeFileSync(file, JSON.stringify({ sessionId: 'sess-42' }), 'utf8');
     expect(store.read()).toBeNull();
+  });
+});
+
+describe('fileLockStore.write when the filesystem will not cooperate', () => {
+  afterEach(() => {
+    failures.rename = null;
+    failures.write = null;
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * The crash this guards against.
+   *
+   * On Windows a rename inside a redirected AppData can fail with EXDEV, and a
+   * sync client holding the target open produces EPERM. write() runs from a
+   * timer inside engageLock, so throwing there killed the entire main process
+   * at the exact moment the lock was supposed to engage.
+   */
+  it('falls back to a direct write when rename fails, and still persists', () => {
+    const store = fileLockStore(scratchFile());
+    failures.rename = Object.assign(new Error('EXDEV: cross-device link not permitted'), {
+      code: 'EXDEV',
+    });
+
+    expect(() => store.write(newLock('sess-42'))).not.toThrow();
+    expect(store.read()?.sessionId).toBe('sess-42');
+  });
+
+  it('does not throw when the file cannot be written at all', () => {
+    const store = fileLockStore(scratchFile());
+    failures.rename = new Error('EPERM');
+    failures.write = new Error('EACCES');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Crash recovery is lost, but the shell stays alive and the lock still
+    // holds in memory. Dying here would hand the machine back.
+    expect(() => store.write(newLock('sess-42'))).not.toThrow();
   });
 });

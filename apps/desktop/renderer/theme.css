@@ -5,8 +5,9 @@
  * justify, and the mobile client already carries its own copy for the same
  * reason.
  *
- * Locked has no hue. Colour is reward-only — green is the single thing the
- * user is trying to make appear.
+ * Follows the web app's retail direction: a green promotional band, a dark
+ * section strip, softer corners and a bold grotesque for display type. Pine
+ * green remains the brand.
  */
 :root {
   --bg: #fbfaf8;
@@ -19,13 +20,17 @@
   --accent: #1b6b4a;
   --accent-fg: #ffffff;
   --accent-soft: #e4efe9;
+  /* The promotional band, a deeper pine so white on it clears AA comfortably. */
+  --promo: #14523a;
+  --promo-fg: #ffffff;
   --danger: #a12d20;
   --warning: #8a6410;
 
-  --radius-xs: 3px;
-  --radius-sm: 5px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Matching the web app: varied by element weight, not one value. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
 
   --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -45,6 +50,8 @@
     --accent: #4ed18f;
     --accent-fg: #0d1a13;
     --accent-soft: #10241b;
+    --promo: #12503a;
+    --promo-fg: #eafff4;
     --danger: #e0685a;
     --warning: #d5a03f;
 
@@ -111,4 +118,48 @@ input {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Display type, matching the web app: a bold grotesque with tight tracking and
+   balanced wrapping, rather than the serif the earlier system used. */
+.display {
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+/* The promotional band pinned above the app header, as on the web. */
+.promo {
+  background: var(--promo);
+  color: var(--promo-fg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 7px 16px;
+}
+
+/* The dark section strip beneath the brand row. */
+.section-strip {
+  background: var(--fg);
+  color: var(--bg);
+}
+.section-strip button {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 0;
+  opacity: 0.75;
+  transition: opacity 150ms;
+}
+.section-strip button:hover,
+.section-strip button[aria-current='page'] {
+  opacity: 1;
+}
+.section-strip button[aria-current='page'] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }

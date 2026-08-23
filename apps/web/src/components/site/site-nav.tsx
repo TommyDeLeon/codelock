@@ -11,10 +11,9 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 /**
  * Navigation for the public site.
  *
- * Separate from AppHeader on purpose: that one belongs to a signed-in tool —
- * it reads the auth store, offers sign-out, and links to the dashboard — and is
- * built to get out of the way. This one has the opposite job, orienting a
- * stranger, and merging the two would force both to compromise.
+ * This is the only navigation the web app has. It used to sit alongside an
+ * AppHeader for the signed-in dashboard; that dashboard now lives in the
+ * desktop and mobile shells, so this nav's job is simply to orient a stranger.
  *
  * Called by: src/app/(site)/layout.tsx
  */

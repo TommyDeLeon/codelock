@@ -92,7 +92,12 @@ export function SettingsScreen() {
 
   if (!timer) {
     return (
-      <p style={{ fontSize: 13, color: status ? 'var(--danger)' : 'var(--faint)' }}>
+      <p
+        style={{
+          fontSize: 13,
+          color: status ? 'var(--danger)' : 'var(--faint)',
+        }}
+      >
         {status ?? 'Loading…'}
       </p>
     );
@@ -117,7 +122,11 @@ export function SettingsScreen() {
                 role="checkbox"
                 aria-checked={on}
                 aria-label={day.label}
-                onClick={() => void save({ activeDaysMask: timer.activeDaysMask ^ (1 << day.bit) })}
+                onClick={() =>
+                  void save({
+                    activeDaysMask: timer.activeDaysMask ^ (1 << day.bit),
+                  })
+                }
                 style={{
                   flex: 1,
                   height: 40,
@@ -140,7 +149,14 @@ export function SettingsScreen() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
+          <label
+            style={{
+              display: 'grid',
+              gap: 4,
+              fontSize: 12.5,
+              color: 'var(--muted)',
+            }}
+          >
             From
             <input
               value={fromText}
@@ -148,7 +164,14 @@ export function SettingsScreen() {
               onBlur={commitWindow}
             />
           </label>
-          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
+          <label
+            style={{
+              display: 'grid',
+              gap: 4,
+              fontSize: 12.5,
+              color: 'var(--muted)',
+            }}
+          >
             To
             <input
               value={toText}
@@ -156,7 +179,14 @@ export function SettingsScreen() {
               onBlur={commitWindow}
             />
           </label>
-          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, color: 'var(--muted)' }}>
+          <label
+            style={{
+              display: 'grid',
+              gap: 4,
+              fontSize: 12.5,
+              color: 'var(--muted)',
+            }}
+          >
             Default length
             <input
               type="number"
@@ -170,7 +200,13 @@ export function SettingsScreen() {
         </div>
 
         {timer.activeDaysMask === 0 && (
-          <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--warning)' }}>
+          <p
+            style={{
+              margin: '10px 0 0',
+              fontSize: 12.5,
+              color: 'var(--warning)',
+            }}
+          >
             No days selected — CodeLock will never lock you.
           </p>
         )}
@@ -186,7 +222,13 @@ export function SettingsScreen() {
               <Stat label="medium" value={leetcode.solved.medium} />
               <Stat label="hard" value={leetcode.solved.hard} />
             </div>
-            <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--faint)' }}>
+            <p
+              style={{
+                margin: '10px 0 0',
+                fontSize: 12,
+                color: 'var(--faint)',
+              }}
+            >
               {leetcode.username} · snapshot from{' '}
               {new Date(leetcode.fetchedAt).toLocaleDateString()}
             </p>
@@ -237,7 +279,13 @@ export function SettingsScreen() {
           </>
         ) : (
           <>
-            <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--muted)' }}>
+            <p
+              style={{
+                margin: '0 0 10px',
+                fontSize: 13,
+                color: 'var(--muted)',
+              }}
+            >
               Mirror accepted solutions to a repository. Sign-in opens in your real browser, so you
               can see the address bar you are typing a password into.
             </p>

@@ -18,10 +18,10 @@ export default function NotFound() {
         The link may be out of date, or the page may have moved.
       </p>
       <Link
-        href="/dashboard"
+        href="/"
         className="inline-flex h-11 items-center rounded-md bg-fg px-6 text-[15px] font-medium text-bg hover:bg-fg/90"
       >
-        Back to dashboard
+        Back to CodeLock
       </Link>
     </main>
   );

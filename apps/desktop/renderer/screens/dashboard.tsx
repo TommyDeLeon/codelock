@@ -108,7 +108,11 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <div
-      style={{ display: 'grid', gap: 28, gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)' }}
+      style={{
+        display: 'grid',
+        gap: 28,
+        gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)',
+      }}
     >
       <div style={{ display: 'grid', gap: 28, minWidth: 0 }}>
         {/* --- timer ----------------------------------------------------- */}
@@ -127,7 +131,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               {/* Only ever shown when the automatic path failed. */}
               {lockFailed && (
                 <>
-                  <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--danger)' }}>
+                  <p
+                    style={{
+                      margin: '10px 0 0',
+                      fontSize: 12.5,
+                      color: 'var(--danger)',
+                    }}
+                  >
                     The shell did not take the screen. Open it manually.
                   </p>
                   <button
@@ -153,13 +163,26 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               >
                 {clock(remaining)}
               </p>
-              <p className="mono" style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--faint)' }}>
+              <p
+                className="mono"
+                style={{
+                  margin: '4px 0 0',
+                  fontSize: 12,
+                  color: 'var(--faint)',
+                }}
+              >
                 locks at {session ? new Date(session.fireAt).toLocaleTimeString() : '—'}
               </p>
             </>
           ) : (
             <>
-              <p style={{ fontSize: 15, margin: '10px 0 12px', color: 'var(--muted)' }}>
+              <p
+                style={{
+                  fontSize: 15,
+                  margin: '10px 0 12px',
+                  color: 'var(--muted)',
+                }}
+              >
                 No active session. Start a block, work, then earn your way back in.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -181,7 +204,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 ))}
               </div>
               {timer && (
-                <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--faint)' }}>
+                <p
+                  style={{
+                    margin: '10px 0 0',
+                    fontSize: 12,
+                    color: 'var(--faint)',
+                  }}
+                >
                   Your default is {timer.durationMinutes} minutes. Change it in Settings.
                 </p>
               )}
@@ -189,7 +218,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           )}
 
           {outage && asked.current && (
-            <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--warning)' }}>
+            <p
+              style={{
+                margin: '10px 0 0',
+                fontSize: 12.5,
+                color: 'var(--warning)',
+              }}
+            >
               {outage} Showing the last known state.
             </p>
           )}
@@ -223,7 +258,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           <section className="rule" style={{ paddingTop: 20 }}>
             <p className="eyebrow">Run log</p>
             {stats.locks.recent.length === 0 ? (
-              <p style={{ margin: '8px 0 0', fontSize: 12.5, color: 'var(--faint)' }}>
+              <p
+                style={{
+                  margin: '8px 0 0',
+                  fontSize: 12.5,
+                  color: 'var(--faint)',
+                }}
+              >
                 No sessions yet. Arm a timer and this fills in.
               </p>
             ) : (

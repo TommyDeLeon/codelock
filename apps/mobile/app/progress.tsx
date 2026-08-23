@@ -13,6 +13,7 @@ import { useFocusEffect } from 'expo-router';
 import type { StatsSummary } from '@codelock/shared';
 import { colors, radius, spacing, type ThemeColors } from '@/theme';
 import { mobileApi } from '@/session';
+import { PromoBand } from '@/promo-band';
 import { PersonalBests, RankReadout, StreakPips, TierLadder } from '@/game';
 
 /**
@@ -76,88 +77,91 @@ export default function ProgressScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}
+      contentContainerStyle={[styles.screenFlush, { backgroundColor: theme.bg }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />
       }
     >
-      {error && (
-        <Text style={[styles.stale, { color: theme.warning }]}>
-          {error} — showing the last figures.
-        </Text>
-      )}
-
-      <Section theme={theme}>
-        <TierLadder progress={stats.progress} theme={theme} />
-      </Section>
-
-      <Section theme={theme}>
-        <StreakPips progress={stats.progress} theme={theme} />
-      </Section>
-
-      <Section theme={theme}>
-        <RankReadout speed={stats.speed} theme={theme} />
-      </Section>
-
-      <View style={styles.figures}>
-        <Figure
-          theme={theme}
-          label="Solved"
-          value={String(stats.progress.totalSolved)}
-          detail={`${stats.submissions.acceptanceRate}% accepted`}
-        />
-        <Figure
-          theme={theme}
-          label="Locks cleared"
-          value={String(stats.locks.unlockedCount)}
-          detail="last 30 sessions"
-        />
-        <Figure
-          theme={theme}
-          label="Median unlock"
-          value={compact(stats.locks.medianUnlockSeconds)}
-          detail="lock to solved"
-        />
-      </View>
-
-      <Section theme={theme}>
-        <PersonalBests bests={stats.personalBests} theme={theme} />
-      </Section>
-
-      <Section theme={theme}>
-        <Text style={[styles.eyebrow, { color: theme.faint }]}>Run log</Text>
-        {stats.locks.recent.length === 0 ? (
-          <Text style={[styles.note, { color: theme.faint }]}>
-            No sessions yet. Arm a timer and this fills in.
+      <PromoBand />
+      <View style={styles.screen}>
+        {error && (
+          <Text style={[styles.stale, { color: theme.warning }]}>
+            {error} — showing the last figures.
           </Text>
-        ) : (
-          stats.locks.recent.map((lock) => (
-            <View key={lock.id} style={[styles.logRow, { borderTopColor: theme.border }]}>
-              <View style={styles.logMain}>
-                <Text numberOfLines={1} style={[styles.logTitle, { color: theme.fg }]}>
-                  {lock.problem?.title ?? 'Session'}
-                </Text>
-                <Text style={[styles.mono, { color: theme.faint }]}>
-                  {lock.resolvedAt ? new Date(lock.resolvedAt).toLocaleDateString() : '—'}
-                  {` · ${lock.attempts} attempt${lock.attempts === 1 ? '' : 's'}`}
+        )}
+
+        <Section theme={theme}>
+          <TierLadder progress={stats.progress} theme={theme} />
+        </Section>
+
+        <Section theme={theme}>
+          <StreakPips progress={stats.progress} theme={theme} />
+        </Section>
+
+        <Section theme={theme}>
+          <RankReadout speed={stats.speed} theme={theme} />
+        </Section>
+
+        <View style={styles.figures}>
+          <Figure
+            theme={theme}
+            label="Solved"
+            value={String(stats.progress.totalSolved)}
+            detail={`${stats.submissions.acceptanceRate}% accepted`}
+          />
+          <Figure
+            theme={theme}
+            label="Locks cleared"
+            value={String(stats.locks.unlockedCount)}
+            detail="last 30 sessions"
+          />
+          <Figure
+            theme={theme}
+            label="Median unlock"
+            value={compact(stats.locks.medianUnlockSeconds)}
+            detail="lock to solved"
+          />
+        </View>
+
+        <Section theme={theme}>
+          <PersonalBests bests={stats.personalBests} theme={theme} />
+        </Section>
+
+        <Section theme={theme}>
+          <Text style={[styles.eyebrow, { color: theme.faint }]}>Run log</Text>
+          {stats.locks.recent.length === 0 ? (
+            <Text style={[styles.note, { color: theme.faint }]}>
+              No sessions yet. Arm a timer and this fills in.
+            </Text>
+          ) : (
+            stats.locks.recent.map((lock) => (
+              <View key={lock.id} style={[styles.logRow, { borderTopColor: theme.border }]}>
+                <View style={styles.logMain}>
+                  <Text numberOfLines={1} style={[styles.logTitle, { color: theme.fg }]}>
+                    {lock.problem?.title ?? 'Session'}
+                  </Text>
+                  <Text style={[styles.mono, { color: theme.faint }]}>
+                    {lock.resolvedAt ? new Date(lock.resolvedAt).toLocaleDateString() : '—'}
+                    {` · ${lock.attempts} attempt${lock.attempts === 1 ? '' : 's'}`}
+                  </Text>
+                </View>
+                {/* Cleared is the only outcome that earns colour. */}
+                <Text
+                  style={[
+                    styles.outcome,
+                    {
+                      color: lock.state === 'UNLOCKED' ? theme.accent : theme.muted,
+                      borderColor: lock.state === 'UNLOCKED' ? theme.accent : theme.border,
+                    },
+                  ]}
+                >
+                  {OUTCOME[lock.state] ?? lock.state.toLowerCase()}
                 </Text>
               </View>
-              {/* Cleared is the only outcome that earns colour. */}
-              <Text
-                style={[
-                  styles.outcome,
-                  {
-                    color: lock.state === 'UNLOCKED' ? theme.accent : theme.muted,
-                    borderColor: lock.state === 'UNLOCKED' ? theme.accent : theme.border,
-                  },
-                ]}
-              >
-                {OUTCOME[lock.state] ?? lock.state.toLowerCase()}
-              </Text>
-            </View>
-          ))
-        )}
-      </Section>
+            ))
+          )}
+        </Section>
+      </View>
     </ScrollView>
   );
 }
@@ -206,7 +210,14 @@ function Figure({
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.lg, gap: spacing.lg, flexGrow: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  // The band is full-bleed, so padding moves to an inner view.
+  screenFlush: { flexGrow: 1 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
   section: { borderTopWidth: 1, paddingTop: spacing.lg },
   eyebrow: {
     fontSize: 11,
@@ -217,9 +228,19 @@ const styles = StyleSheet.create({
   note: { fontSize: 12.5, lineHeight: 18 },
   mono: { fontSize: 12, fontVariant: ['tabular-nums'] },
   figures: { flexDirection: 'row', gap: spacing.sm },
-  figure: { flex: 1, borderWidth: 1, borderRadius: radius.md, padding: spacing.md, gap: 2 },
+  figure: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 2,
+  },
   figureLabel: { fontSize: 11.5 },
-  figureValue: { fontSize: 20, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  figureValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
   figureDetail: { fontSize: 11 },
   logRow: {
     flexDirection: 'row',

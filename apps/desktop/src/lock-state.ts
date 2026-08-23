@@ -88,11 +88,51 @@ export function fileLockStore(filePath: string): LockStateStore {
       }
     },
 
+    /**
+     * Persist the lock, atomically where the filesystem allows it.
+     *
+     * The rename is the crash-safe path, but it is not guaranteed. On Windows
+     * it fails with EXDEV when AppData is redirected across volumes (roaming
+     * profiles, folder redirection) and with EPERM when a sync client or
+     * antivirus holds the target open. This runs from a timer inside
+     * engageLock, so an uncaught throw takes down the whole shell — a far worse
+     * outcome than a non-atomic write, and it was crashing the app at the exact
+     * moment the timer fired.
+     *
+     * So: try atomic, fall back to writing in place, and never throw. A torn
+     * file reads back as "no lock", which the renderer corrects against the
+     * server on its next poll.
+     */
     write(lock: PersistedLock): void {
-      mkdirSync(path.dirname(filePath), { recursive: true });
+      const contents = `${JSON.stringify(lock, null, 2)}\n`;
       const tmp = `${filePath}.tmp`;
-      writeFileSync(tmp, `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
-      renameSync(tmp, filePath);
+
+      try {
+        mkdirSync(path.dirname(filePath), { recursive: true });
+      } catch {
+        // Already present, or unwritable — the writes below surface the real
+        // problem either way.
+      }
+
+      try {
+        writeFileSync(tmp, contents, 'utf8');
+        renameSync(tmp, filePath);
+        return;
+      } catch {
+        try {
+          unlinkSync(tmp);
+        } catch {
+          // Nothing left to clean up.
+        }
+      }
+
+      try {
+        writeFileSync(filePath, contents, 'utf8');
+      } catch (err) {
+        // The lock still holds in memory; only crash recovery is lost, and
+        // saying so beats dying silently.
+        console.error('CodeLock: could not persist lock state to disk.', err);
+      }
     },
 
     clear(): void {

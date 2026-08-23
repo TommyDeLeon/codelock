@@ -211,7 +211,7 @@ export default function HowItWorksPage() {
                   <dd className="prose-site mt-2 text-[14.5px]">
                     A solve counts as fast when you finish inside the problem&apos;s own average
                     solve time. <strong>The streak is consecutive</strong> — one slow solve puts it
-                    back to zero, and the counter on your dashboard shows exactly where you stand.
+                    back to zero, and the counter in the app shows exactly where you stand.
                   </dd>
                 </div>
                 <div className="rule-b py-5">

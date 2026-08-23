@@ -21,7 +21,13 @@ export function TierLadder({ progress }: { progress: UserProgress }) {
       <p className="eyebrow">Tier</p>
       <ol
         aria-label="Difficulty ladder"
-        style={{ display: 'flex', gap: 4, listStyle: 'none', margin: '8px 0 0', padding: 0 }}
+        style={{
+          display: 'flex',
+          gap: 4,
+          listStyle: 'none',
+          margin: '8px 0 0',
+          padding: 0,
+        }}
       >
         {DIFFICULTIES.map((tier, i) => (
           <li key={tier} style={{ flex: 1 }}>
@@ -126,7 +132,14 @@ export function RankReadout({ speed }: { speed: StatsSummary['speed'] }) {
   return (
     <section>
       <p className="eyebrow">Against the record</p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 8,
+          marginTop: 8,
+        }}
+      >
         <span className="mono" style={{ fontSize: 26, fontWeight: 600 }}>
           {speed.medianRatio.toFixed(2)}×
         </span>

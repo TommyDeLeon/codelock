@@ -1,8 +1,11 @@
 /**
  * The same tokens as the web app's `@theme` block, transcribed for React
  * Native. Kept in sync by hand — RN cannot consume CSS custom properties, and
- * a build step to generate them would be more machinery than four colours
+ * a build step to generate them would be more machinery than a dozen colours
  * justify.
+ *
+ * Follows the web app's retail direction: a green promotional band, softer
+ * corners, bold display type. Pine green remains the brand.
  */
 export const colors = {
   light: {
@@ -16,6 +19,9 @@ export const colors = {
     accent: '#1b6b4a',
     accentFg: '#ffffff',
     accentSoft: '#e4efe9',
+    // The promotional band: a deeper pine so white on it clears AA comfortably.
+    promo: '#14523a',
+    promoFg: '#ffffff',
     // The same green as the accent, deliberately. One green, one meaning.
     success: '#1b6b4a',
     danger: '#a12d20',
@@ -32,6 +38,8 @@ export const colors = {
     accent: '#4ed18f',
     accentFg: '#0d1a13',
     accentSoft: '#10241b',
+    promo: '#12503a',
+    promoFg: '#eafff4',
     success: '#4ed18f',
     danger: '#e0685a',
     warning: '#d5a03f',
@@ -45,5 +53,6 @@ export const colors = {
  */
 export type ThemeColors = { [K in keyof (typeof colors)['light']]: string };
 
-export const radius = { xs: 3, sm: 5, md: 8, lg: 12 } as const;
+/** Matching the web app: varied by element weight, not one value everywhere. */
+export const radius = { xs: 4, sm: 8, md: 12, lg: 20 } as const;
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

@@ -12,6 +12,7 @@ import {
 import type { Integration, LeetCodeStats, TimerConfig } from '@codelock/shared';
 import { colors, radius, spacing, type ThemeColors } from '@/theme';
 import { mobileApi } from '@/session';
+import { PromoBand } from '@/promo-band';
 
 /**
  * Settings — the schedule and the LeetCode link, native.
@@ -141,149 +142,161 @@ export default function SettingsScreen() {
   const wraps = timer.activeFromMinute > timer.activeToMinute;
 
   return (
-    <ScrollView contentContainerStyle={[styles.screen, { backgroundColor: theme.bg }]}>
-      {/* --- schedule ---------------------------------------------------- */}
-      <Section theme={theme} title="When CodeLock can lock you">
-        <View style={styles.days}>
-          {DAYS.map((day) => {
-            const on = (timer.activeDaysMask & (1 << day.bit)) !== 0;
-            return (
+    <ScrollView contentContainerStyle={[styles.screenFlush, { backgroundColor: theme.bg }]}>
+      <PromoBand />
+      <View style={styles.screen}>
+        {/* --- schedule ---------------------------------------------------- */}
+        <Section theme={theme} title="When CodeLock can lock you">
+          <View style={styles.days}>
+            {DAYS.map((day) => {
+              const on = (timer.activeDaysMask & (1 << day.bit)) !== 0;
+              return (
+                <Pressable
+                  key={day.bit}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={day.label}
+                  onPress={() =>
+                    void saveTimer({
+                      activeDaysMask: timer.activeDaysMask ^ (1 << day.bit),
+                    })
+                  }
+                  style={[
+                    styles.day,
+                    {
+                      borderColor: on ? theme.accent : theme.border,
+                      backgroundColor: on ? theme.accent : theme.surface,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.dayText, { color: on ? theme.accentFg : theme.muted }]}>
+                    {day.short}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.presets}>
+            <Preset
+              theme={theme}
+              label="Weekdays"
+              onPress={() => void saveTimer({ activeDaysMask: WEEKDAYS })}
+            />
+            <Preset
+              theme={theme}
+              label="Every day"
+              onPress={() => void saveTimer({ activeDaysMask: EVERY_DAY })}
+            />
+          </View>
+
+          <View style={styles.timeRow}>
+            <TimeField
+              theme={theme}
+              label="From"
+              value={fromText}
+              onChange={setFromText}
+              onBlur={commitWindow}
+            />
+            <TimeField
+              theme={theme}
+              label="To"
+              value={toText}
+              onChange={setToText}
+              onBlur={commitWindow}
+            />
+          </View>
+
+          {timer.activeDaysMask === 0 && (
+            <Text style={[styles.note, { color: theme.warning }]}>
+              No days selected — CodeLock will never lock you.
+            </Text>
+          )}
+          {wraps && (
+            <Text style={[styles.note, { color: theme.muted }]}>
+              This window crosses midnight, so it runs into the next morning.
+            </Text>
+          )}
+        </Section>
+
+        {/* --- leetcode ---------------------------------------------------- */}
+        <Section theme={theme} title="LeetCode">
+          {leetcode ? (
+            <>
+              <View style={styles.statRow}>
+                <Stat theme={theme} label="solved" value={String(leetcode.solved.total)} />
+                <Stat theme={theme} label="easy" value={String(leetcode.solved.easy)} />
+                <Stat theme={theme} label="medium" value={String(leetcode.solved.medium)} />
+                <Stat theme={theme} label="hard" value={String(leetcode.solved.hard)} />
+              </View>
+              <Text style={[styles.note, { color: theme.faint }]}>
+                {leetcode.username} · snapshot from{' '}
+                {new Date(leetcode.fetchedAt).toLocaleDateString()}
+              </Text>
               <Pressable
-                key={day.bit}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                accessibilityLabel={day.label}
-                onPress={() =>
-                  void saveTimer({ activeDaysMask: timer.activeDaysMask ^ (1 << day.bit) })
-                }
+                accessibilityRole="button"
+                onPress={() => void mobileApi.disconnect('LEETCODE').then(load)}
+              >
+                <Text style={[styles.link, { color: theme.muted }]}>Disconnect</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder="LeetCode username"
+                placeholderTextColor={theme.faint}
+                autoCapitalize="none"
+                accessibilityLabel="LeetCode username"
                 style={[
-                  styles.day,
+                  styles.input,
                   {
-                    borderColor: on ? theme.accent : theme.border,
-                    backgroundColor: on ? theme.accent : theme.surface,
+                    borderColor: theme.border,
+                    color: theme.fg,
+                    backgroundColor: theme.surface,
+                  },
+                ]}
+              />
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy || username.trim().length === 0}
+                onPress={() => void linkLeetCode()}
+                style={[
+                  styles.button,
+                  {
+                    backgroundColor: theme.fg,
+                    opacity: busy || !username.trim() ? 0.5 : 1,
                   },
                 ]}
               >
-                <Text style={[styles.dayText, { color: on ? theme.accentFg : theme.muted }]}>
-                  {day.short}
-                </Text>
+                <Text style={[styles.buttonText, { color: theme.bg }]}>Link account</Text>
               </Pressable>
-            );
-          })}
-        </View>
+            </>
+          )}
+        </Section>
 
-        <View style={styles.presets}>
-          <Preset
-            theme={theme}
-            label="Weekdays"
-            onPress={() => void saveTimer({ activeDaysMask: WEEKDAYS })}
-          />
-          <Preset
-            theme={theme}
-            label="Every day"
-            onPress={() => void saveTimer({ activeDaysMask: EVERY_DAY })}
-          />
-        </View>
-
-        <View style={styles.timeRow}>
-          <TimeField
-            theme={theme}
-            label="From"
-            value={fromText}
-            onChange={setFromText}
-            onBlur={commitWindow}
-          />
-          <TimeField
-            theme={theme}
-            label="To"
-            value={toText}
-            onChange={setToText}
-            onBlur={commitWindow}
-          />
-        </View>
-
-        {timer.activeDaysMask === 0 && (
-          <Text style={[styles.note, { color: theme.warning }]}>
-            No days selected — CodeLock will never lock you.
-          </Text>
-        )}
-        {wraps && (
+        {/* --- github ------------------------------------------------------ */}
+        <Section theme={theme} title="GitHub">
           <Text style={[styles.note, { color: theme.muted }]}>
-            This window crosses midnight, so it runs into the next morning.
+            {github
+              ? `Connected as ${github.externalUsername}${
+                  github.repoFullName ? `, mirroring to ${github.repoFullName}` : ''
+                }. Accepted solutions are committed after the lock releases; a failed push never keeps you locked.`
+              : 'Not connected. Connect it from the desktop app — the GitHub sign-in flow only accepts a redirect back to CodeLock on a desktop browser.'}
           </Text>
-        )}
-      </Section>
-
-      {/* --- leetcode ---------------------------------------------------- */}
-      <Section theme={theme} title="LeetCode">
-        {leetcode ? (
-          <>
-            <View style={styles.statRow}>
-              <Stat theme={theme} label="solved" value={String(leetcode.solved.total)} />
-              <Stat theme={theme} label="easy" value={String(leetcode.solved.easy)} />
-              <Stat theme={theme} label="medium" value={String(leetcode.solved.medium)} />
-              <Stat theme={theme} label="hard" value={String(leetcode.solved.hard)} />
-            </View>
-            <Text style={[styles.note, { color: theme.faint }]}>
-              {leetcode.username} · snapshot from{' '}
-              {new Date(leetcode.fetchedAt).toLocaleDateString()}
-            </Text>
+          {github && (
             <Pressable
               accessibilityRole="button"
-              onPress={() => void mobileApi.disconnect('LEETCODE').then(load)}
+              onPress={() => void mobileApi.disconnect('GITHUB').then(load)}
             >
               <Text style={[styles.link, { color: theme.muted }]}>Disconnect</Text>
             </Pressable>
-          </>
-        ) : (
-          <>
-            <TextInput
-              value={username}
-              onChangeText={setUsername}
-              placeholder="LeetCode username"
-              placeholderTextColor={theme.faint}
-              autoCapitalize="none"
-              accessibilityLabel="LeetCode username"
-              style={[
-                styles.input,
-                { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface },
-              ]}
-            />
-            <Pressable
-              accessibilityRole="button"
-              disabled={busy || username.trim().length === 0}
-              onPress={() => void linkLeetCode()}
-              style={[
-                styles.button,
-                { backgroundColor: theme.fg, opacity: busy || !username.trim() ? 0.5 : 1 },
-              ]}
-            >
-              <Text style={[styles.buttonText, { color: theme.bg }]}>Link account</Text>
-            </Pressable>
-          </>
-        )}
-      </Section>
+          )}
+        </Section>
 
-      {/* --- github ------------------------------------------------------ */}
-      <Section theme={theme} title="GitHub">
-        <Text style={[styles.note, { color: theme.muted }]}>
-          {github
-            ? `Connected as ${github.externalUsername}${
-                github.repoFullName ? `, mirroring to ${github.repoFullName}` : ''
-              }. Accepted solutions are committed after the lock releases; a failed push never keeps you locked.`
-            : 'Not connected. Connect it from the desktop app — the GitHub sign-in flow only accepts a redirect back to CodeLock on a desktop browser.'}
-        </Text>
-        {github && (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void mobileApi.disconnect('GITHUB').then(load)}
-          >
-            <Text style={[styles.link, { color: theme.muted }]}>Disconnect</Text>
-          </Pressable>
-        )}
-      </Section>
-
-      {status && <Text style={[styles.note, { color: theme.faint }]}>{status}</Text>}
+        {status && <Text style={[styles.note, { color: theme.faint }]}>{status}</Text>}
+      </View>
     </ScrollView>
   );
 }
@@ -351,7 +364,11 @@ function TimeField({
         accessibilityLabel={label}
         style={[
           styles.input,
-          { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface },
+          {
+            borderColor: theme.border,
+            color: theme.fg,
+            backgroundColor: theme.surface,
+          },
         ]}
       />
     </View>
@@ -369,9 +386,16 @@ function Stat({ label, value, theme }: { label: string; value: string; theme: Th
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.lg, gap: spacing.lg, flexGrow: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  // The band is full-bleed, so padding moves to an inner view.
+  screenFlush: { flexGrow: 1 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
   section: { borderTopWidth: 1, paddingTop: spacing.lg, gap: spacing.md },
-  sectionTitle: { fontSize: 15, fontWeight: '600' },
+  sectionTitle: { fontSize: 16, fontWeight: '700' },
   days: { flexDirection: 'row', gap: spacing.xs },
   day: {
     flex: 1,
@@ -400,7 +424,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     fontSize: 16,
   },
-  button: { height: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  button: {
+    height: 46,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   buttonText: { fontSize: 15, fontWeight: '600' },
   note: { fontSize: 12.5, lineHeight: 18 },
   link: { fontSize: 13.5, paddingVertical: spacing.sm },

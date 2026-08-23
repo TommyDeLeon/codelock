@@ -36,7 +36,7 @@ export default function LoginPage() {
   const { hydrate } = useAuth();
 
   useEffect(() => {
-    if (status === 'authenticated') router.replace('/dashboard');
+    if (status === 'authenticated') router.replace('/');
   }, [status, router]);
 
   // Only offer buttons this deployment can actually complete. A provider with
@@ -76,7 +76,7 @@ export default function LoginPage() {
       .then(async (session) => {
         tokenStore.set(session.accessToken, session.refreshToken);
         await hydrate();
-        router.replace('/dashboard');
+        router.replace('/');
       })
       .catch((err: unknown) =>
         setError(
@@ -110,7 +110,7 @@ export default function LoginPage() {
     try {
       if (mode === 'login') await login(email, password);
       else await register({ email, password, displayName });
-      router.replace('/dashboard');
+      router.replace('/');
     } catch (err) {
       setError(
         err instanceof ApiClientError ? err.message : 'Could not reach the server. Try again.',

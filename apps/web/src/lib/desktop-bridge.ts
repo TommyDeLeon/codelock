@@ -30,6 +30,7 @@ export interface CodeLockBridge {
     holdToReleaseMs: number;
   }>;
   schedule(session: { sessionId: string; fireAt: string } | null): Promise<{ scheduled: boolean }>;
+  session?(): Promise<{ accessToken: string; refreshToken: string } | null>;
   openExternal(url: string): Promise<boolean>;
   onHoldProgress(handler: (progress: HoldProgress) => void): () => void;
   onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void;
@@ -57,6 +58,25 @@ export const isDesktop = (): boolean => getBridge() !== null;
  */
 export async function engageDesktopLock(sessionId?: string): Promise<void> {
   await getBridge()?.lock(sessionId);
+}
+
+/**
+ * Borrow the session the desktop shell is holding.
+ *
+ * The shell signs in on its own origin (app://codelock) and then loads the lock
+ * screen from this web app — a different origin with its own, empty storage.
+ * Without this the lock screen would present a sign-in form, at the one moment
+ * the user cannot navigate away from it.
+ *
+ * Null in a browser, and null in the shell before anyone has signed in.
+ */
+export async function borrowDesktopSession(): Promise<{
+  accessToken: string;
+  refreshToken: string;
+} | null> {
+  const bridge = getBridge();
+  if (!bridge?.session) return null;
+  return (await bridge.session().catch(() => null)) ?? null;
 }
 
 /**

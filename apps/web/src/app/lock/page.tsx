@@ -63,7 +63,7 @@ export default function LockPage() {
       // Recorded distinctly in the audit trail: a kill switch is a different
       // event from a user pressing 'give up' in the UI.
       if (sessionId) abandon.mutate({ id: sessionId, reason: 'kill_switch' });
-      router.replace('/dashboard');
+      router.replace('/');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -102,13 +102,13 @@ export default function LockPage() {
     );
   }
 
-  if (unlocked) return <UnlockedScreen onContinue={() => router.replace('/dashboard')} />;
+  if (unlocked) return <UnlockedScreen onContinue={() => router.replace('/')} />;
 
   if (!session) {
     return (
       <main id="main" className="flex h-dvh flex-col items-center justify-center gap-4 p-4">
         <p className="text-sm text-muted">Nothing is locked right now.</p>
-        <Button onClick={() => router.replace('/dashboard')}>Back to dashboard</Button>
+        <Button onClick={() => router.replace('/')}>Back to CodeLock</Button>
       </main>
     );
   }
@@ -123,8 +123,8 @@ export default function LockPage() {
         <p className="max-w-xs text-center text-sm text-muted">
           You can keep working. This screen takes over when the timer reaches zero.
         </p>
-        <Button variant="outline" onClick={() => router.replace('/dashboard')}>
-          Back to dashboard
+        <Button variant="outline" onClick={() => router.replace('/')}>
+          Back to CodeLock
         </Button>
       </main>
     );
@@ -152,7 +152,7 @@ export default function LockPage() {
     );
   }
 
-  return <UnlockedScreen onContinue={() => router.replace('/dashboard')} />;
+  return <UnlockedScreen onContinue={() => router.replace('/')} />;
 }
 
 function UnlockedScreen({ onContinue }: { onContinue: () => void }) {
