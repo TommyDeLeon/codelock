@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.renderer.json",
     "dist": "npm run icon && npm run build && electron-builder --publish never",
     "dist:all": "npm run icon && npm run build && electron-builder -mwl --publish never",
-    "icon": "node scripts/make-icon.mjs",
+    "icon": "node ../../scripts/make-icons.mjs",
     "test": "vitest run",
     "build:renderer": "vite build",
     "dev:renderer": "vite"

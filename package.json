@@ -23,7 +23,8 @@
     "dist:desktop": "npm run dist -w @codelock/desktop",
     "dev:judge": "npm run dev -w @codelock/judge",
     "dev:expire": "npm run dev:expire -w @codelock/api",
-    "db:reset": "npm run db:migrate -w @codelock/api && npm run db:seed -w @codelock/api"
+    "db:reset": "npm run db:migrate -w @codelock/api && npm run db:seed -w @codelock/api",
+    "icons": "node scripts/make-icons.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
