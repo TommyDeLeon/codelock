@@ -1,13 +1,13 @@
-import Link from 'next/link';
-import { LockMark } from '@/components/ui/lock-mark';
+import { SiteNav } from '@/components/site/site-nav';
 import { SiteFooter } from '@/components/site-footer';
 
 /**
  * Shared chrome for the legal pages.
  *
- * These are the only routes reachable while signed out apart from login, so
- * they carry their own minimal header rather than AppHeader, which assumes an
- * authenticated user.
+ * They use the marketing nav, not AppHeader: these are public routes reachable
+ * while signed out, and AppHeader assumes an authenticated user. They used to
+ * carry a bespoke cut-down header, which made the two pages a reader reaches
+ * from the footer the only ones with no navigation and no theme control.
  */
 export function LegalPage({
   title,
@@ -20,18 +20,7 @@ export function LegalPage({
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
-          <Link
-            href="/"
-            aria-label="CodeLock home"
-            className="flex items-center gap-2 py-2 hover:opacity-80"
-          >
-            <LockMark className="size-[19px] shrink-0" />
-            <span className="text-sm font-semibold tracking-tight">CodeLock</span>
-          </Link>
-        </div>
-      </header>
+      <SiteNav />
 
       <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

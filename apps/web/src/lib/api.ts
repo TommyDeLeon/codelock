@@ -10,6 +10,7 @@ import type {
   GradeResult,
   Language,
   LockSessionView,
+  OAuthProviderName,
   PublicProblem,
   StatsSummary,
   TimerConfig,
@@ -266,6 +267,20 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(patch),
       }),
+  },
+
+  oauth: {
+    /** Which providers this deployment can actually complete. */
+    providers: () => request<{ providers: OAuthProviderName[] }>('/v1/auth/oauth/providers'),
+    /** Begin. Returns the provider URL to send the browser to. */
+    start: (provider: OAuthProviderName) =>
+      post<{ url: string; handoff: string }>(`/v1/auth/oauth/${provider.toLowerCase()}/start`),
+    /** Exchange the one-time handoff for a session. */
+    claim: (handoff: string) =>
+      post<{ user: AuthUser; accessToken: string; refreshToken: string }>(
+        '/v1/auth/oauth/claim',
+        { handoff },
+      ),
   },
 
   integrations: {

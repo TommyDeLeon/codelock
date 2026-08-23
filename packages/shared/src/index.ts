@@ -258,6 +258,21 @@ export interface PerformanceVerdict {
   reason: string;
 }
 
+/**
+ * Identity providers this product can sign users in with.
+ *
+ * LeetCode is deliberately absent: it publishes no OAuth or OIDC endpoints, so
+ * "sign in with LeetCode" could only be built by collecting a LeetCode
+ * password, which is phishing with extra steps. It stays linkable from Settings
+ * after sign-in, which is the honest version of the same feature.
+ */
+export type OAuthProviderName = 'GITHUB' | 'GOOGLE';
+
+export const OAUTH_PROVIDER_LABELS: Record<OAuthProviderName, string> = {
+  GITHUB: 'GitHub',
+  GOOGLE: 'Google',
+};
+
 // --- integrations ----------------------------------------------------------
 
 export type IntegrationProvider = 'GITHUB' | 'LEETCODE';

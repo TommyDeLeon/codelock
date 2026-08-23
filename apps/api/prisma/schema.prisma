@@ -73,7 +73,10 @@ enum Platform {
 model User {
   id                String   @id @default(uuid()) @db.Uuid
   email             String   @unique
-  passwordHash      String
+  /// Null for accounts created through an identity provider. Such a user has
+  /// no password to verify, and the login route must never treat that as a
+  /// match — see the DUMMY_HASH path in routes/auth.ts.
+  passwordHash      String?
   displayName       String
   preferredLanguage Language @default(JAVASCRIPT)
   timezone          String   @default("UTC")
@@ -88,8 +91,37 @@ model User {
   refreshTokens RefreshToken[]
   integrations  Integration[]
   unlockAudits  UnlockAudit[]
+  oauthAccounts OAuthAccount[]
 
   @@map("users")
+}
+
+enum OAuthProvider {
+  GITHUB
+  GOOGLE
+}
+
+/// An identity from an external provider, bound to one local user.
+///
+/// Deliberately separate from Integration: that model exists to *act* on a
+/// third-party API on the user's behalf and stores an encrypted access token.
+/// This one only answers "who is this", holds no usable credential after
+/// sign-in, and must not be confused with authorisation to push code.
+model OAuthAccount {
+  id       String        @id @default(uuid()) @db.Uuid
+  userId   String        @db.Uuid
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider OAuthProvider
+  /// The provider's immutable id for the account — never the email, which the
+  /// user can change at the provider and which would then point somewhere else.
+  providerAccountId String
+  /// What the provider called the account at link time. Display only.
+  providerEmail String?
+  createdAt DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@unique([userId, provider])
+  @@map("oauth_accounts")
 }
 
 model RefreshToken {

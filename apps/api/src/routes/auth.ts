@@ -2,6 +2,7 @@ import { Router } from 'express';
 import argon2 from 'argon2';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
+import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
@@ -19,7 +20,7 @@ const ARGON_OPTS = {
   parallelism: 1,
 } as const;
 
-async function issueSession(userId: string, email: string) {
+export async function issueSession(userId: string, email: string) {
   const { token, hash } = generateRefreshToken();
   await prisma.refreshToken.create({
     data: {
@@ -91,11 +92,39 @@ authRouter.post(
       include: { user: true },
     });
 
-    if (!record || record.revokedAt || record.expiresAt < new Date()) {
+    if (!record) throw ApiError.unauthorized('Refresh token is invalid or expired');
+
+    /**
+     * Reuse detection.
+     *
+     * Rotation alone makes a replayed token useless, but it does not tell
+     * anyone that a replay happened. A token is revoked exactly once, when it
+     * is exchanged — so presenting an already-revoked one means two parties
+     * hold the same secret, and only one of them is the user.
+     *
+     * There is no way to tell which is which, so end every session: the real
+     * user signs in again, and the thief is left with nothing. Failing open
+     * here would let a stolen token keep rotating indefinitely, which is the
+     * entire attack this is meant to catch.
+     */
+    if (record.revokedAt) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      logger.warn(
+        { userId: record.userId, tokenId: record.id },
+        'refresh token reuse detected; revoked every session for this user',
+      );
+      throw ApiError.unauthorized('Session ended for security reasons. Please sign in again.');
+    }
+
+    if (record.expiresAt < new Date()) {
       throw ApiError.unauthorized('Refresh token is invalid or expired');
     }
 
-    // Rotate: a replayed token is then provably stale.
+    // Rotate: a replayed token is then provably stale, and lands in the branch
+    // above rather than being silently accepted.
     await prisma.refreshToken.update({
       where: { id: record.id },
       data: { revokedAt: new Date() },

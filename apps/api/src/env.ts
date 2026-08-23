@@ -70,6 +70,14 @@ const schema = z.object({
   GITHUB_CALLBACK_URL: z.string().optional().default(''),
   /// Where to bounce the browser once the OAuth dance finishes.
   APP_URL: z.string().url().default('http://localhost:3000'),
+  /// This API's own public origin. Identity-provider redirect URIs are built
+  /// from it, and they must match what is registered with the provider exactly
+  /// — a mismatch is rejected by the provider rather than by us.
+  API_URL: z.string().url().default('http://localhost:4000'),
+  /// Sign in with Google. Empty disables the button rather than breaking it:
+  /// the login screen only offers providers this deployment can complete.
+  GOOGLE_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
