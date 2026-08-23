@@ -41,6 +41,8 @@ export function SettingsScreen() {
   const [timer, setTimer] = useState<TimerConfig | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [leetcode, setLeetcode] = useState<LeetCodeStats | null>(null);
+  /** Connected, but the last stats fetch failed. Distinct from not connected. */
+  const [leetcodeOffline, setLeetcodeOffline] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [fromText, setFromText] = useState('00:00');
   const [toText, setToText] = useState('24:00');
@@ -55,10 +57,21 @@ export function SettingsScreen() {
       setIntegrations(list.integrations);
 
       if (list.integrations.some((i) => i.provider === 'LEETCODE')) {
-        // The upstream endpoint is unofficial and does go down; a failure here
-        // is not worth surfacing as an error.
-        const stats = await api.leetcodeStats().catch(() => null);
-        setLeetcode(stats?.stats ?? null);
+        // The upstream endpoint is unofficial and does go down, and that is not
+        // worth failing the whole settings load over — but it is not the same
+        // as being disconnected either. Falling back to null here used to drop
+        // the user into the "enter your LeetCode username" form they had
+        // already filled in.
+        setLeetcodeOffline(null);
+        try {
+          const stats = await api.leetcodeStats();
+          setLeetcode(stats.stats);
+        } catch (err) {
+          setLeetcode(null);
+          setLeetcodeOffline(
+            err instanceof ApiError ? err.message : 'Could not reach LeetCode just now.',
+          );
+        }
       }
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'Could not reach CodeLock.');
@@ -233,6 +246,11 @@ export function SettingsScreen() {
               {new Date(leetcode.fetchedAt).toLocaleDateString()}
             </p>
             <Quiet onClick={() => void api.disconnect('LEETCODE').then(load)}>Disconnect</Quiet>
+          </>
+        ) : leetcodeOffline ? (
+          <>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>{leetcodeOffline}</p>
+            <Quiet onClick={() => void load()}>Try again</Quiet>
           </>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>

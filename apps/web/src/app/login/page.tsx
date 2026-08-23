@@ -145,6 +145,15 @@ export default function LoginPage() {
 
         <Card>
           <CardBody>
+            {notice && (
+              <p
+                role="status"
+                className="mb-5 rounded-sm bg-accent-soft px-3 py-2 text-[13px] text-accent"
+              >
+                {notice}
+              </p>
+            )}
+
             {providers.length > 0 && (
               <>
                 <div className="space-y-2">
@@ -220,15 +229,6 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
-
-              {notice && (
-                <p
-                  role="status"
-                  className="rounded-sm bg-accent-soft px-3 py-2 text-[13px] text-accent"
-                >
-                  {notice}
-                </p>
-              )}
 
               {error && (
                 <p role="alert" className="rounded-sm bg-danger-soft px-3 py-2 text-[13px] text-danger">

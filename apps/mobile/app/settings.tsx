@@ -56,6 +56,8 @@ export default function SettingsScreen() {
   const [timer, setTimer] = useState<TimerConfig | null>(null);
   const [integrations, setIntegrations] = useState<Integration[] | null>(null);
   const [leetcode, setLeetcode] = useState<LeetCodeStats | null>(null);
+  /** Connected, but the last stats fetch failed. Distinct from not connected. */
+  const [leetcodeOffline, setLeetcodeOffline] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [fromText, setFromText] = useState('00:00');
   const [toText, setToText] = useState('24:00');
@@ -75,9 +77,20 @@ export default function SettingsScreen() {
 
       if (list.integrations.some((i) => i.provider === 'LEETCODE')) {
         // Cached server-side; the upstream endpoint is unofficial and does go
-        // down, so a failure here is not worth surfacing as an error.
-        const stats = await mobileApi.leetcodeStats().catch(() => null);
-        setLeetcode(stats?.stats ?? null);
+        // down, and that is not worth failing the whole settings load over —
+        // but it is not the same as being disconnected either. Falling back to
+        // null here used to drop the user into the "enter your LeetCode
+        // username" form they had already filled in.
+        setLeetcodeOffline(null);
+        try {
+          const stats = await mobileApi.leetcodeStats();
+          setLeetcode(stats.stats);
+        } catch (err) {
+          setLeetcode(null);
+          setLeetcodeOffline(
+            err instanceof Error ? err.message : 'Could not reach LeetCode just now.',
+          );
+        }
       }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Could not reach CodeLock');
@@ -238,6 +251,13 @@ export default function SettingsScreen() {
                 onPress={() => void mobileApi.disconnect('LEETCODE').then(load)}
               >
                 <Text style={[styles.link, { color: theme.muted }]}>Disconnect</Text>
+              </Pressable>
+            </>
+          ) : leetcodeOffline ? (
+            <>
+              <Text style={[styles.note, { color: theme.muted }]}>{leetcodeOffline}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void load()}>
+                <Text style={[styles.link, { color: theme.muted }]}>Try again</Text>
               </Pressable>
             </>
           ) : (
