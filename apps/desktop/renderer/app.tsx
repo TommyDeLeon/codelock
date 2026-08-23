@@ -107,6 +107,12 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
   // Only offer buttons the server can complete. A provider with no client id
   // configured would send the user to a broken consent screen.
   useEffect(() => {
+    // Reset on every mount, not just initialise once. StrictMode mounts,
+    // unmounts and remounts in development, and the cleanup below latches this
+    // ref at true — so without this line the poll's `!cancelled.current` check
+    // fails on its first pass and provider sign-in times out instantly.
+    cancelled.current = false;
+
     void api
       .oauthProviders()
       .then((r) => setProviders(r.providers))

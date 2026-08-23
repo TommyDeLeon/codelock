@@ -57,9 +57,22 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     return () => clearInterval(id);
   }, [refresh]);
 
+  /**
+   * A paused countdown has no deadline.
+   *
+   * The API freezes secondsRemaining while this is set and refuses to engage
+   * such a session, so nothing on this screen may act as though a deadline is
+   * approaching — not the local tick, not the auto-lock, and not the deadline
+   * handed to the shell.
+   */
+  const paused = session?.pausedAt != null;
+
   // A local countdown between polls, so the figure moves every second without
   // asking the server sixty times a minute. The server still owns the deadline.
-  const counting = remaining !== null;
+  // Frozen while paused: the server is not counting either, so ticking here
+  // would both show a falling number the server disagrees with and walk the
+  // figure down to zero, which is what fires the lock below.
+  const counting = remaining !== null && !paused;
   useEffect(() => {
     if (!counting) return;
     const id = setInterval(
@@ -73,11 +86,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   // closed to the tray. Cleared when there is no armed session to wait for.
   useEffect(() => {
     void bridge()?.schedule(
-      session?.state === 'ARMED' ? { sessionId: session.id, fireAt: session.fireAt } : null,
+      session?.state === 'ARMED' && !paused
+        ? { sessionId: session.id, fireAt: session.fireAt }
+        : null,
     );
-  }, [session?.id, session?.state, session?.fireAt]);
+  }, [session?.id, session?.state, session?.fireAt, paused]);
 
-  const fired = session !== null && (session.state === 'LOCKED' || remaining === 0);
+  const fired =
+    session !== null && (session.state === 'LOCKED' || (remaining === 0 && !paused));
 
   /**
    * The whole point of the product: when the timer fires, the screen goes away
@@ -171,7 +187,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   color: 'var(--faint)',
                 }}
               >
-                locks at {session ? new Date(session.fireAt).toLocaleTimeString() : '—'}
+                {/* fireAt is only meaningful again once resumed, so quoting a
+                    time here while paused would be the second untruth after
+                    a number that is no longer counting down. */}
+                {paused
+                  ? 'Paused. Resume it from the web or mobile app.'
+                  : `locks at ${session ? new Date(session.fireAt).toLocaleTimeString() : '—'}`}
               </p>
             </>
           ) : (
