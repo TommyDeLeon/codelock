@@ -97,12 +97,20 @@ services:
       context: ..
       dockerfile: apps/web/Dockerfile
       args:
-        # Build args, not environment: NEXT_PUBLIC_* is inlined into the client
-        # bundle at build time. Changing these needs a rebuild, not a restart.
+        # Build args, because NEXT_PUBLIC_* is inlined into the client bundle.
+        # These only apply when building here; the prebuilt image from GHCR
+        # carries whatever CI had, which is why the API origin below is passed
+        # as environment instead.
         NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
         NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
         NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
         NEXT_PUBLIC_REPO_URL: ${REPO_URL:-}
+    environment:
+      # Read per request and served to the browser by /runtime-config.js, so a
+      # prebuilt image works for any deployment. Without this the GHCR image
+      # would point every visitor's browser at their own localhost:4000 — the
+      # page renders and nothing works.
+      CODELOCK_API_URL: https://${API_DOMAIN}
     restart: unless-stopped
 
   # SECURITY: the socket mount is root-equivalent on this host. Anyone who

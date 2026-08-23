@@ -16,9 +16,31 @@ import type {
   TimerConfig,
 } from '@codelock/shared';
 
-// `||` not `??`: an unset Docker build arg arrives as the empty string, which
-// would make every request resolve against the page's own origin.
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/**
+ * Where the API lives.
+ *
+ * The runtime value wins. `/runtime-config.js` is a blocking script in the
+ * document head that sets this global from the server's environment, so a
+ * prebuilt image can be pointed at any deployment without rebuilding — CI
+ * cannot know your domain, and a bundle built without one silently falls back
+ * to localhost and calls the visitor's own machine.
+ *
+ * The build-time constant stays as the fallback so `npm run dev` and locally
+ * built images keep working unchanged.
+ *
+ * `||` not `??`: an unset Docker build arg arrives as the empty string, which
+ * would make every request resolve against the page's own origin.
+ */
+declare global {
+  interface Window {
+    __CODELOCK__?: { apiUrl?: string };
+  }
+}
+
+const BASE =
+  (typeof window !== 'undefined' ? window.__CODELOCK__?.apiUrl : undefined) ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:4000';
 
 /**
  * Token storage.

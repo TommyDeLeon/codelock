@@ -91,6 +91,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${sans.variable} ${display.variable} ${mono.variable}`}
     >
+      <head>
+        {/*
+          Deliberately a plain blocking script, not next/script.
+
+          It defines window.__CODELOCK__, which lib/api.ts reads at module
+          scope, so it must have run before any client bundle evaluates —
+          next/script's default strategy does not guarantee that. It is a few
+          dozen bytes from the same origin, so the cost is a parse.
+        */}
+        <script src="/runtime-config.js" />
+      </head>
       <body className="min-h-dvh antialiased">
         {/* First stop for keyboard users; required for WCAG 2.4.1. */}
         <a
