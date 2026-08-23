@@ -17,8 +17,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * per case for no extra signal.
  */
 
-/** Every observable operation, in the order the handler performed it. */
-const calls: string[] = [];
+/**
+ * Every observable operation, in the order the handler performed it, plus the
+ * set of emails the fake database already knows about.
+ */
+const { calls, takenEmails } = vi.hoisted(() => ({
+  calls: [] as string[],
+  takenEmails: new Set<string>(),
+}));
 
 vi.mock('argon2', () => ({
   default: {
@@ -33,9 +39,6 @@ vi.mock('argon2', () => ({
     }),
   },
 }));
-
-/** Emails this fake database already knows about. */
-const takenEmails = new Set<string>();
 
 vi.mock('../lib/prisma.js', () => ({
   prisma: {
@@ -60,8 +63,8 @@ vi.mock('../lib/prisma.js', () => ({
   },
 }));
 
-const { authRouter } = await import('./auth.js');
-const { errorHandler } = await import('../middleware/error.js');
+import { authRouter } from './auth.js';
+import { errorHandler } from '../middleware/error.js';
 
 function app() {
   const instance = express();

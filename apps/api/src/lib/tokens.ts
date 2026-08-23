@@ -32,6 +32,10 @@ export function signAccessToken(userId: string, email: string): string {
 
 export function verifyAccessToken(token: string): AccessClaims {
   const claims = jwt.verify(token, env.JWT_ACCESS_SECRET, {
+    // Pinned rather than inferred. jsonwebtoken already rejects alg:none, but
+    // an accept-anything verifier is one key-material change away from being a
+    // confusion bug, and these secrets are symmetric today by choice.
+    algorithms: ['HS256'],
     issuer: 'codelock',
     audience: 'codelock-client',
   }) as AccessClaims;
@@ -51,6 +55,7 @@ export function signUnlockToken(userId: string, sessionId: string): string {
 
 export function verifyUnlockToken(token: string): UnlockClaims {
   const claims = jwt.verify(token, env.JWT_UNLOCK_SECRET, {
+    algorithms: ['HS256'],
     issuer: 'codelock',
     audience: 'codelock-lockscreen',
   }) as UnlockClaims;
