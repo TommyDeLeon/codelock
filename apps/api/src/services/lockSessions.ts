@@ -5,6 +5,9 @@ import {
   type LockSession,
   type Problem,
 } from '@prisma/client';
+// The cross-client contract. Declaring these locally is how `pausedAt` drifted
+// between the API and the clients once already.
+import type { LockSessionView, PublicProblem } from '@codelock/shared';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
@@ -14,32 +17,6 @@ import { recordUnlock, secondsLocked } from './audit.js';
 
 /** A session left LOCKED longer than this is reaped as ABANDONED. */
 export const SESSION_MAX_AGE_HOURS = 12;
-
-export interface LockSessionView {
-  id: string;
-  state: LockState;
-  difficulty: Difficulty;
-  fireAt: string;
-  /** Server clock at response time, so clients can correct for drift. */
-  serverNow: string;
-  secondsRemaining: number;
-  /** Set while an armed countdown is paused; secondsRemaining freezes with it. */
-  pausedAt: string | null;
-  attempts: number;
-  problem: PublicProblem | null;
-}
-
-export interface PublicProblem {
-  id: string;
-  slug: string;
-  title: string;
-  difficulty: Difficulty;
-  promptMarkdown: string;
-  tags: string[];
-  starterCode: Record<string, string>;
-  sampleCases: Array<{ ordinal: number; stdin: string; expectedStdout: string }>;
-  avgSolveSeconds: number;
-}
 
 /**
  * Arm a timer for a device. Idempotent per device: re-arming while a session is
@@ -312,7 +289,7 @@ export async function toPublicProblem(problem: Problem): Promise<PublicProblem> 
     difficulty: problem.difficulty,
     promptMarkdown: problem.promptMarkdown,
     tags: problem.tags,
-    starterCode: problem.starterCode as Record<string, string>,
+    starterCode: problem.starterCode as PublicProblem['starterCode'],
     sampleCases: samples,
     avgSolveSeconds: problem.avgSolveSeconds,
   };
