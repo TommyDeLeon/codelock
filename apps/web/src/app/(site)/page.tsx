@@ -57,9 +57,7 @@ export default function LandingPage() {
 
               <h1 className="display display-lg mt-5">
                 Your device stays locked
-                <br />
-                until the code is
-                <br />
+                until the code is{' '}
                 <em>correct and fast.</em>
               </h1>
 
@@ -168,8 +166,7 @@ export default function LandingPage() {
             <div className="lg:col-span-5">
               <p className="eyebrow">Limits</p>
               <h2 className="display display-md mt-4">
-                It is a commitment device,
-                <br />
+                It is a commitment device,{' '}
                 <em>not a parental control.</em>
               </h2>
               <div className="prose-site measure mt-5 text-[15px]">
@@ -216,8 +213,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="display display-md">
-                Install it, arm it,
-                <br />
+                Install it, arm it,{' '}
                 <em>then go and work.</em>
               </h2>
               <p className="prose-site measure mt-4 text-[15px]">

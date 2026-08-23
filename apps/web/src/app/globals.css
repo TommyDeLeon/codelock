@@ -8,9 +8,14 @@
 /* ---------------------------------------------------------------------------
    Design tokens.
 
-   CodeLock is a discipline tool, not a consumer toy: warm paper in light mode,
-   near-black in dark, one signal accent reserved for the locked state so it
-   never competes with ordinary UI. Deliberately no indigo, no gradients.
+   Consumer-retail structure on the original palette: a green promotional band,
+   a dark category strip, bright surfaces and softer corners, in the register of
+   a large storefront. Pine green remains the brand.
+
+   What changed from the earlier system is that colour is now decorative as well
+   as functional — it is no longer held in reserve for a passing verdict, and
+   "locked has no hue" no longer applies. docs/DESIGN.md was rewritten alongside
+   this rather than left describing a product that no longer exists.
    --------------------------------------------------------------------------- */
 @theme {
   --color-bg: #fbfaf8;
@@ -24,18 +29,23 @@
      the colour every eyebrow and helper line uses. 4.33:1 now. */
   --color-faint: #7a766e;
 
-  /* The brand, and "you cleared it". Deliberately the same value as
-     --color-success below: one green, one meaning. Two greens a shade apart
-     measured 1.08:1 against each other — indistinguishable — and would have
-     made "locked" and "passed" look identical on the screen where that
-     distinction matters most. So "locked" is no longer a hue at all; states
-     that need attention use --color-warning. */
+/* The brand, and "you cleared it". Pine green, unchanged: it is the one
+     thing the retail restyle did not touch. Used decoratively now as well as
+     functionally — the promotional band, illustration accents and primary
+     buttons all take it, where it used to be held in reserve. */
   --color-accent: #1b6b4a;
   --color-accent-fg: #ffffff;
   --color-accent-soft: #e4efe9;
 
-  /* A separate name so call sites can say which they mean, same value on
-     purpose. */
+  /* The promotional band across the top of every page. A deeper pine so white
+     text clears AA on it comfortably (7.4:1) and it reads as a band rather
+     than as another button. */
+  --color-promo: #14523a;
+  --color-promo-fg: #ffffff;
+
+  /* Same value as the accent, deliberately: one green, one meaning. Two greens
+     a shade apart measure 1.08:1 against each other — indistinguishable — and
+     would make "brand" and "passed" look identical. */
   --color-success: #1b6b4a;
   --color-success-soft: #e4efe9;
   --color-danger: #a12d20;
@@ -43,12 +53,12 @@
   --color-warning: #8a6410;
   --color-warning-soft: #f8eed6;
 
-  /* Restrained radii. Real products vary corner size by element weight;
-     rounding everything to 2xl is the giveaway of generated UI. */
-  --radius-xs: 3px;
-  --radius-sm: 5px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Softer, friendlier corners to match the illustrated blocks. Still varied
+     by element weight rather than one value everywhere. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
 
   /* Loaded by next/font in layout.tsx, each with a fallback chain so a blocked
      font request degrades rather than breaks. */
@@ -58,8 +68,10 @@
   --font-mono:
     var(--font-mono-loaded), ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas,
     monospace;
-  /* Display only. Never for UI chrome — a serif button is a costume. */
-  --font-display: var(--font-display-loaded), 'Iowan Old Style', Georgia, serif;
+/* Display face. The retail direction wants a heavy grotesque rather than a
+     serif, so this now points at the sans stack at a heavier weight. */
+  --font-display:
+    var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
@@ -84,6 +96,9 @@
   --color-accent: #4ed18f;
   --color-accent-fg: #0d1a13;
   --color-accent-soft: #10241b;
+
+  --color-promo: #12503a;
+  --color-promo-fg: #eafff4;
 
   --color-success: #4ed18f;
   --color-success-soft: #10241b;
@@ -215,28 +230,40 @@
    template. */
 .display {
   font-family: var(--font-display);
-  font-weight: 400;
-  line-height: 1.04;
+  /* Bold: the display face is a grotesque now, and 400 at hero scale reads as
+     thin and slack rather than as a headline. */
+  font-weight: 700;
+  line-height: 1.06;
   letter-spacing: -0.018em;
+  /* Headings used to carry hand-placed <br /> tuned for a narrow serif. With a
+     wide face those breaks stranded single words on their own line ("is"), so
+     the breaks are gone and the browser evens the lines out instead — at any
+     width, and for any future face. */
+  text-wrap: balance;
 }
+/* Sized down from the serif-era scale. A bold grotesque sets much wider than
+   Instrument Serif at the same point size, so the old maximum pushed the hero
+   headline to five lines in its column. */
 .display-lg {
-  font-size: clamp(2.75rem, 6.2vw, 4.75rem);
-  letter-spacing: -0.028em;
+  font-size: clamp(2.25rem, 4.4vw, 3.4rem);
+  letter-spacing: -0.026em;
 }
 .display-md {
-  font-size: clamp(2rem, 4vw, 2.9rem);
-  letter-spacing: -0.022em;
+  font-size: clamp(1.75rem, 3.2vw, 2.3rem);
+  letter-spacing: -0.02em;
 }
 .display-sm {
-  font-size: clamp(1.5rem, 2.6vw, 1.95rem);
-  letter-spacing: -0.014em;
+  font-size: clamp(1.375rem, 2.2vw, 1.7rem);
+  letter-spacing: -0.012em;
 }
 
-/* An italic clause inside a display line. Instrument Serif's italic is much
-   more expressive than its roman, so one phrase set in it carries the emphasis
-   that a colour change or a bold weight would otherwise have to do. */
+/* The emphasised clause in a display line.
+   The serif's italic used to carry this on its own. A grotesque italic is a
+   slant rather than a different hand, so the emphasis comes from the brand
+   colour instead, and the clause stays upright and readable. */
 .display em {
-  font-style: italic;
+  font-style: normal;
+  color: var(--color-accent);
 }
 
 /* Section eyebrow: small, wide, mono. Numbers the argument so the page reads

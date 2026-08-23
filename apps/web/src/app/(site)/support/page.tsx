@@ -217,7 +217,6 @@ export default function SupportPage() {
           <p className="eyebrow">Support</p>
           <h1 className="display display-lg measure-wide mt-5">
             Something went wrong,
-            <br />
             or <em>you want out.</em>
           </h1>
           <div className="prose-site measure-wide mt-7 text-[15.5px]">

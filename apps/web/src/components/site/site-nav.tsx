@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { LockMark } from '@/components/ui/lock-mark';
+import { AnnouncementBar } from '@/components/site/announcement-bar';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
@@ -45,40 +46,34 @@ export function SiteNav() {
   }, [open]);
 
   return (
-    <header className="rule-b sticky top-0 z-40 bg-bg/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40">
+      <AnnouncementBar />
+
+      {/* Brand row: mark and wordmark left, utilities right — the storefront
+          arrangement, minus a search field and a basket, because this product
+          sells nothing and has nothing to search. */}
+      <div className="rule-b bg-bg/95 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
-          <LockMark className="size-[19px] shrink-0" />
+        <Link href="/" className="flex items-center gap-2 text-[17px] font-bold tracking-tight">
+          <LockMark className="size-[22px] shrink-0" />
           CodeLock
         </Link>
 
-        <nav aria-label="Main" className="ml-auto hidden items-center gap-7 sm:flex">
-          {LINKS.map((link) => {
-            const active = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={active ? 'page' : undefined}
-                className={`text-[13.5px] transition-colors ${
-                  active ? 'text-fg' : 'text-muted hover:text-fg'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        {/* Utilities only. The sections live in the category strip below, and
+            listing them here as well would give a keyboard or screen-reader
+            user the same eight links twice before reaching any content. */}
+        <div className="ml-auto hidden items-center gap-4 sm:flex">
           <ThemeToggle />
           {/* A styled Link, not <Button asChild> — this Button is a plain
               <button> with no Slot support. */}
           <Link
             href="/install"
-            className="inline-flex h-8 items-center rounded-sm bg-fg px-3.5 text-[13px]
-                       font-medium text-bg transition-colors hover:bg-fg/90"
+            className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-[13px]
+                       font-semibold text-accent-fg transition-opacity hover:opacity-90"
           >
             Download
           </Link>
-        </nav>
+        </div>
 
         <button
           onClick={() => setOpen((v) => !v)}
@@ -90,6 +85,35 @@ export function SiteNav() {
           {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
         </button>
       </div>
+      </div>
+
+      {/* Category strip: the dark full-width row of sections directly under the
+          brand row. Hidden on mobile, where the hamburger already carries it. */}
+      <nav
+        aria-label="Sections"
+        className="hidden bg-fg text-bg sm:block"
+      >
+        <ul className="mx-auto flex max-w-6xl items-center gap-7 px-5 py-2.5 text-[12.5px] font-semibold sm:px-8">
+          {LINKS.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                aria-current={pathname === link.href ? 'page' : undefined}
+                className={`transition-opacity hover:opacity-70 ${
+                  pathname === link.href ? 'underline underline-offset-4' : ''
+                }`}
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+          <li className="ml-auto">
+            <Link href="/login" className="transition-opacity hover:opacity-70">
+              Sign in
+            </Link>
+          </li>
+        </ul>
+      </nav>
 
       {open && (
         <div

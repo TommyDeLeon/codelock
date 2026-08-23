@@ -79,8 +79,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
           <p className="eyebrow">How it works</p>
           <h1 className="display display-lg measure-wide mt-5">
-            The arithmetic,
-            <br />
+            The arithmetic,{' '}
             <em>written out.</em>
           </h1>
           <div className="prose-site measure-wide mt-7 text-[15.5px]">
@@ -334,8 +333,7 @@ export default function HowItWorksPage() {
       <section>
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
-            Now go and see it
-            <br />
+            Now go and see it{' '}
             <em>refuse a working answer.</em>
           </h2>
           <div className="mt-7 flex flex-wrap gap-3">

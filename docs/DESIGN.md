@@ -13,15 +13,18 @@ DESIGN SYSTEM (REQUIRED — do not substitute):
 Platform: Responsive web. Design desktop-first at 1280px, then define the 768px
 and 375px behaviour explicitly. Every screen must be usable at 320px.
 
-Theme: Dual light and dark, both first-class. Hyper-minimal and modular, in
-the register of Linear and Perplexity — dense functional blocks, precise
-typography, restrained surfaces, real information per square inch. Warm paper
-rather than cold grey, so it reads considered rather than clinical.
+Theme: Dual light and dark, both first-class. Consumer-retail structure, in the
+family of a large storefront: a promotional band pinned above the brand row on
+every page, a dark category strip beneath it, bright surfaces, illustrated hero
+bands and friendly rounded blocks.
 
-It is also a GAME, and the game is rendered as INSTRUMENTATION, not as toys.
-Think a pilot's HUD or a lap timer: tiers, streaks, ranks and personal bests
-shown as precise readouts in mono, never as cartoon badges, mascots or
-confetti. See THE GAME LAYER below — it is the core of this document.
+The palette is unchanged — pine green is still the brand. What changed is that
+colour is now decorative as well as functional, rather than being held in
+reserve for a passing verdict.
+
+It is also a GAME, and the game may now be rendered playfully: illustrated
+challenge cards, badges and characters are permitted. See THE GAME LAYER below
+for the rule that still holds — the numbers themselves must stay real.
 
 COLOR
 - Background (light): Warm Paper #fbfaf8 · (dark) Near Black #0e0e0d
@@ -35,7 +38,11 @@ COLOR
   Accent foreground: #ffffff light, #0d1a13 dark.
   Soft tint: #e4efe9 light, #10241b dark.
   This is the BRAND colour and it also means "you cleared it". Use it for the
-  mark, primary buttons, links, focus rings and a passing verdict.
+  mark, primary buttons, links, focus rings, a passing verdict, and decorative
+  illustration accents.
+- PROMO band — #14523a light / #12503a dark, white text, full bleed, pinned
+  above the brand row on every page. A deeper pine than the accent so white
+  clears AA on it comfortably and it reads as a band rather than a button.
 - Success (passed / within budget): the SAME green, #1b6b4a / #4ed18f.
   One green, one meaning. Two greens a shade apart measure 1.08:1 against each
   other — indistinguishable — so do not introduce a second one.
@@ -43,20 +50,17 @@ COLOR
   Rare. Documentation pages only, never on the lock screen.
 - Danger (wrong answer): #a12d20 light, #e0685a dark
 
-- LOCKED HAS NO HUE AT ALL. Not amber, not red — ink #171614 on paper, or paper
-  on ink. The locked state, the "time is up" card, the urgent countdown and the
-  too-slow verdict are all monochrome. Its gravity comes from the ABSENCE of
-  colour: on a screen where green means "through", plain ink means "not yet",
-  and that contrast is harder than any alarm shade.
-  Colour is therefore reward-only. Green is the single thing the user is trying
-  to make appear.
+- The locked state may use colour. The earlier rule that "locked has no hue"
+  is withdrawn along with the monochrome system it belonged to; use the danger
+  and warning tokens where they read most clearly.
 
-NO gradients. NO purple. NO glassmorphism. NO decorative blobs.
+Gradients, illustration and decorative shapes are permitted. Keep purple out —
+the brand is green. Keep glassmorphism out — it fails contrast on bright
+surfaces.
 
 TYPOGRAPHY
-- Display / headings: Instrument Serif, weight 400. Tighten tracking as size
-  grows (-0.028em at hero scale). Use the italic for one emphasised clause per
-  heading — that italic is the brand's single expressive gesture.
+- Display / headings: the sans stack at bold weight, tight tracking. A heavy
+  grotesque rather than a serif, matching the storefront register.
 - Interface / body: Inter.
 - Numbers, runtimes, code, labels: JetBrains Mono. Every millisecond figure,
   every gate value, every case label is mono. The numbers are this product's
@@ -65,11 +69,10 @@ TYPOGRAPHY
 - Body measure never exceeds 66 characters.
 
 STRUCTURE
-- Hairline rules, not stacked cards. A page of rounded boxes is exactly the look
-  being avoided. Separation comes from 1px rules and whitespace.
-- NEVER nest a card inside a card.
-- Varied corner radii by element weight: 3px chips, 5px inputs, 8px buttons,
-  12px large containers. Do not round everything to the same value.
+- Illustrated blocks and cards carry the marketing pages, with hairline rules
+  separating the long-form sections beneath them.
+- Varied corner radii by element weight: 4px chips, 8px inputs, 12px buttons,
+  20px large containers. Do not round everything to the same value.
 - Asymmetric editorial grids (12-column, 5/7 or 4/8 splits) rather than centred
   hero-plus-three-cards layouts.
 - Generous vertical rhythm on marketing pages; dense and scannable on app
@@ -125,25 +128,27 @@ THE FIVE REAL MECHANICS — render these, invent nothing else:
    No confetti. A precise, cold, impressive moment.
 
 VISUAL LANGUAGE FOR THE GAME LAYER
-- Progress drawn as thin bars, rings and pips — 2-4px stroke, never chunky.
-- Every number in JetBrains Mono with tabular figures.
-- Achievement chips are small mono rectangles, 3px radius, hairline border.
-  Not circular medallions, not gradient shields.
-- Motion: a bar fills over ~600ms ease-out. A tier change gets one crisp
-  transition. Nothing bounces, springs or wobbles.
-- Reward = colour appearing on a monochrome field. That is the whole dopamine
-  mechanism and it is enough.
+- Progress may be drawn as bars, rings, pips or illustrated meters.
+- Every number stays in JetBrains Mono with tabular figures. The figures are
+  this product's evidence and must still look like measurements.
+- Achievement chips, badges and medallions are all fine.
 
-NEVER (these break the product, not merely the aesthetic)
+STILL FORBIDDEN (these break the product, not merely the aesthetic)
 - No invented currency: no XP, coins, gems, hearts, or levels beyond the three
-  real tiers.
+  real tiers. Illustrate the real mechanics as playfully as you like, but never
+  add a number that refers to nothing — that is the one thing this product
+  cannot do and still mean what it says.
 - No loss-aversion pressure. This app can take a user's screen away; "don't
   lose your 12-day streak!" attached to a device lock is coercive rather than
   motivating. State streaks as facts, never as threats.
 - No leaderboard ranking people by volume, hours or sessions — that rewards
   grinding, and this tool exists to get someone back to work, not into it.
-- No daily-login rewards, no mascots, no anthropomorphised characters.
-- No celebration on an ordinary solve. Getting the machine back IS the reward.
+- No daily-login rewards.
+
+NOW PERMITTED (previously forbidden; changed with the retail direction)
+- Mascots, characters and illustrated scenes.
+- Badges, trophies and medallions for the real mechanics.
+- Celebration on an ordinary solve.
 
 ---
 
@@ -353,17 +358,16 @@ does not squash cleanly into a phone.
 Hard constraints. These are the difference between looking designed and looking
 templated.
 
-- No purple, no gradient meshes, no glassmorphism, no decorative blobs.
-- No cards inside cards.
-- No uniform 16px border-radius on everything.
-- No centred hero with three feature cards beneath it.
-- No stock photography, no 3D illustrations, no abstract atmospheric imagery.
+- No purple. The brand is green.
+- No glassmorphism — it fails contrast on bright surfaces.
+- No uniform border-radius on everything; vary it by element weight.
+- No stock photography. Illustration yes, photography no.
 - No emoji used as iconography.
-- No confetti, mascots, cartoon badges or bouncing motion. The game layer is
-  instrumentation (§1b); celebration is reserved for a record break.
 - No invented currency: no XP, coins, gems or hearts.
 - No streak-guilt copy and no dark patterns that keep the user locked.
-- No fabricated testimonials, no logo wall, no "trusted by" strip.
+- No fabricated testimonials, no logo wall, no "trusted by" strip, and no
+  invented promotional offer. The product is free; a "30% off today only" band
+  would be the retail aesthetic copied past the point where it means anything.
 - Do not describe a feature in the UI when the control already says it.
 
 ---

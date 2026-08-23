@@ -161,7 +161,6 @@ export default function LimitsPage() {
           <p className="eyebrow">Limits</p>
           <h1 className="display display-lg measure-wide mt-5">
             Everything we tried,
-            <br />
             and <em>what got through.</em>
           </h1>
           <div className="prose-site measure-wide mt-7 text-[15.5px]">
@@ -243,8 +242,7 @@ export default function LimitsPage() {
       <section className="rule-t bg-surface-2/50">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
-            So it is a commitment device,
-            <br />
+            So it is a commitment device,{' '}
             <em>not a parental control.</em>
           </h2>
           <p className="prose-site measure-wide mt-5 text-[15.5px]">

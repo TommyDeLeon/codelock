@@ -203,8 +203,7 @@ function Intro({ onArm }: { onArm: () => void }) {
           <div className="lg:col-span-7">
             <p className="eyebrow">Try it</p>
             <h1 className="display display-lg mt-5">
-              Arm a timer.
-              <br />
+              Arm a timer.{' '}
               <em>See what happens</em> when it fires.
             </h1>
             <div className="prose-site measure mt-7 text-[15.5px]">
