@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { ApiError } from './lib/errors.js';
 import pinoHttp from 'pino-http';
 import { env } from './env.js';
 import { logger } from './lib/logger.js';
@@ -18,6 +19,12 @@ import { statsRouter } from './routes/stats.js';
 import { integrationsRouter } from './routes/integrations.js';
 import { demoRouter } from './routes/demo.js';
 
+/**
+ * The origin the Electron shell's bundled renderer is served from.
+ * Must match APP_ORIGIN in apps/desktop/src/main.ts.
+ */
+const DESKTOP_ORIGIN = 'app://codelock';
+
 export function createApp(): Express {
   const app = express();
 
@@ -29,9 +36,20 @@ export function createApp(): Express {
   app.use(
     cors({
       origin(origin, cb) {
-        // Native clients (Electron/Expo) send no Origin header at all.
+        // Expo sends no Origin header at all.
         if (!origin || env.corsOrigins.includes(origin)) return cb(null, true);
-        cb(new Error('Origin not allowed'));
+
+        // The desktop shell's bundled renderer. It is served from a custom
+        // standard scheme rather than file:// precisely so that it has a real
+        // origin, and this is that origin. No browser can navigate to it, so it
+        // cannot be used to mount a cross-site request from a web page;
+        // impersonating it requires already running code on the machine.
+        if (origin === DESKTOP_ORIGIN) return cb(null, true);
+
+        // A bare Error here surfaces through the error handler as a 500
+        // INTERNAL_ERROR, which reads as "the server is broken" when the truth
+        // is "your origin is not on the list".
+        cb(ApiError.forbidden('Origin not allowed'));
       },
       credentials: true,
     }),
