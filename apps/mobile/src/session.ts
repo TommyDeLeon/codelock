@@ -1,7 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import type {
+  AuthUser,
   Integration,
+  OAuthProviderName,
   LeetCodeStats,
   LockSessionView,
   StatsSummary,
@@ -99,6 +101,70 @@ export const mobileApi = {
       accessToken: string;
       refreshToken: string;
       user: { displayName: string };
+    };
+    await saveSession(data.accessToken, data.refreshToken);
+    return data.user;
+  },
+
+  register: async (input: { email: string; password: string; displayName: string }) => {
+    const res = await fetch(`${apiUrl()}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...input,
+        // The device knows its own zone; asking for it would be a form field
+        // that answers itself.
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+      throw new Error(body?.error?.message ?? 'Could not create that account');
+    }
+    const data = (await res.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      user: AuthUser;
+    };
+    await saveSession(data.accessToken, data.refreshToken);
+    return data.user;
+  },
+
+  /** Which provider buttons this deployment can actually complete. */
+  oauthProviders: async (): Promise<OAuthProviderName[]> => {
+    const res = await fetch(`${apiUrl()}/v1/auth/oauth/providers`).catch(() => null);
+    if (!res?.ok) return [];
+    const data = (await res.json()) as { providers: OAuthProviderName[] };
+    return data.providers;
+  },
+
+  oauthStart: async (provider: OAuthProviderName) => {
+    const res = await fetch(`${apiUrl()}/v1/auth/oauth/${provider.toLowerCase()}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Could not start that sign-in');
+    return (await res.json()) as { url: string; handoff: string };
+  },
+
+  /**
+   * Claim the finished session.
+   *
+   * Returns null rather than throwing while the browser half is still running:
+   * a 401 here means "not yet", and the caller polls it.
+   */
+  oauthClaim: async (handoff: string): Promise<AuthUser | null> => {
+    const res = await fetch(`${apiUrl()}/v1/auth/oauth/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handoff }),
+    }).catch(() => null);
+
+    if (!res?.ok) return null;
+    const data = (await res.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      user: AuthUser;
     };
     await saveSession(data.accessToken, data.refreshToken);
     return data.user;

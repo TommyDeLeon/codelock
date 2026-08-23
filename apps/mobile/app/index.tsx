@@ -24,6 +24,8 @@ import { NativeLock } from '../modules/codelock-lock';
 import { LockMark } from '@/lock-mark';
 import { getAccessToken } from '@/session';
 import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
+import type { OAuthProviderName } from '@codelock/shared';
 
 const PRESETS = [15, 30, 60, 90];
 
@@ -39,6 +41,15 @@ export default function HomeScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [displayName, setDisplayName] = useState('');
+  const [providers, setProviders] = useState<OAuthProviderName[]>([]);
+
+  // Only offer buttons the server can complete; one with no client id
+  // configured would open a broken consent screen in the user's browser.
+  useEffect(() => {
+    void mobileApi.oauthProviders().then(setProviders).catch(() => setProviders([]));
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -86,22 +97,64 @@ export default function HomeScreen() {
     setBusy(true);
     setError(null);
     try {
-      await mobileApi.login(email.trim(), password);
-      setSignedIn(true);
-      await ensureNotificationPermission();
-      // Ask on Android whether or not it is already granted; the helper is a
-      // no-op when it is, and this is the only moment the user has context for
-      // why a screen-covering permission is being requested.
-      if (NativeLock.isSupported) {
-        const granted = await ensureOverlayPermission();
-        if (granted) offerBatteryExemption();
-      }
-      await refreshLock();
+      if (mode === 'login') await mobileApi.login(email.trim(), password);
+      else
+        await mobileApi.register({
+          email: email.trim(),
+          password,
+          displayName: displayName.trim(),
+        });
+      await afterSignIn();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in');
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Sign in with a provider.
+   *
+   * The consent screen opens in the system browser rather than a WebView: a
+   * WebView is an app-controlled window that can read what is typed into it,
+   * which is exactly what a password field must not be inside. The session is
+   * then claimed with the one-time handoff minted before opening it.
+   */
+  async function signInWith(provider: OAuthProviderName) {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url, handoff } = await mobileApi.oauthStart(provider);
+      await WebBrowser.openAuthSessionAsync(url);
+
+      // The browser dismissing does not mean the server finished, so poll
+      // rather than assume. Gives up when the handoff expires server-side.
+      const deadline = Date.now() + 2 * 60_000;
+      while (Date.now() < deadline) {
+        const user = await mobileApi.oauthClaim(handoff);
+        if (user) return afterSignIn();
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+      setError('That sign-in timed out. Try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Shared tail of every sign-in route: permissions, then the lock state. */
+  async function afterSignIn() {
+    setSignedIn(true);
+    await ensureNotificationPermission();
+    // Ask on Android whether or not it is already granted; the helper is a
+    // no-op when it is, and this is the only moment the user has context for
+    // why a screen-covering permission is being requested.
+    if (NativeLock.isSupported) {
+      const granted = await ensureOverlayPermission();
+      if (granted) offerBatteryExemption();
+    }
+    await refreshLock();
   }
 
   async function startSession(minutes: number) {
@@ -132,10 +185,55 @@ export default function HomeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <LockMark size={28} />
-        <Text style={[styles.title, { color: theme.fg }]}>Sign in</Text>
+        <Text style={[styles.title, { color: theme.fg }]}>
+          {mode === 'login' ? 'Sign in' : 'Create your account'}
+        </Text>
         <Text style={[styles.body, { color: theme.muted }]}>
           Use the same account as the web and desktop apps.
         </Text>
+
+        {providers.length > 0 && (
+          <>
+            {providers.map((provider) => (
+              <Pressable
+                key={provider}
+                onPress={() => void signInWith(provider)}
+                disabled={busy}
+                accessibilityRole="button"
+                style={[
+                  styles.providerButton,
+                  { borderColor: theme.border, backgroundColor: theme.surface, opacity: busy ? 0.6 : 1 },
+                ]}
+              >
+                <Text style={[styles.buttonText, { color: theme.fg }]}>
+                  Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
+                </Text>
+              </Pressable>
+            ))}
+
+            <Text style={[styles.hint, { color: theme.faint }]}>
+              Opens your browser. Works for signing in and signing up.
+            </Text>
+
+            <View style={styles.dividerRow}>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <Text style={[styles.hint, { color: theme.faint }]}>or</Text>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            </View>
+          </>
+        )}
+
+        {mode === 'register' && (
+          <TextInput
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder="Name"
+            placeholderTextColor={theme.faint}
+            autoComplete="name"
+            accessibilityLabel="Name"
+            style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
+          />
+        )}
 
         <TextInput
           value={email}
@@ -154,10 +252,16 @@ export default function HomeScreen() {
           placeholder="Password"
           placeholderTextColor={theme.faint}
           secureTextEntry
-          autoComplete="current-password"
+          autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
           accessibilityLabel="Password"
           style={[styles.input, { borderColor: theme.border, color: theme.fg, backgroundColor: theme.surface }]}
         />
+
+        {mode === 'register' && (
+          <Text style={[styles.hint, { color: theme.faint }]}>
+            Password must be at least 12 characters.
+          </Text>
+        )}
 
         {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
 
@@ -165,10 +269,23 @@ export default function HomeScreen() {
           onPress={() => void signIn()}
           disabled={busy}
           accessibilityRole="button"
-          style={[styles.button, { backgroundColor: theme.fg, opacity: busy ? 0.6 : 1 }]}
+          style={[styles.button, { backgroundColor: theme.accent, opacity: busy ? 0.6 : 1 }]}
         >
-          <Text style={[styles.buttonText, { color: theme.bg }]}>
-            {busy ? 'Signing in…' : 'Sign in'}
+          <Text style={[styles.buttonText, { color: theme.accentFg }]}>
+            {busy ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            setMode(mode === 'login' ? 'register' : 'login');
+            setError(null);
+          }}
+          accessibilityRole="button"
+          style={styles.switchMode}
+        >
+          <Text style={[styles.body, { color: theme.muted, textAlign: 'center' }]}>
+            {mode === 'login' ? 'No account yet? Create one' : 'Already have an account? Sign in'}
           </Text>
         </Pressable>
       </ScrollView>
@@ -273,6 +390,17 @@ const styles = StyleSheet.create({
   notice: { padding: spacing.md, borderRadius: radius.sm, marginTop: spacing.md },
   noticeText: { fontSize: 13, lineHeight: 19 },
   error: { fontSize: 13 },
+  providerButton: {
+    height: 46,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hint: { fontSize: 12.5, lineHeight: 18 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  divider: { flex: 1, height: 1 },
+  switchMode: { paddingVertical: spacing.md },
   navRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   navItem: {
     flex: 1,

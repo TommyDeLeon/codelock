@@ -1,5 +1,6 @@
 import type {
   AuthUser,
+  OAuthProviderName,
   Integration,
   LeetCodeStats,
   LockSessionView,
@@ -113,6 +114,65 @@ export const api = {
     );
     store(data.accessToken, data.refreshToken);
     return data.user;
+  },
+
+  register: async (input: {
+    email: string;
+    password: string;
+    displayName: string;
+  }): Promise<AuthUser> => {
+    const data = await request<{ accessToken: string; refreshToken: string; user: AuthUser }>(
+      '/v1/auth/register',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...input,
+          // The shell knows the machine's zone; asking the user for it would be
+          // a form field that answers itself.
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      },
+      false,
+    );
+    store(data.accessToken, data.refreshToken);
+    return data.user;
+  },
+
+  /** Which provider buttons this deployment can actually complete. */
+  oauthProviders: () =>
+    request<{ providers: OAuthProviderName[] }>('/v1/auth/oauth/providers', {}, false),
+
+  oauthStart: (provider: OAuthProviderName) =>
+    request<{ url: string; handoff: string }>(
+      `/v1/auth/oauth/${provider.toLowerCase()}/start`,
+      { method: 'POST' },
+      false,
+    ),
+
+  /**
+   * Claim the finished session.
+   *
+   * Separate from the other calls because a 401 here is expected — it simply
+   * means the browser has not finished yet — so it must not trigger the token
+   * refresh path, and the caller polls it rather than treating it as an error.
+   */
+  oauthClaim: async (
+    handoff: string,
+  ): Promise<{ user: AuthUser; accessToken: string; refreshToken: string } | null> => {
+    const res = await fetch(`${apiUrl}/v1/auth/oauth/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handoff }),
+    }).catch(() => null);
+
+    if (!res || !res.ok) return null;
+    const data = (await res.json()) as {
+      user: AuthUser;
+      accessToken: string;
+      refreshToken: string;
+    };
+    store(data.accessToken, data.refreshToken);
+    return data;
   },
 
   stats: () => request<StatsSummary>('/v1/stats/summary'),

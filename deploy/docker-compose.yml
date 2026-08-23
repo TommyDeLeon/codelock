@@ -80,6 +80,11 @@ services:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GITHUB_CALLBACK_URL: https://${API_DOMAIN}/v1/integrations/github/callback
+      # Sign-in redirect URIs are built from this, so it has to be the origin
+      # the provider was told about — not the container's internal address.
+      API_URL: https://${API_DOMAIN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       PERF_TOLERANCE: ${PERF_TOLERANCE:-1.35}
       PERF_FLOOR_MS: ${PERF_FLOOR_MS:-40}
       PERF_BEST_OF: ${PERF_BEST_OF:-2}
