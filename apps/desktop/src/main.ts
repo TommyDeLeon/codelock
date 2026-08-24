@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   globalShortcut,
   ipcMain,
   net,
@@ -119,16 +120,58 @@ const holdToRelease = new HoldToRelease();
  */
 let fireTimer: NodeJS.Timeout | null = null;
 
+/**
+ * Can this install actually release a lock?
+ *
+ * False when config.json carries neither unlockSecret nor unlockPublicKey,
+ * which is what a build made with no key baked in produces. Until it is true,
+ * this process refuses to START a lock — see refuseToLock below.
+ */
+let canUnlock = false;
+
+/**
+ * Refuse to begin a lock this install could never end.
+ *
+ * Without a verification key the timer still fires and the overlay still
+ * appears, and then a correct, fast solution cannot open the machine: the
+ * unlock token verifies against nothing. The only way out is the kill switch,
+ * which costs the user a recorded failure for a fault that was never theirs.
+ * Locking someone out with no way back is worse than not locking at all.
+ *
+ * This deliberately guards only the paths that START a lock. A lock already
+ * persisted from an earlier run is still restored, because doing otherwise
+ * would turn "delete a line from config.json and restart" into the simplest
+ * bypass in the product. The kill switch remains the exit for that case, as it
+ * always was.
+ */
+function refuseToLock(): boolean {
+  if (canUnlock) return false;
+  console.error('CodeLock refused to lock: no unlock key configured. See', configPath());
+  showWindow();
+  void dialog.showMessageBox({
+    type: 'error',
+    title: 'CodeLock cannot unlock',
+    message: 'CodeLock did not lock, because it could not have unlocked.',
+    detail:
+      'This build has no unlock key, so a correct solution could not release the ' +
+      'screen and you would be stuck behind it.\n\n' +
+      `Edit ${configPath()} and set unlockSecret to the same value as the ` +
+      "server's JWT_UNLOCK_SECRET, then restart CodeLock.",
+    buttons: ['OK'],
+  });
+  return true;
+}
+
 function scheduleLock(sessionId: string, fireAt: number): void {
   clearScheduledLock();
   // Already past: fire on the next tick rather than never.
   const delay = Math.max(0, fireAt - Date.now());
   fireTimer = setTimeout(() => {
     fireTimer = null;
-    if (!locked) {
-      showWindow();
-      engageLock(sessionId);
-    }
+    if (locked) return;
+    if (refuseToLock()) return;
+    showWindow();
+    engageLock(sessionId);
   }, delay);
 }
 
@@ -431,8 +474,10 @@ function registerEscapeSuppression(): void {
  * more than intended is annoying, never a security hole.
  */
 ipcMain.handle('codelock:lock', (_event, sessionId: unknown) => {
+  // Re-asserting an existing lock is always allowed; only a new one is refused.
+  if (!locked && refuseToLock()) return { locked: false, canUnlock: false };
   engageLock(typeof sessionId === 'string' ? sessionId : null);
-  return { locked };
+  return { locked, canUnlock };
 });
 
 /**
@@ -522,6 +567,7 @@ ipcMain.handle('codelock:clear-session', (event) => {
 
 ipcMain.handle('codelock:state', () => ({
   locked,
+  canUnlock,
   sessionId: lockedSessionId,
   platform: process.platform,
   holdToReleaseMs: HOLD_TO_RELEASE_MS,
@@ -549,8 +595,23 @@ void app.whenReady().then(() => {
   // A build with no key can never release the lock, which would trap the user
   // behind an overlay they cannot dismiss. Refuse to arm rather than discover
   // that at unlock time.
-  if (!canVerifyUnlocks(config)) {
+  canUnlock = canVerifyUnlocks(config);
+  if (!canUnlock) {
     logStartupProblem(config.webUrl);
+    // console.error goes nowhere a user launching from the Start menu or the
+    // Dock will ever look, and this is the one problem they must not discover
+    // by being locked out. Say it in a window.
+    void dialog.showMessageBox({
+      type: 'warning',
+      title: 'CodeLock is not configured',
+      message: 'CodeLock cannot unlock yet, so it will not lock.',
+      detail:
+        'No unlock key is configured, so this install could not release the screen ' +
+        'after a correct solution. Timers will refuse to start until it is set.\n\n' +
+        `Edit ${configPath()} and set unlockSecret to the same value as the ` +
+        "server's JWT_UNLOCK_SECRET, then restart CodeLock.",
+      buttons: ['OK'],
+    });
   }
 
   // Continuous by default. The timer is worthless if it only runs while the

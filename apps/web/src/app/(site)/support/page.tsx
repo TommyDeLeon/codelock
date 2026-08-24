@@ -56,8 +56,9 @@ const RECOVERY: Entry[] = [
     a: (
       <>
         The shell could not verify the unlock signature, which almost always means it has no key
-        configured. Check the console output at startup — it names the exact file to edit. A build
-        with no key can never release a lock, so it warns at launch rather than at unlock time.
+        configured. CodeLock shows a dialog at startup naming the exact file to edit, and refuses
+        to start any timer until it is set — an install that cannot unlock does not lock, because
+        being stuck behind a screen that will never open is worse than not being locked at all.
       </>
     ),
   },
@@ -118,9 +119,10 @@ const TROUBLESHOOTING: Entry[] = [
     q: 'Rebooting my computer got past the lock.',
     a: (
       <>
-        A known gap, not a surprise. The lock state survives the reboot, but nothing launches
-        CodeLock at login yet, so it is only re-applied when you next start the app. It is listed as
-        defeated on the <Link href="/limits">limits page</Link> rather than quietly omitted.
+        It should not. The lock state survives the reboot and CodeLock registers itself to launch
+        at login, hidden, so the overlay comes back on its own. If it did not, the login item was
+        never registered — that only happens for installed builds, never when running from source.
+        The remaining honest gap is the window between power-on and the app starting.
       </>
     ),
   },
