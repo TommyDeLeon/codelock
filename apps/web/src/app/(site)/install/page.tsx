@@ -99,7 +99,7 @@ function BuildFromSource() {
   const clone = sourceUrl();
 
   return (
-    <section className="rule-b bg-warning-soft/60">
+    <section className="rule-b bg-warning-soft/60 section-arrive">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-8">
           <p className="eyebrow shrink-0 text-warning">No binaries yet</p>
@@ -138,14 +138,17 @@ const STATUS_LABEL: Record<Status, { text: string; className: string }> = {
 export default function InstallPage() {
   return (
     <>
-      <section className="rule-b section-arrive">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-          <p className="eyebrow">Install</p>
-          <h1 className="display display-lg measure-wide mt-5">
+      {/* Above the fold: load reveal, not section-arrive. A view() entry
+          animation is already at 100% before first paint here, so it never
+          plays — see globals.css, "Cinematic marketing surfaces". */}
+      <section className="rule-b hero-stage">
+        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+          <p className="eyebrow hero-rise hero-rise-1">Install</p>
+          <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
             Get it onto{' '}
             <em>the machine that distracts you.</em>
           </h1>
-          <div className="prose-site measure-wide mt-7 text-[15.5px]">
+          <div className="prose-site measure-wide hero-rise hero-rise-3 mt-8 text-[15.5px]">
             <p>
               CodeLock only works installed. A browser cannot lock anything, so there is no hosted
               version of the product — only the demo, and it tells you it is a demo.
@@ -171,7 +174,7 @@ export default function InstallPage() {
         <BuildFromSource />
       )}
 
-      <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+      <section className="section-arrive mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="rule-t">
           {PLATFORMS.map((platform) => (
             <article key={platform.name} className="rule-b py-7">
