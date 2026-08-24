@@ -124,3 +124,20 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  audit:
+    name: Dependency audit (advisory)
+    runs-on: ubuntu-latest
+    # Advisory on purpose. A transitive advisory can land on a morning nobody
+    # shipped anything, and a red X that blocks merges for something outside
+    # this repo's control is a gate people learn to route around. This one is
+    # here to be read, not obeyed — the job reports and the run stays green.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
