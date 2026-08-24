@@ -1,0 +1,107 @@
+# Deploy the CodeLock API without a virtual machine.
+#
+# The judge needs a real Docker daemon, which no managed platform will give you
+# — but the API never talks to "the judge". It talks to a Judge0-compatible HTTP
+# API (see apps/api/src/services/judge0.ts), and that can be a hosted one. So the
+# only piece that genuinely required a VM can be pointed somewhere else, and the
+# API itself is an ordinary long-lived Node process that Render runs natively.
+#
+#   web        Vercel            (apps/web/vercel.json)
+#   API        here              this file
+#   Postgres   Neon              DATABASE_URL below
+#   execution  hosted Judge0     JUDGE0_URL / JUDGE0_KEY / JUDGE0_HOST below
+#
+# Read docs/FREE-HOSTING.md, "No VM at all", before using this. It states the
+# trade-offs plainly — in particular that a shared public judge makes the speed
+# gate approximate rather than a measurement, which is the product's whole
+# thesis. Good enough to demonstrate; not what you want to practise against
+# every day. Moving back to a self-hosted judge is one environment variable.
+#
+# Usage: Render dashboard -> New -> Blueprint -> pick this repository.
+
+services:
+  - type: web
+    name: codelock-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    # The build context is the repository root, not apps/api: the API imports
+    # @codelock/shared as source from a sibling workspace, and the Dockerfile
+    # copies the root lockfile to install against.
+    dockerContext: .
+    plan: free
+    region: oregon
+
+    # The container runs `prisma migrate deploy` before starting, so a deploy
+    # migrates the database forward on its own.
+    healthCheckPath: /healthz
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Pinned rather than left to Render, so it matches the port the
+      # Dockerfile's own HEALTHCHECK probes. They must agree or the container
+      # reports unhealthy while serving perfectly well.
+      - key: PORT
+        value: 4000
+
+      # --- things only you know -------------------------------------------
+      # sync: false means Render prompts for these and never reads them from
+      # the repository. Nothing secret is committed here.
+
+      # Neon: use the POOLED connection string, not the direct one. The API
+      # holds a connection pool and Neon's free tier caps direct connections.
+      - key: DATABASE_URL
+        sync: false
+
+      # Hosted Judge0. With RapidAPI this is
+      #   https://judge0-ce.p.rapidapi.com
+      # and both the key and host header are required; a self-hosted instance
+      # needs neither.
+      - key: JUDGE0_URL
+        sync: false
+      - key: JUDGE0_KEY
+        sync: false
+      - key: JUDGE0_HOST
+        sync: false
+
+      # Your Vercel origin, exactly — scheme included, no trailing slash. If
+      # this does not match, every browser request is blocked by CORS and the
+      # only symptom is a console warning.
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_URL
+        sync: false
+
+      # This service's own public URL, e.g. https://codelock-api.onrender.com.
+      # Provider redirect URIs are built from it and must match what is
+      # registered with the provider exactly.
+      - key: API_URL
+        sync: false
+
+      # --- generated once, by Render ---------------------------------------
+      # Distinct values, which the API enforces at boot in production.
+      #
+      # Copy JWT_UNLOCK_SECRET out after the first deploy: the desktop app's
+      # config.json needs the identical value, or it cannot verify an unlock
+      # and will refuse to start a timer at all.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_UNLOCK_SECRET
+        generateValue: true
+
+      # Encrypts stored third-party tokens. Regenerating it makes every stored
+      # integration credential undecryptable — not a routine rotation.
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+      # --- admission control ------------------------------------------------
+      # One at a time on the free plan. Grading is a network call to the hosted
+      # judge rather than a local container, but the free instance has a small
+      # CPU share and a shallow queue is a better failure than a slow one.
+      - key: GRADE_CONCURRENCY
+        value: 1
+      - key: GRADE_QUEUE_DEPTH
+        value: 10
