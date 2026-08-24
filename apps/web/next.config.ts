@@ -5,7 +5,12 @@ const config: NextConfig = {
   // Standalone output is what makes the self-hosted image small: Next traces
   // the modules actually reached and copies only those, so the runtime stage
   // carries no toolchain and no node_modules tree.
-  output: 'standalone',
+  //
+  // Off on Vercel, which builds its own output format and does not want a
+  // traced server bundle. Leaving it on there produces a build whose artefacts
+  // Vercel has to second-guess; this is a self-hosting optimisation and Vercel
+  // is not self-hosting.
+  output: process.env.VERCEL ? undefined : 'standalone',
   // Next 16 drops generated tooling docs into the app directory on dev and
   // build. They are not part of this project, so opt out at the source rather
   // than ignoring the files after the fact.

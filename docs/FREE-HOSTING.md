@@ -379,9 +379,27 @@ immediately.
 Worth doing on a 1 GB instance, or if you want the site fast worldwide.
 Vercel's Hobby tier is free for non-commercial use. **Needs a Vercel account.**
 
-Import the repo at [vercel.com/new](https://vercel.com/new). The root
-`vercel.json` already sets the build command and the security headers. Add two
-environment variables:
+Import the repo at [vercel.com/new](https://vercel.com/new).
+
+**Set the Root Directory to `apps/web`.** This is not optional and it is the
+step that is easy to miss. This repository is an npm workspace monorepo: the
+root `package.json` lists no dependencies of its own, so a Vercel project
+pointed at the repository root finds no `next` and fails the build with:
+
+```
+Error: No Next.js version detected. Make sure your package.json has "next" in
+either "dependencies" or "devDependencies".
+```
+
+Vercel also reads `vercel.json` from the Root Directory, so `apps/web/vercel.json`
+— which carries the security headers — is only picked up once this is set.
+
+You will find the setting under **Project Settings → Build and Deployment →
+Root Directory**. Leave "Include files outside of the Root Directory" enabled:
+the web app imports `@codelock/shared` as source from a sibling workspace, and
+turning it off breaks the build.
+
+Then add two environment variables:
 
 ```
 NEXT_PUBLIC_API_URL   = https://codelock-api.duckdns.org
@@ -400,8 +418,17 @@ rather than whatever was compiled in. On the Docker path that origin comes from
 `CODELOCK_API_URL` at run time, which is why one prebuilt image works for any
 deployment.
 
+Set `CODELOCK_API_URL` to the same value as `NEXT_PUBLIC_API_URL`. It is read
+per request rather than compiled in, and it is what `/runtime-config.js` serves
+to the browser — the build-time variable alone leaves the deployed site pointing
+at the wrong origin.
+
 Then set `APP_DOMAIN` on the VM to your Vercel hostname so CORS matches, and
 drop the `web` service from the stack if you like.
+
+> Note that `output: 'standalone'` in `next.config.ts` is switched off
+> automatically when `VERCEL` is set. It exists to keep the self-hosted Docker
+> image small and is not what Vercel's builder wants.
 
 ## Optional: Postgres somewhere managed
 
