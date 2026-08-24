@@ -71,7 +71,8 @@
 /* Display face. The retail direction wants a heavy grotesque rather than a
      serif, so this now points at the sans stack at a heavier weight. */
   --font-display:
-    var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    var(--font-display-loaded), var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', sans-serif;
 
   --shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
@@ -268,12 +269,17 @@
 
 /* Section eyebrow: small, wide, mono. Numbers the argument so the page reads
    as a document with structure rather than a scroll of unrelated bands. */
+/* Set in the display face rather than the mono, and given enough weight and
+   colour to read as a deliberate label. At 11px, faint, in a mono at 0.14em it
+   was washing out into the background — the numbering it carries is structure,
+   not a caption. The mono is reserved for figures, which are evidence. */
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-faint);
+  color: var(--color-muted);
 }
 
 /* Measured prose column. 66ch is the readable maximum; the marketing pages
@@ -451,8 +457,19 @@
    The perspective lives on the ancestor so the child's rotation is read in a
    shared 3D space. Without it, rotateX is a flat squash. */
 .hero-stage {
-  perspective: 1400px;
+  /* Shorter than it looks: perspective is the distance from the viewer to the
+     z=0 plane, so a smaller number is a WIDER angle and a stronger effect.
+     1400px was far enough away that a 7deg rotation read as a vertical squash
+     rather than as depth. */
+  perspective: 900px;
   perspective-origin: 50% 0%;
+}
+
+/* Anything that rotates in the shared space needs its children to keep their
+   own depth, or the whole subtree flattens onto one plane before it rotates. */
+.hero-stage .hero-recede,
+.depth-3d {
+  transform-style: preserve-3d;
 }
 
 /* Scroll-linked departure: as the hero scrolls away the instrument tips back
@@ -467,11 +484,16 @@
   @keyframes hero-recede {
     from {
       opacity: 1;
-      transform: translate3d(0, 0, 0) rotateX(0deg) scale(1);
+      transform: translate3d(0, 0, 0) rotateX(0deg);
     }
     to {
-      opacity: 0.55;
-      transform: translate3d(0, -1.5rem, 0) rotateX(7deg) scale(0.94);
+      /* translateZ, not scale. Pushing the object back along z is what a
+         perspective camera actually does, so the foreshortening is real rather
+         than a uniform shrink — the far edge narrows and the near edge does
+         not. Opacity stops at 0.62 because below that the readout inside it
+         drops under AA against the page. */
+      opacity: 0.62;
+      transform: translate3d(0, -2rem, -180px) rotateX(14deg);
     }
   }
 
@@ -492,6 +514,35 @@
   }
 }
 
+/* --- sections arriving ----------------------------------------------------
+
+   The counterpart to hero-recede, for everything below the fold. Those
+   sections are NOT on screen at load, so unlike the hero they get a genuine
+   scroll-linked entry: they rise and rotate up out of the page as they come
+   into view, and are settled well before they reach reading position.
+
+   The range ends at `cover 32%` on purpose — an element still animating while
+   the reader is reading it is a distraction, not an entrance. */
+@supports (animation-timeline: view()) {
+  @keyframes section-arrive {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 3rem, -220px) rotateX(9deg);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotateX(0deg);
+    }
+  }
+
+  .section-arrive {
+    animation: section-arrive linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 32%;
+    transform-origin: 50% 100%;
+  }
+}
+
 /* --- reduced motion -------------------------------------------------------
 
    This block is not redundant with the global rule near the top of this file.
@@ -502,14 +553,17 @@
    Scroll-linked motion therefore has to be switched off by name. Verified in
    the browser rather than assumed. */
 @media (prefers-reduced-motion: reduce) {
-  .hero-recede {
+  .hero-recede,
+  .section-arrive {
     animation: none !important;
     animation-timeline: auto !important;
     opacity: 1 !important;
     transform: none !important;
   }
 
-  .hero-stage {
+  .hero-stage,
+  .depth-3d {
     perspective: none;
+    transform-style: flat;
   }
 }
