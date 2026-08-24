@@ -48,6 +48,17 @@ const pct = (ms: number) => Math.min(100, (ms / SCALE_MS) * 100);
 export function GateMeter() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  /**
+   * Set once the reader takes manual control, and never cleared.
+   *
+   * WCAG 2.2.2 wants a mechanism to STOP content that moves by itself for more
+   * than five seconds, and pausing on hover is not one: a keyboard user has no
+   * hover, and a touch user has no hover at all. Choosing an attempt is that
+   * mechanism, so it has to stick — advancing away from the slide someone
+   * deliberately selected, 2.6 seconds later, is the same problem wearing a
+   * different hat.
+   */
+  const [stopped, setStopped] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Only advance while on screen and not hovered. An animation that runs
@@ -56,12 +67,28 @@ export function GateMeter() {
   useEffect(() => {
     const node = rootRef.current;
     if (!node) return;
+
+    // IntersectionObserver answers "is this in the viewport", which is not the
+    // same question as "can anyone see it". Switching tabs fires no
+    // intersection change at all, so on its own this kept the interval running
+    // in a background tab — the exact cost the comment above says it avoids.
+    let intersecting = false;
+    const sync = () => setVisible(intersecting && !document.hidden);
+
     const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry?.isIntersecting ?? false),
+      ([entry]) => {
+        intersecting = entry?.isIntersecting ?? false;
+        sync();
+      },
       { threshold: 0.4 },
     );
     observer.observe(node);
-    return () => observer.disconnect();
+    document.addEventListener('visibilitychange', sync);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', sync);
+    };
   }, []);
 
   const reducedMotion = useMemo(
@@ -72,10 +99,10 @@ export function GateMeter() {
   );
 
   useEffect(() => {
-    if (!visible || paused || reducedMotion) return;
+    if (!visible || paused || stopped || reducedMotion) return;
     const id = window.setInterval(() => setIndex((i) => (i + 1) % ATTEMPTS.length), 2600);
     return () => window.clearInterval(id);
-  }, [visible, paused, reducedMotion]);
+  }, [visible, paused, stopped, reducedMotion]);
 
   const attempt = ATTEMPTS[index]!;
   const measured = Math.min(...attempt.runs);
@@ -87,6 +114,10 @@ export function GateMeter() {
       ref={rootRef}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      // Capture, so focus landing on any dot inside counts. Without these a
+      // keyboard user reading the panel has it change under them.
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
       className="rule-t rule-b bg-surface/60 px-5 py-6 sm:px-7 sm:py-7"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
@@ -156,7 +187,10 @@ export function GateMeter() {
         {ATTEMPTS.map((a, i) => (
           <button
             key={a.complexity}
-            onClick={() => setIndex(i)}
+            onClick={() => {
+              setIndex(i);
+              setStopped(true);
+            }}
             aria-label={`Show the ${a.complexity} attempt`}
             aria-current={i === index}
             className={`h-1 flex-1 rounded-xs transition-colors ${
