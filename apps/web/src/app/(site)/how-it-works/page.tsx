@@ -75,14 +75,16 @@ const GATE_FACTS: Array<[string, string]> = [
 export default function HowItWorksPage() {
   return (
     <>
-      <section className="rule-b">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-          <p className="eyebrow">How it works</p>
-          <h1 className="display display-lg measure-wide mt-5">
+      {/* Above the fold, so a load reveal — a scroll-linked entry would
+          already be finished before the first paint. */}
+      <section className="rule-b hero-stage">
+        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+          <p className="eyebrow hero-rise hero-rise-1">How it works</p>
+          <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
             The arithmetic,{' '}
             <em>written out.</em>
           </h1>
-          <div className="prose-site measure-wide mt-7 text-[15.5px]">
+          <div className="prose-site measure-wide hero-rise hero-rise-3 mt-8 text-[15.5px]">
             <p>
               Nothing here is a secret, and a lock you cannot reason about is a lock you will
               resent. Every threshold below is the default the code actually ships with.
@@ -92,7 +94,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* --- 01 The lock --------------------------------------------------- */}
-      <section className="rule-b">
+      <section className="rule-b section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
@@ -121,7 +123,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* --- 02 The gate --------------------------------------------------- */}
-      <section className="rule-b bg-surface-2/50">
+      <section className="rule-b bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
@@ -194,7 +196,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* --- 03 The ladder ------------------------------------------------- */}
-      <section className="rule-b">
+      <section className="rule-b section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
@@ -245,7 +247,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* --- 04 Data ------------------------------------------------------- */}
-      <section className="rule-b bg-surface-2/50">
+      <section className="rule-b bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
@@ -284,7 +286,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* --- 05 Integrations ----------------------------------------------- */}
-      <section className="rule-b">
+      <section className="rule-b section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <p className="eyebrow">05 / Integrations</p>
           <h2 className="display display-md mt-3">Both optional, both narrow.</h2>

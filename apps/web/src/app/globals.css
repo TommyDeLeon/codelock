@@ -543,6 +543,60 @@
   }
 }
 
+/* --- moving between pages -------------------------------------------------
+
+   The same camera, applied to navigation: the page you are leaving falls back
+   into the scene and the one arriving comes forward out of it. Without this a
+   route change is an instant cut, which on a site built around depth is the one
+   moment the illusion drops.
+
+   perspective() as a transform FUNCTION rather than a property, because these
+   pseudo-elements have no ancestor of ours to inherit a perspective from.
+
+   Only the marketing layout starts these — see components/site/cinematic-nav —
+   so /lock cannot reach them however it is navigated to.
+
+   Deliberately short. A page transition is a join, not a scene: past roughly
+   400ms it stops reading as polish and starts reading as latency, and this is
+   a product whose whole argument is that it does not waste your time. */
+@keyframes nav-old {
+  from {
+    opacity: 1;
+    transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: perspective(1000px) translate3d(0, -1.5%, -220px) rotateX(6deg);
+  }
+}
+
+@keyframes nav-new {
+  from {
+    opacity: 0;
+    transform: perspective(1000px) translate3d(0, 2.5%, -260px) rotateX(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg);
+  }
+}
+
+::view-transition-old(root) {
+  animation: nav-old 260ms cubic-bezier(0.4, 0, 1, 1) both;
+  transform-origin: 50% 0%;
+}
+
+::view-transition-new(root) {
+  animation: nav-new 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: 50% 100%;
+}
+
+/* Both snapshots share the frame while they cross, so the outgoing one must not
+   paint over the incoming one. */
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+
 /* --- reduced motion -------------------------------------------------------
 
    This block is not redundant with the global rule near the top of this file.
@@ -553,6 +607,14 @@
    Scroll-linked motion therefore has to be switched off by name. Verified in
    the browser rather than assumed. */
 @media (prefers-reduced-motion: reduce) {
+  /* A view transition is not a CSS animation on a real element, so the blanket
+     duration override at the top of this file does not reach it either. The
+     navigation still happens; it simply cuts. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
   .hero-recede,
   .section-arrive {
     animation: none !important;

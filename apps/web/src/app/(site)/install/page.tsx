@@ -138,7 +138,7 @@ const STATUS_LABEL: Record<Status, { text: string; className: string }> = {
 export default function InstallPage() {
   return (
     <>
-      <section className="rule-b">
+      <section className="rule-b section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
           <p className="eyebrow">Install</p>
           <h1 className="display display-lg measure-wide mt-5">
@@ -155,7 +155,7 @@ export default function InstallPage() {
       </section>
 
       {hasRelease() ? (
-        <section className="rule-b">
+        <section className="rule-b section-arrive">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 sm:flex-row sm:items-baseline sm:gap-8 sm:px-8">
             <p className="eyebrow shrink-0 text-success">Released</p>
             <p className="prose-site text-[14.5px]">
@@ -226,7 +226,7 @@ export default function InstallPage() {
         </div>
       </section>
 
-      <section className="rule-t bg-surface-2/50">
+      <section className="rule-t bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div>

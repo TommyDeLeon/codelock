@@ -133,8 +133,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
+    <main
+      id="main"
+      className="dotfield flex min-h-dvh items-center justify-center px-4 py-12"
+    >
+      <div className="hero-rise hero-rise-1 w-full max-w-sm">
         <div className="mb-7 flex items-center gap-2.5">
           <LockMark className="size-8 shrink-0" />
           <div>

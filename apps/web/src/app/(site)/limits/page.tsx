@@ -156,14 +156,14 @@ function Matrix({ rows }: { rows: Row[] }) {
 export default function LimitsPage() {
   return (
     <>
-      <section className="rule-b">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-          <p className="eyebrow">Limits</p>
-          <h1 className="display display-lg measure-wide mt-5">
+      <section className="rule-b hero-stage">
+        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+          <p className="eyebrow hero-rise hero-rise-1">Limits</p>
+          <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
             Everything we tried,
             and <em>what got through.</em>
           </h1>
-          <div className="prose-site measure-wide mt-7 text-[15.5px]">
+          <div className="prose-site measure-wide hero-rise hero-rise-3 mt-8 text-[15.5px]">
             <p>
               On every platform there is a deliberate, conscious act that ends the lock. We would
               rather you read them here than find one at 2am and conclude the whole thing was
@@ -187,7 +187,7 @@ export default function LimitsPage() {
         </p>
       </section>
 
-      <section className="rule-t bg-surface-2/50">
+      <section className="rule-t bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <p className="eyebrow">Android</p>
           <h2 className="display display-md mt-3">Overlay above other apps</h2>
@@ -199,7 +199,7 @@ export default function LimitsPage() {
         </div>
       </section>
 
-      <section className="rule-t">
+      <section className="rule-t section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
@@ -239,7 +239,7 @@ export default function LimitsPage() {
         </div>
       </section>
 
-      <section className="rule-t bg-surface-2/50">
+      <section className="rule-t bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             So it is a commitment device,{' '}

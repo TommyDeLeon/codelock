@@ -197,16 +197,16 @@ function DemoBanner() {
 
 function Intro({ onArm }: { onArm: () => void }) {
   return (
-    <section className="flex flex-1 items-center">
-      <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+    <section className="hero-stage flex flex-1 items-center">
+      <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <p className="eyebrow">Try it</p>
-            <h1 className="display display-lg mt-5">
+            <p className="eyebrow hero-rise hero-rise-1">Try it</p>
+            <h1 className="display display-hero hero-rise-headline hero-rise-2 mt-6">
               Arm a timer.{' '}
               <em>See what happens</em> when it fires.
             </h1>
-            <div className="prose-site measure mt-7 text-[15.5px]">
+            <div className="prose-site measure hero-rise hero-rise-3 mt-8 text-[15.5px]">
               <p>
                 On a real install this would be twenty-five minutes and it would take your whole
                 screen. Here it is eight seconds and it takes this page — enough to show you the
