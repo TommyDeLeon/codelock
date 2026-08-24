@@ -83,6 +83,27 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
+      # PUBLIC_SITE_URL cannot be supplied by whoever deploys this image.
+      #
+      # The API origin moved to runtime configuration, but metadataBase did not
+      # and cannot without making every marketing page dynamic. It is read when
+      # the bundle is compiled, so an unset variable bakes
+      # "http://localhost:3000/og.png" into the Open Graph tags of every page in
+      # the published image — and that is invisible from inside the running
+      # container. Nothing is broken until somebody shares a link and the
+      # preview is blank.
+      #
+      # Fail here, where the fix is one repository variable, rather than
+      # publishing an image that looks correct.
+      - name: Require PUBLIC_SITE_URL
+        if: vars.PUBLIC_SITE_URL == ''
+        run: |
+          echo "::error::PUBLIC_SITE_URL is not set for this repository."
+          echo "Open Graph URLs are compiled into the image and cannot be corrected at deploy time."
+          echo "Set it under Settings -> Secrets and variables -> Actions -> Variables,"
+          echo "for example  PUBLIC_SITE_URL = https://app.your-domain.com"
+          exit 1
+
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
