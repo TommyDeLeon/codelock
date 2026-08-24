@@ -356,3 +356,133 @@
 .animate-record {
   animation: record-break 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ===========================================================================
+   Cinematic marketing surfaces
+   ===========================================================================
+
+   Marketing pages only — apps/web/src/app/(site)/*. None of this may reach
+   /lock, the desktop dashboard or the mobile tool screens: those appear when
+   the user is least patient, and motion on a tool is friction.
+
+   Apple read correctly: large type, deep negative space, one focal object per
+   section, and motion that is tied to scroll position rather than decorating
+   the page. Restraint plus a few earned moments, not effects everywhere.
+
+   Two rules hold throughout:
+
+   1. Transform and opacity only. Animating width, height, top or left forces
+      layout on every frame, which is how a scroll drops below 60fps.
+   2. Scroll position drives progress, never a JS listener. A scroll handler
+      runs on the main thread on every scroll event; `animation-timeline` is
+      evaluated off it.
+   =========================================================================== */
+
+/* The hero headline, at a scale the rest of the type system does not offer.
+   display-lg tops out at 3.4rem, which is a heading; this is the one place on
+   the site that gets to be a statement. */
+.display-hero {
+  font-size: clamp(2.5rem, 7.2vw, 5rem);
+  letter-spacing: -0.032em;
+  line-height: 1.02;
+}
+
+/* --- the load reveal ------------------------------------------------------
+
+   The hero is above the fold, so a view()-driven entry animation would already
+   be at 100% before the first paint and do nothing visible. Above the fold
+   earns a load reveal; scroll-linked motion belongs to what happens as the
+   section leaves (below).
+
+   A plain animation, deliberately: the global prefers-reduced-motion rule
+   collapses its duration and that is the correct outcome here. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger, so the eye is led down the column rather than shown everything at
+   once. Values are small; a long cascade reads as a slow page, not a designed
+   one. */
+.hero-rise-1 { animation-delay: 60ms; }
+.hero-rise-2 { animation-delay: 140ms; }
+.hero-rise-3 { animation-delay: 220ms; }
+.hero-rise-4 { animation-delay: 300ms; }
+
+/* --- the focal object -----------------------------------------------------
+
+   The gate meter is the one object in this section. It already renders the
+   product thesis as an instrument, so it is given depth rather than replaced
+   by an invented hero graphic.
+
+   The perspective lives on the ancestor so the child's rotation is read in a
+   shared 3D space. Without it, rotateX is a flat squash. */
+.hero-stage {
+  perspective: 1400px;
+  perspective-origin: 50% 0%;
+}
+
+/* Scroll-linked departure: as the hero scrolls away the instrument tips back
+   and recedes, which is what gives the section depth. `exit` rather than
+   `entry` because it is already on screen at load.
+
+   Guarded by @supports: in a browser without scroll-driven animations the
+   rules below never apply and the element simply sits flat and fully opaque,
+   which is a correct page rather than a degraded one. Applying the start state
+   unguarded would leave it invisible in Safari and Firefox. */
+@supports (animation-timeline: view()) {
+  @keyframes hero-recede {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotateX(0deg) scale(1);
+    }
+    to {
+      opacity: 0.55;
+      transform: translate3d(0, -1.5rem, 0) rotateX(7deg) scale(0.94);
+    }
+  }
+
+  .hero-recede {
+    animation: hero-recede linear both;
+    animation-timeline: view();
+    /* Only across the last stretch of its exit, so the instrument is upright
+       and legible for as long as it is the thing being looked at. */
+    animation-range: exit 10% exit 90%;
+    transform-origin: 50% 0%;
+    /* Promote once, rather than letting the compositor discover it mid-scroll. */
+    will-change: transform, opacity;
+  }
+}
+
+/* --- reduced motion -------------------------------------------------------
+
+   This block is not redundant with the global rule near the top of this file.
+   That rule sets animation-duration, and a scroll-driven animation has no
+   duration — its progress comes from scroll position, so a 0.01ms duration
+   changes nothing and the effect keeps running at full strength.
+
+   Scroll-linked motion therefore has to be switched off by name. Verified in
+   the browser rather than assumed. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-recede {
+    animation: none !important;
+    animation-timeline: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .hero-stage {
+    perspective: none;
+  }
+}

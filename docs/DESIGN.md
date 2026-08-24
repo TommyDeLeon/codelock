@@ -78,9 +78,21 @@ STRUCTURE
 - Generous vertical rhythm on marketing pages; dense and scannable on app
   screens. Those are different jobs and should not look alike.
 
-MOTION
-- Sparing and functional. Transitions clarify a state change; nothing is
-  decorative. Respect prefers-reduced-motion.
+MOTION — two registers, and they must not be confused
+
+- On TOOL surfaces — the lock screen, the desktop dashboard, the mobile
+  Progress and Settings screens — motion is limited to state changes: a bar
+  filling, a tier advancing, the record-break flash. Nothing ambient, nothing
+  scroll-linked, nothing that costs a frame while the judge is grading. These
+  are opened many times a day and cinema on a tool is friction.
+- On MARKETING surfaces — everything under app/(site)/ plus the login
+  backdrop — motion is cinematic: scroll-linked rather than decorative. See
+  §4a.
+- Respect prefers-reduced-motion on both. Note that the global rule in
+  globals.css only collapses animation-duration, which does NOT stop a
+  scroll-driven animation — those have no duration, and their progress comes
+  from scroll position. Every scroll-linked effect needs its own explicit
+  opt-out, and it must be verified in a browser rather than assumed.
 
 ACCESSIBILITY (non-negotiable — this is a lock screen)
 - Visible keyboard focus everywhere. A user who cannot see focus on a lock
@@ -265,14 +277,65 @@ Page Structure:
 1. Sticky slim navigation: wordmark with a small drawn mark (two horizontal
    rules and one accent rule — a bar to get under, not a padlock icon), four
    text links, one Download button.
-2. HERO — asymmetric 6/6 split, NOT centred. Left: mono eyebrow, a three-line
-   display-serif headline whose final clause is italic ("Your device stays
-   locked until the code is / correct and fast."), one short paragraph, two
-   buttons. Right: a live speed-gate meter (see §2c) cycling through
+2. HERO — asymmetric 6/6 split, NOT centred, and the one place on the site
+   that gets to be a statement. Left: mono eyebrow, the headline at
+   `.display-hero` scale (clamp 2.5rem -> 5rem, well past the 3.4rem the rest
+   of the type system offers) with its final clause in the brand green, one
+   short paragraph, two buttons. Deep vertical space around all of it — the
+   negative space is the point, not padding left over.
+   Right: the live speed-gate meter (see §2c) cycling through
    O(n^2) -> O(n log n) -> O(n) with real measured numbers, pausing on hover,
-   with manual dot controls. This component is the page's memorable idea — the
-   entire product thesis rendered as an instrument rather than described. A
-   faint dot-grid sits behind the hero only, masked so it fades out.
+   with manual dot controls. This component is the page's memorable idea and
+   its single focal object — the entire product thesis rendered as an
+   instrument rather than described. It is given depth rather than replaced by
+   an invented hero graphic. A faint dot-grid sits behind the hero only, masked
+   so it fades out.
+### 4a. Cinematic technique, marketing surfaces only
+
+The reference is an Apple product page read correctly: enormous type, deep
+negative space, ONE focal object per section, and motion tied to scroll
+position rather than sprinkled over the page. Restraint plus a few earned
+moments — not 3D everywhere.
+
+Where this conflicts with the retail-storefront register in §1, cinematic wins
+on marketing surfaces and only there. The green brand and the promo band stay.
+
+WEB AND DESKTOP (both Chromium, sharing this CSS)
+- CSS scroll-driven animations (`animation-timeline: view()`) are the default.
+  No JS scroll listeners: a scroll handler runs on the main thread on every
+  scroll event, which is a frame each time.
+- Above the fold gets a LOAD reveal, not a scroll one. A view() entry animation
+  on a hero is already at 100% before first paint and does nothing. Scroll
+  drives what happens as a section LEAVES.
+- CSS 3D with `perspective` on the ancestor for depth. Animate transform and
+  opacity ONLY — never width, height, top or left, which force layout per frame.
+- Every scroll-driven rule sits inside `@supports (animation-timeline: view())`.
+  Firefox and Safari do not support it, and applying the start state unguarded
+  leaves the content invisible there.
+- WebGL/Three.js only if a section genuinely cannot be done in CSS, justified in
+  the commit message and lazy-loaded behind an IntersectionObserver.
+
+MOBILE (React Native — cannot run the above at all)
+- react-native-reanimated for scroll-linked transforms on the UI thread.
+- expo-linear-gradient for depth. react-native-skia only if a specific effect
+  needs it, and justified.
+- Do not attempt WebGL parity. Match the DIRECTION — space, type scale, focal
+  hierarchy — not the literal effects.
+
+BUDGETS — gates, not aspirations. Measured, never estimated.
+- Route JS for (site) pages grows by no more than 150 KB gzipped in total.
+- LCP under 2.5s and CLS under 0.1 on a simulated mid-tier mobile device.
+- Scroll holds 60fps on the landing page.
+- No animation runs on any screen while a lock session is LOCKED.
+
+ACCESSIBILITY — a completion gate, not a follow-up
+- Every effect disabled or reduced to a fade under prefers-reduced-motion, and
+  verified per effect rather than assumed to inherit the global rule.
+- Text contrast stays WCAG AA against every new background, including
+  mid-animation states.
+- Focus outlines remain visible against new backgrounds.
+- Nothing becomes keyboard-inaccessible because it moved.
+
 3. THREE IDEAS — one row divided by vertical hairline rules, NOT three cards.
    Numbered mono eyebrows (01 / 02 / 03), serif sub-headings, two short
    paragraphs each.

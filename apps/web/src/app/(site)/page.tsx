@@ -49,19 +49,19 @@ export default function LandingPage() {
   return (
     <>
       {/* --- Hero ---------------------------------------------------------- */}
-      <section className="dotfield">
-        <div className="mx-auto max-w-6xl px-5 pb-16 pt-16 sm:px-8 sm:pb-24 sm:pt-24">
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
+      <section className="dotfield hero-stage">
+        <div className="mx-auto max-w-6xl px-5 pb-24 pt-20 sm:px-8 sm:pb-36 sm:pt-32">
+          <div className="grid gap-14 lg:grid-cols-12 lg:gap-12">
             <div className="lg:col-span-6 lg:pt-6">
-              <p className="eyebrow">Focus timer · Desktop, Android, iOS</p>
+              <p className="eyebrow hero-rise hero-rise-1">Focus timer · Desktop, Android, iOS</p>
 
-              <h1 className="display display-lg mt-5">
+              <h1 className="display display-hero hero-rise hero-rise-2 mt-6">
                 Your device stays locked
                 until the code is{' '}
                 <em>correct and fast.</em>
               </h1>
 
-              <div className="prose-site measure mt-7 text-[15px]">
+              <div className="prose-site measure hero-rise hero-rise-3 mt-8 text-[15px]">
                 <p>
                   Set a timer. Work. When it fires, the screen belongs to CodeLock until you
                   solve the problem it assigns — and a solution that passes every test but runs
@@ -69,7 +69,7 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="hero-rise hero-rise-4 mt-10 flex flex-wrap items-center gap-3">
                 <Link
                   href="/demo"
                   className="inline-flex h-11 items-center rounded-md bg-fg px-5 text-[15px]
@@ -90,7 +90,7 @@ export default function LandingPage() {
             </div>
 
             {/* The instrument itself, not an illustration of one. */}
-            <div className="lg:col-span-6 lg:pt-2">
+            <div className="hero-recede lg:col-span-6 lg:self-center lg:pt-2">
               <GateMeter />
               <p className="mt-3 text-[13px] text-faint">
                 The same arithmetic the judge applies.{' '}
