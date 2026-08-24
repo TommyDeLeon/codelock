@@ -48,9 +48,12 @@ require() {
   local value=${!name:-}
   if [ -z "$value" ]; then
     missing+=("$name")
-  elif [ "$value" = "app.example.com" ] ||
-       [ "$value" = "api.example.com" ] ||
-       [ "$value" = "you@example.com" ]; then
+  elif [[ "${value,,}" == *example* ]]; then
+    # Substring, not equality. The old check only caught the three literal
+    # values from .env.example, so anything derived from them — codelock.example.com,
+    # api.example.org, me@example.net — passed preflight and produced a stack
+    # that starts, gets no certificate, and serves nothing. example.com/net/org
+    # are reserved by RFC 2606 and can never be a real deployment.
     placeholder+=("$name")
   fi
 }
@@ -81,6 +84,21 @@ if [ "$JWT_ACCESS_SECRET" = "$JWT_REFRESH_SECRET" ] ||
    [ "$JWT_ACCESS_SECRET" = "$JWT_UNLOCK_SECRET" ] ||
    [ "$JWT_REFRESH_SECRET" = "$JWT_UNLOCK_SECRET" ]; then
   red "The three JWT secrets must all differ."
+  exit 1
+fi
+
+# POSTGRES_PASSWORD is interpolated into DATABASE_URL verbatim by
+# docker-compose.yml, so a character that means something to a URL parser
+# produces a different URL rather than a wrong password. A '/' ends the
+# authority section and the API dies on "P1013: invalid port number in database
+# URL" — a message that never mentions the password. Caught here, where it can
+# be explained, rather than in a crash loop behind a proxy returning 502.
+if printf %s "$POSTGRES_PASSWORD" | LC_ALL=C grep -q '[^A-Za-z0-9._~-]'; then
+  red "POSTGRES_PASSWORD contains a character that is not safe in a URL."
+  echo "  It goes straight into DATABASE_URL, so / @ : ? # [ ] % and spaces"
+  echo "  change the URL rather than the password."
+  echo "  ./gen-secrets.sh now produces URL-safe values; or by hand:"
+  echo "    openssl rand -base64 48 | tr -d '\n=' | tr '+/' '-_' | cut -c1-64"
   exit 1
 fi
 

@@ -141,3 +141,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
+
+  runtime-config:
+    name: Web image is runtime-configurable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The published web image carries no NEXT_PUBLIC_* values, so the API
+      # origin has to arrive at run time or a prebuilt deploy points every
+      # browser at its own localhost and silently reaches nothing. Both halves
+      # are asserted — the served origin and the CSP that permits reaching it.
+      - run: ./scripts/test-runtime-config.sh

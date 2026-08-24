@@ -41,9 +41,20 @@ command -v openssl >/dev/null 2>&1 || {
   exit 1
 }
 
-# 48 raw bytes -> 64 base64 characters, comfortably past the 32-character
-# minimum the API enforces, and safe to paste into an env file.
-secret() { openssl rand -base64 48 | tr -d '\n=' | cut -c1-64; }
+# 48 raw bytes -> 64 characters, comfortably past the 32-character minimum the
+# API enforces.
+# base64*url*, not plain base64.
+#
+# POSTGRES_PASSWORD is interpolated straight into DATABASE_URL by
+# docker-compose.yml, and standard base64 emits '/' and '+'. A '/' ends the
+# URL authority, so the connection string silently became a different,
+# invalid URL and the API crash-looped on "P1013: invalid port number in
+# database URL" with nothing in the message pointing at the password.
+# Roughly two thirds of 64-character base64 strings contain at least one '/',
+# so this was most fresh installs, not an edge case.
+#
+# Same 64-symbol alphabet, so the entropy is unchanged.
+secret() { openssl rand -base64 48 | tr -d '\n=' | tr '+/' '-_' | cut -c1-64; }
 
 cp .env.example .env
 
