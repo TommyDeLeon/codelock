@@ -28,7 +28,7 @@ export function AnnouncementBar() {
         </span>
         {/* Never let the call to action itself break in half. */}
         <Link
-          href="/install"
+          href="/demo"
           className="whitespace-nowrap underline underline-offset-2 hover:no-underline"
         >
           Get it running
