@@ -497,20 +497,31 @@
     }
   }
 
-  .hero-recede {
-    animation: hero-recede linear both;
-    animation-timeline: view();
-    /* Only across the last stretch of its exit, so the instrument is upright
-       and legible for as long as it is the thing being looked at. */
-    animation-range: exit 10% exit 90%;
-    transform-origin: 50% 0%;
-    /* No will-change here, on purpose. The compositor already knows about a
-       scroll-driven transform/opacity animation at style-resolution time, so
-       there is no mid-scroll discovery to pre-empt — and the hint is not free:
-       it promotes this column to a composited layer for the lifetime of the
-       page, several MB of GPU texture held whether or not the hero is anywhere
-       near the viewport. That is the wrong trade on a low-memory phone, which
-       is the device this effect matters least on. */
+  /* Mouse/trackpad only. On a touchscreen the same scroll-linked rotation
+     reads as the page "going back and forth": momentum scrolling and the
+     rubber-band bounce at the top/bottom of the page make scroll position
+     jitter by a few pixels even when the finger motion was smooth, and a
+     rotateX + translateZ inside a perspective camera turns that tiny jitter
+     into visible reversing motion. A 2D fade/translate does not have this
+     problem, because it has no depth for jitter to be amplified into — which
+     is exactly what a touch device still gets here: full opacity, no
+     transform, i.e. the element simply appears, unanimated. */
+  @media (hover: hover) and (pointer: fine) {
+    .hero-recede {
+      animation: hero-recede linear both;
+      animation-timeline: view();
+      /* Only across the last stretch of its exit, so the instrument is
+         upright and legible for as long as it is the thing being looked at. */
+      animation-range: exit 10% exit 90%;
+      transform-origin: 50% 0%;
+      /* No will-change here, on purpose. The compositor already knows about a
+         scroll-driven transform/opacity animation at style-resolution time, so
+         there is no mid-scroll discovery to pre-empt — and the hint is not
+         free: it promotes this column to a composited layer for the lifetime
+         of the page, several MB of GPU texture held whether or not the hero is
+         anywhere near the viewport. That is the wrong trade on a low-memory
+         phone, which is the device this effect matters least on. */
+    }
   }
 }
 
@@ -535,11 +546,17 @@
     }
   }
 
-  .section-arrive {
-    animation: section-arrive linear both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 32%;
-    transform-origin: 50% 100%;
+  /* Same touch guard as .hero-recede above, and the same reason: the
+     rotateX + translateZ depth is what turns ordinary scroll jitter into
+     visible back-and-forth motion, and that jitter is a property of momentum
+     touch-scrolling specifically. */
+  @media (hover: hover) and (pointer: fine) {
+    .section-arrive {
+      animation: section-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 32%;
+      transform-origin: 50% 100%;
+    }
   }
 }
 
