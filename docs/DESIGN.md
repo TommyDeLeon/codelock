@@ -204,11 +204,22 @@ glance, before any text is read:
 
   c) CORRECT BUT TOO SLOW — the hardest and most important state in the entire
      product. Every test case shows PASS in green, and the screen still says
-     locked — in PLAIN INK, no hue at all. Show a horizontal meter: a
-     green-tinted budget region, a labelled "gate" threshold line, and the
-     user's runtime bar overshooting it in solid ink. The green stops exactly
-     where the budget ends and the ink carries on past it: the picture is "you
-     ran out of green". Beneath it, in mono:
+     locked — in DANGER RED. Show a horizontal meter: a green-tinted budget
+     region, a labelled "gate" threshold line, and the user's runtime bar
+     overshooting it in red. The green stops exactly where the budget ends and
+     the red carries on past it: the picture is "you ran out of green".
+
+     Two rules this state got wrong once and must not again:
+     - The threshold line paints ON TOP of the runtime bar, never beneath it.
+       Drawn underneath, it is hidden by the bar in exactly the case that
+       matters — an overshooting run — leaving the reader with a coloured block
+       and no visible budget edge.
+     - The overshoot is red, not plain ink. Ink was specified when the system
+       was monochrome; on the dark theme it resolves to near-white and reads as
+       a neutral block rather than as a verdict. §1 withdrew the "locked has no
+       hue" rule and this is the state it was withdrawn for.
+
+     Beneath it, in mono:
      "412 ms against a 189 ms budget. Correct, but roughly 2.2x slower than the
      best known solution. Look for a better algorithm."
      This must read as FAIR AND ACTIONABLE, never arbitrary or punitive. The

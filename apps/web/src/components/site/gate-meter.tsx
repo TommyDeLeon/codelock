@@ -139,22 +139,32 @@ export function GateMeter() {
             style={{ width: `${pct(gateMs)}%` }}
             aria-hidden
           />
-          <div
-            className="absolute inset-y-0 w-px bg-success"
-            style={{ left: `${pct(gateMs)}%` }}
-            aria-hidden
-          />
-
+          {/* The runtime bar, drawn BEFORE the threshold so the threshold can
+              cross it. Red while the gate is not cleared: this is the state the
+              whole product exists to explain — every test passed and the
+              machine is still locked — so it has to be legible at a glance,
+              before a word of the readout is read. It was plain ink, which on
+              the dark theme is near-white and read as a neutral block. */}
           <div
             className={`absolute inset-y-2 left-0 rounded-r-xs transition-[width,background-color] duration-700 ease-out ${
-              passed ? 'bg-success' : 'bg-fg'
+              passed ? 'bg-success' : 'bg-danger'
             }`}
             style={{ width: `${pct(measured)}%` }}
             aria-hidden
           />
 
+          {/* The threshold, last so it paints on top. Drawn before the bar it
+              was hidden underneath it the moment a run overshot — which is
+              every locked case, the one time the reader most needs to see
+              where the budget ended. */}
+          <div
+            className="absolute inset-y-0 w-0.5 bg-fg"
+            style={{ left: `${pct(gateMs)}%` }}
+            aria-hidden
+          />
+
           <span
-            className="absolute -top-0.5 translate-x-2 font-mono text-[11px] text-success"
+            className="absolute -top-0.5 translate-x-2 font-mono text-[11px] font-medium text-fg"
             style={{ left: `${pct(gateMs)}%` }}
             aria-hidden
           >
@@ -170,11 +180,11 @@ export function GateMeter() {
             <span className="text-faint">
               {attempt.runs[0]}ms / {attempt.runs[1]}ms →{' '}
             </span>
-            <span className={passed ? 'text-success' : 'text-fg'}>{measured}ms</span>
+            <span className={passed ? 'text-success' : 'text-danger'}>{measured}ms</span>
           </span>
         </div>
 
-        <p className={`mt-3 font-mono text-[13px] ${passed ? 'text-success' : 'text-fg'}`}>
+        <p className={`mt-3 font-mono text-[13px] ${passed ? 'text-success' : 'text-danger'}`}>
           {passed
             ? `unlocked · ${ratio.toFixed(2)}× the best known answer`
             : `still locked · roughly ${ratio.toFixed(1)}× slower than the best known answer`}
