@@ -556,39 +556,45 @@
    Only the marketing layout starts these — see components/site/cinematic-nav —
    so /lock cannot reach them however it is navigated to.
 
-   Deliberately short. A page transition is a join, not a scene: past roughly
-   400ms it stops reading as polish and starts reading as latency, and this is
-   a product whose whole argument is that it does not waste your time. */
+   Deliberately short and deliberately small. A page transition is a join, not
+   a scene: past roughly 300ms it stops reading as polish and starts reading as
+   latency, and this is a product whose whole argument is that it does not waste
+   your time.
+
+   The first version of this rotated and pushed the whole page along z, the same
+   move the hero uses. On a route change it read as theatrical — the entire
+   document tumbling for a click that should feel instant. What is left is a
+   short cross-fade with a few pixels of lift: enough that the change registers
+   as a movement rather than a cut, not enough to be watched. The depth on this
+   site belongs to the objects inside a page, not to the page itself. */
 @keyframes nav-old {
   from {
     opacity: 1;
-    transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg);
+    transform: none;
   }
   to {
     opacity: 0;
-    transform: perspective(1000px) translate3d(0, -1.5%, -220px) rotateX(6deg);
+    transform: translate3d(0, -6px, 0);
   }
 }
 
 @keyframes nav-new {
   from {
     opacity: 0;
-    transform: perspective(1000px) translate3d(0, 2.5%, -260px) rotateX(-5deg);
+    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
-    transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg);
+    transform: none;
   }
 }
 
 ::view-transition-old(root) {
-  animation: nav-old 260ms cubic-bezier(0.4, 0, 1, 1) both;
-  transform-origin: 50% 0%;
+  animation: nav-old 130ms ease-out both;
 }
 
 ::view-transition-new(root) {
-  animation: nav-new 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-origin: 50% 100%;
+  animation: nav-new 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Both snapshots share the frame while they cross, so the outgoing one must not

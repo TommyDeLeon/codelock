@@ -25,6 +25,16 @@ const LINKS = [
   { href: '/install', label: 'Install' },
 ];
 
+/**
+ * Where the promotional band is worth showing.
+ *
+ * It exists to say the product is free and point at the install page. On
+ * /install that is where the reader already is, and on /demo the page carries
+ * its own non-dismissible banner directly beneath this one — two stacked bands
+ * before any content is a header, not an announcement.
+ */
+const BANDLESS = new Set(['/install', '/demo']);
+
 export function SiteNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -46,7 +56,7 @@ export function SiteNav() {
 
   return (
     <header className="sticky top-0 z-40">
-      <AnnouncementBar />
+      {!BANDLESS.has(pathname) && <AnnouncementBar />}
 
       {/* Brand row: mark and wordmark left, utilities right — the storefront
           arrangement, minus a search field and a basket, because this product
@@ -86,20 +96,33 @@ export function SiteNav() {
       </div>
       </div>
 
-      {/* Category strip: the dark full-width row of sections directly under the
-          brand row. Hidden on mobile, where the hamburger already carries it. */}
+      {/* Section strip, directly under the brand row. Hidden on mobile, where
+          the hamburger already carries it.
+
+          It used to be `bg-fg text-bg` — a deliberate inversion borrowed from
+          the storefront reference. On the dark theme that resolves to a
+          near-white slab running the full width of the window, which fights
+          every other surface on the page; and because the band is full-bleed
+          while its contents stop at max-w-6xl, on a wide screen the links float
+          in the middle of a bright bar and read as misplaced rather than
+          aligned. They are not misplaced — brand, sections and page content all
+          sit on the same 73px left edge — but the inversion made the alignment
+          impossible to see. A quiet surface tone keeps the strip legible as its
+          own row without competing with the content. */}
       <nav
         aria-label="Sections"
-        className="hidden bg-fg text-bg sm:block"
+        className="rule-b hidden bg-surface-2 sm:block"
       >
-        <ul className="mx-auto flex max-w-6xl items-center gap-7 px-5 py-2.5 text-[12.5px] font-semibold sm:px-8">
+        <ul className="mx-auto flex max-w-6xl items-center gap-7 px-5 py-2.5 text-[12.5px] font-medium sm:px-8">
           {LINKS.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
                 aria-current={pathname === link.href ? 'page' : undefined}
-                className={`transition-opacity hover:opacity-70 ${
-                  pathname === link.href ? 'underline underline-offset-4' : ''
+                className={`transition-colors hover:text-fg ${
+                  pathname === link.href
+                    ? 'text-fg underline underline-offset-4'
+                    : 'text-muted'
                 }`}
               >
                 {link.label}
@@ -107,7 +130,7 @@ export function SiteNav() {
             </li>
           ))}
           <li className="ml-auto">
-            <Link href="/login" className="transition-opacity hover:opacity-70">
+            <Link href="/login" className="text-muted transition-colors hover:text-fg">
               Sign in
             </Link>
           </li>
