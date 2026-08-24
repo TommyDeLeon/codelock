@@ -425,6 +425,22 @@ does not squash cleanly into a phone.
 - Navigation collapses to a hamburger opening a full-height panel with 44px rows.
 - Nothing may scroll horizontally at 320px.
 
+MOBILE TYPE SCALE — apps/mobile/src/theme.ts
+
+React Native cannot read the web tokens, so the scale is transcribed there as
+`type`. Use it; do not write a fontSize inline. The three screens each used to
+guess their own, which is why they did not look like one product.
+
+- `display` (34) is for ENTRY and marketing surfaces only — the sign-in
+  screen, not the timer. It is the mobile counterpart of the web .display-hero
+  and matches the lower bound of that clamp, which is what the web already
+  resolves to at phone width.
+- `figure` (48, tabular) is for runtimes, gates and countdowns. Those are the
+  product evidence and are the one thing allowed to be large on a tool screen.
+- Progress and Settings stay on `heading`/`body`/`small`. They are tools opened
+  many times a day and get no display type and no cinematic motion — only
+  state-change motion, as §1 MOTION requires.
+
 ---
 
 ## 8. What to avoid

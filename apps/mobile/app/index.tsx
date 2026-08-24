@@ -10,7 +10,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, type as typeScale } from '@/theme';
 import { clearSession, loadSession, mobileApi } from '@/session';
 import {
   ENFORCEMENT_COPY,
@@ -189,12 +189,15 @@ export default function HomeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <PromoBand />
-        <View style={styles.screen}>
-          <LockMark size={28} />
-          <Text style={[styles.title, { color: theme.fg }]}>
+        <View style={[styles.screen, styles.entry]}>
+          <LockMark size={32} />
+          {/* The entry screen carries the direction: display type, deeper
+              space, one focal element. The timer below — a tool opened many
+              times a day — deliberately does not. */}
+          <Text style={[typeScale.display, styles.entryTitle, { color: theme.fg }]}>
             {mode === 'login' ? 'Sign in' : 'Create your account'}
           </Text>
-          <Text style={[styles.body, { color: theme.muted }]}>
+          <Text style={[typeScale.body, { color: theme.muted }]}>
             Use the same account as the web and desktop apps.
           </Text>
 
@@ -397,6 +400,8 @@ const styles = StyleSheet.create({
   screenFlush: { flexGrow: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
+  entry: { paddingTop: spacing.xxxl, gap: spacing.lg },
+  entryTitle: { marginTop: spacing.md },
   label: { fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
   countdown: { fontSize: 48, fontWeight: '600', fontVariant: ['tabular-nums'] },
   body: { fontSize: 14 },
