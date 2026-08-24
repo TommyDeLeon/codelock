@@ -143,8 +143,18 @@ async function request<T>(
   // Grading is synchronous and can legitimately take ~30s; everything else
   // should fail fast. Without a timeout, an unreachable API leaves the UI on
   // skeletons indefinitely, which reads as "still loading" rather than "broken".
-  // The demo runs the same sandbox containers, so it needs the same patience.
-  const grading = path.startsWith('/v1/submissions') || path === '/v1/demo/grade';
+  // The demo runs the same sandbox containers, so it needs the same patience —
+  // and that includes /v1/demo/problem, not only /v1/demo/grade. It is the
+  // FIRST request the demo page makes, so on a cold instance (a free-tier host
+  // asleep after inactivity can take up to a minute to wake — see
+  // docs/FREE-HOSTING.md) it is the one most likely to be racing a wake-up, and
+  // it used to carry the 15s "fail fast" budget meant for an already-warm app.
+  // Two 15s attempts (retry: 1) settling into an error while the instance is
+  // still waking up is what read as the demo being "stuck" rather than slow.
+  const grading =
+    path.startsWith('/v1/submissions') ||
+    path === '/v1/demo/grade' ||
+    path === '/v1/demo/problem';
   const timeoutMs = grading ? 120_000 : 15_000;
 
   let res: Response;
