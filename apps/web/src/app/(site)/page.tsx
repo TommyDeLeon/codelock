@@ -55,7 +55,7 @@ export default function LandingPage() {
             <div className="lg:col-span-6 lg:pt-6">
               <p className="eyebrow hero-rise hero-rise-1">Focus timer · Desktop, Android, iOS</p>
 
-              <h1 className="display display-hero hero-rise hero-rise-2 mt-6">
+              <h1 className="display display-hero hero-rise-headline hero-rise-2 mt-6">
                 Your device stays locked
                 until the code is{' '}
                 <em>correct and fast.</em>

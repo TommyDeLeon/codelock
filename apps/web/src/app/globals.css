@@ -411,6 +411,29 @@
   animation: hero-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/**
+ * The headline reveals by moving only, never by fading.
+ *
+ * Chrome will not treat an element painted at zero opacity as an LCP
+ * candidate, and `both` fill holds that start frame through the
+ * animation-delay as well. Giving the h1 the fading reveal therefore stamped
+ * LCP at first-paint plus the delay plus a frame, rather than at first paint —
+ * measurably, and for nothing the reader gains. An element that only
+ * translates is a candidate from its first frame.
+ */
+@keyframes hero-rise-headline {
+  from {
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.hero-rise-headline {
+  animation: hero-rise-headline 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Stagger, so the eye is led down the column rather than shown everything at
    once. Values are small; a long cascade reads as a slow page, not a designed
    one. */
@@ -459,8 +482,13 @@
        and legible for as long as it is the thing being looked at. */
     animation-range: exit 10% exit 90%;
     transform-origin: 50% 0%;
-    /* Promote once, rather than letting the compositor discover it mid-scroll. */
-    will-change: transform, opacity;
+    /* No will-change here, on purpose. The compositor already knows about a
+       scroll-driven transform/opacity animation at style-resolution time, so
+       there is no mid-scroll discovery to pre-empt — and the hint is not free:
+       it promotes this column to a composited layer for the lifetime of the
+       page, several MB of GPU texture held whether or not the hero is anywhere
+       near the viewport. That is the wrong trade on a low-memory phone, which
+       is the device this effect matters least on. */
   }
 }
 
@@ -479,7 +507,6 @@
     animation-timeline: auto !important;
     opacity: 1 !important;
     transform: none !important;
-    will-change: auto;
   }
 
   .hero-stage {

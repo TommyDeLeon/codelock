@@ -1,16 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
 
 /**
- * Three families, each with a job.
+ * Two families, each with a job.
  *
  * The default stack was system-ui everywhere, which is the single loudest
- * signal that nobody chose anything. A serif for display gives the pages the
- * weight of a written argument rather than a product page; Inter carries the
- * interface; and the mono is finally a real face rather than a fallback chain,
- * which matters because runtimes and gate figures are the product's evidence.
+ * signal that nobody chose anything. Inter carries both the interface and the
+ * display type — the rebrand replaced the display serif with a grotesque, and
+ * that is Inter at bold weight, not a third family. The mono is finally a real
+ * face rather than a fallback chain, which matters because runtimes and gate
+ * figures are the product's evidence.
+ *
+ * There were three. Instrument Serif survived the rebrand as a dead import:
+ * still fetched, still preloaded at the highest priority, referenced by no CSS
+ * rule at all — 30 KB of the render-blocking budget spent on a face that never
+ * appeared on screen.
  *
  * next/font self-hosts and inlines the metrics, so there is no layout shift and
  * no request to Google at runtime.
@@ -18,14 +24,6 @@ import './globals.css';
 const sans = Inter({
   subsets: ['latin'],
   variable: '--font-sans-loaded',
-  display: 'swap',
-});
-
-const display = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-display-loaded',
   display: 'swap',
 });
 
@@ -89,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
     >
       <head>
         {/*
