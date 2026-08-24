@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
 
 /**
- * Two families, each with a job.
+ * Three families, each with a job.
  *
  * The default stack was system-ui everywhere, which is the single loudest
  * signal that nobody chose anything. Inter carries both the interface and the
@@ -24,6 +24,25 @@ import './globals.css';
 const sans = Inter({
   subsets: ['latin'],
   variable: '--font-sans-loaded',
+  display: 'swap',
+});
+
+/**
+ * The display face, and the only reason to carry a third family.
+ *
+ * Inter was doing both jobs, which is why the headings read as body copy set
+ * large rather than as display type. Space Grotesk has the wide apertures and
+ * squared terminals that hold up at 80px, and enough character at 11px that the
+ * section eyebrows stop looking like faded small caps.
+ *
+ * Two static weights, not the variable face: 500 for eyebrows and 700 for
+ * headings is the whole range this design uses, and the variable file is
+ * several times the size of the two instances.
+ */
+const display = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['500', '700'],
+  variable: '--font-display-loaded',
   display: 'swap',
 });
 
@@ -87,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${sans.variable} ${mono.variable}`}
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
     >
       <head>
         {/*
