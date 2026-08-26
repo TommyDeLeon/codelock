@@ -231,7 +231,8 @@ export default function InstallPage() {
         </div>
       </section>
 
-      <section className="rule-t bg-surface-2/50 section-arrive">
+      <section className="relative isolate rule-t bg-surface-2/50">
+        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div>

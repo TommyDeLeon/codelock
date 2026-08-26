@@ -241,7 +241,8 @@ export default function LimitsPage() {
         </div>
       </section>
 
-      <section className="rule-t bg-surface-2/50 section-arrive">
+      <section className="relative isolate rule-t bg-surface-2/50">
+        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             So it is a commitment device,{' '}

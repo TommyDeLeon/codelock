@@ -334,7 +334,8 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <section>
+      <section className="relative isolate">
+        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             Now go and see it{' '}

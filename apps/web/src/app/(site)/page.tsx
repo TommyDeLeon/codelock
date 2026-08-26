@@ -210,7 +210,8 @@ export default function LandingPage() {
       </section>
 
       {/* --- Close --------------------------------------------------------- */}
-      <section className="section-arrive rule-t">
+      <section className="relative isolate rule-t">
+        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-end sm:justify-between">
             <div>

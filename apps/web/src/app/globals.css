@@ -82,6 +82,12 @@
   --color-prose: #2a2723;
   /* Hairlines for the editorial rules that carry the marketing pages. */
   --color-rule: #ded9d0;
+
+  /* Peak opacity of the marketing horizon glow (.code-field__glow). On paper
+     the page is already bright, so this only has to suggest warmth. 0.04 is
+     the measured ceiling that keeps --color-muted at 4.5:1 over
+     --color-surface-2 with a code bar under the same glyph. */
+  --cf-glow: 0.04;
 }
 
 .dark {
@@ -113,6 +119,13 @@
 
   --color-prose: #d9d5cd;
   --color-rule: #302f2b;
+
+  /* Nearly twice the light value, because this is the theme with the problem:
+     against #0e0e0d a closing section with no light in it reads as the page
+     having run out rather than having ended. 0.07 is the measured ceiling that
+     keeps --color-muted at 4.70:1 over --color-surface-2 with a code bar under
+     the same glyph — the tightest case, not the average one. */
+  --cf-glow: 0.07;
 }
 
 @layer base {
@@ -540,7 +553,23 @@
    into view, and are settled well before they reach reading position.
 
    The range ends at `cover 32%` on purpose — an element still animating while
-   the reader is reading it is a distraction, not an entrance. */
+   the reader is reading it is a distraction, not an entrance.
+
+   DO NOT PUT THIS ON THE LAST SECTION OF A PAGE. A scroll-driven animation can
+   only finish if the scroller can reach the offset its range ends at, and under
+   a final section there is only a short footer left to scroll. The animation
+   then stops part-way and STAYS there: the closing band on every page sat at
+   partial opacity for good. Measured on the landing page at 1440x900: 0.87,
+   falling to 0.41 on a viewport tall enough to fit the page without scrolling.
+   That, not the background, is what made the bottom of these pages look dim —
+   the text itself was half-faded.
+
+   Retuning the range does not fix it, it only moves the failure: ending at
+   `entry 90%` completes the last section at 1440x900 but clamps every lower
+   section to opacity 0 on a tall viewport, which is worse. The rule is
+   structural, so the fix is structural — closing bands get their light from
+   .code-field--rise and its horizon instead, and are never faded by script or
+   by scroll. */
 @supports (animation-timeline: view()) {
   @keyframes section-arrive {
     from {
@@ -700,19 +729,66 @@
    backdrop is always intersecting the viewport and could never pause. */
 .code-field {
   --cf-src: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='480' height='640' viewBox='0 0 480 640'%3e%3cg fill='%23000'%3e%3crect x='8' y='6' width='28' height='3'/%3e%3crect x='42' y='6' width='64' height='3'/%3e%3crect x='120' y='6' width='28' height='3'/%3e%3crect x='8' y='22' width='78' height='3'/%3e%3crect x='92' y='22' width='42' height='3'/%3e%3crect x='148' y='22' width='22' height='3'/%3e%3crect x='8' y='38' width='52' height='3'/%3e%3crect x='70' y='38' width='42' height='3'/%3e%3crect x='8' y='54' width='28' height='3'/%3e%3crect x='8' y='70' width='22' height='3'/%3e%3crect x='40' y='70' width='64' height='3'/%3e%3crect x='8' y='86' width='22' height='3'/%3e%3crect x='38' y='86' width='34' height='3'/%3e%3crect x='78' y='86' width='52' height='3'/%3e%3crect x='21' y='102' width='64' height='3'/%3e%3crect x='91' y='102' width='64' height='3'/%3e%3crect x='21' y='118' width='34' height='3'/%3e%3crect x='8' y='150' width='34' height='3'/%3e%3crect x='56' y='150' width='42' height='3'/%3e%3crect x='106' y='150' width='34' height='3'/%3e%3crect x='8' y='166' width='16' height='3'/%3e%3crect x='38' y='166' width='64' height='3'/%3e%3crect x='8' y='182' width='52' height='3'/%3e%3crect x='21' y='198' width='42' height='3'/%3e%3crect x='69' y='198' width='78' height='3'/%3e%3crect x='21' y='214' width='16' height='3'/%3e%3crect x='34' y='230' width='28' height='3'/%3e%3crect x='68' y='230' width='64' height='3'/%3e%3crect x='138' y='230' width='16' height='3'/%3e%3crect x='21' y='246' width='64' height='3'/%3e%3crect x='95' y='246' width='78' height='3'/%3e%3crect x='183' y='246' width='22' height='3'/%3e%3crect x='21' y='262' width='22' height='3'/%3e%3crect x='49' y='262' width='28' height='3'/%3e%3crect x='34' y='278' width='64' height='3'/%3e%3crect x='104' y='278' width='16' height='3'/%3e%3crect x='34' y='294' width='78' height='3'/%3e%3crect x='126' y='294' width='28' height='3'/%3e%3crect x='168' y='294' width='42' height='3'/%3e%3crect x='34' y='310' width='22' height='3'/%3e%3crect x='64' y='310' width='34' height='3'/%3e%3crect x='112' y='310' width='64' height='3'/%3e%3crect x='8' y='358' width='28' height='3'/%3e%3crect x='50' y='358' width='22' height='3'/%3e%3crect x='86' y='358' width='42' height='3'/%3e%3crect x='21' y='374' width='22' height='3'/%3e%3crect x='21' y='390' width='22' height='3'/%3e%3crect x='51' y='390' width='64' height='3'/%3e%3crect x='129' y='390' width='78' height='3'/%3e%3crect x='34' y='406' width='34' height='3'/%3e%3crect x='78' y='406' width='16' height='3'/%3e%3crect x='34' y='422' width='22' height='3'/%3e%3crect x='62' y='422' width='22' height='3'/%3e%3crect x='21' y='438' width='42' height='3'/%3e%3crect x='77' y='438' width='34' height='3'/%3e%3crect x='117' y='438' width='28' height='3'/%3e%3crect x='34' y='454' width='22' height='3'/%3e%3crect x='64' y='454' width='64' height='3'/%3e%3crect x='138' y='454' width='64' height='3'/%3e%3crect x='47' y='470' width='64' height='3'/%3e%3crect x='117' y='470' width='28' height='3'/%3e%3crect x='47' y='502' width='64' height='3'/%3e%3crect x='119' y='502' width='28' height='3'/%3e%3crect x='157' y='502' width='52' height='3'/%3e%3crect x='47' y='518' width='34' height='3'/%3e%3crect x='95' y='518' width='28' height='3'/%3e%3crect x='131' y='518' width='42' height='3'/%3e%3crect x='47' y='534' width='52' height='3'/%3e%3crect x='109' y='534' width='64' height='3'/%3e%3crect x='181' y='534' width='42' height='3'/%3e%3crect x='47' y='566' width='64' height='3'/%3e%3crect x='117' y='566' width='42' height='3'/%3e%3crect x='47' y='582' width='78' height='3'/%3e%3crect x='47' y='598' width='42' height='3'/%3e%3crect x='95' y='598' width='42' height='3'/%3e%3crect x='34' y='614' width='34' height='3'/%3e%3crect x='74' y='614' width='34' height='3'/%3e%3crect x='114' y='614' width='34' height='3'/%3e%3crect x='34' y='630' width='42' height='3'/%3e%3c/g%3e%3c/svg%3e");
+  /* Which way the bands fade out. A hero fades downward, away from the
+     headline; a closing section fades upward, out of the rule above it. */
+  --cf-fade: linear-gradient(to bottom, #000 0%, #000 55%, transparent 92%);
+  /* Peak strength of the horizon glow, per theme — set on the theme blocks at
+     the top of this file. The two themes have opposite problems: on paper the
+     glow only has to suggest warmth, while on near-black it is doing the real
+     work of stopping the page ending in a void. Both values are ceilings
+     measured against --color-muted at 4.5:1, over the WORSE of the two section
+     backgrounds (--color-surface-2), with a code bar under the same glyph.
+     See docs/DESIGN.md §4b. */
   position: absolute;
   inset: 0;
-  /* Behind the hero's content but in front of the section background, the same
+  /* Behind the section's content but in front of its background, the same
      arrangement .dotfield uses. The parent supplies the isolation. */
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  /* The fade lives on the CONTAINER, not on the layers. A mask on a layer would
-     travel with that layer's transform, so the soft edge would slide up the
-     hero instead of staying at its boundary. Nothing inside here is content, so
-     masking the subtree costs nothing. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 92%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 92%);
+}
+
+/* The fade lives on this wrapper rather than on .code-field, so the glow can be
+   a sibling of it and escape the mask. It cannot live on the layers themselves:
+   a mask on a layer travels with that layer's transform, so the soft edge would
+   slide up the section instead of staying at its boundary. */
+.code-field__bands {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: var(--cf-fade);
+  mask-image: var(--cf-fade);
+}
+
+/* Closing sections: the bands fade upward instead of downward, so the texture
+   emerges from the hairline rule above rather than being cut off at it. */
+.code-field--rise {
+  --cf-fade: linear-gradient(to top, #000 0%, #000 58%, transparent 94%);
+}
+
+/* The horizon.
+
+   A single soft light low in the section, in the brand green. This is what
+   stops a closing band reading as the page having run out rather than having
+   ended — the reason the lower half of these pages read as a void on dark.
+
+   Deliberately WIDE and low-contrast rather than bright and tight. A small
+   intense radial is a spotlight, and a spotlight behind a heading is the
+   generated-landing-page house style §8 rules out; a large, barely-there lift
+   reads as depth instead. It sits below the type and bleeds off both edges, so
+   it has no visible shape of its own to be recognised as a blob.
+
+   Static on purpose. The drift in the bands is the motion here; a second,
+   breathing light would be two things asking to be watched, and a pulsing
+   gradient is its own cliché. */
+.code-field__glow {
+  position: absolute;
+  left: 50%;
+  bottom: -34%;
+  width: min(96rem, 150%);
+  aspect-ratio: 2 / 1;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 100%, var(--color-accent) 0%, transparent 68%);
+  opacity: var(--cf-glow);
 }
 
 .code-field__layer {

@@ -21,12 +21,21 @@ import { useEffect, useRef } from 'react';
  * something nobody is looking at. Both conditions are watched here and both
  * resolve to one attribute; the CSS turns that into `animation-play-state`.
  *
- * Rendered only inside `(site)` heroes and the login backdrop. It must never
+ * TWO VARIANTS. `hero` fades downward, away from the headline. `close` fades
+ * upward out of the rule above it and adds the horizon — a single wide, soft
+ * brand-green light low in the section. Closing bands were the one place these
+ * pages had nothing in them at all, which on the dark theme read as the page
+ * running out rather than ending.
+ *
+ * The parent must establish a positioning and stacking context: `.hero-stage`
+ * does it for heroes, and closing sections carry `relative isolate`.
+ *
+ * Rendered only inside `(site)` sections and the login backdrop. It must never
  * appear on /lock, the desktop dashboard, or the mobile Progress and Settings
  * screens — those are tools, and §1 MOTION of docs/DESIGN.md allows them state
  * changes and nothing else.
  */
-export function CodeField() {
+export function CodeField({ variant = 'hero' }: { variant?: 'hero' | 'close' }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,9 +79,19 @@ export function CodeField() {
   }, []);
 
   return (
-    <div ref={ref} className="code-field" aria-hidden="true" data-paused="false">
-      <div className="code-field__layer code-field__layer--far" />
-      <div className="code-field__layer code-field__layer--near" />
+    <div
+      ref={ref}
+      className={variant === 'close' ? 'code-field code-field--rise' : 'code-field'}
+      aria-hidden="true"
+      data-paused="false"
+    >
+      {/* The horizon belongs to closing sections only. A hero already has the
+          gate meter as its focal object and does not need a second light. */}
+      {variant === 'close' && <div className="code-field__glow" />}
+      <div className="code-field__bands">
+        <div className="code-field__layer code-field__layer--far" />
+        <div className="code-field__layer code-field__layer--near" />
+      </div>
     </div>
   );
 }

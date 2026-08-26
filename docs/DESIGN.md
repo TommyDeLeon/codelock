@@ -375,11 +375,10 @@ this is a product about source code and its running time, so the background is
 source code, or it is nothing.
 
 WHERE IT GOES
-- Bounded to the HERO BAND of each `(site)` page, and to the login backdrop.
-  Not the full page. One ambient idea, in the one section that is allowed to be
-  a statement — a pattern running under the reading column is decoration
-  competing with content, which is the thing §4a's "one focal object per
-  section" exists to prevent.
+- The HERO BAND of each `(site)` page, the CLOSING band of each, and the
+  login backdrop. Not the long-form middle: a pattern running under the
+  reading column is decoration competing with content, which is the thing
+  §4a's "one focal object per section" exists to prevent.
 - Bounding it is also what makes its pause real. A full-page fixed backdrop is
   always intersecting the viewport and could never pause on scroll.
 - Never on /lock, the desktop dashboard, or the mobile Progress and Settings
@@ -419,6 +418,51 @@ in the token, not something the field introduced, and it is why the field's
 alpha is held this low rather than at the 0.34 that `muted` alone would allow.
 Fixing the token is a separate change; until it happens, no new background may
 spend the headroom that is not there.
+
+THE HORIZON — how a marketing page is allowed to end
+Closing bands get `.code-field--rise`: the same field, fading upward out of the
+rule above it, plus `.code-field__glow` — one wide, soft brand-green light low
+in the section.
+
+- WIDE and low-contrast, never bright and tight. A small intense radial is a
+  spotlight, and a spotlight behind a heading is the generated-landing-page look
+  §8 rules out. This one bleeds off both edges so it has no shape of its own to
+  be read as a blob.
+- Static. The drift in the bands is the motion in that section; a second,
+  breathing light would be two things asking to be watched.
+- Peak opacity is a token, `--cf-glow`: 0.04 light, 0.07 dark. The two themes
+  have opposite problems — on paper the glow only suggests warmth, while on
+  near-black it is doing the real work. Both are ceilings measured against
+  `--color-muted` at 4.5:1 over the WORSE section background
+  (`--color-surface-2`) with a code bar under the same glyph. Measured in the
+  browser, text in the closing band actually sits at 0.44–0.66 of the gradient's
+  radius, where it has decayed to roughly a third of peak.
+- Heroes do NOT get the horizon. A hero already has the gate meter as its focal
+  object and does not need a second light.
+
+NEVER PUT `.section-arrive` ON THE LAST SECTION OF A PAGE
+This is the rule that matters most in this section, because breaking it is
+invisible in code review and obvious on the page.
+
+A scroll-driven animation can only finish if the scroller can actually reach the
+offset its range ends at. `.section-arrive` ends at `cover 32%`, which requires
+the section to scroll most of the way through the viewport — and under a final
+section there is only a short footer left. The animation stops part-way and
+STAYS there. Measured on the landing page: the closing band sat at opacity 0.87
+at 1440x900, and 0.41 on a viewport tall enough to fit the page without
+scrolling. Every marketing page had this. It is why the bottom of these pages
+looked dim, and no amount of background light would have fixed it, because the
+text itself was half-faded.
+
+Retuning the range does not fix it, it moves it: ending at `entry 90%` completes
+the last section at 1440x900 but clamps every lower section to opacity 0 on a
+tall viewport, which is worse. The failure is structural — a page always has a
+last element — so the fix is structural. Closing bands are never faded by scroll
+at all; they get their entrance from the horizon and the rising field, both of
+which are complete the moment they are painted.
+
+When adding a section to a marketing page, check what is now last.
+
 
 REDUCED MOTION
 The field stays, the drift stops. The global rule at the top of globals.css sets
