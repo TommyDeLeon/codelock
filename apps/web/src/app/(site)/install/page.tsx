@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { hasRelease, releaseAsset, releasePageUrl, sourceUrl } from '@/lib/releases';
+import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: 'Install',
@@ -142,6 +143,7 @@ export default function InstallPage() {
           animation is already at 100% before first paint here, so it never
           plays — see globals.css, "Cinematic marketing surfaces". */}
       <section className="rule-b hero-stage">
+        <CodeField />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <p className="eyebrow hero-rise hero-rise-1">Install</p>
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">

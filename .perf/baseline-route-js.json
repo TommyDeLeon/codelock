@@ -1,0 +1,40 @@
+{
+  "perRoute": {
+    "/": {
+      "bytes": 219804,
+      "chunks": 14
+    },
+    "/how-it-works": {
+      "bytes": 218269,
+      "chunks": 13
+    },
+    "/limits": {
+      "bytes": 218269,
+      "chunks": 13
+    },
+    "/install": {
+      "bytes": 218269,
+      "chunks": 13
+    },
+    "/demo": {
+      "bytes": 264338,
+      "chunks": 15
+    },
+    "/support": {
+      "bytes": 218269,
+      "chunks": 13
+    },
+    "/login": {
+      "bytes": 215476,
+      "chunks": 13
+    },
+    "/lock": {
+      "bytes": 261078,
+      "chunks": 15
+    }
+  },
+  "siteUnion": {
+    "bytes": 265873,
+    "chunks": 16
+  }
+}

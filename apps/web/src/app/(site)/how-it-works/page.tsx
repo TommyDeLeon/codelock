@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -78,6 +79,7 @@ export default function HowItWorksPage() {
       {/* Above the fold, so a load reveal — a scroll-linked entry would
           already be finished before the first paint. */}
       <section className="rule-b hero-stage">
+        <CodeField />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <p className="eyebrow hero-rise hero-rise-1">How it works</p>
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">

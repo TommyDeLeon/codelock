@@ -457,6 +457,13 @@
    The perspective lives on the ancestor so the child's rotation is read in a
    shared 3D space. Without it, rotateX is a flat squash. */
 .hero-stage {
+  /* The stage is also what the code field is positioned against, and what
+     isolates it: `isolation: isolate` gives this section its own stacking
+     context, so the field's z-index:-1 lands behind the hero's content but
+     still in front of the section background rather than dropping behind the
+     page. The same arrangement .dotfield already uses. */
+  position: relative;
+  isolation: isolate;
   /* Shorter than it looks: perspective is the distance from the viewer to the
      z=0 plane, so a smaller number is a WIDER angle and a stronger effect.
      1400px was far enough away that a 7deg rotation read as a vertical squash
@@ -650,5 +657,126 @@
   .depth-3d {
     perspective: none;
     transform-style: flat;
+  }
+}
+/* --- the code field -------------------------------------------------------
+
+   The ambient background for the marketing surfaces. Rendered by
+   components/site/code-field, which only the (site) heroes and the login
+   backdrop mount — it cannot reach /lock, the desktop dashboard or the mobile
+   tool screens, where §1 MOTION allows state changes and nothing else.
+
+   WHAT IT IS: source code seen from too far away to read — the ragged indent
+   ladder of a file, drifting slowly upward. Two layers at different scales and
+   speeds, so the parallax reads as depth without anything on the page moving
+   fast enough to be watched.
+
+   Deliberately NOT falling glyphs. "Matrix rain" is the most templated
+   programming background there is, and §8 rules out exactly that kind of
+   decoration. Drawing the SHAPE of code rather than characters also keeps a
+   second alphabet off the page, where it would compete with the type.
+
+   WHY CSS AND NOT CANVAS: the drift is a uniform vertical translation of a
+   repeating pattern, which is what the compositor does for free. A canvas would
+   need a rAF loop, a resize path and a device-pixel-ratio path to arrive at the
+   same two composited layers, and would put the whole thing on the main thread.
+   These animate transform only — never width, height, top or left — so after
+   the first frame they never touch layout or paint.
+
+   The pattern is a MASK rather than an image, so the bars take
+   `background-color: var(--color-rule)` and follow the theme with no second
+   asset and no JS.
+
+   CONTRAST: the bars paint in the hairline colour at a per-layer alpha of 0.07
+   and 0.05. The worst frame is a glyph sitting fully on a bar of both layers at
+   once — an effective 0.116 — which moves body text by under 0.2:1 and leaves
+   every text role on the same side of AA it was already on. Measured, not
+   estimated; see docs/DESIGN.md §4b.
+
+   It is bounded to the hero band rather than the whole page. That is the
+   restrained choice — one ambient idea, in the one section that is a statement,
+   instead of decoration under the reading column — and it is also what makes
+   the component's IntersectionObserver mean something: a full-page fixed
+   backdrop is always intersecting the viewport and could never pause. */
+.code-field {
+  --cf-src: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='480' height='640' viewBox='0 0 480 640'%3e%3cg fill='%23000'%3e%3crect x='8' y='6' width='28' height='3'/%3e%3crect x='42' y='6' width='64' height='3'/%3e%3crect x='120' y='6' width='28' height='3'/%3e%3crect x='8' y='22' width='78' height='3'/%3e%3crect x='92' y='22' width='42' height='3'/%3e%3crect x='148' y='22' width='22' height='3'/%3e%3crect x='8' y='38' width='52' height='3'/%3e%3crect x='70' y='38' width='42' height='3'/%3e%3crect x='8' y='54' width='28' height='3'/%3e%3crect x='8' y='70' width='22' height='3'/%3e%3crect x='40' y='70' width='64' height='3'/%3e%3crect x='8' y='86' width='22' height='3'/%3e%3crect x='38' y='86' width='34' height='3'/%3e%3crect x='78' y='86' width='52' height='3'/%3e%3crect x='21' y='102' width='64' height='3'/%3e%3crect x='91' y='102' width='64' height='3'/%3e%3crect x='21' y='118' width='34' height='3'/%3e%3crect x='8' y='150' width='34' height='3'/%3e%3crect x='56' y='150' width='42' height='3'/%3e%3crect x='106' y='150' width='34' height='3'/%3e%3crect x='8' y='166' width='16' height='3'/%3e%3crect x='38' y='166' width='64' height='3'/%3e%3crect x='8' y='182' width='52' height='3'/%3e%3crect x='21' y='198' width='42' height='3'/%3e%3crect x='69' y='198' width='78' height='3'/%3e%3crect x='21' y='214' width='16' height='3'/%3e%3crect x='34' y='230' width='28' height='3'/%3e%3crect x='68' y='230' width='64' height='3'/%3e%3crect x='138' y='230' width='16' height='3'/%3e%3crect x='21' y='246' width='64' height='3'/%3e%3crect x='95' y='246' width='78' height='3'/%3e%3crect x='183' y='246' width='22' height='3'/%3e%3crect x='21' y='262' width='22' height='3'/%3e%3crect x='49' y='262' width='28' height='3'/%3e%3crect x='34' y='278' width='64' height='3'/%3e%3crect x='104' y='278' width='16' height='3'/%3e%3crect x='34' y='294' width='78' height='3'/%3e%3crect x='126' y='294' width='28' height='3'/%3e%3crect x='168' y='294' width='42' height='3'/%3e%3crect x='34' y='310' width='22' height='3'/%3e%3crect x='64' y='310' width='34' height='3'/%3e%3crect x='112' y='310' width='64' height='3'/%3e%3crect x='8' y='358' width='28' height='3'/%3e%3crect x='50' y='358' width='22' height='3'/%3e%3crect x='86' y='358' width='42' height='3'/%3e%3crect x='21' y='374' width='22' height='3'/%3e%3crect x='21' y='390' width='22' height='3'/%3e%3crect x='51' y='390' width='64' height='3'/%3e%3crect x='129' y='390' width='78' height='3'/%3e%3crect x='34' y='406' width='34' height='3'/%3e%3crect x='78' y='406' width='16' height='3'/%3e%3crect x='34' y='422' width='22' height='3'/%3e%3crect x='62' y='422' width='22' height='3'/%3e%3crect x='21' y='438' width='42' height='3'/%3e%3crect x='77' y='438' width='34' height='3'/%3e%3crect x='117' y='438' width='28' height='3'/%3e%3crect x='34' y='454' width='22' height='3'/%3e%3crect x='64' y='454' width='64' height='3'/%3e%3crect x='138' y='454' width='64' height='3'/%3e%3crect x='47' y='470' width='64' height='3'/%3e%3crect x='117' y='470' width='28' height='3'/%3e%3crect x='47' y='502' width='64' height='3'/%3e%3crect x='119' y='502' width='28' height='3'/%3e%3crect x='157' y='502' width='52' height='3'/%3e%3crect x='47' y='518' width='34' height='3'/%3e%3crect x='95' y='518' width='28' height='3'/%3e%3crect x='131' y='518' width='42' height='3'/%3e%3crect x='47' y='534' width='52' height='3'/%3e%3crect x='109' y='534' width='64' height='3'/%3e%3crect x='181' y='534' width='42' height='3'/%3e%3crect x='47' y='566' width='64' height='3'/%3e%3crect x='117' y='566' width='42' height='3'/%3e%3crect x='47' y='582' width='78' height='3'/%3e%3crect x='47' y='598' width='42' height='3'/%3e%3crect x='95' y='598' width='42' height='3'/%3e%3crect x='34' y='614' width='34' height='3'/%3e%3crect x='74' y='614' width='34' height='3'/%3e%3crect x='114' y='614' width='34' height='3'/%3e%3crect x='34' y='630' width='42' height='3'/%3e%3c/g%3e%3c/svg%3e");
+  position: absolute;
+  inset: 0;
+  /* Behind the hero's content but in front of the section background, the same
+     arrangement .dotfield uses. The parent supplies the isolation. */
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  /* The fade lives on the CONTAINER, not on the layers. A mask on a layer would
+     travel with that layer's transform, so the soft edge would slide up the
+     hero instead of staying at its boundary. Nothing inside here is content, so
+     masking the subtree costs nothing. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 92%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 92%);
+}
+
+.code-field__layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* One tile of slack at each end, so translating up by exactly one tile height
+     leaves no gap at the bottom and lands on a frame identical to the first —
+     which is what makes the loop seamless rather than a jump. */
+  top: calc(-1 * var(--cf-tile));
+  height: calc(100% + var(--cf-tile) * 2);
+  background-color: var(--color-rule);
+  -webkit-mask-image: var(--cf-src);
+  mask-image: var(--cf-src);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: var(--cf-w) var(--cf-tile);
+  mask-size: var(--cf-w) var(--cf-tile);
+  animation: code-drift var(--cf-dur) linear infinite;
+  /* No will-change, for the reason .hero-recede gives: these are already
+     composited transforms, so there is nothing to pre-empt, and the hint would
+     pin two hero-sized textures in GPU memory for the life of the page. */
+}
+
+@keyframes code-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, calc(-1 * var(--cf-tile)), 0);
+  }
+}
+
+/* The far layer: smaller, slower, fainter. Reading it as "further away" is the
+   whole of the depth effect. It gets no perspective of its own on purpose — a
+   background moving with a camera would fight the instrument in front of it,
+   which has one. */
+.code-field__layer--far {
+  --cf-w: 336px;
+  --cf-tile: 448px;
+  --cf-dur: 78s;
+  opacity: 0.05;
+}
+
+.code-field__layer--near {
+  --cf-w: 480px;
+  --cf-tile: 640px;
+  --cf-dur: 54s;
+  opacity: 0.07;
+}
+
+/* Scrolled past, or a hidden tab. Set by the component from an
+   IntersectionObserver and visibilitychange — a background tab spending battery
+   on an animation nobody is looking at is a bug, not a flourish. */
+.code-field[data-paused='true'] .code-field__layer {
+  animation-play-state: paused;
+}
+
+/* Reduced motion: the field stays, the drift stops. The global rule near the
+   top of this file sets animation-duration, which for an INFINITE animation is
+   not the same as stopping it — at 0.01ms it would run the entire loop every
+   frame, which is worse than leaving it alone. It has to be named. */
+@media (prefers-reduced-motion: reduce) {
+  .code-field__layer {
+    animation: none !important;
   }
 }

@@ -12,6 +12,7 @@ import { TestResults } from '@/components/lock/test-results';
 import { Button } from '@/components/ui/button';
 import { ErrorState, Skeleton } from '@/components/ui/primitives';
 import { formatDuration } from '@/lib/utils';
+import { CodeField } from '@/components/site/code-field';
 
 /**
  * The demo.
@@ -198,6 +199,7 @@ function DemoBanner() {
 function Intro({ onArm }: { onArm: () => void }) {
   return (
     <section className="hero-stage flex flex-1 items-center">
+      <CodeField />
       <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-7">

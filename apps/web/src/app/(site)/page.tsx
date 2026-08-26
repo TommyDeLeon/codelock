@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GateMeter } from '@/components/site/gate-meter';
+import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: { absolute: 'CodeLock — earn your screen time' },
@@ -50,6 +51,7 @@ export default function LandingPage() {
     <>
       {/* --- Hero ---------------------------------------------------------- */}
       <section className="dotfield hero-stage">
+        <CodeField />
         <div className="mx-auto max-w-6xl px-5 pb-24 pt-20 sm:px-8 sm:pb-36 sm:pt-32">
           <div className="grid gap-14 lg:grid-cols-12 lg:gap-12">
             <div className="lg:col-span-6 lg:pt-6">
@@ -104,7 +106,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- The three ideas ----------------------------------------------- */}
-      <section className="rule-t">
+      <section className="section-arrive rule-t">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
           <div className="grid lg:grid-cols-12">
             <div className="rule-b py-10 lg:col-span-4 lg:border-b-0 lg:py-14 lg:pr-10">
@@ -160,7 +162,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- Limits, stated before they are discovered ---------------------- */}
-      <section className="rule-t bg-surface-2/50">
+      <section className="section-arrive rule-t bg-surface-2/50">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-5">
@@ -208,7 +210,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- Close --------------------------------------------------------- */}
-      <section className="rule-t">
+      <section className="section-arrive rule-t">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-end sm:justify-between">
             <div>

@@ -358,6 +358,82 @@ ACCESSIBILITY — a completion gate, not a follow-up
 5. CLOSING — heading, one paragraph, one button. No newsletter capture, no
    testimonials, no logo wall, no pricing table.
 
+### 4b. The code field — the ambient background
+
+One ambient background, on marketing surfaces only: source code seen from too
+far away to read. The ragged indent ladder of a file, drifting slowly upward in
+two parallax layers at different scales and speeds.
+
+The point is that it renders the SHAPE of code rather than characters. There is
+no second alphabet on the page competing with the type, and no glyph is ever
+legible enough to be read instead of the headline.
+
+It is deliberately NOT falling glyphs. "Matrix rain" is the most templated
+programming background there is, and §8 already rules out that kind of
+decoration. It is also not a generic particle field or an atmospheric blob —
+this is a product about source code and its running time, so the background is
+source code, or it is nothing.
+
+WHERE IT GOES
+- Bounded to the HERO BAND of each `(site)` page, and to the login backdrop.
+  Not the full page. One ambient idea, in the one section that is allowed to be
+  a statement — a pattern running under the reading column is decoration
+  competing with content, which is the thing §4a's "one focal object per
+  section" exists to prevent.
+- Bounding it is also what makes its pause real. A full-page fixed backdrop is
+  always intersecting the viewport and could never pause on scroll.
+- Never on /lock, the desktop dashboard, or the mobile Progress and Settings
+  screens. §1 MOTION allows those state changes and nothing else.
+
+HOW IT IS BUILT — `.code-field` in globals.css, mounted by
+`components/site/code-field`
+- CSS, not canvas. The effect is a uniform vertical translation of a repeating
+  pattern, which is what the compositor does for free; a canvas would put the
+  same two layers on the main thread behind a rAF loop, a resize path and a
+  device-pixel-ratio path. Transform only — never width, height, top or left.
+- The pattern is an SVG MASK over `background-color: var(--color-rule)`, so it
+  follows the theme with no second asset and no JS.
+- The component's only job is to stop it: an IntersectionObserver for "scrolled
+  past" and `visibilitychange` for a hidden tab, both resolving to one attribute
+  that the CSS turns into `animation-play-state: paused`. An animation ticking
+  under a tab nobody is looking at is a bug, not a flourish.
+- Absolutely positioned, `aria-hidden`, out of flow: it cannot move layout, so
+  it cannot contribute to CLS.
+
+CONTRAST — the binding constraint, measured rather than assumed
+The bars paint in the hairline colour at a per-layer alpha of 0.07 (near) and
+0.05 (far). The worst frame is a glyph sitting fully on a bar of BOTH layers at
+once, an effective 0.116, which moves every text role by under 0.2:1:
+
+| role  | light, no field | light, worst frame | dark, no field | dark, worst frame |
+|-------|-----------------|--------------------|----------------|-------------------|
+| fg    | 17.34:1         | 16.76:1            | 16.97:1        | 16.48:1           |
+| prose | 14.25:1         | 13.78:1            | 13.20:1        | 12.82:1           |
+| muted | 5.32:1          | 5.15:1             | 6.55:1         | 6.37:1            |
+| faint | 4.33:1          | 4.19:1             | 3.70:1         | 3.59:1            |
+
+Nothing crosses AA that was not already across it. Note the last row: **the
+`--color-faint` token already fails AA on its own, before any background** —
+4.33:1 light and 3.70:1 dark against a 4.5:1 bar. That is a pre-existing defect
+in the token, not something the field introduced, and it is why the field's
+alpha is held this low rather than at the 0.34 that `muted` alone would allow.
+Fixing the token is a separate change; until it happens, no new background may
+spend the headroom that is not there.
+
+REDUCED MOTION
+The field stays, the drift stops. The global rule at the top of globals.css sets
+`animation-duration`, which for an INFINITE animation is not the same as
+stopping it — at 0.01ms it would run the whole loop every frame, which is worse
+than leaving it alone. It is switched off by name, and verified in a browser.
+
+MEASURING THE BUDGET
+`scripts/route-js-budget.mjs` gzips each route's client chunks off the build
+output. Next 16 with Turbopack no longer prints a "First Load JS" column, so the
+150 KB gate in §4a had nothing to be checked against. Run it after a build:
+
+    node scripts/route-js-budget.mjs --baseline .perf/baseline-route-js.json
+
+
 ---
 
 ## 5. Interactive demo

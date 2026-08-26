@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardBody, Field, Input } from '@/components/ui/primitives';
 import { LockMark } from '@/components/ui/lock-mark';
 import { GithubMark } from '@/components/ui/github-mark';
+import { CodeField } from '@/components/site/code-field';
 
 /** Where the one-time handoff waits while the browser is at the provider. */
 const HANDOFF_KEY = 'codelock.oauth.handoff';
@@ -137,6 +138,7 @@ export default function LoginPage() {
       id="main"
       className="dotfield flex min-h-dvh items-center justify-center px-4 py-12"
     >
+      <CodeField />
       <div className="hero-rise hero-rise-1 w-full max-w-sm">
         <div className="mb-7 flex items-center gap-2.5">
           <LockMark className="size-8 shrink-0" />
