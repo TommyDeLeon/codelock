@@ -87,7 +87,10 @@ describe('the problem as the client sees it during a lock', () => {
     // The structural half of the guarantee: `toPublicProblem` is what every
     // pre-resolution route returns, and it cannot leak what it never copies.
     // `getDebrief` is the only other path to these fields.
-    const publicProblem = (await toPublicProblem(problemRow() as never)) as Record<string, unknown>;
+    const publicProblem = (await toPublicProblem(problemRow() as never)) as unknown as Record<
+      string,
+      unknown
+    >;
 
     expect(publicProblem).not.toHaveProperty('editorialMarkdown');
     expect(publicProblem).not.toHaveProperty('editorialUrl');

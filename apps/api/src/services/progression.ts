@@ -1,4 +1,5 @@
-import { PatternFamily, Tier } from '@prisma/client';
+import { LockState, PatternFamily, SubmissionStatus, Tier } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
 /**
  * Which tiers a user is ready for.
@@ -15,7 +16,10 @@ import { PatternFamily, Tier } from '@prisma/client';
  * difficulty, and this module only narrows *which pool* that difficulty draws
  * from.
  *
- * Pure. No Prisma, no clock.
+ * Every rule here is pure. The one function that touches Prisma
+ * (`loadProgressSnapshot`) sits at the bottom and only gathers inputs, so the
+ * gating decisions stay arguable in a test rather than only observable in
+ * production.
  */
 
 /**
@@ -194,6 +198,48 @@ export function nextStructuresToBuild(progress: ProgressSnapshot, limit = 3): st
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([signatureId]) => signatureId);
+}
+
+/**
+ * Build a snapshot from the database.
+ *
+ * The only impure function in this file, and it is kept at the bottom on
+ * purpose: everything above it is decidable without a connection, which is what
+ * makes the gating rules arguable in a test rather than only observable in
+ * production.
+ *
+ * "Solved" means an accepted submission, not a resolved session — a session can
+ * end in a bypass, and a bypass is precisely the case where the user did *not*
+ * demonstrate the thing the next tier assumes.
+ */
+export async function loadProgressSnapshot(userId: string): Promise<ProgressSnapshot> {
+  const [locksServed, solved] = await Promise.all([
+    prisma.lockSession.count({
+      where: { userId, state: { in: [LockState.UNLOCKED, LockState.BYPASSED, LockState.ABANDONED] } },
+    }),
+    prisma.submission.findMany({
+      where: { userId, status: SubmissionStatus.ACCEPTED },
+      select: { problem: { select: { tier: true, patternFamily: true, signatureId: true } } },
+      distinct: ['problemId'],
+    }),
+  ]);
+
+  const solvesByTier: Partial<Record<Tier, number>> = {};
+  const solvesByFamily: Partial<Record<PatternFamily, number>> = {};
+  const builtStructures: string[] = [];
+
+  for (const { problem } of solved) {
+    if (!problem) continue;
+    solvesByTier[problem.tier] = (solvesByTier[problem.tier] ?? 0) + 1;
+    solvesByFamily[problem.patternFamily] = (solvesByFamily[problem.patternFamily] ?? 0) + 1;
+    // A structure counts as built only if the user solved the Tier 0.5 problem
+    // that *is* that structure.
+    if (problem.tier === Tier.TIER_0_5 && problem.signatureId.startsWith('cls:')) {
+      builtStructures.push(problem.signatureId);
+    }
+  }
+
+  return { locksServed, solvesByTier, solvesByFamily, builtStructures };
 }
 
 /** One line for the UI: why is this the tier I am being given? */

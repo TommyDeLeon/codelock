@@ -15,19 +15,9 @@
  *   npm run verify:drivers -w @codelock/api -- cls:lru-cache
  */
 import { driversFor } from '../src/corpus/signatures.js';
+import { JUDGE_URL, failureDetail, isJudgeUp, normalise, runBatch, unb64, type Run } from './judge-client.js';
 import type { Lang } from '../src/corpus/types.js';
 
-const JUDGE_URL = process.env.JUDGE0_URL ?? 'http://localhost:2358';
-
-/** Matches Judge0 1.13.1, which is what `apps/judge` speaks. */
-const LANGUAGE_IDS: Record<Lang, number> = {
-  JAVASCRIPT: 63,
-  TYPESCRIPT: 74,
-  PYTHON: 71,
-  JAVA: 62,
-  CPP: 54,
-  GO: 60,
-};
 
 interface Fixture {
   signatureId: string;
@@ -285,73 +275,6 @@ const twoSum: Fixture = {
 
 const FIXTURES: Fixture[] = [lruCache, twoSum];
 
-// --- judge plumbing ---------------------------------------------------------
-
-const b64 = (s: string): string => Buffer.from(s, 'utf8').toString('base64');
-const unb64 = (s: string | null | undefined): string =>
-  s ? Buffer.from(s, 'base64').toString('utf8') : '';
-
-interface Submission {
-  token: string;
-  /** Judge0 reports `{ id, description }`, not a bare number. */
-  status?: { id: number; description?: string } | number;
-  stdout?: string | null;
-  stderr?: string | null;
-  compile_output?: string | null;
-}
-
-const statusId = (s: Submission): number =>
-  typeof s.status === 'number' ? s.status : (s.status?.id ?? 0);
-
-const statusName = (s: Submission): string =>
-  typeof s.status === 'number' ? String(s.status) : (s.status?.description ?? 'unknown');
-
-/**
- * Compile-sized limits, not solve-sized ones.
- *
- * The sandbox runs `--memory <limit>` and the *compiler* lives inside it. At the
- * 256 MB default, `g++ -O2` on <bits/stdc++.h> and `go run` are both killed
- * outright — which reads as "your driver is broken" when nothing is broken but
- * the budget. This script is checking correctness, not speed, so it asks for
- * room. (Worth knowing: `Problem.memoryLimitKb` defaults to 128000 — 125 MB —
- * which is below what those two toolchains need to *build*. See the note in
- * docs/CORPUS-SOURCES.md follow-ups.)
- */
-const CPU_TIME_LIMIT = 20;
-const MEMORY_LIMIT_KB = 1_048_576;
-
-async function submit(
-  batch: Array<{
-    language_id: number;
-    source_code: string;
-    stdin: string;
-    cpu_time_limit: number;
-    memory_limit: number;
-  }>,
-): Promise<string[]> {
-  const res = await fetch(`${JUDGE_URL}/submissions/batch`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ submissions: batch }),
-  });
-  if (!res.ok) throw new Error(`judge rejected the batch: ${res.status} ${await res.text()}`);
-  return ((await res.json()) as Array<{ token: string }>).map((s) => s.token);
-}
-
-/** Poll until every token is out of the queue. Compiled languages are slow. */
-async function collect(tokens: string[], timeoutMs = 15 * 60_000): Promise<Submission[]> {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    const res = await fetch(`${JUDGE_URL}/submissions/batch?tokens=${tokens.join(',')}`);
-    const { submissions } = (await res.json()) as { submissions: Submission[] };
-    const pending = submissions.filter((s) => statusId(s) === 1 || statusId(s) === 2).length;
-    if (pending === 0) return submissions;
-    if (Date.now() > deadline) throw new Error(`timed out with ${pending} submissions still running`);
-    process.stdout.write(`\r  waiting on ${pending}/${tokens.length} ...    `);
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-}
-
 // --- main -------------------------------------------------------------------
 
 interface Row {
@@ -369,54 +292,32 @@ async function main(): Promise<void> {
     throw new Error(`no fixture for "${only}". Known: ${FIXTURES.map((f) => f.signatureId).join(', ')}`);
   }
 
-  const health = await fetch(`${JUDGE_URL}/healthz`).catch(() => null);
-  if (!health?.ok) {
+  if (!(await isJudgeUp())) {
     throw new Error(`judge is not answering at ${JUDGE_URL}. Start it with: npm run dev:judge`);
   }
 
-  const batch: Array<{
-    language_id: number;
-    source_code: string;
-    stdin: string;
-    cpu_time_limit: number;
-    memory_limit: number;
-  }> = [];
+  const runs: Run[] = [];
   const index: Array<{ fixture: Fixture; language: Lang; caseIndex: number; expected: string }> = [];
 
   for (const fixture of fixtures) {
     const drivers = driversFor(fixture.signatureId);
-    for (const language of Object.keys(LANGUAGE_IDS) as Lang[]) {
+    for (const language of Object.keys(fixture.solutions) as Lang[]) {
       const source = drivers[language].replace('{{SOLUTION}}', fixture.solutions[language]);
       fixture.cases.forEach((c, caseIndex) => {
-        batch.push({
-          language_id: LANGUAGE_IDS[language],
-          source_code: b64(source),
-          stdin: b64(c.stdin),
-          cpu_time_limit: CPU_TIME_LIMIT,
-          memory_limit: MEMORY_LIMIT_KB,
-        });
+        runs.push({ language, source, stdin: c.stdin });
         index.push({ fixture, language, caseIndex, expected: c.expected });
       });
     }
   }
 
-  console.log(`Submitting ${batch.length} runs to ${JUDGE_URL}\n`);
-  const results = await collect(await submit(batch));
-  process.stdout.write('\r');
+  console.log(`Submitting ${runs.length} runs to ${JUDGE_URL}\n`);
+  const results = await runBatch(runs);
 
   const rows: Row[] = results.map((result, i) => {
     const { fixture, language, caseIndex, expected } = index[i];
-    const stdout = unb64(result.stdout).replace(/\r/g, '').trimEnd();
-    const ok = stdout === expected.trimEnd();
-    const compile = unb64(result.compile_output).trim();
-    const stderr = unb64(result.stderr).trim();
-    const detail = ok
-      ? ''
-      : compile
-        ? `compile error: ${compile.split('\n').slice(0, 3).join(' | ')}`
-        : stderr
-          ? `runtime error: ${stderr.split('\n').slice(0, 3).join(' | ')}`
-          : `[${statusName(result)}] expected ${JSON.stringify(expected)} got ${JSON.stringify(stdout)}`;
+    const stdout = normalise(unb64(result.stdout));
+    const ok = stdout === normalise(expected);
+    const detail = ok ? '' : failureDetail(result, expected, stdout);
     return { signature: fixture.signatureId, language, caseIndex, ok, detail };
   });
 

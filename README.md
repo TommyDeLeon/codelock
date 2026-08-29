@@ -13,6 +13,24 @@ programming problem — **correctly and fast enough**.
 | `apps/judge` | Docker-backed execution sandbox, Judge0-compatible |
 | `apps/mobile` | Expo app: Android overlay, iOS soft lock |
 | `packages/shared` | The API contract, consumed as TypeScript source by every client |
+| `data/` | Problem corpus content and attribution. **Licensed separately — see below.** |
+
+## Code and data are licensed separately
+
+The code in this repository is free software. The problem corpus is not one
+thing: problems written for CodeLock are CC0, and some corpora worth importing
+carry non-commercial or share-alike terms. Those are fine for CodeLock, which is
+free and non-commercial, but they are **not free by OSI standards**.
+
+So they live under `data/`, never in `apps/` or `packages/`, with their own
+[`data/LICENSE`](data/LICENSE) and a generated [`data/NOTICE`](data/NOTICE)
+listing every source and its terms, per problem. If you are reusing code from
+this repository, `data/` is the directory to check before you assume.
+
+Two rules that follow, set out in full in
+[`docs/CORPUS-SOURCES.md`](docs/CORPUS-SOURCES.md): LeetCode statement text is
+never ingested from any source, and a source with no stated licence is excluded
+rather than assumed permissive.
 
 ## The unlock rule
 
@@ -207,6 +225,7 @@ behind.
 | [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
 | [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |
 | [docs/ESCAPE-MATRIX.md](docs/ESCAPE-MATRIX.md) | Every way we tried to defeat the lock, per platform, and what worked |
+| [docs/CORPUS-SOURCES.md](docs/CORPUS-SOURCES.md) | Which problem sources may be redistributed and which may not, with the licence read from each canonical URL |
 
 ## Deploying
 
