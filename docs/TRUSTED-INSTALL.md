@@ -18,6 +18,128 @@ Everything below Track A has been **written but not executed** — see
 
 ## Windows
 
+### 0. Check Smart App Control first
+
+**Track A does not work on a machine with Smart App Control enforcing.** Check
+before spending the afternoon:
+
+```powershell
+Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy" -Name VerifiedAndReputablePolicyState
+```
+
+`0` is off and Track A applies. `1` is enforced and `2` is evaluation, which
+switches itself to enforced without warning — in both cases stop here and read
+on. `npm run dist` prints this verdict at the end of every build.
+
+Smart App Control is on by default on clean Windows 11 installs. It enforces at
+the user-mode code integrity layer, which sits *below* SmartScreen: there is no
+"run anyway" button, because there is no prompt. An unsigned binary is refused
+at load, so the NSIS installer appears to complete and the app then never
+opens — no window, no crash dialog, nothing in the app's own logs, because none
+of its code ever ran. What it looks like is a broken app. What it is, is a
+blocked one.
+
+Confirm that is what happened:
+
+```powershell
+Get-WinEvent -LogName Microsoft-Windows-CodeIntegrity/Operational | Where-Object Message -match CodeLock | Select-Object -First 3 TimeCreated,Id,Message
+```
+
+Events **3033** and **3077** naming `CodeLock.exe` or `CodeLock Setup <version>.exe`
+are the block. Note that the installer itself is subject to it, so "the install
+succeeded" may mean only that the installer window closed.
+
+**The self-signed certificate in steps 1–5 below does not lift this.** Importing
+it into `LocalMachine\Root` and `TrustedPublisher` establishes trust locally,
+and Smart App Control does not consult local trust — it wants a signer that is
+reputable to Microsoft, or an explicit allow rule in policy. Adding a
+certificate to a store creates no such rule.
+
+#### What was measured, exactly
+
+On a machine with `VerifiedAndReputablePolicyState = 1`, three separate results:
+
+| Artifact | Result |
+|---|---|
+| `CodeLock Setup <version>.exe` (NSIS installer) | **Blocked**, both before and after the flag below |
+| `release\win-unpacked\CodeLock.exe` from a default build | **Blocked** — CodeIntegrity 3033/3077 |
+| `release\win-unpacked\CodeLock.exe` built with `-c.win.signAndEditExecutable=false` | **Launches**, no block event logged |
+
+```bash
+npx electron-builder --win nsis --x64 --arm64 -c.win.signAndEditExecutable=false --publish never
+```
+
+That is the same flag the "Building locally on Windows" section at the bottom
+recommends for the symlink-privilege problem, and it costs the same thing: the
+executable keeps Electron's stock icon and version metadata, because `rcedit`
+writes those and the flag disables `rcedit`.
+
+**So the installed app is not the thing this rescues.** Every NSIS installer
+build is a freshly generated, unsigned stub with no reputation, and it stays
+blocked. When it is blocked it writes nothing at all — no program directory, no
+Start Menu shortcut, no uninstall entry — while still closing like a completed
+install. "The installer ran and then the app never opened" is very often this,
+and it is worth checking `%LOCALAPPDATA%\Programs\CodeLock` before debugging
+any application code:
+
+```powershell
+Test-Path "$env:LOCALAPPDATA\Programs\CodeLock\CodeLock.exe"
+```
+
+`False` after a supposedly successful install means nothing was installed.
+
+What the flag buys is a **runnable local build**: launch
+`release\win-unpacked\CodeLock.exe` directly, or make a shortcut to it, and skip
+the installer entirely while developing.
+
+#### Installing on your own machine without the installer
+
+Smart App Control's verdict follows the binary, not its location — a copy of
+`win-unpacked` runs from anywhere it is put. That is enough to create by hand
+everything the NSIS installer would have:
+
+```powershell
+.\apps\desktop\scripts\install-local.ps1
+```
+
+It copies the unpacked build to `%LOCALAPPDATA%\Programs\CodeLock` (the same
+per-user location `perMachine: false` targets), writes a Start Menu shortcut,
+and launches it once. That last step matters: `setAutoStart(true)` runs on
+`ready` in packaged builds only, and it registers the login item at whatever
+path the app was started from. Launching the *installed* copy is what points
+the login item somewhere that survives a rebuild — launching straight out of
+`release\` registers a login item into the build tree, which breaks the next
+time that directory is cleaned.
+
+Re-run it after every rebuild; it replaces the directory rather than merging
+into it. `-NoStart` skips the launch, and therefore the login item.
+
+This is a machine-you-own path. It produces no uninstall entry — remove it by
+deleting the folder, the Start Menu shortcut, and the `CodeLock.exe` value
+under `HKCU:\Software\Microsoft\Windows\CurrentVersion\Run` — and it gives
+other people nothing they can install.
+
+**The negative control was not run.** A build with the flag *on* cannot be
+produced on that machine at all, because `rcedit` lives inside the `winCodeSign`
+bundle whose extraction needs `SeCreateSymbolicLinkPrivilege`. The flag is the
+only variable that changed, but "rcedit's resource rewrite is what Code
+Integrity objects to" is inference, not a demonstrated mechanism. Note also
+that Electron's own `electron.exe` from npm is itself unsigned and runs fine,
+so plain unsignedness is not the whole story either.
+
+The durable options, on a machine where Smart App Control is enforcing:
+
+| Option | Effect | Cost |
+|---|---|---|
+| Sign with any CA in the **Microsoft Trusted Root Program** | The build launches anywhere. Microsoft's own Smart App Control docs say that when its intelligence service cannot predict a file, it still allows one "signed with a certificate issued by a certificate authority within the Trusted Root Program" — so EV is not required *for this*; EV buys SmartScreen reputation, which is a different problem | See the cheapest routes below |
+| Deploy an explicit **WDAC allow rule** (publisher, catalog, or hash) for CodeLock | The build launches, narrowly scoped | Policy-admin access to the machine |
+| Turn Smart App Control **off** in Windows Security → App & browser control | The build launches; the machine loses that protection, and re-enabling it later requires a Windows reinstall | Your call, deliberately made |
+| Run unpackaged: `npm run dev -w @codelock/desktop` | Works today — Electron's own binary is the host and is already reputable | Not a shipping path |
+
+The last one is why development works while a default `npm run dist` output
+does not, and it is the fastest way to confirm the app code is fine before
+touching signing at all.
+
 ### 1. Generate the certificate
 
 Run in a normal (non-admin) PowerShell. This creates a key in your own user

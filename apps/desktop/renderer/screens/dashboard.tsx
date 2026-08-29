@@ -159,7 +159,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   <button
                     type="button"
                     onClick={() => void bridge()?.lock(session?.id)}
-                    style={primaryButton}
+                    className="btn btn-primary" style={{ marginTop: 14 }}
                   >
                     Open the lock screen
                   </button>
@@ -214,13 +214,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     disabled={busy}
                     onClick={() => void arm(minutes)}
                     aria-label={`Start a ${minutes} minute session`}
-                    style={{
-                      ...chipButton,
-                      borderColor:
-                        timer?.durationMinutes === minutes ? 'var(--accent)' : 'var(--border)',
-                    }}
+                    // The default duration is a selected state, not merely a
+                    // coloured edge: aria-pressed carries it to assistive tech
+                    // and drives the styling from that one source.
+                    aria-pressed={timer?.durationMinutes === minutes}
+                    className="btn btn-chip"
                   >
-                    <span className="mono">{minutes}m</span>
+                    {minutes}m
                   </button>
                 ))}
               </div>
@@ -360,7 +360,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           <p style={{ fontSize: 12.5, color: 'var(--faint)' }}>Loading your progress…</p>
         )}
 
-        <button type="button" onClick={onSignOut} style={quietButton}>
+        <button type="button" onClick={onSignOut} className="btn btn-quiet" style={{ marginTop: 10 }}>
           Sign out
         </button>
       </aside>
@@ -397,7 +397,7 @@ function Outage({ message, onRetry }: { message: string; onRetry: () => void }) 
       <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--muted)' }}>
         Your session, if you have one, is still running on the server.
       </p>
-      <button type="button" onClick={onRetry} style={quietButton}>
+      <button type="button" onClick={onRetry} className="btn btn-quiet" style={{ marginTop: 10 }}>
         Try again
       </button>
     </div>
@@ -434,32 +434,3 @@ function compact(seconds: number | null): string {
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 }
 
-const primaryButton: React.CSSProperties = {
-  marginTop: 14,
-  padding: '9px 16px',
-  borderRadius: 'var(--radius-md)',
-  border: 'none',
-  background: 'var(--accent)',
-  color: 'var(--accent-fg)',
-  fontWeight: 600,
-};
-
-const chipButton: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--border)',
-  background: 'var(--surface)',
-  color: 'var(--fg)',
-};
-
-const quietButton: React.CSSProperties = {
-  marginTop: 10,
-  padding: 0,
-  border: 'none',
-  background: 'none',
-  color: 'var(--muted)',
-  fontSize: 13,
-  textAlign: 'left',
-  textDecoration: 'underline',
-  textUnderlineOffset: 3,
-};

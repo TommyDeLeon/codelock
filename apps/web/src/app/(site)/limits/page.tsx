@@ -20,7 +20,17 @@ export const metadata: Metadata = {
  * /terms states the same facts as legal prose. This is the explanatory version.
  */
 
-type Verdict = 'holds' | 'defeated' | 'intended';
+/**
+ * A verdict is what actually happened, not what the code intends to happen.
+ *
+ * 'untested' exists because it has to. Before this, the union was
+ * holds | defeated | intended, so a row the matrix records as UNTESTED had
+ * nowhere to go and was written as 'holds'. The page therefore claimed eleven
+ * successful defences that nobody has ever observed. The comment above this
+ * block already promised that the untested rows say so. They did not. They do
+ * now.
+ */
+type Verdict = 'holds' | 'defeated' | 'intended' | 'untested';
 
 interface Row {
   attempt: string;
@@ -28,111 +38,155 @@ interface Row {
   note: string;
 }
 
+/*
+  Verdicts below are copied from docs/ESCAPE-MATRIX.md, row for row. Where one
+  line here covers several matrix rows it takes the weakest verdict of the set,
+  because a row that is partly unproven is unproven.
+
+  No desktop or Android row is currently 'holds'. That is not an oversight in
+  this file, it is what the matrix says: every barrier is either defeated or
+  written-but-not-exercised. 'holds' stays in the union so a row can earn it
+  once it has actually been run.
+*/
 const DESKTOP: Row[] = [
   {
+    // Matrix D1-D4.
     attempt: 'Alt+F4, Ctrl+W, Ctrl+Q, window close',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Swallowed while locked, and the close event is cancelled regardless.',
   },
   {
+    // Matrix D5-D7.
     attempt: 'Minimise, Alt+Tab, Show desktop',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Kiosk mode keeps the window in front; losing focus pulls it straight back.',
   },
   {
+    // Matrix D8.
     attempt: 'Switch virtual desktop',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'The window is marked visible on all workspaces.',
   },
   {
+    // Matrix D9-D11.
     attempt: 'Use the second monitor',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Opaque covers on every other display, resynced when you plug one in mid-lock.',
   },
   {
+    // Matrix D12-D13.
     attempt: 'Sleep, wake, or lock the OS session',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Every barrier is re-asserted on resume rather than merely refocused.',
   },
   {
+    // Matrix D15.
     attempt: 'Kill the process from Task Manager',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Lock state is on disk and the app relaunches itself while a lock is live.',
   },
   {
+    // Matrix D14 and D22.
     attempt: 'Open DevTools and call the unlock channel',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'The token is verified in the main process against a key the page cannot read.',
   },
   {
+    // Matrix D16.
     attempt: 'Delete the lock file from AppData',
     verdict: 'defeated',
     note: 'By design. A deliberate two-step act with a file manager is above the bar this sets.',
   },
   {
+    // Matrix D17. Recorded as untested there, but the gap is known and real:
+    // nothing registers CodeLock at login, so a reboot ends the lock in
+    // practice. Reported as defeated rather than untested, because erring
+    // toward admitting an escape is the only safe direction for this page.
     attempt: 'Reboot the machine',
     verdict: 'defeated',
     note: 'The lock file survives, but nothing launches CodeLock at login yet. A known gap.',
   },
   {
+    // Matrix D18 and D19.
     attempt: 'Ctrl+Alt+Del, or hold the power button',
     verdict: 'defeated',
     note: 'The Secure Attention Sequence cannot be intercepted by any userland process, ever.',
   },
   {
+    // Matrix D21.
     attempt: 'Hold Escape for ten seconds',
     verdict: 'intended',
     note: 'The documented kill switch. Resolves the session as abandoned, which counts as a failure.',
   },
 ];
 
+/*
+  Android is untested throughout. The matrix is blunt about why: the native
+  module is written but has never been compiled, there is no JDK or Android SDK
+  on the development machine, and no EAS build has been run. Every non-defeated
+  row here is a claim about code, not an observation.
+*/
 const ANDROID: Row[] = [
   {
+    // Matrix A1.
     attempt: 'Back button',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'Swallowed by the overlay and by the in-app screen.',
   },
   {
+    // Matrix A2 and A4.
     attempt: 'Home button, or open another app',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'The overlay window sits above the launcher and above other apps.',
   },
   {
+    // Matrix A3.
     attempt: 'Swipe the app away from Recents',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'That kills the activity. The overlay belongs to a foreground service.',
   },
   {
+    // Matrix A6 and A7.
     attempt: 'Reboot, or update the app',
-    verdict: 'holds',
+    verdict: 'untested',
     note: 'A boot receiver restores the lock from storage.',
   },
   {
+    // Matrix A5.
     attempt: 'Pull down the status bar',
     verdict: 'defeated',
     note: 'System UI always draws above application overlays, and Settings is reachable there.',
   },
   {
+    // Matrix A9.
     attempt: 'Settings → Force stop',
     verdict: 'defeated',
     note: 'Documented. Only enterprise Device Owner provisioning prevents it, and that needs a factory reset.',
   },
   {
+    // Matrix A10 and A11.
     attempt: 'Safe Mode, uninstall, or clear data',
     verdict: 'defeated',
     note: 'Third-party apps do not run, or the stored lock goes with them.',
   },
   {
+    // Matrix A12.
     attempt: 'An OEM battery manager kills the service',
     verdict: 'defeated',
     note: 'Xiaomi, Huawei, Samsung, OnePlus. The app asks for an exemption; granting it is up to you.',
   },
 ];
 
+/*
+  'untested' shares the muted colour with 'intended' on purpose. The only
+  distinction that matters at a glance is that neither of them is the green of
+  a defence that actually held, and the label carries the rest.
+*/
 const VERDICT_STYLE: Record<Verdict, { label: string; className: string }> = {
   holds: { label: 'holds', className: 'text-success' },
   defeated: { label: 'defeated', className: 'text-warning' },
   intended: { label: 'by design', className: 'text-muted' },
+  untested: { label: 'untested', className: 'text-muted' },
 };
 
 function Matrix({ rows }: { rows: Row[] }) {

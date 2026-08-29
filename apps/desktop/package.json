@@ -12,7 +12,7 @@
     "dev": "npm run build && cross-env CODELOCK_WEB_URL=http://localhost:3000 electron .",
     "start": "electron .",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.renderer.json",
-    "dist": "npm run icon && npm run build && electron-builder --publish never",
+    "dist": "npm run icon && npm run build && electron-builder --publish never && node scripts/check-windows-policy.mjs",
     "dist:all": "npm run icon && npm run build && electron-builder -mwl --publish never",
     "icon": "node ../../scripts/make-icons.mjs",
     "test": "vitest run",

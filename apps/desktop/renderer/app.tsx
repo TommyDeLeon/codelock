@@ -5,6 +5,7 @@ import { openExternal } from './bridge';
 import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
 import { LockMark } from './lock-mark';
+import { ProviderMark } from './provider-mark';
 
 type Tab = 'dashboard' | 'settings';
 
@@ -24,16 +25,16 @@ export function App() {
 
   return (
     <>
-      {/* The same three-tier chrome as the web app: promotional band, brand
-          row, then a dark strip carrying the sections. */}
-      <div className="promo">Free and open source — your sessions never leave your server</div>
-
+      {/* The web app's chrome minus its promotional band. That band belongs to
+          a storefront, where the visitor has not decided yet; here they have
+          installed the thing and open it several times a day, and a strip
+          selling it back to them is the loudest reason this window read as a
+          web page rather than an application. DESIGN.md §3 specifies a slim
+          app header for this screen and no band. */}
       <header style={{ borderBottom: '1px solid var(--border)' }}>
         <div
           style={{
-            maxWidth: 1180,
-            margin: '0 auto',
-            padding: '12px 28px',
+            padding: '12px 32px',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
@@ -47,9 +48,7 @@ export function App() {
       <nav className="section-strip" aria-label="Sections">
         <div
           style={{
-            maxWidth: 1180,
-            margin: '0 auto',
-            padding: '0 28px',
+            padding: '0 32px',
             display: 'flex',
             gap: 28,
           }}
@@ -68,7 +67,11 @@ export function App() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 28px 40px' }}>
+      {/* Full width, not a centred column. This is an application window the
+          user sizes themselves; reserving their extra width as empty margin
+          second-guesses that. Long prose inside still carries its own measure,
+          which is where a reading limit actually belongs. */}
+      <div style={{ padding: '28px 32px 40px' }}>
         {tab === 'dashboard' ? (
           <DashboardScreen
             onSignOut={() => {
@@ -103,6 +106,14 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
   const [waiting, setWaiting] = useState(false);
   const [providers, setProviders] = useState<OAuthProviderName[]>([]);
   const cancelled = useRef(false);
+  /**
+   * Set by the Cancel button, and distinct from `cancelled`, which means the
+   * component is going away. Closing the browser tab tells this process
+   * nothing at all — there is no event for "the user gave up" — so without a
+   * way to say so the screen sits on "Waiting for your browser" for the full
+   * two minutes and looks frozen.
+   */
+  const abandoned = useRef(false);
 
   // Only offer buttons the server can complete. A provider with no client id
   // configured would send the user to a broken consent screen.
@@ -144,6 +155,7 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
 
   async function startProvider(provider: OAuthProviderName) {
     setError(null);
+    abandoned.current = false;
     setWaiting(true);
     try {
       const { url, handoff } = await api.oauthStart(provider);
@@ -153,11 +165,15 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
       // after two minutes, so this gives up at the same moment rather than
       // spinning forever on a window the user quietly closed.
       const deadline = Date.now() + 2 * 60_000;
-      while (Date.now() < deadline && !cancelled.current) {
+      while (Date.now() < deadline && !cancelled.current && !abandoned.current) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const session = await api.oauthClaim(handoff);
         if (session) return onSignedIn();
       }
+      // Cancelling is a deliberate act, not a failure. Saying "timed out"
+      // after the user pressed Cancel reads as though something went wrong.
+      if (abandoned.current) return;
+      if (cancelled.current) return;
       setError('That sign-in timed out. Try again.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not start that sign-in.');
@@ -170,7 +186,6 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <>
-      <div className="promo">Free and open source — your sessions never leave your server</div>
       <main style={{ maxWidth: 340, margin: '12vh auto', padding: '0 24px' }}>
         <LockMark size={26} />
         <h1 className="display" style={{ fontSize: 26, margin: '12px 0 4px' }}>
@@ -187,18 +202,12 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
                 <button
                   key={provider}
                   type="button"
+                  className="btn btn-secondary"
                   disabled={disabled}
                   onClick={() => void startProvider(provider)}
-                  style={{
-                    height: 40,
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    color: 'var(--fg)',
-                    fontWeight: 600,
-                    opacity: disabled ? 0.6 : 1,
-                  }}
+                  style={{ width: '100%' }}
                 >
+                  <ProviderMark provider={provider} />
                   Continue with {provider === 'GITHUB' ? 'GitHub' : 'Google'}
                 </button>
               ))}
@@ -210,11 +219,35 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
                 fontSize: 12,
                 color: 'var(--faint)',
                 textAlign: 'center',
+                // Without this the line breaks after "signing" and orphans
+                // "up." on a line of its own under a 340px column.
+                textWrap: 'balance',
               }}
             >
-              {waiting
-                ? 'Waiting for your browser...'
-                : 'Opens your browser. Works for signing in and signing up.'}
+              {waiting ? (
+                <>
+                  Finish signing in from your browser, then come back.{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      abandoned.current = true;
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'var(--fg)',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                'Opens your browser. Works for signing in and signing up.'
+              )}
             </p>
 
             <div
@@ -296,17 +329,9 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
 
           <button
             type="submit"
+            className="btn btn-primary"
             disabled={disabled}
-            style={{
-              marginTop: 6,
-              height: 40,
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--accent)',
-              color: 'var(--accent-fg)',
-              fontWeight: 600,
-              opacity: disabled ? 0.6 : 1,
-            }}
+            style={{ marginTop: 6, width: '100%' }}
           >
             {busy ? 'Working...' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
@@ -327,14 +352,8 @@ function AuthScreen({ onSignedIn }: { onSignedIn: () => void }) {
               setMode(mode === 'login' ? 'register' : 'login');
               setError(null);
             }}
-            style={{
-              border: 'none',
-              background: 'none',
-              color: 'var(--fg)',
-              fontWeight: 600,
-              textDecoration: 'underline',
-              textUnderlineOffset: 3,
-            }}
+            className="btn btn-quiet"
+            style={{ color: 'var(--fg)', fontWeight: 600 }}
           >
             {mode === 'login' ? 'Create one' : 'Sign in'}
           </button>

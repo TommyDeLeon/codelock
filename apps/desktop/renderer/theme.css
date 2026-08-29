@@ -102,6 +102,153 @@ button {
   cursor: pointer;
 }
 
+/* --- buttons --------------------------------------------------------------
+ *
+ * These live in CSS rather than as React style objects for one reason that
+ * matters more than tidiness: an inline style cannot express :hover, :active
+ * or :disabled. Every control in this shell was inline-styled, so none of them
+ * reacted to the pointer at all — which is most of why the app read as a
+ * prototype rather than a product.
+ *
+ * One height, one radius per weight class, one transition. Colour is the only
+ * thing that varies between variants.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The one action a screen is for. Never more than one per view. */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, var(--fg));
+}
+.btn-primary:active:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 78%, var(--fg));
+}
+
+/* Everything else that is still a real action: provider sign-in, connect. */
+.btn-secondary {
+  background: var(--surface);
+  color: var(--fg);
+  border-color: var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: color-mix(in oklab, var(--border) 60%, var(--fg));
+}
+.btn-secondary:active:not(:disabled) {
+  background: color-mix(in oklab, var(--surface-2) 90%, var(--fg));
+}
+
+/*
+ * Sign out, disconnect, cancel. Destructive-adjacent actions read as text, not
+ * as a red block — a red button gives an ordinary action the weight of a
+ * warning, and then nothing is left to escalate to when one is warranted.
+ */
+.btn-quiet {
+  height: auto;
+  padding: 2px 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--border);
+}
+.btn-quiet:hover:not(:disabled) {
+  color: var(--fg);
+  text-decoration-color: currentColor;
+}
+
+/*
+ * Duration chips. Mono, because the number is a measurement — the same reason
+ * every runtime and gate value in this product is mono.
+ */
+.btn-chip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--border);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.btn-chip:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: color-mix(in oklab, var(--border) 55%, var(--fg));
+}
+/* Pressed for the duration presets, checked for the day toggles: one selected
+   look, whichever ARIA state the control legitimately uses. */
+.btn-chip[aria-pressed='true'],
+.btn-chip[aria-checked='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- surfaces the browser draws for us ------------------------------------
+ *
+ * Selection, caret and scrollbars ship with defaults that belong to no design
+ * system. Left alone they are the giveaway that a window was assembled rather
+ * than designed.
+ */
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+input,
+textarea {
+  caret-color: var(--accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid var(--bg);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--faint);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 input {
   font: inherit;
   color: var(--fg);
@@ -140,26 +287,50 @@ input {
   padding: 7px 16px;
 }
 
-/* The dark section strip beneath the brand row. */
+/*
+ * The section strip beneath the brand row.
+ *
+ * This was `background: var(--fg)`, inherited from the web storefront where a
+ * dark strip sits under a bright page. Those tokens invert in dark mode, so on
+ * the app's primary theme it rendered as a near-white band across the window —
+ * the brightest thing on screen, above the content it was meant to serve.
+ *
+ * A navigation row is not a section of the page competing for attention; it is
+ * chrome. So it is a surface with a hairline under it, in both themes, and the
+ * current tab is marked with the accent rather than by inverting the strip.
+ */
 .section-strip {
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--surface);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
 }
 .section-strip button {
+  position: relative;
   border: none;
   background: none;
   color: inherit;
   font-size: 12.5px;
   font-weight: 600;
-  padding: 9px 0;
-  opacity: 0.75;
-  transition: opacity 150ms;
+  padding: 10px 0;
+  transition: color 150ms ease;
 }
-.section-strip button:hover,
-.section-strip button[aria-current='page'] {
-  opacity: 1;
+.section-strip button:hover {
+  color: var(--fg);
 }
 .section-strip button[aria-current='page'] {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: var(--fg);
+}
+/*
+ * The active marker is a rule flush with the strip's own bottom border, so the
+ * tab reads as attached to the page beneath it. An underline on the text would
+ * sit at an arbitrary height and collide with the descenders in "Dashboard".
+ */
+.section-strip button[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
 }

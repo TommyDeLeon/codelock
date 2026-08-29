@@ -118,14 +118,21 @@ export function SettingsScreen() {
 
   const github = integrations.find((i) => i.provider === 'GITHUB') ?? null;
 
+  // The panels span the window; the prose inside them does not. A 640px column
+  // left most of a maximised window empty, but settings text set to 1400px
+  // would be worse — so the width limit moves onto the paragraphs, where a
+  // reading measure belongs, and the controls get the full span.
   return (
-    <div style={{ maxWidth: 640, display: 'grid', gap: 24 }}>
+    <div style={{ display: 'grid', gap: 24 }}>
       <section>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>
           When CodeLock can lock you
         </h2>
 
-        <div style={{ display: 'flex', gap: 4 }}>
+        {/* Capped, unlike the panels around it. Stretching seven one-letter
+            toggles across a maximised window gives each a 120px hit area for a
+            single glyph, which reads as seven buttons rather than one week. */}
+        <div style={{ display: 'flex', gap: 4, maxWidth: 460 }}>
           {DAYS.map((day) => {
             const on = (timer.activeDaysMask & (1 << day.bit)) !== 0;
             return (
@@ -140,15 +147,12 @@ export function SettingsScreen() {
                     activeDaysMask: timer.activeDaysMask ^ (1 << day.bit),
                   })
                 }
-                style={{
-                  flex: 1,
-                  height: 40,
-                  borderRadius: 'var(--radius-sm)',
-                  border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
-                  background: on ? 'var(--accent)' : 'var(--surface)',
-                  color: on ? 'var(--accent-fg)' : 'var(--muted)',
-                  fontWeight: 600,
-                }}
+                // Seven solid accent blocks made the quietest panel on the
+                // screen the loudest thing in the window. A day being enabled
+                // is the ordinary state, not an alert, so it gets the same
+                // tinted chip the duration presets use.
+                className="btn btn-chip"
+                style={{ flex: 1, padding: 0 }}
               >
                 {day.short}
               </button>
@@ -276,7 +280,7 @@ export function SettingsScreen() {
                     ),
                   )
               }
-              style={outlineButton}
+              className="btn btn-secondary"
             >
               Link
             </button>
@@ -302,6 +306,8 @@ export function SettingsScreen() {
                 margin: '0 0 10px',
                 fontSize: 13,
                 color: 'var(--muted)',
+                // The panel is full width now; a line of prose still is not.
+                maxWidth: '62ch',
               }}
             >
               Mirror accepted solutions to a repository. Sign-in opens in your real browser, so you
@@ -317,7 +323,7 @@ export function SettingsScreen() {
                     setStatus(err instanceof ApiError ? err.message : 'GitHub is not configured.'),
                   )
               }
-              style={outlineButton}
+              className="btn btn-secondary"
             >
               Connect GitHub
             </button>
@@ -335,16 +341,8 @@ function Quiet({ children, onClick }: { children: React.ReactNode; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      style={{
-        marginTop: 10,
-        padding: 0,
-        border: 'none',
-        background: 'none',
-        color: 'var(--muted)',
-        fontSize: 13,
-        textDecoration: 'underline',
-        textUnderlineOffset: 3,
-      }}
+      className="btn btn-quiet"
+      style={{ marginTop: 10 }}
     >
       {children}
     </button>
@@ -364,11 +362,3 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-const outlineButton: React.CSSProperties = {
-  padding: '0 14px',
-  height: 38,
-  borderRadius: 'var(--radius-md)',
-  border: '1px solid var(--border)',
-  background: 'var(--surface)',
-  color: 'var(--fg)',
-};

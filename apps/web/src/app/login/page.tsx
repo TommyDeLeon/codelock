@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardBody, Field, Input } from '@/components/ui/primitives';
 import { LockMark } from '@/components/ui/lock-mark';
 import { GithubMark } from '@/components/ui/github-mark';
+import { GoogleMark } from '@/components/ui/google-mark';
 import { CodeField } from '@/components/site/code-field';
 
 /** Where the one-time handoff waits while the browser is at the provider. */
@@ -173,6 +174,7 @@ export default function LoginPage() {
                       onClick={() => void startProvider(provider)}
                     >
                       {provider === 'GITHUB' && <GithubMark className="size-4" aria-hidden />}
+                      {provider === 'GOOGLE' && <GoogleMark className="size-4" aria-hidden />}
                       Continue with {OAUTH_PROVIDER_LABELS[provider]}
                     </Button>
                   ))}

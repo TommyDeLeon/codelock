@@ -79,6 +79,29 @@ services:
       - key: API_URL
         sync: false
 
+      # --- sign in with GitHub / Google -------------------------------------
+      # Optional. Leave a pair unset and that provider simply does not appear
+      # on the sign-in screen — /v1/auth/oauth/providers reports only the ones
+      # that are configured, and both the web and desktop UIs render whatever
+      # it returns. An unset provider is a missing button, never an error,
+      # which is also why a missing button on a deployment means "not
+      # configured here" rather than "broken".
+      #
+      # Register the callback with each provider as
+      #   <API_URL>/v1/auth/oauth/github/callback
+      #   <API_URL>/v1/auth/oauth/google/callback
+      # built from this service's API_URL above, not the web origin. A
+      # deployment and a local dev machine are different URLs and each needs
+      # its own entry in the provider's redirect list.
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
       # --- generated once, by Render ---------------------------------------
       # Distinct values, which the API enforces at boot in production.
       #
