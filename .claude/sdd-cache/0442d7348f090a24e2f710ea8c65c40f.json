@@ -1,8 +1,0 @@
-{
-  "url": "https://github.com/exercism/exercism",
-  "prompt": "What license is Exercism's content and exercise material under? Quote exactly. Are exercise problem statements included in the repos and are they freely redistributable?",
-  "etag": "W/\"22069c1d182475429fa8aea095ec4fa6\"",
-  "last_modified": "",
-  "content": "Based on the provided web page content, I cannot find information about Exercism's content license or whether exercise problem statements are included in the repositories.\r\n\r\nThe page directs users to the [exercism/website](http://github.com/exercism/website) repository for current code and mentions a [v1.exercism.io branch](https://github.com/exercism/exercism/tree/v1.exercism.io) for legacy code, but does not include licensing details or information about exercise material distribution.\r\n\r\nTo answer your question accurately, you would need to consult the LICENSE file in the relevant Exercism repositories or visit their website directly.",
-  "fetched_at": 1788035350
-}

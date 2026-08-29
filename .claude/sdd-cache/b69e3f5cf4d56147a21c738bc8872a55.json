@@ -1,8 +1,0 @@
-{
-  "url": "https://huggingface.co/datasets/google-research-datasets/mbpp",
-  "prompt": "What license is the MBPP dataset released under? Quote it exactly. How many problems, what fields does each record have (statement text, test cases, reference solution)? Is there a sanitized subset?",
-  "etag": "W/\"c4aa7-Jmw0xPO8P6vjWqc1UiJ4oZIwtYQ\"",
-  "last_modified": "",
-  "content": "# MBPP Dataset Overview\r\n\r\n**License:** The dataset is released under CC-BY-4.0 (Creative Commons Attribution 4.0 International).\r\n\r\n**Number of Problems:** Approximately 1,000 crowd-sourced Python programming problems, with a total of 974 rows in the full dataset.\r\n\r\n**Record Fields:** Each problem contains:\r\n- `task_id`: unique identifier\r\n- `text`/`prompt`: task description\r\n- `code`: reference solution\r\n- `test_list`: automated test cases (typically 3 per problem)\r\n- `test_setup_code`/`test_imports`: necessary imports for execution\r\n- `challenge_test_list`: optional additional harder tests\r\n\r\n**Sanitized Subset:** Yes. A subset underwent a second round of human verification to improve task descriptions, resulting in 427 hand-verified problems in the \"sanitized\" version, designed to address cases where original descriptions weren't sufficiently expressive.",
-  "fetched_at": 1788035331
-}

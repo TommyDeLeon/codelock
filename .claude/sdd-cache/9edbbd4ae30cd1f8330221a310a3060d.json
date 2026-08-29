@@ -1,8 +1,0 @@
-{
-  "url": "https://github.com/openai/human-eval",
-  "prompt": "What license is this repository under? Quote the license name exactly. Does it include problem statements (docstrings), test cases, and canonical solutions? How many problems?",
-  "etag": "W/\"439a503c81d91519bb1528d1d67648dd\"",
-  "last_modified": "",
-  "content": "# HumanEval Repository License and Contents\r\n\r\n**License:** The repository is under the \"MIT license\" as indicated in the footer navigation.\r\n\r\n**Contents:** Based on the provided content, the repository includes:\r\n- Problem statements and test cases (referenced in the evaluation harness description)\r\n- Example files demonstrating the format (`example_problem.jsonl` and `example_solutions.jsonl`)\r\n- An evaluation framework for assessing model-generated code solutions\r\n\r\n**Number of Problems:** The webpage does not explicitly specify the total number of problems in the dataset. The example shows 6 test cases, but the full HumanEval dataset size is not stated in this particular page content.\r\n\r\nTo determine the exact number of problems and confirm all component types, you would need to access the actual repository files or the accompanying research paper referenced (\"Evaluating Large Language Models Trained on Code\").",
-  "fetched_at": 1788035315
-}
