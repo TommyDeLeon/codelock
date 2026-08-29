@@ -4,6 +4,7 @@ import {
   dialog,
   globalShortcut,
   ipcMain,
+  Menu,
   net,
   powerMonitor,
   protocol,
@@ -185,11 +186,13 @@ function clearScheduledLock(): void {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  // Closing the window does not quit — the process lives on behind the tray,
+  // and `mainWindow` still points at a *destroyed* BrowserWindow. Touching
+  // that reference throws "Object has been destroyed" and takes the whole main
+  // process down, so the second launch goes through showWindow(), which
+  // recreates the window when there is nothing left to focus.
   app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
+    showWindow();
   });
 }
 
@@ -226,6 +229,11 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     backgroundColor: '#0e0e0d',
+    // Set explicitly rather than relying on the icon electron-builder stamps
+    // into the executable: `rcedit` does that, and a build made with
+    // signAndEditExecutable disabled skips it, leaving Electron's own icon in
+    // the title bar and taskbar. This makes the window right either way.
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -349,7 +357,10 @@ function sendHoldProgress(now: number): void {
  * the lock in exactly that window.
  */
 function engageLock(sessionId: string | null): void {
-  if (!mainWindow) return;
+  // Null and destroyed are different failures and both happen here: the window
+  // is gone after a close, and the reference outlives it. Every other function
+  // that touches mainWindow checks both.
+  if (!mainWindow || mainWindow.isDestroyed()) return;
 
   if (sessionId) {
     lockedSessionId = sessionId;
@@ -617,6 +628,14 @@ void app.whenReady().then(() => {
   // Continuous by default. The timer is worthless if it only runs while the
   // user happens to have the window open, and worse than worthless if it
   // silently stops at every reboot.
+  // Electron installs a default File/Edit/View/Window/Help menu, which is
+  // Chromium's developer furniture rather than this product's: every entry is
+  // either irrelevant (Reload, Toggle DevTools) or actively hostile to a lock
+  // screen. The window has no menu of its own to offer, so it gets none.
+  // Clipboard and text-editing shortcuts keep working — Chromium handles those
+  // natively, not through the menu's accelerators.
+  Menu.setApplicationMenu(null);
+
   setAutoStart(true);
   createTray(trayActions);
 

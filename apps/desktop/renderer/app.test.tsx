@@ -79,6 +79,43 @@ describe('the OAuth poll', () => {
     expect(apiMock.oauthClaim.mock.calls.length).toBe(callsAtDeadline);
   });
 
+  /**
+   * Closing the browser tab tells this process nothing — there is no event for
+   * "the user gave up". Without Cancel the screen sits on "Finish signing in"
+   * for the full two minutes and reads as frozen, which is exactly how it
+   * looked in practice.
+   */
+  it('stops polling immediately when the sign-in is cancelled', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<App />);
+
+    const button = await screen.findByRole('button', { name: /continue with github/i });
+    button.click();
+    await waitFor(() => expect(openExternal).toHaveBeenCalled());
+
+    await vi.advanceTimersByTimeAsync(6_000);
+    expect(apiMock.oauthClaim.mock.calls.length).toBeGreaterThan(0);
+
+    screen.getByRole('button', { name: /cancel/i }).click();
+    await vi.advanceTimersByTimeAsync(4_000);
+    const callsAtCancel = apiMock.oauthClaim.mock.calls.length;
+
+    // Polling stops, and well before the deadline.
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(apiMock.oauthClaim.mock.calls.length).toBe(callsAtCancel);
+
+    // Cancelling is a choice, not a failure: no error is shown for it.
+    expect(screen.queryByText(/timed out/i)).toBeNull();
+
+    // And the buttons come back rather than staying disabled forever.
+    await waitFor(() => {
+      const retry = screen.getByRole('button', {
+        name: /continue with github/i,
+      }) as HTMLButtonElement;
+      expect(retry.disabled).toBe(false);
+    });
+  });
+
   it('stops polling the moment the session is claimed', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     apiMock.oauthClaim
