@@ -12,6 +12,7 @@ import {
   engageLock,
   getActiveSession,
   requireOwnedSession,
+  getDebrief,
 } from '../services/lockSessions.js';
 import { recordFailure } from '../services/grading.js';
 import { recordUnlock, secondsLocked } from '../services/audit.js';
@@ -46,6 +47,25 @@ lockRouter.get(
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     res.json({ session: await getActiveSession(user.id) });
+  }),
+);
+
+/**
+ * GET /lock/:id/debrief — the pattern, the editorial, and a worked solution.
+ *
+ * Available only once the session has resolved, however it resolved. A user who
+ * bypassed or gave up gets the same debrief as one who solved it: they need it
+ * most, and the lock is over either way.
+ *
+ * The gate lives in `getDebrief`, not here, because this is the *only* route
+ * that serves these fields — `toPublicProblem` does not carry them at all.
+ */
+lockRouter.get(
+  '/:id/debrief',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    res.json({ debrief: await getDebrief(user.id, id) });
   }),
 );
 
