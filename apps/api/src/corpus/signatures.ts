@@ -72,7 +72,8 @@ const FUNCTION_SIGNATURES: readonly FunctionSignature[] = [
   fn('fn:int->int', 'single int in, single int out', ['int'], 'int'),
   fn('fn:int->bool', 'single int in, boolean out', ['int'], 'bool'),
   fn('fn:int->ints', 'single int in, int array out', ['int'], 'int[]'),
-  fn('fn:int->string', 'single int in, string out (FizzBuzz, roman numerals)', ['int'], 'string'),
+  fn('fn:int->string', 'single int in, string out (roman numerals)', ['int'], 'string'),
+  fn('fn:int->strings', 'single int in, list of strings out (FizzBuzz to n)', ['int'], 'string[]'),
   fn('fn:int,int->int', 'two ints in, int out', ['int', 'int'], 'int'),
 
   // Matrices, grids, intervals, and adjacency-list graphs.

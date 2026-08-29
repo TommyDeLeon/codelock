@@ -13,6 +13,7 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
+import { availableTiers, loadProgressSnapshot } from './progression.js';
 import { isWithinActiveWindow } from './schedule.js';
 import { recordUnlock, secondsLocked } from './audit.js';
 
@@ -270,7 +271,11 @@ async function claimDueSession(
   userId: string,
   difficulty: Difficulty,
 ): Promise<{ session: LockSession; problem: Problem } | null> {
-  const problem = await pickProblem(userId, difficulty);
+  // Difficulty says how hard; the progression gate says what this user is ready
+  // for. Both narrow the pool, and they are not the same question — a fast
+  // beginner is HARD at Tier 0 and still has no business being shown DP.
+  const tiers = availableTiers(await loadProgressSnapshot(userId));
+  const problem = await pickProblem(userId, difficulty, tiers);
   const lockedAt = new Date();
 
   const claimed = await prisma.lockSession.updateMany({

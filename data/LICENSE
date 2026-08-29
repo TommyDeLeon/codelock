@@ -1,0 +1,69 @@
+CodeLock problem corpus — licensing
+===================================
+
+This directory holds problem *content*: statements, editorials, test data and
+attribution. It is licensed separately from the source code, and deliberately so.
+
+Why the split
+-------------
+
+The code in this repository is free software by the usual definition. Some of
+the corpora that are genuinely useful to a learning tool are not: they carry
+non-commercial or share-alike terms, which are perfectly usable for CodeLock —
+it is free and non-commercial — but are **not free by OSI standards**.
+
+Mixing those into the source tree would make a contributor's reasonable
+assumption ("this repo is permissively licensed, so I can reuse any of it")
+false, and they would find out only if someone complained. Keeping the content
+here, with its own terms, means the licence you find next to a file is the
+licence that actually governs it.
+
+What applies to what
+--------------------
+
+**Per-problem.** There is no single licence for this directory. Every imported
+problem carries its own `source`, `sourceUrl`, `sourceLicense`,
+`attributionText` and `sourceRef` in the database, and `NOTICE` in this
+directory is generated from exactly those columns. `NOTICE` is therefore the
+authoritative list of what is here and under what terms — not this file, and not
+anybody's memory.
+
+Do not edit `NOTICE` by hand. Re-run:
+
+    npm run import:corpus -w @codelock/api
+
+**Problems written for CodeLock** are released under CC0 1.0 Universal (public
+domain dedication). That includes all of Tier 0, which had to be authored from
+scratch because no published interview list covers material below "you can
+already program".
+
+**Imported problems** keep the terms of the corpus they came from. Where a
+licence specifies attribution wording — Project Euler supplies its own sentence,
+for instance — that wording is reproduced verbatim in `NOTICE` rather than
+paraphrased.
+
+Rules for anyone adding to this directory
+-----------------------------------------
+
+1. **A source with no stated licence is excluded**, not assumed permissive.
+   Silence is not permission; the default is all rights reserved.
+
+2. **Never ingest LeetCode statement text, from any source.** A permissive
+   licence on a "leetcode solutions" repository covers that author's code, not
+   LeetCode's statements. The uploader had no right to relicense them, and a
+   LICENSE file does not launder that. The canonical *lists* — which patterns,
+   in what order — are facts and are free to use.
+
+3. **Non-commercial and share-alike content stays here**, never in `apps/` or
+   `packages/`.
+
+4. **Every row needs all five provenance fields.** `NOTICE` is generated from
+   them, so a missing `sourceRef` produces a notice that under-attributes a
+   licence we are relying on.
+
+5. **If a licence cannot be confirmed from a primary source, write "unverified"
+   and stop.** Being wrong here has legal consequences, unlike being wrong about
+   almost anything else in this repository.
+
+The full research behind these rules, source by source, is in
+`docs/CORPUS-SOURCES.md`.

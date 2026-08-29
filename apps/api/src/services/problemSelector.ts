@@ -1,4 +1,4 @@
-import { Difficulty, type Problem } from '@prisma/client';
+import { Difficulty, type Problem, type Tier } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -19,6 +19,7 @@ const REPEAT_COOLDOWN_DAYS = 21;
 export async function pickProblem(
   userId: string,
   difficulty: Difficulty,
+  tiers?: Tier[],
 ): Promise<Problem> {
   const since = new Date(Date.now() - REPEAT_COOLDOWN_DAYS * 86_400_000);
 
@@ -29,14 +30,29 @@ export async function pickProblem(
   });
   const seen = recent.map((r) => r.problemId);
 
+  // `tiers` comes from the progression gate: what this user is ready for, which
+  // is a different question from how hard they find things. Omitted only by
+  // callers that genuinely want the whole pool.
+  const tierFilter = tiers && tiers.length > 0 ? { tier: { in: tiers } } : {};
+
   let candidates = await prisma.problem.findMany({
-    where: { difficulty, isActive: true, id: { notIn: seen } },
+    where: { difficulty, isActive: true, ...tierFilter, id: { notIn: seen } },
     take: 25,
   });
 
   // Everything at this tier is on cooldown — better to repeat than to fail open
   // and leave the device unlockable.
   if (candidates.length === 0) {
+    candidates = await prisma.problem.findMany({
+      where: { difficulty, isActive: true, ...tierFilter },
+      take: 25,
+    });
+  }
+
+  // Still nothing: the tier gate and this difficulty do not intersect yet. Drop
+  // the tier filter rather than the lock — a user who cannot unlock is a worse
+  // outcome than a user served something slightly off-curriculum.
+  if (candidates.length === 0 && tiers && tiers.length > 0) {
     candidates = await prisma.problem.findMany({
       where: { difficulty, isActive: true },
       take: 25,
