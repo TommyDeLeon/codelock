@@ -329,6 +329,11 @@ model Problem {
 
   editorialUrl      String?
   editorialMarkdown String?
+  /// Per-language worked solution, same shape as `starterCode`. Shown in the
+  /// debrief, never before it. A user who fails must not leave with nothing —
+  /// an editorial that explains the approach without showing working code
+  /// leaves a beginner exactly where they started.
+  referenceSolution Json @default("{}")
 
   // --- ranker (see src/services/valueRanker.ts) ----------------------------
   // Every component is stored, not just the total, so "why is this rank S?"

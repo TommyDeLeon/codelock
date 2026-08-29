@@ -397,6 +397,63 @@ export async function toPublicProblem(problem: Problem): Promise<PublicProblem> 
   };
 }
 
+/**
+ * States in which the answer may be shown.
+ *
+ * BYPASSED and ABANDONED are here on purpose. The temptation is to reward only
+ * a solve, but a user who failed is the user who most needs the explanation —
+ * withholding it turns a hard evening into a wasted one, and this audience does
+ * not have many evenings to waste. The lock is over either way; there is
+ * nothing left to protect.
+ */
+const RESOLVED_STATES: readonly LockState[] = [
+  LockState.UNLOCKED,
+  LockState.BYPASSED,
+  LockState.ABANDONED,
+];
+
+export interface Debrief {
+  patternFamily: string;
+  patternTags: string[];
+  editorialMarkdown: string | null;
+  editorialUrl: string | null;
+  referenceSolution: Record<string, string>;
+  outcome: LockState;
+}
+
+/**
+ * What to show once the lock is over: the pattern, the editorial, the solution.
+ *
+ * This is the product's purpose for this audience. Everything else — the timer,
+ * the overlay, the judge — is machinery in service of the moment the screen
+ * comes back and the user finds out what the problem *was*.
+ *
+ * Refuses while the session is still live. That refusal is the whole security
+ * property: `toPublicProblem` never carries these fields, so this function is
+ * the only path to them, and it checks state before it reads.
+ */
+export async function getDebrief(userId: string, sessionId: string): Promise<Debrief> {
+  const session = await requireOwnedSession(userId, sessionId);
+
+  if (!RESOLVED_STATES.includes(session.state)) {
+    // Deliberately not a 404: the session exists and is theirs. Telling them
+    // "not yet" is honest and leaks nothing a countdown would not.
+    throw ApiError.conflict('The debrief is available once the lock is resolved');
+  }
+
+  const problem = await loadProblem(session.problemId);
+  if (!problem) throw ApiError.notFound('No problem was assigned to this session');
+
+  return {
+    patternFamily: problem.patternFamily,
+    patternTags: problem.patternTags,
+    editorialMarkdown: problem.editorialMarkdown,
+    editorialUrl: problem.editorialUrl,
+    referenceSolution: (problem.referenceSolution ?? {}) as Record<string, string>,
+    outcome: session.state,
+  };
+}
+
 async function toView(session: LockSession, problem: Problem | null): Promise<LockSessionView> {
   const now = Date.now();
   // A paused countdown does not advance. Measuring from `pausedAt` rather than
