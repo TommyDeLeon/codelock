@@ -1,0 +1,8 @@
+{
+  "url": "https://github.com/hendrycks/apps",
+  "prompt": "What license is this repository and the APPS dataset under? Quote exactly. Where were the problems scraped from (which sites)? Does the repo say anything about redistribution rights of the problem statements themselves? Does it include test cases?",
+  "etag": "W/\"6bb0743b11920b467396531be00e91a1\"",
+  "last_modified": "",
+  "content": "# APPS Repository License and Dataset Information\r\n\r\n**License:** The repository is under the \"MIT license\" as indicated in the navigation.\r\n\r\n**Problem Sources:** The provided content does not specify which websites the problems were scraped from. This information is not included in the page excerpt.\r\n\r\n**Redistribution Rights:** The page content contains no discussion of redistribution rights for the problem statements themselves.\r\n\r\n**Test Cases:** The excerpt does not explicitly address whether test cases are included in the dataset.\r\n\r\n**Note:** To find answers about problem sources and test case inclusion, you would need to consult the actual README.md file or the full dataset documentation, which are referenced but not detailed in this page excerpt.",
+  "fetched_at": 1788035332
+}

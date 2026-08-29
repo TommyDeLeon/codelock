@@ -1,0 +1,8 @@
+{
+  "url": "https://github.com/google-deepmind/code_contests",
+  "prompt": "Quote exactly what the README says about licensing: the code license, the data/dataset license, any per-source attribution requirements, and which original problem sources (Codeforces, Description2Code, CodeNet etc.) the problems come from and under what licenses. Also state whether test cases are included in the dataset.",
+  "etag": "W/\"6b584ee06fe454ebc9e373f75e627c54\"",
+  "last_modified": "",
+  "content": "# CodeContests Dataset Licensing Summary\r\n\r\n## Code License\r\n\"The code is licensed under the Apache 2.0 License.\"\r\n\r\n## Data/Dataset License\r\n\"All non-code materials provided are made available under the terms of the CC BY 4.0 license.\"\r\n\r\n## Problem Sources and Attribution\r\n\r\nThe dataset includes problems from five sources with the following requirements:\r\n\r\n1. **Codeforces**: \"Codeforces materials are sourced from http://codeforces.com.\"\r\n\r\n2. **Description2Code**: Materials \"licensed under the MIT open source license,\" sourced from the Description2Code Dataset repository.\r\n\r\n3. **CodeNet** (Aizu, AtCoder): Materials \"licensed under Apache 2.0,\" sourced from Project_CodeNet.\r\n\r\n4. **Other sources** (CodeChef, HackerEarth): Also sourced through Description2Code materials.\r\n\r\n## Test Cases\r\nYes, test cases are included. The README states: \"Problems include test cases in the form of paired inputs and outputs, as well as both correct and incorrect human solutions in a variety of languages.\"",
+  "fetched_at": 1788035314
+}
