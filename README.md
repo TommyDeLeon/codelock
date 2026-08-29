@@ -226,6 +226,7 @@ behind.
 | [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |
 | [docs/ESCAPE-MATRIX.md](docs/ESCAPE-MATRIX.md) | Every way we tried to defeat the lock, per platform, and what worked |
 | [docs/CORPUS-SOURCES.md](docs/CORPUS-SOURCES.md) | Which problem sources may be redistributed and which may not, with the licence read from each canonical URL |
+| [docs/HANDOFF-CORPUS.md](docs/HANDOFF-CORPUS.md) | State of the problem corpus: the signature registry, the ranker, and what is still owed |
 
 ## Deploying
 
