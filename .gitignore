@@ -23,3 +23,6 @@ next-env.d.ts
 
 # Expo local state, regenerated on every start.
 .expo/
+
+# Local agent tool caches, not project content
+.claude/sdd-cache/

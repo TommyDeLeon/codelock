@@ -1,8 +1,0 @@
-{
-  "url": "https://github.com/cpinitiative/usaco-guide",
-  "prompt": "What license does the USACO Guide use for its content and for its code? Quote exactly. Does it host problem statements itself or link to externally hosted problems?",
-  "etag": "W/\"e875a897b36335dabf092788313fdad8\"",
-  "last_modified": "",
-  "content": "# USACO Guide License\r\n\r\n**Content License:**\r\nThe guide states: \"This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.\"\r\n\r\n**Code License:**\r\nThe provided content does not specify a separate license for the code itself, only referencing the Creative Commons license for the content.\r\n\r\n**Problem Hosting:**\r\nThe webpage does not indicate whether the guide hosts problem statements or links to external sources. This information is not included in the provided GitHub repository overview.",
-  "fetched_at": 1788035335
-}
