@@ -20,6 +20,61 @@ enum Difficulty {
   HARD
 }
 
+/// How far into the curriculum a problem sits.
+///
+/// Not the same axis as `Difficulty`, and the difference matters: an EASY
+/// Tier 1 problem is still a pattern a beginner has never seen. Difficulty is
+/// how hard this problem is; tier is what you must already have built.
+///
+/// Named rather than numeric because the interesting value is 0.5 — "implement
+/// the data structure", which sits between "can you write a loop" and "can you
+/// recognise a pattern", and is the tier that stops pattern-matching from
+/// collapsing under an interview follow-up.
+enum Tier {
+  /// Foundations: loops, strings, arrays, hashmaps, I/O parsing. ~60 problems.
+  /// No published interview list covers this; our audience needs it.
+  TIER_0
+  /// Build the structure, do not just use it. ~55 problems.
+  TIER_0_5
+  /// Core patterns — one canonical problem per pattern. ~150.
+  TIER_1
+  /// Variations: same pattern, new disguise. ~330.
+  TIER_2
+  /// Breadth: advanced graphs, 2-D DP, greedy, bit manipulation. ~100.
+  TIER_3
+}
+
+/// Pattern family, from the canonical interview lists.
+///
+/// The lists themselves are facts — which patterns matter, in what order — and
+/// are free to use; see docs/CORPUS-SOURCES.md. The two trailing members have
+/// no upstream counterpart, because no published list starts below "you can
+/// already program".
+enum PatternFamily {
+  ARRAYS_HASHING
+  TWO_POINTERS
+  SLIDING_WINDOW
+  STACK
+  BINARY_SEARCH
+  LINKED_LIST
+  TREES
+  TRIES
+  HEAP_PRIORITY_QUEUE
+  BACKTRACKING
+  GRAPHS
+  ADVANCED_GRAPHS
+  DP_1D
+  DP_2D
+  GREEDY
+  INTERVALS
+  MATH_GEOMETRY
+  BIT_MANIPULATION
+  /// Tier 0 only.
+  FOUNDATIONS
+  /// Tier 0.5 only — the structure itself is the subject.
+  DATA_STRUCTURES
+}
+
 enum Language {
   JAVASCRIPT
   TYPESCRIPT
@@ -108,16 +163,16 @@ enum OAuthProvider {
 /// This one only answers "who is this", holds no usable credential after
 /// sign-in, and must not be confused with authorisation to push code.
 model OAuthAccount {
-  id       String        @id @default(uuid()) @db.Uuid
-  userId   String        @db.Uuid
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider OAuthProvider
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @db.Uuid
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          OAuthProvider
   /// The provider's immutable id for the account — never the email, which the
   /// user can change at the provider and which would then point somewhere else.
   providerAccountId String
   /// What the provider called the account at link time. Display only.
-  providerEmail String?
-  createdAt DateTime @default(now())
+  providerEmail     String?
+  createdAt         DateTime      @default(now())
 
   @@unique([provider, providerAccountId])
   @@unique([userId, provider])
@@ -159,20 +214,20 @@ model Device {
 // ---------------------------------------------------------------------------
 
 model TimerConfig {
-  id      String  @id @default(uuid()) @db.Uuid
-  userId  String  @unique @db.Uuid
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled Boolean @default(true)
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique @db.Uuid
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled            Boolean  @default(true)
   /// Minutes of uninterrupted use before the lock fires.
-  durationMinutes Int @default(60)
+  durationMinutes    Int      @default(60)
   /// Seconds of warning shown before the overlay appears.
-  graceSeconds    Int @default(60)
+  graceSeconds       Int      @default(60)
   /// Bitmask, Sunday = bit 0. 127 = every day.
-  activeDaysMask  Int @default(127)
+  activeDaysMask     Int      @default(127)
   /// Local-time window in minutes past midnight, evaluated in the user's
   /// timezone. Outside it, arming is refused. from > to wraps past midnight.
-  activeFromMinute Int @default(0)
-  activeToMinute   Int @default(1440)
+  activeFromMinute   Int      @default(0)
+  activeToMinute     Int      @default(1440)
   /// Start the next countdown as soon as a lock is solved.
   ///
   /// The point of the product is that the decision to be interrupted is made
@@ -182,10 +237,10 @@ model TimerConfig {
   /// not, or holding Escape would buy ten seconds before the next countdown and
   /// the documented escape hatch would become a trap. The active-hours window
   /// still applies, so this stops on its own at the end of the day.
-  autoRearm Boolean @default(false)
+  autoRearm          Boolean  @default(false)
   /// How many "skip this one" escapes per day. 0 disables the escape hatch.
-  dailySkipAllowance Int @default(1)
-  updatedAt DateTime @updatedAt
+  dailySkipAllowance Int      @default(1)
+  updatedAt          DateTime @updatedAt
 
   @@map("timer_configs")
 }
@@ -195,33 +250,33 @@ model TimerConfig {
 // ---------------------------------------------------------------------------
 
 model Problem {
-  id             String     @id @default(uuid()) @db.Uuid
-  slug           String     @unique
-  title          String
-  difficulty     Difficulty
-  promptMarkdown String
-  tags           String[]   @default([])
+  id                  String     @id @default(uuid()) @db.Uuid
+  slug                String     @unique
+  title               String
+  difficulty          Difficulty
+  promptMarkdown      String
+  tags                String[]   @default([])
   /// { "JAVASCRIPT": "function solve(...) {}", ... } — per-language stubs.
-  starterCode Json
+  starterCode         Json
   /// Harness that reads stdin, calls the solution function, prints the result.
   /// Same shape as starterCode. Keeps test cases language-agnostic.
-  driverCode Json
+  driverCode          Json
   /// Runtime of the canonical optimal solution, per language, in ms:
   /// { "JAVASCRIPT": 45, "CPP": 8, ... }. Language-specific because a JVM
   /// cold start dwarfs a C++ whole-program run; one global number would make
   /// the gate unwinnable in Java and trivial in C++.
-  referenceRuntimeMs Json
+  referenceRuntimeMs  Json
   /// Fastest accepted runtime ever observed, per language. Ratchets down as
   /// users beat the reference. Same shape as referenceRuntimeMs.
-  bestRuntimeMs Json @default("{}")
-  cpuTimeLimit  Float @default(2.0)
-  memoryLimitKb Int   @default(128000)
+  bestRuntimeMs       Json       @default("{}")
+  cpuTimeLimit        Float      @default(2.0)
+  memoryLimitKb       Int        @default(128000)
   /// Rolling mean of accepted solve times; the promotion rule compares against it.
-  avgSolveSeconds Int  @default(600)
-  solveCount      Int  @default(0)
-  attemptCount    Int  @default(0)
+  avgSolveSeconds     Int        @default(600)
+  solveCount          Int        @default(0)
+  attemptCount        Int        @default(0)
   /// Slug of the equivalent LeetCode problem, when there is one.
-  leetcodeSlug    String?
+  leetcodeSlug        String?
   /// How much this problem is worth being asked, 0 upward.
   ///
   /// Editorial and external, never derived from this instance's own usage:
@@ -232,19 +287,79 @@ model Problem {
   ///
   /// Only a ranking signal. Selection stays random and weighted so that a
   /// low-scoring problem is still reachable — see problemSelector.
-  popularity          Int       @default(0)
+  popularity          Int        @default(0)
   /// Where the number came from, so a stale or disputed score is traceable
   /// rather than anonymous. e.g. "leetcode:likes", "manual".
   popularitySource    String?
   popularityCheckedAt DateTime?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  // --- provenance ----------------------------------------------------------
+  // Non-null on every row, per rule 4 in docs/CORPUS-SOURCES.md. Attribution is
+  // per *problem*, not per corpus, because a single upstream dataset can span
+  // several licences — CodeContests alone carries five. A blanket credit line
+  // in a README cannot express that, and would be wrong for most rows.
+
+  /// Short source key, e.g. "codelock-authored", "mbpp", "code_contests".
+  source          String @default("codelock-authored")
+  /// Canonical URL for this specific problem, or for the corpus if it has none.
+  sourceUrl       String @default("")
+  /// SPDX identifier where one exists, e.g. "CC-BY-4.0", "MIT", "CC-BY-NC-SA-4.0".
+  sourceLicense   String @default("CC0-1.0")
+  /// The exact wording the licence requires. Project Euler, for instance,
+  /// supplies its own sentence and it is reproduced verbatim, not paraphrased.
+  attributionText String @default("")
+  /// Which upstream strand this row came from, e.g. "code_contests:codeforces".
+  /// Non-null because generating data/NOTICE depends on it.
+  sourceRef       String @default("codelock-authored")
+
+  // --- taxonomy ------------------------------------------------------------
+
+  patternFamily PatternFamily @default(FOUNDATIONS)
+  /// Finer-grained than the family: "prefix-sum", "monotonic-stack", "kadane".
+  patternTags   String[]      @default([])
+  tier          Tier          @default(TIER_1)
+  /// Which entry in the signature registry generates this problem's driver and
+  /// starter stubs. See src/corpus/signatures.ts. Empty means "not yet wired",
+  /// and the importer refuses to activate such a row.
+  signatureId   String        @default("")
+
+  // --- editorial -----------------------------------------------------------
+  // Revealed only after the session resolves, SOLVED or BYPASSED. A user who
+  // fails must not leave with nothing — that is the product's purpose for this
+  // audience — but revealing it early would hand over the answer under a lock.
+
+  editorialUrl      String?
+  editorialMarkdown String?
+
+  // --- ranker (see src/services/valueRanker.ts) ----------------------------
+  // Every component is stored, not just the total, so "why is this rank S?"
+  // answers with the six numbers rather than a shrug.
+
+  /// 0..1 each.
+  patternTransfer    Float   @default(0)
+  interviewFrequency Float   @default(0)
+  lockWindowFit      Float   @default(0)
+  explanationQuality Float   @default(0)
+  judgeability       Float   @default(0)
+  /// High only where the full answer is a single published value — Project
+  /// Euler's integers. A problem with a good editorial is *not* high risk:
+  /// the editorial is gated behind the solve.
+  answerLookupRisk   Float   @default(0)
+  /// Weighted sum of the above. Can exceed 1 or fall below 0 by construction.
+  valueScore         Float   @default(0)
+  /// valueScore >= threshold AND answerLookupRisk < 0.5. Stored so selection
+  /// does not recompute it per draw.
+  eligibleForUnlock  Boolean @default(false)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   testCases    TestCase[]
   submissions  Submission[]
   lockSessions LockSession[]
 
   @@index([difficulty, isActive])
+  @@index([tier, isActive])
+  @@index([patternFamily, tier])
   @@map("problems")
 }
 
@@ -256,7 +371,7 @@ model TestCase {
   stdin          String
   expectedStdout String
   /// Sample cases are shown in the UI; the rest stay hidden.
-  isSample Boolean @default(false)
+  isSample       Boolean @default(false)
 
   @@unique([problemId, ordinal])
   @@map("test_cases")
@@ -267,23 +382,23 @@ model TestCase {
 // ---------------------------------------------------------------------------
 
 model UserProgress {
-  id                String     @id @default(uuid()) @db.Uuid
-  userId            String     @unique @db.Uuid
-  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currentDifficulty Difficulty @default(EASY)
+  id                    String     @id @default(uuid()) @db.Uuid
+  userId                String     @unique @db.Uuid
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentDifficulty     Difficulty @default(EASY)
   /// Consecutive *fast* solves at the current tier. Resets on promote/demote/fail.
-  consecutiveFastSolves Int @default(0)
+  consecutiveFastSolves Int        @default(0)
   /// Consecutive failed or abandoned lock sessions at the current tier.
-  consecutiveFailures Int @default(0)
-  totalSolved         Int @default(0)
-  totalFailed         Int @default(0)
+  consecutiveFailures   Int        @default(0)
+  totalSolved           Int        @default(0)
+  totalFailed           Int        @default(0)
   /// Exponential moving average of solve time, seconds.
-  emaSolveSeconds Int @default(600)
+  emaSolveSeconds       Int        @default(600)
   /// EMA of first-submission acceptance as fixed point, 0..1000.
-  firstTryRate    Int @default(500)
-  lastPromotedAt DateTime?
-  lastDemotedAt  DateTime?
-  updatedAt      DateTime  @updatedAt
+  firstTryRate          Int        @default(500)
+  lastPromotedAt        DateTime?
+  lastDemotedAt         DateTime?
+  updatedAt             DateTime   @updatedAt
 
   @@map("user_progress")
 }
@@ -301,21 +416,21 @@ model LockSession {
   problemId String?  @db.Uuid
   problem   Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
 
-  state      LockState  @default(ARMED)
-  difficulty Difficulty @default(EASY)
-  armedAt    DateTime   @default(now())
+  state           LockState  @default(ARMED)
+  difficulty      Difficulty @default(EASY)
+  armedAt         DateTime   @default(now())
   /// Server-computed moment the overlay must appear. Clients trust this over
   /// their own clock, so suspending the device does not buy extra time.
-  fireAt     DateTime
-  lockedAt   DateTime?
-  resolvedAt DateTime?
+  fireAt          DateTime
+  lockedAt        DateTime?
+  resolvedAt      DateTime?
   /// Set while the user has paused an ARMED countdown. Resuming shifts fireAt
   /// forward by the time spent paused, so the remaining interval is preserved
   /// exactly. Never set on a LOCKED session: a live lock cannot be paused.
-  pausedAt   DateTime?
-  attempts   Int        @default(0)
+  pausedAt        DateTime?
+  attempts        Int        @default(0)
   /// Set when state = BYPASSED: "skip_allowance" | "admin" | "emergency".
-  escapeReason String?
+  escapeReason    String?
   /// SHA-256 of the issued unlock token. The raw JWT is returned exactly once.
   unlockTokenHash String?
 
@@ -335,24 +450,24 @@ model Submission {
   lockSessionId String?      @db.Uuid
   lockSession   LockSession? @relation(fields: [lockSessionId], references: [id], onDelete: SetNull)
 
-  language    Language
-  sourceCode  String
-  status      SubmissionStatus @default(QUEUED)
-  passedCount Int              @default(0)
-  totalCount  Int              @default(0)
+  language       Language
+  sourceCode     String
+  status         SubmissionStatus @default(QUEUED)
+  passedCount    Int              @default(0)
+  totalCount     Int              @default(0)
   /// Best-of-N worst-case runtime across the test cases, in ms.
-  runtimeMs   Int?
-  memoryKb    Int?
+  runtimeMs      Int?
+  memoryKb       Int?
   /// The gate this submission had to beat. Stored so history stays explicable
   /// after the gate ratchets down for everyone else.
-  gateMs      Int?
+  gateMs         Int?
   /// Compiler or stderr output, truncated before storage.
-  message     String?
+  message        String?
   /// Judge0 tokens, one per test case, for audit and re-polling.
-  judgeTokens String[] @default([])
+  judgeTokens    String[]         @default([])
   /// Seconds from lock start to this submission. Feeds the difficulty engine.
   elapsedSeconds Int?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime         @default(now())
 
   syncs SyncRecord[]
 
@@ -389,25 +504,25 @@ model Integration {
   provider IntegrationProvider
 
   /// The provider-side identity: GitHub login, or LeetCode username.
-  externalUsername String
+  externalUsername  String
   /// AES-256-GCM ciphertext of the OAuth access token. Null for LEETCODE,
   /// which needs no credential. Never leaves the server.
   accessTokenCipher String?
   /// OAuth scopes actually granted, so the UI can explain what will happen.
-  scopes   String[] @default([])
+  scopes            String[] @default([])
 
   /// GITHUB only: "owner/name" of the repo that receives solutions.
   repoFullName String?
   /// GITHUB only: branch to commit to.
   repoBranch   String  @default("main")
 
-  enabled     Boolean    @default(true)
-  lastSyncAt  DateTime?
-  lastError   String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  enabled    Boolean   @default(true)
+  lastSyncAt DateTime?
+  lastError  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  syncs SyncRecord[]
+  syncs       SyncRecord[]
   /// Cached provider stats (LeetCode solved counts, GitHub streak) as returned
   /// by the last successful fetch. Avoids hammering unofficial endpoints.
   cachedStats Json?
@@ -425,14 +540,14 @@ model SyncRecord {
   submissionId  String      @db.Uuid
   submission    Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
-  status    SyncStatus @default(PENDING)
+  status      SyncStatus @default(PENDING)
   /// Commit SHA on success; provider error message on failure.
-  detail    String?
+  detail      String?
   /// Web URL of the created commit, for the "view on GitHub" link.
   externalUrl String?
-  attempts  Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  attempts    Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@unique([integrationId, submissionId])
   @@index([status])
@@ -477,16 +592,16 @@ model UnlockAudit {
   outcome UnlockOutcome
 
   /// Populated for SOLVED. The submission that cleared the gate.
-  submissionId String? @db.Uuid
+  submissionId  String? @db.Uuid
   /// Measured runtime of that submission, in ms.
-  runtimeMs    Int?
+  runtimeMs     Int?
   /// The gate it had to beat. Stored so the verdict stays explicable after the
   /// gate ratchets for everyone else.
-  gateMs       Int?
+  gateMs        Int?
   /// Seconds from the overlay appearing to this outcome.
   secondsLocked Int?
   /// "skip_allowance", "kill_switch", "user_gave_up", "stale_sweep".
-  reason       String?
+  reason        String?
 
   createdAt DateTime @default(now())
 
