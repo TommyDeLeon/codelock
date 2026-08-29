@@ -270,7 +270,13 @@ model Problem {
   /// users beat the reference. Same shape as referenceRuntimeMs.
   bestRuntimeMs       Json       @default("{}")
   cpuTimeLimit        Float      @default(2.0)
-  memoryLimitKb       Int        @default(128000)
+  /// The sandbox applies this as the container's `--memory`, and the
+  /// **compiler runs inside it**. That makes this a build budget, not just a
+  /// runtime one: at the old 125 MB default, `g++ -O2` on <bits/stdc++.h> and
+  /// `go run` were both killed outright, so even a two-line "add two integers"
+  /// program failed to compile and C++ and Go users could not solve anything.
+  /// Measured on this judge: 256 MB still fails, 500 MB passes.
+  memoryLimitKb       Int        @default(512000)
   /// Rolling mean of accepted solve times; the promotion rule compares against it.
   avgSolveSeconds     Int        @default(600)
   solveCount          Int        @default(0)
