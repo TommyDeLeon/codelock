@@ -46,6 +46,27 @@ export function signOut(): void {
   void window.codelock?.clearSession();
 }
 
+/**
+ * Re-hand the stored session to the shell.
+ *
+ * `store()` below shares the session at the moment of signing in, and that was
+ * the only time it ever happened — but this origin's localStorage outlives the
+ * process, so the next launch renders a signed-in dashboard without logging in
+ * again, and the shell is left holding nothing. The two stores then disagree
+ * silently, and the failure surfaces somewhere much worse: the lock screen
+ * borrows its session from the shell, so it gets null and shows "Missing
+ * bearer token" behind an overlay the user cannot dismiss.
+ *
+ * Called once at startup. Cheap, idempotent, and it makes the shell's copy a
+ * consequence of this one rather than something that had to be kept in step.
+ */
+export function shareSessionWithShell(): void {
+  const access = localStorage.getItem(ACCESS_KEY);
+  const refresh = localStorage.getItem(REFRESH_KEY);
+  if (!access || !refresh) return;
+  void window.codelock?.setSession({ accessToken: access, refreshToken: refresh });
+}
+
 function store(access: string, refresh: string): void {
   localStorage.setItem(ACCESS_KEY, access);
   localStorage.setItem(REFRESH_KEY, refresh);

@@ -144,6 +144,8 @@ export interface CommitInput {
   runtimeMs: number | null;
   gateMs: number | null;
   leetcodeSlug: string | null;
+  /** Rendered Problem/Solution/Results write-up, committed alongside the code. */
+  caseStudy?: string;
 }
 
 /**
@@ -188,7 +190,53 @@ export async function commitSolution(
     logger.warn({ status: result.status, repo: input.repoFullName }, 'github commit failed');
     throw ApiError.upstream(result.message);
   }
+
+  // The write-up is a separate commit on purpose. It is the part a reader
+  // actually reads, but the solution is the part that must land — so a failure
+  // to push prose never costs the user the code they earned.
+  if (input.caseStudy) {
+    await commitFile(
+      token,
+      input,
+      `case-studies/${input.problemSlug}.md`,
+      input.caseStudy,
+      `Write up ${input.problemTitle}`,
+    ).catch((err) => {
+      logger.warn({ err, repo: input.repoFullName }, 'case study commit failed; solution is safe');
+    });
+  }
+
   return { sha: result.data.commit.sha, url: result.data.commit.html_url };
+}
+
+/** Create or update one file, idempotent by path. */
+async function commitFile(
+  token: string,
+  input: CommitInput,
+  path: string,
+  body: string,
+  message: string,
+): Promise<void> {
+  const existing = await gh<{ sha: string }>(
+    token,
+    `/repos/${input.repoFullName}/contents/${encodeURIComponent(path)}?ref=${input.branch}`,
+  );
+  const sha = existing.ok ? existing.data.sha : undefined;
+
+  const result = await gh(
+    token,
+    `/repos/${input.repoFullName}/contents/${encodeURIComponent(path)}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({
+        message,
+        content: Buffer.from(body, 'utf8').toString('base64'),
+        branch: input.branch,
+        ...(sha ? { sha } : {}),
+      }),
+    },
+  );
+  if (!result.ok) throw ApiError.upstream(result.message);
 }
 
 /** Header comment carrying the metadata the repo would otherwise lose. */

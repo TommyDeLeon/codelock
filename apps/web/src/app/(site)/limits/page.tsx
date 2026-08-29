@@ -56,10 +56,12 @@ const DESKTOP: Row[] = [
     note: 'Swallowed while locked, and the close event is cancelled regardless.',
   },
   {
-    // Matrix D5-D7.
+    // Matrix D5-D7. Minimising was driven programmatically and held; the
+    // keystrokes themselves were not pressed by hand, which is why this is
+    // still qualified below rather than claimed outright.
     attempt: 'Minimise, Alt+Tab, Show desktop',
     verdict: 'untested',
-    note: 'Kiosk mode keeps the window in front; losing focus pulls it straight back.',
+    note: 'Minimising was tested and did not stick — the window came straight back and the lock held. Alt+Tab and the Windows key were not tried by hand. Kiosk mode keeps the window in front; losing focus pulls it straight back.',
   },
   {
     // Matrix D8.
@@ -80,16 +82,25 @@ const DESKTOP: Row[] = [
     note: 'Every barrier is re-asserted on resume rather than merely refocused.',
   },
   {
-    // Matrix D15.
+    // Matrix D15. This said the app relaunches itself. It does not: the
+    // relaunch is in `will-quit`, which a forced kill never runs. Tested and
+    // corrected 30 Aug 2026 — all four processes went to zero and stayed there.
     attempt: 'Kill the process from Task Manager',
-    verdict: 'untested',
-    note: 'Lock state is on disk and the app relaunches itself while a lock is live.',
+    verdict: 'defeated',
+    note: 'The overlay goes with it. Lock state stays on disk, so opening CodeLock again restores the lock — but that is your choice to make, and until then the machine is yours.',
+  },
+  {
+    // Matrix D15b. The other half of the row above: killing it is temporary on
+    // a machine where CodeLock starts at login.
+    attempt: 'Reopen CodeLock after killing it',
+    verdict: 'holds',
+    note: 'Tested. The lock came back from disk with no new timer, so killing the process buys a desktop only until the next launch.',
   },
   {
     // Matrix D14 and D22.
     attempt: 'Open DevTools and call the unlock channel',
-    verdict: 'untested',
-    note: 'The token is verified in the main process against a key the page cannot read.',
+    verdict: 'holds',
+    note: 'Tested against a live lock: a forged token and an empty one were both rejected as malformed and the overlay stayed. The token is verified in the main process against a key the page cannot read.',
   },
   {
     // Matrix D16.
@@ -98,13 +109,15 @@ const DESKTOP: Row[] = [
     note: 'By design. A deliberate two-step act with a file manager is above the bar this sets.',
   },
   {
-    // Matrix D17. Recorded as untested there, but the gap is known and real:
-    // nothing registers CodeLock at login, so a reboot ends the lock in
-    // practice. Reported as defeated rather than untested, because erring
-    // toward admitting an escape is the only safe direction for this page.
+    // Matrix D17. This was reported as defeated because nothing registered
+    // CodeLock at login. That gap is now closed: the packaged app writes a
+    // login item on first run, and a live lock is restored from disk when it
+    // starts. It is deliberately NOT promoted to 'holds' — a full reboot has
+    // not been sat through and verified end to end, and on this page a barrier
+    // nobody has watched work is never described as one that works.
     attempt: 'Reboot the machine',
-    verdict: 'defeated',
-    note: 'The lock file survives, but nothing launches CodeLock at login yet. A known gap.',
+    verdict: 'untested',
+    note: 'The lock file survives, and the installed app now registers itself to start at login and re-engage a live lock. Whether that survives a real reboot has not been verified.',
   },
   {
     // Matrix D18 and D19.

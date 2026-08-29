@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { commitSolution } from './github.js';
+import { renderCaseStudy } from './caseStudy.js';
 import { fetchLeetCodeStats } from './leetcode.js';
 
 /** Give up after this many failed pushes; the token or repo is likely gone. */
@@ -57,6 +58,27 @@ async function runMirror(userId: string, submissionId: string): Promise<void> {
       runtimeMs: submission.runtimeMs,
       gateMs: submission.gateMs,
       leetcodeSlug: submission.problem.leetcodeSlug,
+      // Rendered here rather than inside the mirror, so that changing how a
+      // solve is written up never touches the code that pushes to someone's
+      // GitHub account.
+      caseStudy: renderCaseStudy({
+        problemTitle: submission.problem.title,
+        problemSlug: submission.problem.slug,
+        difficulty: submission.problem.difficulty,
+        patternTags: submission.problem.tags,
+        language: submission.language,
+        sourceCode: submission.sourceCode,
+        runtimeMs: submission.runtimeMs,
+        gateMs: submission.gateMs,
+        bestKnownMs: bestKnownFor(submission.problem.bestRuntimeMs, submission.language),
+        attempts: record.attempts + 1,
+        // Not carried on the submission; the write-up omits the line rather
+        // than guessing at how long the screen was covered.
+        secondsLocked: null,
+        avgSolveSeconds: submission.problem.avgSolveSeconds,
+        solvedAt: submission.createdAt,
+        leetcodeSlug: submission.problem.leetcodeSlug,
+      }),
     });
 
     await prisma.$transaction([
@@ -139,4 +161,17 @@ export async function getLeetCodeStats(
       'Could not reach LeetCode just now. Your account is still connected — try again shortly.',
     );
   }
+}
+
+/**
+ * The best runtime recorded for one language.
+ *
+ * bestRuntimeMs is a per-language JSON map that starts empty, so every lookup
+ * here can legitimately miss — and a missing best is reported as unknown
+ * rather than as zero, which would read as an impossible record.
+ */
+function bestKnownFor(best: unknown, language: string): number | null {
+  if (!best || typeof best !== 'object') return null;
+  const value = (best as Record<string, unknown>)[language];
+  return typeof value === 'number' && value > 0 ? value : null;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useLockSession } from './use-lock-session';
+import { useAuth } from '@/lib/auth-store';
 
 /**
  * Regression guard for PRE-LAUNCH-CHECKLIST 3.5.
@@ -62,6 +63,10 @@ describe('useLockSession when the API is unreachable', () => {
   beforeEach(() => {
     window.localStorage.setItem('codelock.access', 'test-access-token');
     window.localStorage.setItem('codelock.refresh', 'test-refresh-token');
+    // The hook waits for auth to settle before it will ask the API, so a bare
+    // render never fires a request. Providers normally settles it via
+    // hydrate(); here the tokens above are the session, so say so directly.
+    useAuth.setState({ status: 'authenticated' });
     vi.stubGlobal('fetch', vi.fn(async () => serviceUnavailable()));
   });
 

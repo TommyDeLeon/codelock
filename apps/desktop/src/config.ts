@@ -32,6 +32,20 @@ export interface DesktopConfig {
    */
   unlockPublicKey: string;
   unlockSecret: string;
+  /**
+   * A command to start the backend when it is not already answering.
+   *
+   * Empty by default, and deliberately not something anyone inherits: running
+   * an arbitrary command at startup is not a thing an installed app should do
+   * merely because it can. It exists for the self-hosted case this product is
+   * built around — API, web app and judge all on the same machine as the shell
+   * — where opening CodeLock should be enough to bring them up rather than
+   * requiring the user to remember a terminal first.
+   *
+   * Example (Windows):
+   *   "powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\\repo\\scripts\\serve-local.ps1"
+   */
+  backendCommand: string;
 }
 
 /**
@@ -45,6 +59,7 @@ function readBuildDefaults(): DesktopConfig {
     apiUrl: 'http://localhost:4000',
     unlockPublicKey: '',
     unlockSecret: '',
+    backendCommand: '',
   };
   try {
     const here = path.dirname(fileURLToPath(import.meta.url));
@@ -88,6 +103,10 @@ export function loadConfig(): DesktopConfig {
       BUILD_DEFAULTS.unlockPublicKey,
     unlockSecret:
       process.env.CODELOCK_UNLOCK_SECRET || fromFile.unlockSecret || BUILD_DEFAULTS.unlockSecret,
+    // No environment override: a command run at startup should be something
+    // the user wrote into their own config file, not something a stray
+    // variable in the launching shell can inject.
+    backendCommand: fromFile.backendCommand ?? BUILD_DEFAULTS.backendCommand ?? '',
   };
 
   if (!existsSync(file)) writeConfig(cached);

@@ -212,6 +212,32 @@ skips any port already listening, so it is safe to run repeatedly.
 Logs land in `%LOCALAPPDATA%\CodeLock\logs\` as `api.log`, `web.log`,
 `judge.log`, with `.err.log` siblings.
 
+### Letting the app start the backend
+
+The desktop app can bring the services up itself, so opening CodeLock is enough
+and no terminal is involved. Add a `backendCommand` to
+`%APPDATA%\CodeLock\config.json`:
+
+```json
+{
+  "webUrl": "http://localhost:3000",
+  "apiUrl": "http://localhost:4000",
+  "backendCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\\Cowork\\codelock\\scripts\\serve-local.ps1"
+}
+```
+
+It runs only when `GET {apiUrl}/healthz` does not answer, so a second window —
+or a machine where the Scheduled Task below already handles this — starts
+nothing. It is empty by default and has no environment-variable override: a
+command executed at startup should be something written deliberately into a
+config file, not something a stray variable in the launching shell can inject.
+The process is detached, so closing the window to the tray does not take the
+backend down with it.
+
+This does not replace the Scheduled Task. The app covers "I opened CodeLock";
+the task covers "the machine has been on since login and the app is closed",
+which is exactly when a timer can expire with nothing watching.
+
 ### At logon, and every five minutes
 
 The desktop app is a 24/7 background process, so the backend has to be one too.

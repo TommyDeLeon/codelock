@@ -13,6 +13,7 @@ import {
 } from 'electron';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { verifyUnlockToken } from './unlock-verifier.js';
 import { canVerifyUnlocks, configPath, loadConfig } from './config.js';
@@ -20,6 +21,8 @@ import { fileLockStore, isLive, newLock, type LockStateStore } from './lock-stat
 import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
+import { engageOnServer } from './server-lock.js';
+import { diagnose, ensureBackend, isBackendUp, readBackendStatus } from './backend.js';
 import {
   clearSession as clearStoredSession,
   readSession,
@@ -163,16 +166,100 @@ function refuseToLock(): boolean {
   return true;
 }
 
+/**
+ * Say something useful if the backend never arrives.
+ *
+ * Docker takes its time, and a dialog that fires the instant a port is closed
+ * would accuse it of being broken while it is merely starting. So this waits,
+ * polling, and only speaks if the wait was in vain — and then it says which of
+ * the several possible causes it actually is, using the note the launcher
+ * leaves behind. "Install Docker Desktop" and "wait, it is starting" are not
+ * things the user should have to tell apart themselves.
+ */
+async function reportBackendIfStillDown(): Promise<void> {
+  const deadline = Date.now() + 3 * 60_000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    if (await isBackendUp(API_URL)) return;
+  }
+
+  // Not userData: that is Roaming, and the launcher writes its logs to Local
+  // alongside the service output. Reading the wrong one produced a null status
+  // and therefore the generic message, which is exactly the failure this
+  // function exists to avoid.
+  const logsDir = process.env.LOCALAPPDATA
+    ? path.join(process.env.LOCALAPPDATA, 'CodeLock', 'logs')
+    : path.join(app.getPath('userData'), 'logs');
+
+  const status = readBackendStatus(path.join(logsDir, 'backend-status.json'), (p) =>
+    readFileSync(p, 'utf8'),
+  );
+  const { title, detail, installDocker } = diagnose(status);
+
+  showWindow();
+  const { response } = await dialog.showMessageBox({
+    type: installDocker ? 'warning' : 'info',
+    title,
+    message: title,
+    detail,
+    buttons: installDocker ? ['Get Docker Desktop', 'Not now'] : ['OK'],
+    defaultId: 0,
+    cancelId: installDocker ? 1 : 0,
+  });
+
+  if (installDocker && response === 0) {
+    void shell.openExternal('https://www.docker.com/products/docker-desktop/');
+  }
+}
+
+/**
+ * Take the screen, but only once the server agrees the lock is on.
+ *
+ * The ordering here is the whole point. Engaging locally first produced a
+ * covered screen with the session still ARMED on the server, and a submission
+ * against an ARMED session is refused — so the lock could not be solved out of
+ * at all. Asking first means that by the time the overlay appears, a correct
+ * answer can always mint an unlock token.
+ *
+ * On failure the screen is NOT taken. A lock nobody can open is worse than a
+ * lock that did not fire: the timer stays armed and this is tried again.
+ */
+async function takeScreenFor(sessionId: string): Promise<void> {
+  if (locked) return;
+  if (refuseToLock()) return;
+
+  const engaged = await engageOnServer(sessionId, {
+    apiUrl: API_URL,
+    readSession,
+    writeSession,
+  });
+
+  if (!engaged.ok) {
+    console.error(
+      `CodeLock: not taking the screen — the server did not confirm the lock (${engaged.reason}).`,
+      engaged.detail ?? '',
+    );
+    // 'refused' means the server deliberately said no: cancelled, paused, or
+    // not actually due. Retrying that would spin against a settled answer.
+    // Anything else is transient, so keep trying rather than silently dropping
+    // a lock the user asked for.
+    if (engaged.reason !== 'refused' && engaged.reason !== 'no-session') {
+      setTimeout(() => void takeScreenFor(sessionId), 15_000);
+    }
+    return;
+  }
+
+  showWindow();
+  engageLock(sessionId);
+}
+
 function scheduleLock(sessionId: string, fireAt: number): void {
   clearScheduledLock();
   // Already past: fire on the next tick rather than never.
   const delay = Math.max(0, fireAt - Date.now());
   fireTimer = setTimeout(() => {
     fireTimer = null;
-    if (locked) return;
-    if (refuseToLock()) return;
-    showWindow();
-    engageLock(sessionId);
+    void takeScreenFor(sessionId);
   }, delay);
 }
 
@@ -484,10 +571,27 @@ function registerEscapeSuppression(): void {
  * The renderer asks to lock. It is trusted for this direction only: locking
  * more than intended is annoying, never a security hole.
  */
-ipcMain.handle('codelock:lock', (_event, sessionId: unknown) => {
+ipcMain.handle('codelock:lock', async (_event, sessionId: unknown) => {
+  const id = typeof sessionId === 'string' ? sessionId : null;
+
   // Re-asserting an existing lock is always allowed; only a new one is refused.
-  if (!locked && refuseToLock()) return { locked: false, canUnlock: false };
-  engageLock(typeof sessionId === 'string' ? sessionId : null);
+  if (locked) {
+    engageLock(id);
+    return { locked, canUnlock };
+  }
+
+  // This is the path the dashboard takes when its countdown reaches zero, and
+  // it used to engage locally without telling the server — which is how the
+  // screen ended up covered over a session the API still called ARMED, with no
+  // unlock token obtainable. It goes through the same confirmation as the
+  // main-process deadline now.
+  if (id) {
+    await takeScreenFor(id);
+    return { locked, canUnlock };
+  }
+
+  if (refuseToLock()) return { locked: false, canUnlock: false };
+  engageLock(null);
   return { locked, canUnlock };
 });
 
@@ -601,6 +705,22 @@ void app.whenReady().then(() => {
   WEB_URL = config.webUrl;
   API_URL = config.apiUrl;
   serveRenderer();
+
+  // Start the backend if the user configured one and it is not already up.
+  // Deliberately not awaited: the services take seconds to bind, and holding
+  // the window closed behind them would make every launch feel broken. The
+  // renderer already polls and shows an outage banner until they answer.
+  void ensureBackend({ apiUrl: API_URL, command: config.backendCommand })
+    .then(async (outcome) => {
+      if (outcome === 'already-running' || outcome === 'not-configured') return;
+      if (outcome === 'failed') {
+        console.error('CodeLock: backendCommand could not be launched. See', configPath());
+      } else {
+        console.log('CodeLock: starting the backend.');
+      }
+      await reportBackendIfStillDown();
+    })
+    .catch((err) => console.error('CodeLock: backend startup failed.', err));
   lockStore = fileLockStore(path.join(app.getPath('userData'), 'lock-state.json'));
 
   // A build with no key can never release the lock, which would trap the user
@@ -656,7 +776,11 @@ void app.whenReady().then(() => {
   // or unlocks properly through the normal verified path.
   const persisted = lockStore.read();
   if (isLive(persisted)) {
-    mainWindow.once('ready-to-show', () => engageLock(persisted!.sessionId));
+    // Through takeScreenFor, not engageLock: a restored lock is the case where
+    // no client has *ever* told the server the timer fired, so restoring the
+    // overlay without confirming would rebuild exactly the state nobody can
+    // solve their way out of.
+    mainWindow.once('ready-to-show', () => void takeScreenFor(persisted!.sessionId));
   } else if (persisted) {
     // Stale debris from a much older run. Do not honour it, do not keep it.
     lockStore.clear();
