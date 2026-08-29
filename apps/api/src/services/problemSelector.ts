@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
+import { bucketedPick } from './valueSelection.js';
 
 /** Do not serve a problem the user has already seen within this window. */
 const REPEAT_COOLDOWN_DAYS = 21;
@@ -54,7 +55,7 @@ export async function pickProblem(
     if (chosen) return chosen;
   }
 
-  return weightedPick(candidates);
+  return bucketedPick(candidates);
 }
 
 /**
@@ -68,23 +69,13 @@ export async function pickProblem(
  *
  * So: weight, never dictate. Every eligible problem keeps a real chance.
  *
- * The +1 floor is what guarantees that. A problem with no popularity data yet —
- * which is every newly authored one — would otherwise have weight zero and be
- * unreachable, so the corpus could never grow past whatever was ranked first.
- * The square root flattens the tail: raw like counts span orders of magnitude,
- * and without it one famous problem would swamp its whole tier.
+ * The weighting itself now lives in valueSelection.ts, which buckets by
+ * valueScore (8/5/3/1 by rank) and keeps popularity as a bounded tiebreak.
+ * This wrapper stays because it is the name the rest of the codebase and its
+ * tests already know.
  */
 export function weightedPick(candidates: Problem[], random: () => number = Math.random): Problem {
-  const weights = candidates.map((c) => 1 + Math.sqrt(Math.max(0, c.popularity)));
-  const total = weights.reduce((sum, w) => sum + w, 0);
-
-  let roll = random() * total;
-  for (let i = 0; i < candidates.length; i++) {
-    roll -= weights[i]!;
-    if (roll <= 0) return candidates[i]!;
-  }
-  // Floating-point drift only; the loop above covers the range in practice.
-  return candidates[candidates.length - 1]!;
+  return bucketedPick(candidates, random);
 }
 
 async function rankWithLlm(candidates: Problem[], seenCount: number): Promise<Problem | null> {

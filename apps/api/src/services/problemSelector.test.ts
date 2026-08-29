@@ -63,12 +63,21 @@ describe('weightedPick', () => {
     ]);
 
     // Weighting by popularity directly would give the famous problem about 87%
-    // of draws (40000 / 46000). The square root pulls that to roughly 60%, so
-    // the assertion is against that baseline rather than against a coin flip —
-    // a 20x more-liked problem *should* still come up more often.
+    // of draws (40000 / 46000).
+    //
+    // Since the value ranker landed, popularity is no longer the primary
+    // signal — it is a tiebreak *within* a rank bucket, capped at 2x, so an
+    // 8-vs-1 bucket spread cannot be swamped by like counts that span orders of
+    // magnitude. These fixtures carry no valueScore, so they all sit in one
+    // bucket and popularity is the only thing separating them: the famous
+    // problem lands near a quarter of draws rather than the old ~60%.
+    //
+    // It still comes up more often than an unloved one, which is the part worth
+    // keeping.
     const famousShare = counts.get('famous')! / 1000;
-    expect(famousShare).toBeLessThan(0.7);
-    expect(famousShare).toBeGreaterThan(0.4);
+    expect(famousShare).toBeLessThan(0.45);
+    expect(famousShare).toBeGreaterThan(0.2);
+    expect(counts.get('famous')!).toBeGreaterThan(counts.get('good-a')!);
 
     // And none of the others gets squeezed out of the rotation.
     for (const slug of ['good-a', 'good-b', 'good-c']) {
