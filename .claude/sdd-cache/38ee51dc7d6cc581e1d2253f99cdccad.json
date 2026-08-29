@@ -1,0 +1,8 @@
+{
+  "url": "https://raw.githubusercontent.com/hendrycks/apps/main/README.md",
+  "prompt": "Quote what the README says about the dataset: which websites problems were scraped from, how many problems, whether test cases are included, and any licensing or usage statement.",
+  "etag": "\"a6d3274e35d4d5dd27da90bec0575f6c0e84f09e561bc8404e0f2581e7cf6616\"",
+  "last_modified": "",
+  "content": "I've reviewed the provided web page content, but it doesn't contain the specific information you're asking for. The page is a repository README that includes:\r\n\r\n- A link to download the APPS dataset (~1.3GB)\r\n- References to training and evaluation code locations\r\n- A citation\r\n\r\nHowever, the actual README doesn't specify which websites the problems were scraped from, the exact number of problems included, whether test cases are present, or any licensing/usage statements. That detailed information would be found in the full documentation referenced (likely in `train/README.md` and `eval/README.md`), which aren't included in the excerpt you provided.\r\n\r\nTo get those specifics, you'd need to access the complete README files or the dataset documentation directly from the repository.",
+  "fetched_at": 1788035347
+}
