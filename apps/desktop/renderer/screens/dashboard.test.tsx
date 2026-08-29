@@ -65,6 +65,7 @@ const TIMER: TimerConfig = {
   activeFromMinute: 0,
   activeToMinute: 1440,
   dailySkipAllowance: 1,
+  autoRearm: false,
 };
 
 function session(overrides: Partial<LockSessionView> = {}): LockSessionView {

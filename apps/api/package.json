@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "calibrate": "tsx --env-file-if-exists=.env scripts/calibrate.ts",
-    "dev:expire": "tsx --env-file-if-exists=.env scripts/expire-timer.ts"
+    "dev:expire": "tsx --env-file-if-exists=.env scripts/expire-timer.ts",
+    "popularity": "tsx --env-file-if-exists=.env scripts/fetch-popularity.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

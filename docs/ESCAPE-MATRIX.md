@@ -26,7 +26,7 @@ hardware available at the time of writing.
 | D4 | Click the window close button | `UNTESTED` | `setClosable(false)`, and `close` is cancelled. |
 | D5 | Minimise | `UNTESTED` | `setMinimizable(false)`; `minimize` is not cancellable, so it is undone in the handler. |
 | D6 | Alt+Tab to another window | `UNTESTED` | Cannot be intercepted from userland. Kiosk mode plus `blur` → `focus()` pulls the lock back in front. |
-| D7 | Windows key / Show desktop | `UNTESTED` | Same as D6. The taskbar is suppressed by kiosk mode. |
+| D7 | Windows key / Show desktop | `HOLDS` | **Partially tested 30 Aug 2026.** `ShowWindow(SW_MINIMIZE)` — the programmatic form of Show desktop — was called on the lock window: it did not stay minimised (`IsIconic` false 1.5s later) and the shell still reported `locked: true`. The `minimize` handler restores and refocuses. The keystrokes themselves were not pressed by hand, so this covers the effect and not the input path. |
 | D8 | Switch virtual desktop | `UNTESTED` | `setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })`. |
 | D9 | Second monitor | `UNTESTED` | Opaque cover windows at `screen-saver` level on every non-lock display. |
 | D10 | Plug in a monitor mid-lock | `UNTESTED` | `display-added` re-syncs covers. |
@@ -34,27 +34,34 @@ hardware available at the time of writing.
 | D12 | Sleep and wake | `UNTESTED` | `powerMonitor.resume` re-asserts kiosk, always-on-top level, and covers. |
 | D13 | Lock the OS session and return | `UNTESTED` | `powerMonitor.unlock-screen`, same handler. |
 | D14 | DevTools (F12, Ctrl+Shift+I) | `UNTESTED` | Swallowed shortcuts, and `devTools: false` in packaged builds. |
-| D15 | Kill the process (Task Manager → End Task) | `UNTESTED` | Lock state is on disk. `will-quit` calls `app.relaunch()` while a lock is live and no verified release happened. |
+| D15 | Kill the process (Task Manager → End Task) | **`DEFEATED`** | **Tested 30 Aug 2026.** `Stop-Process -Force` took all four processes to zero and nothing came back: the relaunch lives in `will-quit`, which a hard kill never runs. The overlay is gone until the app is started again. `lock-state.json` does survive, and a later launch restores the lock (see D15b) — but "later" is the user's choice. |
+| D15b | Relaunch after killing it while locked | `HOLDS` | **Tested 30 Aug 2026.** Starting the app again after D15 restored the lock from `lock-state.json`: the shell reported `locked: true` without any new timer. This is what limits D15 to a temporary escape on a machine where the login item is registered. |
 | D16 | Kill the process, then delete `%APPDATA%/CodeLock/lock-state.json` | **`DEFEATED`** | By design. A deliberate two-step act with a file manager is above the bar a commitment device is trying to set. |
-| D17 | Reboot the machine | `UNTESTED` | The lock file survives, but nothing launches CodeLock at login yet. **This is a real gap** — see below. |
+| D17 | Reboot the machine | `UNTESTED` | The lock file survives, and a packaged build now registers a login item on first run and re-engages a live lock on start. Not yet watched through a real reboot — see below. |
 | D18 | Ctrl+Alt+Del → Sign out / Task Manager | **`DEFEATED`** | The Secure Attention Sequence cannot be intercepted by any userland process on Windows. Stated in the product copy. |
 | D19 | Hard power-off | **`DEFEATED`** | Nothing in userland prevents this. Combined with D17 it is currently a full escape. |
 | D20 | Boot another OS / safe mode | **`DEFEATED`** | Out of scope for any userland app. |
 | D21 | Hold Escape for 10s | **`DEFEATED` (intended)** | The documented kill switch. Resolves the session as `ABANDONED`, which counts as a failure for adaptive difficulty. |
-| D22 | Patch the renderer / call `codelock.unlock('')` from a console | `UNTESTED` | The token is verified in the main process against a key the renderer cannot read. A forged or absent token fails signature verification and the overlay stays. |
+| D22 | Patch the renderer / call `codelock.unlock('')` from a console | `HOLDS` | **Tested 30 Aug 2026.** Called over the debug protocol against a live lock: `unlock('not.a.token')` and `unlock('')` both returned `{ok: false, reason: 'malformed'}` and the overlay stayed. The token is verified in the main process against a key the renderer cannot read. |
 
 ### Known gap: D17 + D19
 
-Rebooting currently escapes, because nothing registers CodeLock as a login item
-and the relaunch in `will-quit` does not survive a power cut. The lock file is
-still on disk and will be honoured the next time the app starts by hand, but
-"the next time the app starts by hand" is the user's choice.
+The login item this section used to call for now exists. `setAutoStart(true)`
+runs on `ready` in packaged builds only, registering the app with
+`app.setLoginItemSettings` and `--background`, and a lock still live in
+`lock-state.json` is re-engaged once the window is ready. The registration has
+been confirmed on Windows: the `Run` key points at the installed executable.
 
-Closing this needs a login-item registration (`app.setLoginItemSettings` on
-Windows and macOS, a `.desktop` autostart entry on Linux). It is deliberately
-**not** done yet: an app that silently adds itself to startup and then covers
-the screen on boot is one bad state away from bricking a machine, and the
-relaunch loop in D15 needs hardware testing before it is wired to boot.
+What has **not** happened is anyone sitting through a real reboot and watching
+the overlay come back, so D17 stays `UNTESTED` rather than moving to `HOLDS`.
+The caution that kept this closed still applies to the verdict: an app that
+adds itself to startup and then covers the screen on boot is one bad state away
+from an unusable machine, and this row should only be promoted after a reboot
+has been observed on hardware — including the case where the backend is not yet
+up, since an overlay whose API is unreachable cannot be solved out of.
+
+D19 is unchanged and is still a full escape on its own: nothing in userland
+survives a hard power-off, and the relaunch in `will-quit` does not run.
 
 ---
 

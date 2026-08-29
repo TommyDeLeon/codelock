@@ -116,6 +116,12 @@ export interface TimerConfig {
   activeFromMinute: number;
   activeToMinute: number;
   dailySkipAllowance: number;
+  /**
+   * Start the next countdown as soon as a lock is solved. Only a solved
+   * release re-arms — never the kill switch, or the escape hatch would buy ten
+   * seconds before the next timer. The active-hours window still applies.
+   */
+  autoRearm: boolean;
 }
 
 export interface AuthUser {

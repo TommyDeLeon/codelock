@@ -10,6 +10,7 @@ import {
 import type { LockSessionView, PublicProblem } from '@codelock/shared';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
+import { logger } from '../lib/logger.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
 import { isWithinActiveWindow } from './schedule.js';
@@ -93,17 +94,15 @@ export async function engageLock(params: {
     throw ApiError.conflict('Timer has not expired yet');
   }
 
-  const problem = await pickProblem(params.userId, session.difficulty);
-  const locked = await prisma.lockSession.update({
-    where: { id: session.id },
-    data: { state: LockState.LOCKED, lockedAt: new Date(), problemId: problem.id },
-  });
-  await prisma.problem.update({
-    where: { id: problem.id },
-    data: { attemptCount: { increment: 1 } },
-  });
-
-  return toView(locked, problem);
+  const claimed = await claimDueSession(session.id, session.userId, session.difficulty);
+  if (!claimed) {
+    // Someone else engaged it between the read above and the write: the
+    // background sweep, or a second client. Report their result rather than
+    // assigning a second problem over the top of theirs.
+    const current = await requireOwnedSession(params.userId, params.sessionId);
+    return toView(current, await loadProblem(current.problemId));
+  }
+  return toView(claimed.session, claimed.problem);
 }
 
 /** Called after a submission passes every test case. Issues the unlock proof. */
@@ -142,7 +141,35 @@ export async function releaseLock(params: {
     secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
   });
 
+  await rearmAfterSolve(params.userId);
+
   return { unlockToken, expiresInSeconds: 300 };
+}
+
+/**
+ * Start the next countdown, if the user asked for that.
+ *
+ * Called only from the solved path. A lock ended by the kill switch or left to
+ * be abandoned must not re-arm: holding Escape for ten seconds would then buy
+ * ten seconds of freedom before the next timer, which turns the one documented
+ * way out into a trap.
+ *
+ * Failures are swallowed on purpose. `armSession` refuses outside the active
+ * hours and when the timer is disabled, and both are correct answers here — the
+ * day is over, or the user turned it off. Neither is a reason to fail a release
+ * the user has already earned: the screen is theirs the moment the token is
+ * signed, and nothing after that point may take it back.
+ */
+async function rearmAfterSolve(userId: string): Promise<void> {
+  const config = await prisma.timerConfig.findUnique({ where: { userId } });
+  if (!config?.autoRearm) return;
+
+  try {
+    await armSession({ userId });
+  } catch (err) {
+    // Expected whenever the window has closed; logged rather than raised.
+    logger.info({ err, userId }, 'auto re-arm skipped');
+  }
 }
 
 /** Spend one of the day's skip allowances, if any remain. */
@@ -224,6 +251,81 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
         }
       : null,
   };
+}
+
+/**
+ * Move one due session ARMED -> LOCKED, exactly once.
+ *
+ * The problem is picked before the claim so both land in a single conditional
+ * write: a session is never briefly LOCKED with no problem attached, and two
+ * racers cannot each assign one. The loser's pick is simply discarded — it has
+ * had no effect on anything, since attemptCount is only incremented by the
+ * winner below.
+ *
+ * The `where` repeats every precondition rather than trusting the caller's
+ * earlier read. That read is what makes this a race in the first place.
+ */
+async function claimDueSession(
+  sessionId: string,
+  userId: string,
+  difficulty: Difficulty,
+): Promise<{ session: LockSession; problem: Problem } | null> {
+  const problem = await pickProblem(userId, difficulty);
+  const lockedAt = new Date();
+
+  const claimed = await prisma.lockSession.updateMany({
+    where: {
+      id: sessionId,
+      state: LockState.ARMED,
+      pausedAt: null,
+      fireAt: { lte: lockedAt },
+    },
+    data: { state: LockState.LOCKED, lockedAt, problemId: problem.id },
+  });
+  if (claimed.count !== 1) return null;
+
+  await prisma.problem.update({
+    where: { id: problem.id },
+    data: { attemptCount: { increment: 1 } },
+  });
+
+  const session = await prisma.lockSession.findUniqueOrThrow({ where: { id: sessionId } });
+  return { session, problem };
+}
+
+/**
+ * Engage every timer whose deadline has passed.
+ *
+ * Until this existed the transition depended entirely on a client noticing and
+ * asking. That is fine while the app is open and wrong the rest of the time: a
+ * timer that expired with the desktop app closed stayed ARMED, so when the app
+ * came back it covered the screen over a session the API did not consider
+ * locked — and a submission against an ARMED session is refused, which left no
+ * way to earn the unlock. The deadline is the server's fact, so the server
+ * keeps it.
+ *
+ * Paused timers are skipped: their fireAt is frozen and sails past "now" while
+ * the user is away from the desk, and engaging one would lock someone out on a
+ * timer they had explicitly stopped.
+ */
+export async function engageDueSessions(): Promise<number> {
+  const due = await prisma.lockSession.findMany({
+    where: { state: LockState.ARMED, pausedAt: null, fireAt: { lte: new Date() } },
+    select: { id: true, userId: true, difficulty: true },
+  });
+
+  let engaged = 0;
+  for (const session of due) {
+    // One failure must not strand the rest: a user whose problem pool is empty
+    // should not keep everyone else's timer from firing.
+    try {
+      if (await claimDueSession(session.id, session.userId, session.difficulty)) engaged++;
+    } catch {
+      // Reported by the caller's logger via the count mismatch; nothing here
+      // can usefully recover, and the next sweep tries again.
+    }
+  }
+  return engaged;
 }
 
 /** Background sweep: close out sessions nobody ever resolved. */

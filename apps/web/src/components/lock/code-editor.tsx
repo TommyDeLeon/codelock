@@ -50,12 +50,23 @@ export function CodeEditor({
   onChange,
   onLanguageChange,
   disabled,
+  alwaysDark = false,
 }: {
   language: Language;
   value: string;
   onChange: (next: string) => void;
   onLanguageChange: (next: Language) => void;
   disabled?: boolean;
+  /**
+   * Ignore the theme preference and keep the editor dark.
+   *
+   * The lock screen is dark whatever the site theme says, and Monaco paints its
+   * own surface rather than inheriting the page's — so following
+   * `resolvedTheme` there produced a white editor sitting in the middle of a
+   * dark full-screen takeover. The demo, which does live inside the themed
+   * site, leaves this off.
+   */
+  alwaysDark?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
 
@@ -89,7 +100,7 @@ export function CodeEditor({
           language={MONACO_LANGUAGE_IDS[language]}
           value={value}
           onChange={(next) => onChange(next ?? '')}
-          theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
+          theme={alwaysDark || resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
           options={{
             readOnly: disabled,
             fontSize: 13,

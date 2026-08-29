@@ -160,6 +160,9 @@ export function LockWorkspace({
               onChange={setCode}
               onLanguageChange={setLanguage}
               disabled={submit.isPending}
+              // The lock screen is dark regardless of the site theme, and
+              // Monaco paints its own surface rather than inheriting the page's.
+              alwaysDark
             />
           </div>
           <div className="max-h-[45%] shrink-0 overflow-auto border-t border-border bg-surface">

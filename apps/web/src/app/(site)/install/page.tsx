@@ -44,8 +44,8 @@ const PLATFORMS: Platform[] = [
     format: 'NSIS installer (.exe)',
     status: 'unpublished',
     warning:
-      'Windows shows a blue “Windows protected your PC” panel, because the build is not signed by a certificate authority Microsoft recognises. Click “More info”, then “Run anyway”.',
-    note: 'A self-signed certificate silences this on machines where you install that certificate yourself. Silencing it for everyone needs a certificate issued to a registered business entity, which is the real obstacle for a project this size.',
+      'Windows 10, and Windows 11 with Smart App Control off, show a blue “Windows protected your PC” panel because the build is not signed by a certificate authority Microsoft recognises. Click “More info”, then “Run anyway”.',
+    note: 'On a clean Windows 11 install, Smart App Control is on and there is no “Run anyway”. It blocks the installer before it runs — no panel, no error, no log. The installer window closes and nothing is installed, which looks exactly like an app that will not start. Check Settings → Windows Security → App & browser control. A self-signed certificate does not help here: Smart App Control does not consult certificates you trust locally, so the options are to turn it off (permanent — re-enabling it needs a Windows reinstall) or to run the unpacked build instead of installing.',
   },
   {
     name: 'macOS',
@@ -251,6 +251,12 @@ export default function InstallPage() {
                   Silencing it costs money and, on Windows, a registered company. Until then the
                   warning stays, and the least we can do is tell you it is coming and exactly which
                   buttons to press.
+                </p>
+                <p>
+                  Windows 11 raised that bar again. Smart App Control does not warn — it refuses,
+                  with no dialog to click through, and an installer it blocks still closes as
+                  though it worked. That failure is indistinguishable from a broken app, so it is
+                  written out in full above rather than left for you to diagnose.
                 </p>
               </div>
             </div>

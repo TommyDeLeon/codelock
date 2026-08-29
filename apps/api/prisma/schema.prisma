@@ -173,6 +173,16 @@ model TimerConfig {
   /// timezone. Outside it, arming is refused. from > to wraps past midnight.
   activeFromMinute Int @default(0)
   activeToMinute   Int @default(1440)
+  /// Start the next countdown as soon as a lock is solved.
+  ///
+  /// The point of the product is that the decision to be interrupted is made
+  /// once, in advance, rather than each time — and the moment right after
+  /// earning your screen back is the least honest moment to ask. Only a SOLVED
+  /// release re-arms: the kill switch and an abandoned session deliberately do
+  /// not, or holding Escape would buy ten seconds before the next countdown and
+  /// the documented escape hatch would become a trap. The active-hours window
+  /// still applies, so this stops on its own at the end of the day.
+  autoRearm Boolean @default(false)
   /// How many "skip this one" escapes per day. 0 disables the escape hatch.
   dailySkipAllowance Int @default(1)
   updatedAt DateTime @updatedAt
@@ -212,6 +222,21 @@ model Problem {
   attemptCount    Int  @default(0)
   /// Slug of the equivalent LeetCode problem, when there is one.
   leetcodeSlug    String?
+  /// How much this problem is worth being asked, 0 upward.
+  ///
+  /// Editorial and external, never derived from this instance's own usage:
+  /// solveCount and attemptCount measure what CodeLock happened to serve, so
+  /// ranking by them would just amplify whatever it served first. Populated by
+  /// scripts/fetch-popularity.ts from the public like counts of the equivalent
+  /// problem, and hand-editable for problems with no external counterpart.
+  ///
+  /// Only a ranking signal. Selection stays random and weighted so that a
+  /// low-scoring problem is still reachable — see problemSelector.
+  popularity          Int       @default(0)
+  /// Where the number came from, so a stale or disputed score is traceable
+  /// rather than anonymous. e.g. "leetcode:likes", "manual".
+  popularitySource    String?
+  popularityCheckedAt DateTime?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
