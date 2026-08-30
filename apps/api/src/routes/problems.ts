@@ -5,7 +5,11 @@ import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
 import { idParamSchema } from '../validation/schemas.js';
 import { pickProblem } from '../services/problemSelector.js';
-import { availableTiers, loadProgressSnapshot } from '../services/progression.js';
+import {
+  availableFamiliesForTiers,
+  availableTiers,
+  loadProgressSnapshot,
+} from '../services/progression.js';
 import { toPublicProblem } from '../services/lockSessions.js';
 
 export const problemsRouter = Router();
@@ -29,8 +33,10 @@ problemsRouter.get(
     // would hand a first-week user a "build an LRU cache" problem — the same
     // discouragement the lock path is careful to avoid — and would let them
     // meet a pattern here before the tier that teaches it.
-    const tiers = availableTiers(await loadProgressSnapshot(user.id));
-    const problem = await pickProblem(user.id, progress.currentDifficulty, tiers);
+    const snapshot = await loadProgressSnapshot(user.id);
+    const tiers = availableTiers(snapshot);
+    const families = availableFamiliesForTiers(snapshot, tiers);
+    const problem = await pickProblem(user.id, progress.currentDifficulty, tiers, families);
     res.json({
       problem: await toPublicProblem(problem),
       difficulty: progress.currentDifficulty,

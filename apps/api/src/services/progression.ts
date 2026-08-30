@@ -77,6 +77,50 @@ export const FAMILY_PREREQUISITES: Record<PatternFamily, readonly string[]> = {
   DATA_STRUCTURES: [],
 };
 
+/** Solves in a parent family before its roadmap children open. */
+export const ROADMAP_UNLOCK_SOLVES = 3;
+
+/**
+ * Which families a pattern family assumes you have already practised.
+ *
+ * This is the roadmap DAG, and it is a different axis from
+ * `FAMILY_PREREQUISITES`. That one asks "have you *built* the structure this
+ * family runs on"; this one asks "have you *met* the idea this family is a
+ * variation of". Both must hold, because they fail in different directions: a
+ * user can build a heap without ever having seen a tree traversal, and can
+ * grind array problems without ever having written a hash map.
+ *
+ * Without this, six families have no structural prerequisite at all, so
+ * building a single dynamic array opened nine of eighteen families at once —
+ * two-dimensional dynamic programming among them, which sits six hops below the
+ * root here. That is not a hard problem served early; it is a problem served
+ * before its vocabulary exists.
+ *
+ * `ARRAYS_HASHING` is the root and depends on nothing: it is the way in.
+ */
+export const ROADMAP_PREREQUISITES: Record<PatternFamily, readonly PatternFamily[]> = {
+  ARRAYS_HASHING: [],
+  TWO_POINTERS: [PatternFamily.ARRAYS_HASHING],
+  STACK: [PatternFamily.ARRAYS_HASHING],
+  BINARY_SEARCH: [PatternFamily.TWO_POINTERS],
+  SLIDING_WINDOW: [PatternFamily.TWO_POINTERS],
+  LINKED_LIST: [PatternFamily.TWO_POINTERS],
+  TREES: [PatternFamily.BINARY_SEARCH, PatternFamily.SLIDING_WINDOW, PatternFamily.LINKED_LIST],
+  TRIES: [PatternFamily.TREES],
+  BACKTRACKING: [PatternFamily.TREES],
+  HEAP_PRIORITY_QUEUE: [PatternFamily.TREES],
+  INTERVALS: [PatternFamily.HEAP_PRIORITY_QUEUE],
+  GREEDY: [PatternFamily.HEAP_PRIORITY_QUEUE],
+  GRAPHS: [PatternFamily.BACKTRACKING],
+  DP_1D: [PatternFamily.BACKTRACKING],
+  ADVANCED_GRAPHS: [PatternFamily.GRAPHS, PatternFamily.HEAP_PRIORITY_QUEUE],
+  DP_2D: [PatternFamily.GRAPHS, PatternFamily.DP_1D],
+  BIT_MANIPULATION: [PatternFamily.DP_1D],
+  MATH_GEOMETRY: [PatternFamily.DP_2D, PatternFamily.BIT_MANIPULATION],
+  FOUNDATIONS: [],
+  DATA_STRUCTURES: [],
+};
+
 /** What the gate needs to know about a user. */
 export interface ProgressSnapshot {
   /** Resolved lock sessions, solved or bypassed. Locks *served*, not solved. */
@@ -108,6 +152,35 @@ const at = <K extends string>(rec: Partial<Record<K, number>>, key: K): number =
  */
 export function isFamilyUnlocked(family: PatternFamily, built: readonly string[]): boolean {
   return FAMILY_PREREQUISITES[family].every((signatureId) => built.includes(signatureId));
+}
+
+/**
+ * Has this user practised everything the family descends from?
+ *
+ * All-or-nothing for the same reason as the structural gate, and with the same
+ * consequence if it is relaxed: Trees sits below binary search, sliding window
+ * *and* linked lists, because a tree problem draws on all three. Opening it
+ * after one of them is how a user concludes they are bad at trees when they
+ * have simply never held two pointers.
+ *
+ * Counted in solves rather than in problems served: a family you were shown and
+ * bypassed is a family you have not met.
+ */
+export function isFamilyReached(
+  family: PatternFamily,
+  solvesByFamily: Partial<Record<PatternFamily, number>>,
+): boolean {
+  return ROADMAP_PREREQUISITES[family].every(
+    (parent) => at(solvesByFamily, parent) >= ROADMAP_UNLOCK_SOLVES,
+  );
+}
+
+/** Both gates. A family opens when its structures are built *and* its roadmap parents are solved. */
+export function isFamilyOpen(family: PatternFamily, progress: ProgressSnapshot): boolean {
+  return (
+    isFamilyUnlocked(family, progress.builtStructures) &&
+    isFamilyReached(family, progress.solvesByFamily)
+  );
 }
 
 const REAL_FAMILIES = (Object.values(PatternFamily) as PatternFamily[]).filter(
@@ -147,8 +220,13 @@ export function availableTiers(progress: ProgressSnapshot): Tier[] {
   // *Which* families then open is decided separately by `availableFamilies`:
   // someone who has built a stack gets stack problems without also having built
   // a trie.
+  //
+  // With the roadmap gate in place the only family that can open first is
+  // ARRAYS_HASHING — the root — so in practice this asks whether the user has
+  // built the dynamic array, hash map and hash set. That is the intended way
+  // in, and it is why those three are the Tier 0.5 problems that matter most.
   if (progress.builtStructures.length === 0) return tiers;
-  if (!REAL_FAMILIES.some((family) => isFamilyUnlocked(family, progress.builtStructures))) {
+  if (!REAL_FAMILIES.some((family) => isFamilyOpen(family, progress))) {
     return tiers;
   }
   tiers.push(Tier.TIER_1);
@@ -173,7 +251,27 @@ export function availableTiers(progress: ProgressSnapshot): Tier[] {
 export function availableFamilies(progress: ProgressSnapshot, tier: Tier): PatternFamily[] {
   if (tier === Tier.TIER_0) return [PatternFamily.FOUNDATIONS];
   if (tier === Tier.TIER_0_5) return [PatternFamily.DATA_STRUCTURES];
-  return REAL_FAMILIES.filter((family) => isFamilyUnlocked(family, progress.builtStructures));
+  return REAL_FAMILIES.filter((family) => isFamilyOpen(family, progress));
+}
+
+/**
+ * Every family this user may be served across the tiers they can reach.
+ *
+ * The selector filters on one flat list rather than per-tier, so this unions
+ * them. Tier 0 always contributes FOUNDATIONS and Tier 0.5 DATA_STRUCTURES,
+ * which is why a user deep in Tier 1 can still be served a foundation problem —
+ * intended, and the reason the tier filter stays alongside this one rather than
+ * being replaced by it.
+ */
+export function availableFamiliesForTiers(
+  progress: ProgressSnapshot,
+  tiers: readonly Tier[],
+): PatternFamily[] {
+  const families = new Set<PatternFamily>();
+  for (const tier of tiers) {
+    for (const family of availableFamilies(progress, tier)) families.add(family);
+  }
+  return [...families];
 }
 
 /**
@@ -256,5 +354,40 @@ export function explainGate(progress: ProgressSnapshot): string {
   if (next.length > 0) {
     return `Build ${next[0]} to open more pattern families.`;
   }
+  // Every structure is built, so anything still shut is shut on the roadmap.
+  // Saying "build X" here would be a lie the user cannot act on.
+  const frontier = nextFamiliesToPractise(progress, 1);
+  if (frontier.length > 0) {
+    const family = frontier[0]!;
+    const have = at(progress.solvesByFamily, family);
+    return `Solve ${ROADMAP_UNLOCK_SOLVES - have} more in ${family} to open what follows it.`;
+  }
   return 'All pattern families open.';
+}
+
+/**
+ * Which open families to practise next to advance along the roadmap.
+ *
+ * Ordered by how many still-closed families each one would open, mirroring
+ * `nextStructuresToBuild`: the answer to "what should I do next" is the thing
+ * that unlocks the most, not the next item in an arbitrary list. Only families
+ * that are themselves open are proposed — advising practice in a family the
+ * user cannot be served is the same permanent lock this file exists to avoid.
+ */
+export function nextFamiliesToPractise(progress: ProgressSnapshot, limit = 3): PatternFamily[] {
+  const opens = new Map<PatternFamily, number>();
+
+  for (const family of REAL_FAMILIES) {
+    if (isFamilyOpen(family, progress)) continue;
+    for (const parent of ROADMAP_PREREQUISITES[family]) {
+      if (at(progress.solvesByFamily, parent) >= ROADMAP_UNLOCK_SOLVES) continue;
+      if (!isFamilyOpen(parent, progress)) continue;
+      opens.set(parent, (opens.get(parent) ?? 0) + 1);
+    }
+  }
+
+  return [...opens.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([family]) => family);
 }
