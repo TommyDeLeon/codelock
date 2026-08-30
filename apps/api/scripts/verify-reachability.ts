@@ -26,6 +26,7 @@ import {
 } from '../src/services/progression.js';
 import { pickProblem } from '../src/services/problemSelector.js';
 import { toPublicProblem } from '../src/services/lockSessions.js';
+import { ALL_PROBLEMS } from '../src/corpus/problems/index.js';
 
 const DRAWS = 60;
 
@@ -182,8 +183,30 @@ async function main(): Promise<void> {
   // ---- Nothing unservable ----------------------------------------------
   console.log('\nthe corpus itself');
   {
-    const inactive = await prisma.problem.count({ where: { isActive: false } });
-    check('holds no INACTIVE problem', inactive === 0, `${inactive} inactive`);
+    // An *authored* problem held INACTIVE is always a real defect: the judge
+    // rejected one of its reference solutions and it will never be served.
+    //
+    // A row that is inactive and no longer authored is a different thing — a
+    // retired legacy row, deliberately withdrawn. `two-sum` is one: it
+    // duplicated `pair-with-target-sum`, so it was deactivated rather than
+    // re-authored. Counting raw inactive rows would flag that retirement as a
+    // failure forever, which is how a check stops being read.
+    const authored = new Set(ALL_PROBLEMS.map((d) => d.slug));
+    const inactive = await prisma.problem.findMany({
+      where: { isActive: false },
+      select: { slug: true },
+    });
+    const brokenAuthored = inactive.filter((row) => authored.has(row.slug));
+    check(
+      'holds no authored problem INACTIVE',
+      brokenAuthored.length === 0,
+      brokenAuthored.map((r) => r.slug).join(),
+    );
+
+    const retired = inactive.filter((row) => !authored.has(row.slug));
+    if (retired.length > 0) {
+      console.log(`        ${retired.length} retired: ${retired.map((r) => r.slug).join(', ')}`);
+    }
 
     // `referenceRuntimeMs` is a Json column, so this is a raw SQL null test —
     // Prisma's Json filters cannot express "IS NULL" without Prisma.DbNull and
