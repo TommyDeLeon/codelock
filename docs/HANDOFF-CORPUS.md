@@ -5,7 +5,7 @@ Read cold. This covers the seven-phase corpus and value-ranker work that
 `corpus`, `schema`, `ranker`, `selection`, `progression`, `importer`, `memory`.
 
 ```
-npm test           1085 passing / 30 files   (api 999 · desktop 67 · judge 15 · web 4)
+npm test           1092 passing / 31 files   (api 1006 · desktop 67 · judge 15 · web 4)
 npm run typecheck  clean across the workspace
 ```
 
@@ -95,7 +95,28 @@ columns, and the root README states the code/data split.
 
 ---
 
-## Two bugs found by doing this
+## Verified reachable, not just imported
+
+"Imported as ACTIVE" and "reachable in the app" are different claims, and the
+first does not imply the second. Against the running API, on freshly built code:
+
+```
+60 draws from GET /v1/problems/next  ->  12 distinct problems, all Tier 0
+```
+
+The three legacy rows are correctly excluded (not `eligibleForUnlock`), and the
+payload carries no editorial, reference solution or pattern name.
+
+Two things to know when checking this yourself:
+
+- **The API runs `dist/index.js`.** A source change is invisible until
+  `npm run build -w @codelock/api`. An end-to-end check against a stale build
+  tests the previous release — which is exactly how the eligibility filter
+  appeared broken when it was not.
+- `npm run import:corpus` **without** `--measure` is safe and keeps rows active;
+  it carries the stored runtimes forward.
+
+## Three bugs found by doing this
 
 **The 125 MB memory limit made C++ and Go unsolvable.** `Problem.memoryLimitKb`
 defaulted to 128000, the sandbox applies it as the container's `--memory`, and
@@ -104,6 +125,24 @@ failed to compile in both languages — Go's stderr said the compiler was killed
 Two of six languages could not solve *anything*. Measured: 256 MB still fails,
 500 MB passes. Default raised to 512000 and existing rows lifted (migration
 `raise_memory_limit_for_compilers`). **Re-measure if the judge images change.**
+
+**A re-import without `--measure` deactivated the entire corpus.** The importer
+correctly carried stored `referenceRuntimeMs` forward onto the row, but computed
+its "is anything missing?" check from *this run's* measurements instead of the
+effective ones. So a plain `npm run import:corpus` — a routine command — marked
+every already-measured, already-live problem INACTIVE. The app served nothing
+but the three legacy rows, while the importer's own report said 12 active.
+
+It also invalidated the first idempotency check: both snapshots were taken after
+the deactivating run, so two identically-broken states matched. The check now
+takes its baseline before the first run. Fixed, with a regression test.
+
+**There were no HARD problems, and difficulty was never relaxed.** The ladder
+promotes a user to HARD after three fast solves; `pickProblem` filtered to HARD,
+found nothing, and threw, so the lock could not engage at all. The fallbacks
+relaxed cooldown and tier but never difficulty — meaning the product broke
+precisely for the users who got good at it. There is now a final fallback to the
+whole active pool, and `problemSelector.fallback.test.ts` pins the order.
 
 **Java single-file source mode runs the first class in the file.** With
 `TreeNode` on top, `java Main.java` looked for `main` in TreeNode and refused.
@@ -147,10 +186,15 @@ contracts, and until some Tier 0.5 problems exist no user can ever reach Tier 1
   end-to-end test asserting that a real new user's first five *served* problems
   are Tier 0. The logic test and the wiring both exist; the seam between them is
   untested.
-- Three problems from the original `seed.ts` predate all of this. They carry
-  default provenance (accurate — the project authored them) but no tier or
-  ranking, so `eligibleForUnlock` is false and selection reaches them only
-  through the fallback. Either re-author them as definitions or retire them.
+- **Three problems from the original `seed.ts` have no editorial and no
+  reference solution.** They are ACTIVE, so a fallback can serve them, and a
+  user who fails one gets an empty debrief — the exact outcome the debrief
+  exists to prevent. They also predate the taxonomy, so `eligibleForUnlock` is
+  false and normal selection skips them. They escaped the completeness rule only
+  because they never went through the importer. Re-author them as definitions
+  (two-sum, valid-parentheses and longest-unique-substring are all Tier 1
+  canonical, so this doubles as the start of Tier 1) — do not simply deactivate
+  them, as `longest-unique-substring` is currently the only MEDIUM problem.
 - `prisma/seed.ts` and the importer are now two ingestion paths. The importer is
   the one to keep.
 - MBPP's 427 sanitized rows are the cheapest real corpus win available and are

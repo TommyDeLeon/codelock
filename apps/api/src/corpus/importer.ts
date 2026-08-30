@@ -94,8 +94,25 @@ export async function importProblems(
   for (const def of definitions) {
     validateDefinition(def);
 
-    const runtimes = options.runtimesBySlug?.[def.slug];
-    const gaps = blockingGaps(def, runtimes);
+    const existing = await prisma.problem.findUnique({
+      where: { slug: def.slug },
+      select: { id: true, referenceRuntimeMs: true },
+    });
+
+    // Keep a previously measured runtime when this run did not measure. Losing
+    // calibration on an unrelated re-import would quietly turn the speed gate
+    // back into the coin flip it used to be.
+    const measured = options.runtimesBySlug?.[def.slug];
+    const referenceRuntimeMs =
+      measured && Object.keys(measured).length > 0
+        ? measured
+        : ((existing?.referenceRuntimeMs as Record<string, number> | undefined) ?? {});
+
+    // Gaps are computed from the *effective* runtimes, not from what this
+    // particular run measured. Checking the run's own input instead meant a
+    // re-import without --measure deactivated every problem that was already
+    // measured and live — a silent, total corpus outage on a routine command.
+    const gaps = blockingGaps(def, referenceRuntimeMs);
     const isActive = gaps.length === 0;
 
     const ranking = rank({
@@ -107,19 +124,6 @@ export async function importProblems(
       testCaseCount: def.tests.length,
       hasPublishedSingleAnswer: def.hasPublishedSingleAnswer,
     });
-
-    const existing = await prisma.problem.findUnique({
-      where: { slug: def.slug },
-      select: { id: true, referenceRuntimeMs: true },
-    });
-
-    // Keep a previously measured runtime when this run did not measure. Losing
-    // calibration on an unrelated re-import would quietly turn the speed gate
-    // back into the coin flip it used to be.
-    const referenceRuntimeMs =
-      runtimes && Object.keys(runtimes).length > 0
-        ? runtimes
-        : ((existing?.referenceRuntimeMs as Record<string, number> | undefined) ?? {});
 
     const data = {
       title: def.title,

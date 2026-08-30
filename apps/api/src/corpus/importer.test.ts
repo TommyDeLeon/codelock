@@ -46,6 +46,16 @@ describe('what stops a problem being served', () => {
     expect(blockingGaps(def(), {}).some((g) => /referenceRuntimeMs/.test(g))).toBe(true);
   });
 
+  it('treats runtimes carried over from an earlier measured run as measured', () => {
+    // Regression. `blockingGaps` is given the *effective* runtimes — this run's
+    // measurements, or the ones already stored on the row. It used to be given
+    // only what this run measured, so a plain `import:corpus` with no --measure
+    // deactivated every problem that was already measured and live: a silent,
+    // total corpus outage triggered by a routine command.
+    const carriedOver = { JAVASCRIPT: 40, PYTHON: 90 };
+    expect(blockingGaps(def(), carriedOver)).toEqual([]);
+  });
+
   it('explains every gap rather than just saying no', () => {
     const gaps = blockingGaps(def({ tests: [], referenceSolution: {} }), undefined);
     expect(gaps.length).toBe(3);
