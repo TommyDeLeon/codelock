@@ -59,8 +59,26 @@ export async function pickProblem(
     });
   }
 
+  // Last resort: relax difficulty as well.
+  //
+  // The ladder promotes a user to HARD after three fast solves, and if the
+  // corpus has no HARD problems yet, every later lock fails to engage — the
+  // user gets good at this and the product stops working for them. Serving an
+  // easier problem is a far smaller wrong than a lock that cannot open.
+  //
+  // Same principle as the cooldown fallback above: repeat rather than fail.
   if (candidates.length === 0) {
-    throw ApiError.notFound(`No active problems at ${difficulty} difficulty`);
+    candidates = await prisma.problem.findMany({ where: { isActive: true }, take: 25 });
+    if (candidates.length > 0) {
+      logger.warn(
+        { difficulty, tiers },
+        'no problems at this difficulty; serving from the whole active pool',
+      );
+    }
+  }
+
+  if (candidates.length === 0) {
+    throw ApiError.notFound('No active problems at any difficulty');
   }
 
   if (env.DIFFICULTY_MODE === 'hybrid' && env.OPENAI_API_KEY) {
