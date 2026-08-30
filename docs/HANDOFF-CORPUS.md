@@ -5,7 +5,7 @@ Read cold. This covers the seven-phase corpus and value-ranker work that
 `corpus`, `schema`, `ranker`, `selection`, `progression`, `importer`, `memory`.
 
 ```
-npm test           1092 passing / 31 files   (api 1006 · desktop 67 · judge 15 · web 4)
+npm test           1096 passing / 31 files   (api 1010 · desktop 67 · judge 15 · web 4)
 npm run typecheck  clean across the workspace
 ```
 
@@ -13,8 +13,9 @@ npm run typecheck  clean across the workspace
 
 ## The short version
 
-The **machinery** is built, tested and wired end to end. The **corpus is not**:
-12 problems are authored and active against a target of ~695. That gap is the
+The **machinery** is built, tested and wired end to end. The **corpus is under
+way**: 86 problems are authored, judge-verified and active against a target of
+~695 (plus 3 legacy rows, so 89 active in the database). That gap is the
 whole of what remains, and it is deliberate — authoring against a signature
 registry that had not been proven in six languages would have been the expensive
 mistake.
@@ -87,7 +88,7 @@ stable ids, because test cases upsert by ordinal rather than wipe-and-recreate).
 judge, which both proves correctness and produces `referenceRuntimeMs`:
 
 ```
-378 reference solutions run  ->  all passed  ->  12/12 active
+2382 reference solutions run across 86 problems  ->  86/86 active
 ```
 
 `data/LICENSE` is written, `data/NOTICE` is **generated** from the provenance
@@ -102,6 +103,7 @@ first does not imply the second. Against the running API, on freshly built code:
 
 ```
 60 draws from GET /v1/problems/next  ->  12 distinct problems, all Tier 0
+(run when the corpus was 12; the gate serves Tier 0 first by design)
 ```
 
 The three legacy rows are correctly excluded (not `eligibleForUnlock`), and the
@@ -157,15 +159,51 @@ loops.
 
 ---
 
+## Authoring at scale — what the pipeline taught us
+
+Batches are authored in parallel (`src/corpus/problems/tier*.ts`, aggregated by
+`problems/index.ts`) against the contract in `docs/AUTHORING.md`, then gated by
+`import:corpus --measure`. Codex authored 49 of the Tier 0.5 problems this way.
+
+**The gate works, including on its authors.** Of the first 49 Codex problems, 8
+failed the judge and were correctly held INACTIVE. Every one was a real defect,
+and the failure signature told us which kind:
+
+- **All six languages agree on an answer the test did not expect** → the *test*
+  is wrong. Six independent implementations do not share a bug. Four op-log
+  cases had one fewer expected line than the declared operation count — a void
+  method whose `null` was forgotten.
+- **One language fails deterministically, the other five pass** → that
+  language's solution, or the driver for it, is wrong.
+- **A language fails intermittently, on problems that passed before** →
+  infrastructure. `runBatch` now retries those automatically.
+
+**The `union` keyword bug.** `cls:union-find` originally named a method
+`union`, which is a reserved word in C++, so the generated driver emitted
+`__obj->union(...)` and could not compile. It is now `unite`. The general rule:
+a method name in a class signature must be spellable in all six languages.
+
+**The judge hides C++ compile errors.** Its C++ command is
+`g++ ... 2>/tmp/cc.log && ./a.out`, so compiler diagnostics go to a file nobody
+reads and a compile failure arrives as a "runtime error" with empty output and
+empty stderr. That cost real time on the `union` bug. Worth fixing in
+`apps/judge/src/languages.ts` — surface `cc.log` as `compile_output`.
+
+**Scaling limits found:** the judge caps a request body at 2 MB (~300
+submissions), so `runBatch` chunks at 80. Throughput is roughly 25 runs/minute
+at concurrency 4, so the full ~695-problem corpus is ~20,000 runs and on the
+order of 13 hours of judge time per full re-measure. Incremental measurement —
+re-measuring only changed problems — is the obvious next improvement.
+
 ## What remains
 
 **The corpus, which is the bulk of the work.**
 
 | Tier | Target | Authored | Notes |
 |---|---|---|---|
-| 0 Foundations | ~60 | **12** | loops, strings, arrays, hashmaps, parsing |
-| 0.5 Implement the DS | ~55 | 0 | driver is proven; 15 class signatures ready |
-| 1 Core patterns | ~150 | 0 | one per pattern, NeetCode 150 shape |
+| 0 Foundations | ~60 | **28** | loops, strings, arrays, hashmaps, parsing |
+| 0.5 Implement the DS | ~55 | **49** | linear, hashing/caches, trees/tries, heaps/graphs |
+| 1 Core patterns | ~150 | **9** | Arrays & Hashing family complete |
 | 2 Variations | ~330 | 0 | 3 per Tier 1 problem |
 | 3 Breadth | ~100 | 0 | |
 
