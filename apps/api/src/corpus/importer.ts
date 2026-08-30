@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import { rank } from '../services/valueRanker.js';
 import type { ProblemDefinition } from './problem.js';
 import { driversFor, getSignature, stubsFor } from './signatures.js';
-import type { Lang } from './types.js';
+import { LANGUAGES, type Lang } from './types.js';
 
 /**
  * Corpus ingestion.
@@ -53,12 +53,37 @@ export function blockingGaps(
   const gaps: string[] = [];
   if (def.tests.length === 0) gaps.push('no test cases');
   if (!def.signatureId) gaps.push('no signatureId, so no driver can be generated');
-  if (!runtimes || Object.keys(runtimes).length === 0) {
+
+  // Per language, not "at least one". Both of these checks used to pass on a
+  // single language, which meant a problem could go ACTIVE having been measured
+  // only in Python, or shipping only a Go solution.
+  //
+  // The two failures differ in who they hurt but not in how quietly they do it.
+  // A missing runtime is a speed gate with no baseline for that language. A
+  // missing solution is a debrief that shows a failed user nothing — the exact
+  // outcome the debrief exists to prevent — and it would do so for five of six
+  // users while the importer's summary reported the problem as fully active.
+  if (!runtimes) {
     gaps.push('no measured referenceRuntimeMs (run the importer with --measure)');
+  } else {
+    const unmeasured = LANGUAGES.filter((lang) => typeof runtimes[lang] !== 'number');
+    if (unmeasured.length === LANGUAGES.length) {
+      gaps.push('no measured referenceRuntimeMs (run the importer with --measure)');
+    } else if (unmeasured.length > 0) {
+      gaps.push(`no measured referenceRuntimeMs for ${unmeasured.join(', ')}`);
+    }
   }
-  if (Object.keys(def.referenceSolution).length === 0) {
+
+  const missingSolutions = LANGUAGES.filter((lang) => {
+    const source = def.referenceSolution[lang];
+    return typeof source !== 'string' || source.trim() === '';
+  });
+  if (missingSolutions.length === LANGUAGES.length) {
     gaps.push('no reference solution, so the debrief would leave a failed user with nothing');
+  } else if (missingSolutions.length > 0) {
+    gaps.push(`no reference solution for ${missingSolutions.join(', ')}`);
   }
+
   return gaps;
 }
 
