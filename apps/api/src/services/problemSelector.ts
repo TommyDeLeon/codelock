@@ -94,6 +94,22 @@ export async function pickProblem(
     families && families.length > 0 ? { patternFamily: { in: families } } : {};
   const curriculum = { ...tierFilter, ...familyFilter };
 
+  // An empty-but-present gate result is not the same as "no gate requested",
+  // and the `.length > 0` checks above cannot tell them apart — both degrade to
+  // "match everything". Falling through is the right behaviour (a user who
+  // cannot unlock is worse than one served off-curriculum), but doing it
+  // silently is not: an empty set means the progression gate is broken, and
+  // that is exactly the kind of fault that stayed invisible here before.
+  //
+  // `availableFamiliesForTiers` cannot currently return empty — Tier 0 always
+  // contributes FOUNDATIONS — so this firing at all indicates a regression.
+  if (tiers?.length === 0 || families?.length === 0) {
+    logger.warn(
+      { userId, tiers, families },
+      'progression gate returned an empty set; selection is unfiltered',
+    );
+  }
+
   let candidates = await sampleCandidates({
     difficulty,
     isActive: true,
@@ -104,6 +120,7 @@ export async function pickProblem(
   // Everything at this tier is on cooldown — better to repeat than to fail open
   // and leave the device unlockable.
   if (candidates.length === 0) {
+    logger.info({ userId, difficulty }, 'selection relaxed: cooldown dropped');
     candidates = await sampleCandidates({ difficulty, isActive: true, ...curriculum });
   }
 
@@ -112,6 +129,7 @@ export async function pickProblem(
   // Widen to the tier before widening to the corpus — an off-pattern problem at
   // the right tier is a smaller wrong than one from six families ahead.
   if (candidates.length === 0 && families && families.length > 0 && tiers && tiers.length > 0) {
+    logger.info({ userId, difficulty, families }, 'selection relaxed: pattern family dropped');
     candidates = await sampleCandidates({ difficulty, isActive: true, ...tierFilter });
   }
 
@@ -119,6 +137,7 @@ export async function pickProblem(
   // the tier filter rather than the lock — a user who cannot unlock is a worse
   // outcome than a user served something slightly off-curriculum.
   if (candidates.length === 0 && tiers && tiers.length > 0) {
+    logger.warn({ userId, difficulty, tiers }, 'selection relaxed: tier gate dropped');
     candidates = await sampleCandidates({ difficulty, isActive: true });
   }
 
