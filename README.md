@@ -225,6 +225,8 @@ behind.
 | [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
 | [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |
 | [docs/ESCAPE-MATRIX.md](docs/ESCAPE-MATRIX.md) | Every way we tried to defeat the lock, per platform, and what worked |
+| [HANDOFF.md](HANDOFF.md) | **Current state**: what is live, how to use it today, and what is left of the corpus |
+| [docs/AUTHORING.md](docs/AUTHORING.md) | The contract for adding problems to the corpus |
 | [docs/CORPUS-SOURCES.md](docs/CORPUS-SOURCES.md) | Which problem sources may be redistributed and which may not, with the licence read from each canonical URL |
 | [docs/HANDOFF-CORPUS.md](docs/HANDOFF-CORPUS.md) | State of the problem corpus: the signature registry, the ranker, and what is still owed |
 
