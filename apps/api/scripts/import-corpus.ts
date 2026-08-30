@@ -93,9 +93,25 @@ async function measure(definitions: ProblemDefinition[]): Promise<Measured> {
 }
 
 async function main(): Promise<void> {
-  const args = new Set(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = new Set(argv);
   const shouldMeasure = args.has('--measure');
   const dryRun = args.has('--dry-run');
+
+  // `--only=slug,slug` measures just those problems, carrying every other row's
+  // stored runtimes forward untouched.
+  //
+  // A full re-measure of the corpus is tens of thousands of sandbox runs and
+  // hours of wall time. Without this, fixing one wrong test expectation costs
+  // the same as re-verifying everything — the kind of friction that stops
+  // people fixing things.
+  const onlyArg = argv.find((a) => a.startsWith('--only='));
+  const only = onlyArg ? new Set(onlyArg.slice('--only='.length).split(',')) : null;
+
+  if (only) {
+    const unknown = [...only].filter((slug) => !DEFINITIONS.some((d) => d.slug === slug));
+    if (unknown.length > 0) throw new Error(`--only names unknown problems: ${unknown.join(', ')}`);
+  }
 
   let runtimesBySlug: Record<string, Partial<Record<Lang, number>>> = {};
 
@@ -103,7 +119,8 @@ async function main(): Promise<void> {
     if (!(await isJudgeUp())) {
       throw new Error('judge is not answering. Start it with: npm run dev:judge');
     }
-    const measured = await measure(DEFINITIONS);
+    const toMeasure = only ? DEFINITIONS.filter((d) => only.has(d.slug)) : DEFINITIONS;
+    const measured = await measure(toMeasure);
     runtimesBySlug = measured.runtimesBySlug;
 
     if (measured.failures.length > 0) {

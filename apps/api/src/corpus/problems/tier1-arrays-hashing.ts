@@ -94,7 +94,7 @@ export const TIER_1_ARRAYS_HASHING_PROBLEMS: ProblemDefinition[] = [
       { stdin: '3 3\n6', expectedStdout: '0 1' },
       { stdin: '-1 -2 -3\n-5', expectedStdout: '1 2' },
       { stdin: '0 4 3 0\n0', expectedStdout: '0 3' },
-      { stdin: '1 5 2 8\n10', expectedStdout: '1 3' },
+      { stdin: '1 5 2 8\n10', expectedStdout: '2 3' },
     ],
   }),
 
@@ -664,7 +664,9 @@ export const TIER_1_ARRAYS_HASHING_PROBLEMS: ProblemDefinition[] = [
     tests: [
       { stdin: '1 1 1\n2', expectedStdout: '3', isSample: true },
       { stdin: '1 2 3 4\n5', expectedStdout: '2', isSample: true },
-      { stdin: '', expectedStdout: '0' },
+      // Two parameters means two lines. An empty first line is an empty list,
+      // but the target line still has to be there.
+      { stdin: '\n0', expectedStdout: '0' },
       { stdin: '1 2 3\n99', expectedStdout: '0' },
       { stdin: '0 0\n0', expectedStdout: '1' },
       { stdin: '-1 1 0 0\n0', expectedStdout: '2' },
