@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Problem } from '@prisma/client';
 import { weightedPick } from './problemSelector.js';
+import { weightOf } from './valueSelection.js';
 
 /**
  * Selection has to be biased and still unpredictable.
@@ -77,7 +78,14 @@ describe('weightedPick', () => {
     const famousShare = counts.get('famous')! / 1000;
     expect(famousShare).toBeLessThan(0.45);
     expect(famousShare).toBeGreaterThan(0.2);
-    expect(counts.get('famous')!).toBeGreaterThan(counts.get('good-a')!);
+
+    // "More liked comes up more often" is asserted on the *weight*, not on
+    // sampled counts. The 2x cap puts 40,000 likes and 2,000 likes only ~6%
+    // apart, which a thousand draws cannot separate from noise — an earlier
+    // version of this line compared the two counts and failed on a coin flip.
+    expect(weightOf(problem('famous', 40_000))).toBeGreaterThan(
+      weightOf(problem('good-a', 2_000)),
+    );
 
     // And none of the others gets squeezed out of the rotation.
     for (const slug of ['good-a', 'good-b', 'good-c']) {

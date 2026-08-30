@@ -5,6 +5,7 @@ import { asyncHandler } from '../middleware/error.js';
 import { requireAuth, currentUser } from '../middleware/auth.js';
 import { idParamSchema } from '../validation/schemas.js';
 import { pickProblem } from '../services/problemSelector.js';
+import { availableTiers, loadProgressSnapshot } from '../services/progression.js';
 import { toPublicProblem } from '../services/lockSessions.js';
 
 export const problemsRouter = Router();
@@ -24,7 +25,12 @@ problemsRouter.get(
     const progress = await prisma.userProgress.findUnique({ where: { userId: user.id } });
     if (!progress) throw ApiError.notFound('User progress missing');
 
-    const problem = await pickProblem(user.id, progress.currentDifficulty);
+    // Gated the same way a real lock is. Practice that ignores the curriculum
+    // would hand a first-week user a "build an LRU cache" problem — the same
+    // discouragement the lock path is careful to avoid — and would let them
+    // meet a pattern here before the tier that teaches it.
+    const tiers = availableTiers(await loadProgressSnapshot(user.id));
+    const problem = await pickProblem(user.id, progress.currentDifficulty, tiers);
     res.json({
       problem: await toPublicProblem(problem),
       difficulty: progress.currentDifficulty,
