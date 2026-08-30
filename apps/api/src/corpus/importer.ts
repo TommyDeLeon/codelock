@@ -94,119 +94,141 @@ export async function importProblems(
   for (const def of definitions) {
     validateDefinition(def);
 
-    const existing = await prisma.problem.findUnique({
-      where: { slug: def.slug },
-      select: { id: true, referenceRuntimeMs: true },
-    });
+    // One transaction per definition, spanning the read as well as the writes.
+    //
+    // The read belongs inside it because `referenceRuntimeMs` is *merged* with
+    // the existing row when this run did not measure. Reading outside the
+    // transaction lets a concurrent `--measure` run commit between the read and
+    // the write, and this loop then overwrites the fresh measurement with the
+    // stale value it read moments earlier. Losing calibration does not fail
+    // loudly; it turns the speed gate back into the coin flip it used to be.
+    //
+    // The writes belong inside it because `isActive` is computed from the
+    // definition's test count rather than from what actually reached the table.
+    // A crash between the problem upsert and the last test-case upsert would
+    // otherwise leave a row marked active and servable with an incomplete
+    // hidden test suite — the same "report says one thing, the database says
+    // another" shape as the outage that deactivated the whole corpus.
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const existing = await tx.problem.findUnique({
+          where: { slug: def.slug },
+          select: { id: true, referenceRuntimeMs: true },
+        });
 
-    // Keep a previously measured runtime when this run did not measure. Losing
-    // calibration on an unrelated re-import would quietly turn the speed gate
-    // back into the coin flip it used to be.
-    const measured = options.runtimesBySlug?.[def.slug];
-    const referenceRuntimeMs =
-      measured && Object.keys(measured).length > 0
-        ? measured
-        : ((existing?.referenceRuntimeMs as Record<string, number> | undefined) ?? {});
+        // Keep a previously measured runtime when this run did not measure.
+        const measured = options.runtimesBySlug?.[def.slug];
+        const referenceRuntimeMs =
+          measured && Object.keys(measured).length > 0
+            ? measured
+            : ((existing?.referenceRuntimeMs as Record<string, number> | undefined) ?? {});
 
-    // Gaps are computed from the *effective* runtimes, not from what this
-    // particular run measured. Checking the run's own input instead meant a
-    // re-import without --measure deactivated every problem that was already
-    // measured and live — a silent, total corpus outage on a routine command.
-    const gaps = blockingGaps(def, referenceRuntimeMs);
-    const isActive = gaps.length === 0;
+        // Gaps are computed from the *effective* runtimes, not from what this
+        // particular run measured. Checking the run's own input instead meant a
+        // re-import without --measure deactivated every problem that was
+        // already measured and live — a silent, total corpus outage on a
+        // routine command.
+        const gaps = blockingGaps(def, referenceRuntimeMs);
+        const isActive = gaps.length === 0;
 
-    const ranking = rank({
-      tier: def.tier,
-      source: def.provenance.source,
-      avgSolveSeconds: def.avgSolveSeconds ?? 600,
-      editorialMarkdown: def.editorialMarkdown,
-      editorialUrl: def.editorialUrl ?? null,
-      testCaseCount: def.tests.length,
-      hasPublishedSingleAnswer: def.hasPublishedSingleAnswer,
-    });
+        const ranking = rank({
+          tier: def.tier,
+          source: def.provenance.source,
+          avgSolveSeconds: def.avgSolveSeconds ?? 600,
+          editorialMarkdown: def.editorialMarkdown,
+          editorialUrl: def.editorialUrl ?? null,
+          testCaseCount: def.tests.length,
+          hasPublishedSingleAnswer: def.hasPublishedSingleAnswer,
+        });
 
-    const data = {
-      title: def.title,
-      difficulty: def.difficulty,
-      promptMarkdown: def.promptMarkdown,
-      tags: def.patternTags,
-      starterCode: stubsFor(def.signatureId),
-      driverCode: driversFor(def.signatureId),
-      referenceRuntimeMs,
-      avgSolveSeconds: def.avgSolveSeconds ?? 600,
+        const data = {
+          title: def.title,
+          difficulty: def.difficulty,
+          promptMarkdown: def.promptMarkdown,
+          tags: def.patternTags,
+          starterCode: stubsFor(def.signatureId),
+          driverCode: driversFor(def.signatureId),
+          referenceRuntimeMs,
+          avgSolveSeconds: def.avgSolveSeconds ?? 600,
 
-      source: def.provenance.source,
-      sourceUrl: def.provenance.sourceUrl,
-      sourceLicense: def.provenance.sourceLicense,
-      attributionText: def.provenance.attributionText,
-      sourceRef: def.provenance.sourceRef,
+          source: def.provenance.source,
+          sourceUrl: def.provenance.sourceUrl,
+          sourceLicense: def.provenance.sourceLicense,
+          attributionText: def.provenance.attributionText,
+          sourceRef: def.provenance.sourceRef,
 
-      patternFamily: def.patternFamily,
-      patternTags: def.patternTags,
-      tier: def.tier,
-      signatureId: def.signatureId,
+          patternFamily: def.patternFamily,
+          patternTags: def.patternTags,
+          tier: def.tier,
+          signatureId: def.signatureId,
 
-      editorialMarkdown: def.editorialMarkdown,
-      editorialUrl: def.editorialUrl ?? null,
-      referenceSolution: def.referenceSolution,
+          editorialMarkdown: def.editorialMarkdown,
+          editorialUrl: def.editorialUrl ?? null,
+          referenceSolution: def.referenceSolution,
 
-      patternTransfer: ranking.patternTransfer,
-      interviewFrequency: ranking.interviewFrequency,
-      lockWindowFit: ranking.lockWindowFit,
-      explanationQuality: ranking.explanationQuality,
-      judgeability: ranking.judgeability,
-      answerLookupRisk: ranking.answerLookupRisk,
-      valueScore: ranking.valueScore,
-      eligibleForUnlock: ranking.eligibleForUnlock,
+          patternTransfer: ranking.patternTransfer,
+          interviewFrequency: ranking.interviewFrequency,
+          lockWindowFit: ranking.lockWindowFit,
+          explanationQuality: ranking.explanationQuality,
+          judgeability: ranking.judgeability,
+          answerLookupRisk: ranking.answerLookupRisk,
+          valueScore: ranking.valueScore,
+          eligibleForUnlock: ranking.eligibleForUnlock,
 
-      isActive,
-    };
+          isActive,
+        };
 
-    const result: ImportResult = {
-      slug: def.slug,
-      action: existing ? 'updated' : 'created',
-      isActive,
-      blockedBy: gaps,
-      valueScore: ranking.valueScore,
-      rank: ranking.rank,
-    };
+        const outcome: ImportResult = {
+          slug: def.slug,
+          action: existing ? 'updated' : 'created',
+          isActive,
+          blockedBy: gaps,
+          valueScore: ranking.valueScore,
+          rank: ranking.rank,
+        };
 
-    if (options.dryRun) {
-      results.push(result);
-      continue;
-    }
+        if (options.dryRun) return outcome;
 
-    const problem = await prisma.problem.upsert({
-      where: { slug: def.slug },
-      create: { slug: def.slug, ...data },
-      update: data,
-      select: { id: true },
-    });
+        const problem = await tx.problem.upsert({
+          where: { slug: def.slug },
+          create: { slug: def.slug, ...data },
+          update: data,
+          select: { id: true },
+        });
 
-    // Upsert by ordinal rather than wipe-and-recreate: stable ids make a second
-    // run a genuine no-op instead of churn that merely looks like a change.
-    for (const [ordinal, test] of def.tests.entries()) {
-      await prisma.testCase.upsert({
-        where: { problemId_ordinal: { problemId: problem.id, ordinal } },
-        create: {
-          problemId: problem.id,
-          ordinal,
-          stdin: test.stdin,
-          expectedStdout: test.expectedStdout,
-          isSample: test.isSample ?? false,
-        },
-        update: {
-          stdin: test.stdin,
-          expectedStdout: test.expectedStdout,
-          isSample: test.isSample ?? false,
-        },
-      });
-    }
+        // Upsert by ordinal rather than wipe-and-recreate: stable ids make a
+        // second run a genuine no-op instead of churn that merely looks like a
+        // change.
+        for (const [ordinal, test] of def.tests.entries()) {
+          await tx.testCase.upsert({
+            where: { problemId_ordinal: { problemId: problem.id, ordinal } },
+            create: {
+              problemId: problem.id,
+              ordinal,
+              stdin: test.stdin,
+              expectedStdout: test.expectedStdout,
+              isSample: test.isSample ?? false,
+            },
+            update: {
+              stdin: test.stdin,
+              expectedStdout: test.expectedStdout,
+              isSample: test.isSample ?? false,
+            },
+          });
+        }
 
-    // A definition that lost test cases must not leave the old ones behind.
-    await prisma.testCase.deleteMany({
-      where: { problemId: problem.id, ordinal: { gte: def.tests.length } },
-    });
+        // A definition that lost test cases must not leave the old ones behind.
+        await tx.testCase.deleteMany({
+          where: { problemId: problem.id, ordinal: { gte: def.tests.length } },
+        });
+
+        return outcome;
+      },
+      // A problem carries up to a few dozen test cases, so the default 5s
+      // interactive-transaction budget is ample locally but not against a
+      // network-hop database. Raised rather than tuned per environment.
+      { timeout: 30_000 },
+    );
 
     results.push(result);
   }
