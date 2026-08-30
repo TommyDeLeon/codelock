@@ -1,4 +1,4 @@
-import { Difficulty, type Problem, type Tier } from '@prisma/client';
+import { Difficulty, type PatternFamily, type Problem, type Tier } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -20,6 +20,7 @@ export async function pickProblem(
   userId: string,
   difficulty: Difficulty,
   tiers?: Tier[],
+  families?: PatternFamily[],
 ): Promise<Problem> {
   const since = new Date(Date.now() - REPEAT_COOLDOWN_DAYS * 86_400_000);
 
@@ -35,14 +36,39 @@ export async function pickProblem(
   // callers that genuinely want the whole pool.
   const tierFilter = tiers && tiers.length > 0 ? { tier: { in: tiers } } : {};
 
+  // `families` comes from the same gate, and answers the question the tier
+  // cannot: *which* patterns this user has reached. Both the structural
+  // prerequisites ("build the heap before heap problems") and the roadmap
+  // ordering ("two pointers before trees") arrive here already resolved.
+  //
+  // Without this the gate was computed, unit-tested and then discarded — the
+  // query filtered on tier alone, so a user one lock into Tier 1 could be
+  // served any family in the corpus. It was invisible only because Arrays &
+  // Hashing is currently the sole authored Tier 1 family; the second family
+  // authored would have made it a live bug.
+  const familyFilter =
+    families && families.length > 0 ? { patternFamily: { in: families } } : {};
+  const curriculum = { ...tierFilter, ...familyFilter };
+
   let candidates = await prisma.problem.findMany({
-    where: { difficulty, isActive: true, ...tierFilter, id: { notIn: seen } },
+    where: { difficulty, isActive: true, ...curriculum, id: { notIn: seen } },
     take: 25,
   });
 
   // Everything at this tier is on cooldown — better to repeat than to fail open
   // and leave the device unlockable.
   if (candidates.length === 0) {
+    candidates = await prisma.problem.findMany({
+      where: { difficulty, isActive: true, ...curriculum },
+      take: 25,
+    });
+  }
+
+  // The family gate and this difficulty do not intersect: the user has reached
+  // Two Pointers but every Two Pointers problem is MEDIUM and they are on EASY.
+  // Widen to the tier before widening to the corpus — an off-pattern problem at
+  // the right tier is a smaller wrong than one from six families ahead.
+  if (candidates.length === 0 && families && families.length > 0 && tiers && tiers.length > 0) {
     candidates = await prisma.problem.findMany({
       where: { difficulty, isActive: true, ...tierFilter },
       take: 25,
