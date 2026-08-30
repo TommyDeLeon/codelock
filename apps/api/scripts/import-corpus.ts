@@ -22,14 +22,14 @@ import { fileURLToPath } from 'node:url';
 import { prisma } from '../src/lib/prisma.js';
 import { generateNotice, importProblems } from '../src/corpus/importer.js';
 import { driversFor } from '../src/corpus/signatures.js';
-import { TIER_0_PROBLEMS } from '../src/corpus/problems/tier0.js';
+import { ALL_PROBLEMS } from '../src/corpus/problems/index.js';
 import type { ProblemDefinition } from '../src/corpus/problem.js';
 import type { Lang } from '../src/corpus/types.js';
 import { failureDetail, isJudgeUp, normalise, runBatch, unb64, type Run } from './judge-client.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
-const DEFINITIONS: ProblemDefinition[] = [...TIER_0_PROBLEMS];
+const DEFINITIONS: ProblemDefinition[] = [...ALL_PROBLEMS];
 
 interface Measured {
   runtimesBySlug: Record<string, Partial<Record<Lang, number>>>;

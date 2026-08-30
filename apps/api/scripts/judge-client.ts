@@ -97,12 +97,40 @@ async function collect(tokens: string[], timeoutMs: number): Promise<Submission[
   }
 }
 
-/** Submit a batch and wait for all of it. */
+/**
+ * Submissions per POST.
+ *
+ * The judge caps a request body at 2 MB, and a submission is a whole generated
+ * program in base64 — roughly 6-10 KB each. Past a few hundred the body exceeds
+ * the cap and the POST fails as a bare `fetch failed`, with nothing in the
+ * judge log to explain it. The full corpus is tens of thousands of runs, so
+ * chunking is not a safeguard here, it is the normal path.
+ *
+ * It also stops the queue being handed the whole corpus at once, which makes
+ * progress observable instead of a single silent hour.
+ */
+const CHUNK_SIZE = 80;
+
+/**
+ * Submit and wait for every run, in chunks.
+ *
+ * Results come back in the caller's original order: callers index into this by
+ * position to recover which problem and language each result belongs to, so
+ * reordering would silently attribute failures to the wrong problem.
+ */
 export async function runBatch(runs: Run[], timeoutMs = 30 * 60_000): Promise<Submission[]> {
   if (runs.length === 0) return [];
-  const results = await collect(await submit(runs), timeoutMs);
+
+  const out: Submission[] = [];
+  for (let i = 0; i < runs.length; i += CHUNK_SIZE) {
+    const chunk = runs.slice(i, i + CHUNK_SIZE);
+    const done = Math.min(i + CHUNK_SIZE, runs.length);
+    process.stdout.write(`\r  judged ${i}/${runs.length} ...    `);
+    out.push(...(await collect(await submit(chunk), timeoutMs)));
+    process.stdout.write(`\r  judged ${done}/${runs.length} ...    `);
+  }
   process.stdout.write('\r');
-  return results;
+  return out;
 }
 
 /** Human-readable reason a run did not produce the expected output. */
