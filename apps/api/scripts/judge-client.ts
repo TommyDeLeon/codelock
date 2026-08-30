@@ -30,7 +30,18 @@ export const LANGUAGE_IDS: Record<Lang, number> = {
  * which reads as a broken driver when nothing is broken but the budget.
  */
 export const CPU_TIME_LIMIT = 20;
-export const MEMORY_LIMIT_KB = 1_048_576;
+
+/**
+ * 500 MB — the same figure as the `Problem.memoryLimitKb` default.
+ *
+ * Two reasons it is not simply the maximum. It is what a real submission gets,
+ * so measuring at anything else would calibrate the speed gate against
+ * conditions users never see. And the judge runs several containers at once:
+ * at 1 GB each, concurrent Go and C++ *compiles* were killed by host memory
+ * pressure, which looks exactly like a broken reference solution in the report
+ * and is not one. 500 MB is measured-sufficient for both toolchains.
+ */
+export const MEMORY_LIMIT_KB = 512_000;
 
 export const b64 = (s: string): string => Buffer.from(s, 'utf8').toString('base64');
 export const unb64 = (s: string | null | undefined): string =>
@@ -130,7 +141,66 @@ export async function runBatch(runs: Run[], timeoutMs = 30 * 60_000): Promise<Su
     process.stdout.write(`\r  judged ${done}/${runs.length} ...    `);
   }
   process.stdout.write('\r');
-  return out;
+
+  return retryTransient(runs, out, timeoutMs);
+}
+
+/**
+ * Did this run fail because of the machine rather than the code?
+ *
+ * The Go and C++ toolchains are memory-hungry to *compile*, and several
+ * containers build at once. Under host pressure the kernel kills the compiler
+ * and the run comes back with `signal: killed` and no output — which is
+ * indistinguishable, in the report, from a reference solution that is simply
+ * wrong.
+ *
+ * That distinction matters more at scale than it looks. The corpus is tens of
+ * thousands of runs; a transient failure rate of even one percent would
+ * randomly deactivate good problems on every import, and the corpus would
+ * appear to flicker.
+ *
+ * A genuine wrong answer is deterministic and will fail the retry too, so
+ * retrying costs nothing but time. The tell for a real content bug is the
+ * opposite: *every* language agreeing on an answer the test did not expect.
+ */
+function isTransientFailure(s: Submission): boolean {
+  const id = statusId(s);
+  // Internal error, or killed mid-compile with nothing to show for it.
+  if (id === 13) return true;
+  const stderr = unb64(s.stderr);
+  return /killed/i.test(stderr);
+}
+
+/**
+ * Re-run the machine-shaped failures, sequentially.
+ *
+ * Small chunks on purpose: the failure was contention, so retrying at the same
+ * width would reproduce it. Results are patched back into their original
+ * positions, because callers index this array by position to recover which
+ * problem and language each result belongs to.
+ */
+async function retryTransient(
+  runs: Run[],
+  results: Submission[],
+  timeoutMs: number,
+  attempts = 2,
+): Promise<Submission[]> {
+  const patched = [...results];
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const failed = patched
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => isTransientFailure(s));
+    if (failed.length === 0) break;
+
+    console.log(`\n  retrying ${failed.length} run(s) killed by host pressure (attempt ${attempt})`);
+    for (const { i } of failed) {
+      const [retried] = await collect(await submit([runs[i]!]), timeoutMs);
+      if (retried) patched[i] = retried;
+    }
+  }
+
+  return patched;
 }
 
 /** Human-readable reason a run did not produce the expected output. */
