@@ -9,6 +9,25 @@ import { AUTHORED, type ProblemDefinition } from './problem.js';
 import { ALL_PROBLEMS, TIER_0_PROBLEMS } from './problems/index.js';
 import { SIGNATURE_IDS } from './signatures.js';
 
+/** Every language, so a fixture is complete unless a test deliberately breaks it. */
+const ALL_SOLUTIONS = {
+  JAVASCRIPT: 'function solve(a) { return 0; }',
+  TYPESCRIPT: 'function solve(a: number[]): number { return 0; }',
+  PYTHON: 'def solve(a):\n    return 0',
+  JAVA: '    static int solve(int[] a) { return 0; }',
+  CPP: 'int solve(vector<int> a) { return 0; }',
+  GO: 'func solve(a []int) int {\n\treturn 0\n}',
+};
+
+const ALL_RUNTIMES = {
+  JAVASCRIPT: 40,
+  TYPESCRIPT: 45,
+  PYTHON: 90,
+  JAVA: 120,
+  CPP: 20,
+  GO: 30,
+};
+
 const def = (over: Partial<ProblemDefinition> = {}): ProblemDefinition => ({
   slug: 'example',
   title: 'Example',
@@ -19,7 +38,7 @@ const def = (over: Partial<ProblemDefinition> = {}): ProblemDefinition => ({
   signatureId: 'fn:ints->int',
   promptMarkdown: 'Do the thing.',
   editorialMarkdown: 'Here is how.',
-  referenceSolution: { JAVASCRIPT: 'function solve(a) { return 0; }' },
+  referenceSolution: ALL_SOLUTIONS,
   tests: [{ stdin: '1', expectedStdout: '1' }],
   provenance: AUTHORED,
   ...over,
@@ -27,7 +46,23 @@ const def = (over: Partial<ProblemDefinition> = {}): ProblemDefinition => ({
 
 describe('what stops a problem being served', () => {
   it('accepts a complete definition with measured runtimes', () => {
-    expect(blockingGaps(def(), { JAVASCRIPT: 40 })).toEqual([]);
+    expect(blockingGaps(def(), ALL_RUNTIMES)).toEqual([]);
+  });
+
+  it('refuses a problem measured in only some languages', () => {
+    // "At least one language measured" used to pass. A problem could go ACTIVE
+    // having been measured only in Python, leaving the speed gate with no
+    // baseline for the other five.
+    const gaps = blockingGaps(def(), { PYTHON: 90 });
+    expect(gaps.some((g) => /referenceRuntimeMs for /.test(g))).toBe(true);
+  });
+
+  it('refuses a problem missing a solution in some language', () => {
+    // The debrief shows a user their own language. Five of six is not a
+    // partial success; it is nothing at all for whoever draws the sixth.
+    const partial = def({ referenceSolution: { JAVASCRIPT: 'function solve(a) { return 0; }' } });
+    const gaps = blockingGaps(partial, ALL_RUNTIMES);
+    expect(gaps.some((g) => /reference solution for /.test(g))).toBe(true);
   });
 
   it.each([
@@ -35,7 +70,7 @@ describe('what stops a problem being served', () => {
     ['no reference solution', def({ referenceSolution: {} }), /reference solution/],
     ['no signature', def({ signatureId: '' }), /signatureId/],
   ])('refuses to activate a problem with %s', (_label, definition, pattern) => {
-    const gaps = blockingGaps(definition, { JAVASCRIPT: 40 });
+    const gaps = blockingGaps(definition, ALL_RUNTIMES);
     expect(gaps.some((g) => pattern.test(g))).toBe(true);
   });
 
@@ -52,7 +87,7 @@ describe('what stops a problem being served', () => {
     // only what this run measured, so a plain `import:corpus` with no --measure
     // deactivated every problem that was already measured and live: a silent,
     // total corpus outage triggered by a routine command.
-    const carriedOver = { JAVASCRIPT: 40, PYTHON: 90 };
+    const carriedOver = { ...ALL_RUNTIMES };
     expect(blockingGaps(def(), carriedOver)).toEqual([]);
   });
 
