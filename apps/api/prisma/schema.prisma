@@ -371,6 +371,10 @@ model Problem {
   @@index([difficulty, isActive])
   @@index([tier, isActive])
   @@index([patternFamily, tier])
+  /// The selection query filters on all four at once once the curriculum gate
+  /// is applied. None of the three above covers that combination, so Postgres
+  /// could use only one of them and re-filter the rest.
+  @@index([difficulty, isActive, tier, patternFamily])
   @@map("problems")
 }
 
@@ -449,6 +453,10 @@ model LockSession {
 
   @@index([userId, state])
   @@index([state, fireAt])
+  /// Both are foreign keys with no dedicated index; see the note on
+  /// Submission.problemId.
+  @@index([problemId])
+  @@index([deviceId])
   @@map("lock_sessions")
 }
 
@@ -484,6 +492,10 @@ model Submission {
 
   @@index([userId, createdAt])
   @@index([lockSessionId])
+  /// A foreign key with no index of its own: Postgres needs the referencing
+  /// side indexed to avoid scanning this table whenever a problem row is
+  /// deleted or its key updated.
+  @@index([problemId])
   @@map("submissions")
 }
 
