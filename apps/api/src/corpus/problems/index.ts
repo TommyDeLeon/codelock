@@ -3,6 +3,8 @@ import { TIER_0_PROBLEMS } from './tier0.js';
 import { TIER_0B_PROBLEMS } from './tier0b.js';
 import { TIER_05_LINEAR_PROBLEMS } from './tier05-linear.js';
 import { TIER_05_HASHING_PROBLEMS } from './tier05-hashing.js';
+import { TIER_05_TREES_PROBLEMS } from './tier05-trees.js';
+import { TIER_05_HEAPS_GRAPHS_PROBLEMS } from './tier05-heaps-graphs.js';
 
 /**
  * Every authored problem, in tier order.
@@ -18,6 +20,9 @@ import { TIER_05_HASHING_PROBLEMS } from './tier05-hashing.js';
  */
 export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_0_PROBLEMS,
-  ...TIER_0B_PROBLEMS, ...TIER_05_LINEAR_PROBLEMS, ...TIER_05_HASHING_PROBLEMS];
+  ...TIER_0B_PROBLEMS, ...TIER_05_LINEAR_PROBLEMS, ...TIER_05_HASHING_PROBLEMS,
+  ...TIER_05_TREES_PROBLEMS,
+  ...TIER_05_HEAPS_GRAPHS_PROBLEMS,
+];
 
-export { TIER_0_PROBLEMS, TIER_0B_PROBLEMS, TIER_05_LINEAR_PROBLEMS, TIER_05_HASHING_PROBLEMS };
+export { TIER_0_PROBLEMS, TIER_0B_PROBLEMS, TIER_05_LINEAR_PROBLEMS, TIER_05_HASHING_PROBLEMS, TIER_05_TREES_PROBLEMS, TIER_05_HEAPS_GRAPHS_PROBLEMS };
