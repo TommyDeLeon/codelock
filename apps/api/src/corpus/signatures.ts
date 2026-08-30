@@ -195,7 +195,7 @@ const CLASS_SIGNATURES: readonly ClassSignature[] = [
     { name: 'size', params: [], returns: 'int' },
   ]),
   cls('cls:union-find', 'Disjoint set — path compression and union by rank', 'UnionFind', ['int'], [
-    { name: 'union', params: ['int', 'int'], returns: 'void' },
+    { name: 'unite', params: ['int', 'int'], returns: 'void' },
     { name: 'find', params: ['int'], returns: 'int' },
     { name: 'connected', params: ['int', 'int'], returns: 'bool' },
     { name: 'count', params: [], returns: 'int' },

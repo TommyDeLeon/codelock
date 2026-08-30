@@ -119,7 +119,10 @@ describe('the operation-log driver', () => {
   it('gives Go a Constructor and capitalised methods, since lowercase is unexported', () => {
     const go = driversFor('cls:union-find').GO;
     expect(go).toContain('__obj = Constructor(');
-    expect(go).toContain('__obj.Union(');
+    // `unite`, not `union`: the latter is a reserved word in C++, so a method
+    // named `union` generates a driver that cannot compile. Found by the
+    // sandbox — C++ failed every case while the other five languages passed.
+    expect(go).toContain('__obj.Unite(');
     expect(go).toContain('__obj.Connected(');
   });
 
