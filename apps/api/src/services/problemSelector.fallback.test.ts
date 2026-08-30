@@ -36,11 +36,33 @@ const problem = (slug: string, difficulty: string, tier: string) => ({
   popularity: 0,
 });
 
-/** Answer each successive query with the next scripted result. */
+/**
+ * Answer each successive fallback rung with the next scripted result.
+ *
+ * Each rung costs two queries, not one: `sampleCandidates` selects ids first,
+ * then fetches only the sampled rows. Scripting those as two separate results
+ * would make every test encode that implementation detail, so this models a
+ * *rung* instead — the id query reports what the rung holds, and the row query
+ * consumes it.
+ *
+ * A rung holding nothing is consumed at the id query, because
+ * `sampleCandidates` short-circuits and never issues the second one.
+ */
 function scriptQueries(...results: unknown[][]): void {
   findMany.mockReset();
-  for (const result of results) findMany.mockResolvedValueOnce(result);
-  findMany.mockResolvedValue([]);
+  const queue = results.map((r) => [...r]);
+
+  findMany.mockImplementation((args: { select?: { id?: boolean } } = {}) => {
+    const head = queue[0] ?? [];
+
+    if (args?.select?.id) {
+      if (head.length === 0) queue.shift();
+      return Promise.resolve((head as Array<{ id: string }>).map((row) => ({ id: row.id })));
+    }
+
+    queue.shift();
+    return Promise.resolve(head);
+  });
 }
 
 beforeEach(() => vi.clearAllMocks());
