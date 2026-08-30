@@ -201,13 +201,13 @@ re-measuring only changed problems — is the obvious next improvement.
 
 | Tier | Target | Authored | Notes |
 |---|---|---|---|
-| 0 Foundations | ~60 | **48** | loops, strings, arrays, hashmaps, parsing |
-| 0.5 Implement the DS | ~55 | **49** | linear, hashing/caches, trees/tries, heaps/graphs |
-| 1 Core patterns | ~150 | **11** | Arrays & Hashing complete; Stack and Sliding Window seeded |
+| 0 Foundations | ~60 | **60** | complete |
+| 0.5 Implement the DS | ~55 | **55** | complete |
+| 1 Core patterns | ~150 | **20** | Arrays & Hashing 9, Two Pointers 9, Stack 1, Sliding Window 1 |
 | 2 Variations | ~330 | 0 | 3 per Tier 1 problem |
 | 3 Breadth | ~100 | 0 | |
 
-**108 authored, all active, all measured** (verified against the database, not
+**Tiers 0 and 0.5 are complete.** 135 authored, all active, all measured (verified against the database, not
 counted from this file). Counting on disk: `grep -c "slug:"` under-reports,
 because `tier0b`, `tier0c` and the Tier 1 files declare `tier:` once in a shared
 `base` object. The database is the honest source:
