@@ -201,11 +201,28 @@ re-measuring only changed problems — is the obvious next improvement.
 
 | Tier | Target | Authored | Notes |
 |---|---|---|---|
-| 0 Foundations | ~60 | **28** | loops, strings, arrays, hashmaps, parsing |
+| 0 Foundations | ~60 | **48** | loops, strings, arrays, hashmaps, parsing |
 | 0.5 Implement the DS | ~55 | **49** | linear, hashing/caches, trees/tries, heaps/graphs |
-| 1 Core patterns | ~150 | **9** | Arrays & Hashing family complete |
+| 1 Core patterns | ~150 | **11** | Arrays & Hashing complete; Stack and Sliding Window seeded |
 | 2 Variations | ~330 | 0 | 3 per Tier 1 problem |
 | 3 Breadth | ~100 | 0 | |
+
+**108 authored, all active, all measured** (verified against the database, not
+counted from this file). Counting on disk: `grep -c "slug:"` under-reports,
+because `tier0b`, `tier0c` and the Tier 1 files declare `tier:` once in a shared
+`base` object. The database is the honest source:
+
+```
+select tier, count(*) from problems where "isActive" group by 1;
+```
+
+**Author in roadmap order, not difficulty order.** `ROADMAP_PREREQUISITES` in
+`src/services/progression.ts` encodes the NeetCode DAG, and a family whose
+parents have no problems is unreachable no matter how many problems it has. The
+order is: Arrays & Hashing -> {Two Pointers, Stack} -> {Binary Search, Sliding
+Window, Linked List} -> Trees -> {Tries, Backtracking, Heap} -> ... -> Math &
+Geometry. **Two Pointers is the next family to author**: Sliding Window is
+seeded but unreachable until Two Pointers has three problems.
 
 The 12 authored problems are CC0, written from scratch, each with six reference
 solutions, an editorial written for someone who did *not* get it, and 4–6 test
@@ -224,15 +241,19 @@ contracts, and until some Tier 0.5 problems exist no user can ever reach Tier 1
   end-to-end test asserting that a real new user's first five *served* problems
   are Tier 0. The logic test and the wiring both exist; the seam between them is
   untested.
-- **Three problems from the original `seed.ts` have no editorial and no
-  reference solution.** They are ACTIVE, so a fallback can serve them, and a
-  user who fails one gets an empty debrief — the exact outcome the debrief
-  exists to prevent. They also predate the taxonomy, so `eligibleForUnlock` is
-  false and normal selection skips them. They escaped the completeness rule only
-  because they never went through the importer. Re-author them as definitions
-  (two-sum, valid-parentheses and longest-unique-substring are all Tier 1
-  canonical, so this doubles as the start of Tier 1) — do not simply deactivate
-  them, as `longest-unique-substring` is currently the only MEDIUM problem.
+- ~~Three problems from the original `seed.ts` have no editorial and no
+  reference solution.~~ **Done.** `valid-parentheses` and
+  `longest-unique-substring` were re-authored in place, keeping their slugs so
+  the importer upserted the broken rows rather than duplicating them. Both are
+  ACTIVE, rank S, six reference solutions each, judge-verified.
+  `two-sum` could *not* be re-authored: `pair-with-target-sum` (Tier 1 Arrays &
+  Hashing) is the same task on the same signature, authored since this document
+  was written. It was deactivated instead — migration
+  `retire_superseded_two_sum`. That was necessary rather than tidy: normal
+  selection skipped it via `eligibleForUnlock`, but `pickProblem`'s last-resort
+  fallback filters on `isActive` alone, so it was reachable after all and would
+  have handed the user an empty debrief.
+
 - `prisma/seed.ts` and the importer are now two ingestion paths. The importer is
   the one to keep.
 - MBPP's 427 sanitized rows are the cheapest real corpus win available and are
@@ -253,3 +274,88 @@ contracts, and until some Tier 0.5 problems exist no user can ever reach Tier 1
 - **Re-run `verify:drivers` after any judge, image or language-version change**,
   and re-run `import:corpus --measure` after any of those too — an uncalibrated
   speed gate is not a slightly wrong number, it is a lockout.
+
+---
+
+## The roadmap gate (added 2026-08-31)
+
+Problems are now ordered by the **NeetCode roadmap DAG**, above difficulty.
+`ROADMAP_PREREQUISITES` in `src/services/progression.ts` holds the 18-node graph;
+`ROADMAP_UNLOCK_SOLVES = 3` is how many solves in a parent family open its
+children. It composes with the existing structural gate rather than replacing
+it: a family opens when its structures are built **and** its roadmap parents are
+solved. `PatternFamily` already matched the roadmap 1:1, so no migration.
+
+Entry to Tier 1 is stricter than before. Previously any single structure opened
+it; now it is the roadmap root, so a user needs `cls:dynamic-array`,
+`cls:hash-map` and `cls:hash-set`. **Those three are the highest-value Tier 0.5
+problems in the corpus** — nothing at Tier 1 is reachable without them.
+
+### Two dead gates found while wiring it
+
+**`availableFamilies` had zero production call sites.** `pickProblem` filtered on
+`tier` alone and never on `patternFamily`, so the structural gate the brief asked
+for — "build the heap before heap problems" — was computed, unit-tested, and then
+discarded at the query. It was invisible only because Arrays & Hashing was the
+sole authored Tier 1 family; the second family authored would have made it live.
+`pickProblem` now takes `families`, and both call sites pass it via
+`availableFamiliesForTiers`.
+
+**One structure opened nine of eighteen families.** Six families have no
+structural prerequisite, so building `cls:dynamic-array` alone reached
+two-dimensional DP — six hops below the root. Pinned by the regression test
+"does not open nine families for one dynamic array".
+
+### Verifying reachability
+
+```
+npm run verify:reachability -w @codelock/api
+```
+
+21 checks against the live corpus through the real service path: tier gating,
+roadmap gating, payload leakage, and that no *authored* problem is INACTIVE. It
+drives `pickProblem` rather than HTTP on purpose — the route handler is three
+lines and every failure so far has been below it. This also covers the
+end-to-end assertion this document previously listed as owed: a brand-new user's
+first 60 served problems are all Tier 0.
+
+## Known defects, not yet fixed
+
+Found by `ecc:database-reviewer` and `ecc:silent-failure-hunter`. Both agents
+independently ranked the transaction gap first; it is now **fixed** (one
+`$transaction` per definition, spanning the read as well as the writes, in
+`importer.ts`). The rest stand:
+
+- **`take: 25` with no `ORDER BY`.** Only the 25 lowest-id problems in a pool are
+  ever candidates. Measured: a fresh user reaches 23 of 48 Tier 0 problems.
+  Cooldown rotates the window so it is not a lockout, but at 695 problems a
+  user's candidate set is still 25, and the value-ranker buckets a non-random
+  subset. This is the highest-value open item.
+- **No index for the selector query.** Add
+  `@@index([difficulty, isActive, tier, patternFamily])`. Latent at 108 rows.
+- **Three FKs with no index:** `submissions.problemId`,
+  `lock_sessions.problemId`, `lock_sessions.deviceId`.
+- **~5,600 serial DB round trips** per full import at 695 problems. Batch
+  test-case upserts with a single multi-row `ON CONFLICT` statement.
+- **`blockingGaps` does not check runtimes per language.** It passes when *any*
+  language was measured, so a partially measured problem can go active with a
+  missing speed baseline for one language.
+- **LLM ranking failures are wholly silent.** A non-ok HTTP response is not an
+  exception, so it never reaches the `.catch` that logs; hybrid mode degrades to
+  `bucketedPick` permanently with no log line.
+- **Fallback rungs 1-3 log nothing.** Only the last one does, so "relaxed once"
+  and "relaxing on every request because the curriculum is broken" look
+  identical to an operator.
+- **`isActive` defaults to `true`** in the schema, the opposite of the
+  "incomplete means inactive" principle the importer enforces in code.
+
+## Measure incrementally, always
+
+```
+npm run import:corpus -w @codelock/api -- --measure --only=slug-a,slug-b
+```
+
+`--only` carries every other row's stored runtime forward. A full `--measure` at
+the current 108 problems is ~3,000 judge runs (~2 hours); at 695 it is ~20,000
+(~13 hours). The importer measures everything *before* it writes, so killing a
+run mid-measurement is safe and changes nothing.
