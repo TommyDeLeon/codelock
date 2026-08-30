@@ -9,6 +9,7 @@ import { TIER_05_TREES_PROBLEMS } from './tier05-trees.js';
 import { TIER_05_HEAPS_GRAPHS_PROBLEMS } from './tier05-heaps-graphs.js';
 import { TIER_05_EXTRA_PROBLEMS } from './tier05-extra.js';
 import { TIER_1_ARRAYS_HASHING_PROBLEMS } from './tier1-arrays-hashing.js';
+import { TIER_1_TWO_POINTERS_PROBLEMS } from './tier1-two-pointers.js';
 import { TIER_1_STACK_PROBLEMS } from './tier1-stack.js';
 import { TIER_1_SLIDING_WINDOW_PROBLEMS } from './tier1-sliding-window.js';
 
@@ -35,6 +36,7 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_05_HEAPS_GRAPHS_PROBLEMS,
   ...TIER_05_EXTRA_PROBLEMS,
   ...TIER_1_ARRAYS_HASHING_PROBLEMS,
+  ...TIER_1_TWO_POINTERS_PROBLEMS,
   ...TIER_1_STACK_PROBLEMS,
   ...TIER_1_SLIDING_WINDOW_PROBLEMS,
 ];
@@ -50,6 +52,7 @@ export {
   TIER_05_HEAPS_GRAPHS_PROBLEMS,
   TIER_05_EXTRA_PROBLEMS,
   TIER_1_ARRAYS_HASHING_PROBLEMS,
+  TIER_1_TWO_POINTERS_PROBLEMS,
   TIER_1_STACK_PROBLEMS,
   TIER_1_SLIDING_WINDOW_PROBLEMS,
 };
