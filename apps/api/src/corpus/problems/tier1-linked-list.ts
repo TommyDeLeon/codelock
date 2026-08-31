@@ -440,12 +440,12 @@ export const TIER_1_LINKED_LIST_PROBLEMS: ProblemDefinition[] = [
 }`,
     },
     tests: [
-      { stdin: '1 2 3 4 5\n2', expectedStdout: '4', isSample: true },
-      { stdin: '10 20 30\n3', expectedStdout: '10', isSample: true },
+      { stdin: '1 2 3 4 5\n2', expectedStdout: '4 5', isSample: true },
+      { stdin: '10 20 30\n3', expectedStdout: '10 20 30', isSample: true },
       { stdin: '7\n1', expectedStdout: '7' },
       { stdin: '1 2 3 4 5\n1', expectedStdout: '5' },
-      { stdin: '5 4 3 2 1\n5', expectedStdout: '5' },
-      { stdin: '-1 -2 -3 -4\n2', expectedStdout: '-3' },
+      { stdin: '5 4 3 2 1\n5', expectedStdout: '5 4 3 2 1' },
+      { stdin: '-1 -2 -3 -4\n2', expectedStdout: '-3 -4' },
     ],
   }),
 
