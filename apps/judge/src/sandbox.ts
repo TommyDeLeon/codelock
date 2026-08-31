@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { env } from './env.js';
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LANGUAGES, STATUS, type LanguageSpec } from './languages.js';
@@ -72,6 +72,12 @@ export async function runInSandbox(request: RunRequest): Promise<RunResult> {
   const workdir = await mkdtemp(path.join(tmpdir(), 'codelock-run-'));
   try {
     await writeFile(path.join(workdir, spec.filename), request.source, 'utf8');
+    // mkdtemp creates 0700 and writeFile 0600, both owned by the uid the judge
+    // runs as. The sandbox runs as --user 65534:65534, so without this it
+    // cannot traverse the directory or read the source, and every language
+    // fails identically with a permission error that looks like broken code.
+    await chmod(workdir, 0o755);
+    await chmod(path.join(workdir, spec.filename), 0o644);
     return await execute(spec, workdir, request);
   } catch (err) {
     logger.error({ err }, 'sandbox run failed');
