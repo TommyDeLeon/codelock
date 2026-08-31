@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
-import { useAuth } from '@/lib/auth-store';
+import { useProfile } from '@/lib/profile-store';
 
 /**
  * CodeLock keeps working while nobody is looking at it.
@@ -57,7 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [queryClient]);
 
-  const hydrate = useAuth((s) => s.hydrate);
+  const hydrate = useProfile((s) => s.hydrate);
   useEffect(() => {
     void hydrate();
   }, [hydrate]);

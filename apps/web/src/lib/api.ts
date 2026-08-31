@@ -293,6 +293,10 @@ export const api = {
   },
 
   settings: {
+    profile: () =>
+      request<{ profile: { displayName: string; preferredLanguage: Language; timezone: string } }>(
+        '/v1/settings/profile',
+      ),
     timer: () => request<{ timerConfig: TimerConfig }>('/v1/settings/timer'),
     updateTimer: (patch: Partial<TimerConfig>) =>
       request<{ timerConfig: TimerConfig }>('/v1/settings/timer', {

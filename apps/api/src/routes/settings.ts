@@ -2,10 +2,45 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
-import { registerDeviceSchema, timerConfigSchema } from '../validation/schemas.js';
+import { profileSchema, registerDeviceSchema, timerConfigSchema } from '../validation/schemas.js';
 
 export const settingsRouter = Router();
 settingsRouter.use(withLocalUser);
+
+/**
+ * GET /settings/profile
+ *
+ * The learner's own preferences. This replaces what `/auth/me` used to carry:
+ * with accounts gone there is no identity to return, but the editor still needs
+ * to know which language to open in, and losing that silently made the lock
+ * screen forget a setting the user had deliberately chosen.
+ */
+settingsRouter.get(
+  '/profile',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const row = await prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: { displayName: true, preferredLanguage: true, timezone: true },
+    });
+    res.json({ profile: row });
+  }),
+);
+
+/** PATCH /settings/profile */
+settingsRouter.patch(
+  '/profile',
+  asyncHandler(async (req, res) => {
+    const patch = profileSchema.parse(req.body);
+    const user = currentUser(req);
+    const row = await prisma.user.update({
+      where: { id: user.id },
+      data: patch,
+      select: { displayName: true, preferredLanguage: true, timezone: true },
+    });
+    res.json({ profile: row });
+  }),
+);
 
 /** GET /settings/timer */
 settingsRouter.get(

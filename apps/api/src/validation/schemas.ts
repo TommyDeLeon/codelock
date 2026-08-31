@@ -20,6 +20,20 @@ export const refreshSchema = z.object({
   refreshToken: z.string().min(20).max(200),
 });
 
+/**
+ * What the learner may change about themselves.
+ *
+ * Every field optional: a PATCH that sets only the language must not blank the
+ * timezone, and an empty body is a no-op rather than a reset.
+ */
+export const profileSchema = z
+  .object({
+    displayName: z.string().min(1).max(80),
+    preferredLanguage: z.enum(['JAVASCRIPT', 'TYPESCRIPT', 'PYTHON', 'JAVA', 'CPP', 'GO']),
+    timezone: z.string().min(1).max(64),
+  })
+  .partial();
+
 export const timerConfigSchema = z.object({
   enabled: z.boolean().optional(),
   durationMinutes: z.number().int().min(5).max(600).optional(),
