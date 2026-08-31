@@ -128,9 +128,28 @@ get 1
 ## Verifying
 
 ```bash
-npm run import:corpus -w @codelock/api -- --measure   # runs every solution on the judge
-npm test -w @codelock/api                             # structural checks
+node scripts/check-batch.mjs apps/api/src/corpus/problems/<batch>.ts   # before wiring
+node scripts/wire-corpus.mjs                                          # regenerate index.ts
+npm test -w @codelock/api                                             # structural checks
+npm run import:corpus -w @codelock/api -- --measure --only=<slugs>    # the judge
 ```
+
+Run them in that order. The first three take seconds; the last is ~28 judge runs
+per problem and answers about forty minutes later, so everything cheap should
+have failed first.
+
+**`check-batch.mjs`** catches what review misses and the judge charges for:
+two problems sharing one reference solution (they are then the same problem
+under two names — the most common defect this corpus has shipped), a missing
+language, the wrong number of samples, `sort.`/`math.` in Go, `std::sort`
+without `<algorithm>`, and truncation markers.
+
+**`wire-corpus.mjs`** regenerates `problems/index.ts` from the directory. Do not
+hand-edit that file. Wiring by hand is silent when it goes wrong: an unused
+import type-checks, so a batch can sit fully authored and completely invisible
+to every test. Six families once did, and it surfaced only when the importer
+rejected 46 slugs as unknown. `--check` fails if the file has drifted, and
+`src/corpus/wiring.test.ts` enforces the same invariant in the suite.
 
 A problem whose reference solutions do not pass its own tests **imports as
 INACTIVE and is never served**. That is the quality gate: it is not possible to

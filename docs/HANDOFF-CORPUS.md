@@ -199,22 +199,46 @@ re-measuring only changed problems — is the obvious next improvement.
 
 **The corpus, which is the bulk of the work.**
 
-| Tier | Target | Authored | Notes |
-|---|---|---|---|
-| 0 Foundations | ~60 | **60** | complete |
-| 0.5 Implement the DS | ~55 | **55** | complete |
-| 1 Core patterns | ~150 | **20** | Arrays & Hashing 9, Two Pointers 9, Stack 1, Sliding Window 1 |
-| 2 Variations | ~330 | 0 | 3 per Tier 1 problem |
-| 3 Breadth | ~100 | 0 | |
+| Tier | Target | Authored | Active | Notes |
+|---|---|---|---|---|
+| 0 Foundations | ~60 | **60** | 60 | complete, measured |
+| 0.5 Implement the DS | ~55 | **55** | 55 | complete, measured |
+| 1 Core patterns | ~150 | **150** | 78 | all 18 families authored; 72 measuring |
+| 2 Variations | ~330 | **123** | 0 | 15 families; not yet gated |
+| 3 Breadth | ~100 | **72** | 0 | 6 batches; not yet gated |
 
-**Tiers 0 and 0.5 are complete.** 135 authored, all active, all measured (verified against the database, not
-counted from this file). Counting on disk: `grep -c "slug:"` under-reports,
-because `tier0b`, `tier0c` and the Tier 1 files declare `tier:` once in a shared
-`base` object. The database is the honest source:
+**460 authored on disk, all slugs unique. 193 active.**
+
+Counting on disk: use `grep -oh "slug: *'[^']*'" | wc -l`, not `grep -c`. Some
+batches put a whole problem on one line, so counting *lines* undercuts them —
+that is a 17-problem difference at this size. Multiply each file's count by the
+tier its `base` declares.
+
+**The database is the honest source, and it is now the only one:**
 
 ```
-select tier, count(*) from problems where "isActive" group by 1;
+select tier, "isActive", count(*) from problems group by 1,2 order by 1,2;
 ```
+
+Nothing is active until `--measure` proves every reference solution passes its
+own tests, so "authored" and "servable" are different numbers and the gap is
+where the work actually is.
+
+### Recovering from a wiped database
+
+The machine was reformatted and the Docker volume went with it, so every row had
+to be re-measured from scratch. If that happens again, the order matters:
+
+1. `docker compose --env-file apps/api/.env up -d postgres judge`
+2. `npm run db:migrate -w @codelock/api`
+3. `npm run import:corpus -w @codelock/api` (fast, but everything lands INACTIVE)
+4. Measure **Tier 0.5 first**, then Tier 0, then the rest. Tier 0.5 is the
+   progression gate: until at least one structure problem is active, no user can
+   reach Tier 1 at all, however many Tier 1 problems exist.
+
+Compose publishes Postgres on **5433** to match `apps/api/.env`, and compose
+interpolates the JWT secrets from that same file, so every compose command needs
+`--env-file apps/api/.env` or it fails before starting anything.
 
 **Author in roadmap order, not difficulty order.** `ROADMAP_PREREQUISITES` in
 `src/services/progression.ts` encodes the NeetCode DAG, and a family whose
