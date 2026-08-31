@@ -12,6 +12,10 @@ import { TIER_1_ARRAYS_HASHING_PROBLEMS } from './tier1-arrays-hashing.js';
 import { TIER_1_TWO_POINTERS_PROBLEMS } from './tier1-two-pointers.js';
 import { TIER_1_STACK_PROBLEMS } from './tier1-stack.js';
 import { TIER_1_SLIDING_WINDOW_PROBLEMS } from './tier1-sliding-window.js';
+import { TIER_1_BINARY_SEARCH_PROBLEMS } from './tier1-binary-search.js';
+import { TIER_1_LINKED_LIST_PROBLEMS } from './tier1-linked-list.js';
+import { TIER_1_STACK_B_PROBLEMS } from './tier1-stack-b.js';
+import { TIER_1_SLIDING_WINDOW_B_PROBLEMS } from './tier1-sliding-window-b.js';
 
 /**
  * Every authored problem, in tier order.
@@ -39,6 +43,10 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_1_TWO_POINTERS_PROBLEMS,
   ...TIER_1_STACK_PROBLEMS,
   ...TIER_1_SLIDING_WINDOW_PROBLEMS,
+  ...TIER_1_BINARY_SEARCH_PROBLEMS,
+  ...TIER_1_LINKED_LIST_PROBLEMS,
+  ...TIER_1_STACK_B_PROBLEMS,
+  ...TIER_1_SLIDING_WINDOW_B_PROBLEMS,
 ];
 
 export {
@@ -55,4 +63,8 @@ export {
   TIER_1_TWO_POINTERS_PROBLEMS,
   TIER_1_STACK_PROBLEMS,
   TIER_1_SLIDING_WINDOW_PROBLEMS,
+  TIER_1_BINARY_SEARCH_PROBLEMS,
+  TIER_1_LINKED_LIST_PROBLEMS,
+  TIER_1_STACK_B_PROBLEMS,
+  TIER_1_SLIDING_WINDOW_B_PROBLEMS,
 };
