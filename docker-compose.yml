@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: codelock
       POSTGRES_PASSWORD: codelock
       POSTGRES_DB: codelock
-    ports: ['5432:5432']
+    ports: ['5433:5432']
     volumes: ['pgdata:/var/lib/postgresql/data']
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U codelock']
@@ -31,6 +31,10 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
       JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
+      # Encrypts stored OAuth tokens. env.ts requires it, so the container exits
+      # on boot without it — it was missing here while the API ran only locally.
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set in .env}
+      APP_URL: http://localhost:3000
       CORS_ORIGINS: http://localhost:3000
       JUDGE0_URL: http://judge:2358
     ports: ['4000:4000']
@@ -59,6 +63,25 @@ services:
       # sandbox, so the path must mean the same thing to judge and daemon.
       - /tmp:/tmp
     ports: ["2358:2358"]
+
+  # The desktop shell loads the lock screen from this origin, so a self-hosted
+  # install needs it up alongside the API — without it the app opens on a dead
+  # page at the exact moment a timer fires. NEXT_PUBLIC_* values are inlined at
+  # build time, which is why the API url is a build arg and not just an env var.
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports: ['3000:3000']
+    depends_on:
+      api:
+        condition: service_started
 
 volumes:
   pgdata:
