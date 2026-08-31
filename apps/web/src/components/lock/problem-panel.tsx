@@ -10,11 +10,6 @@ export function ProblemPanel({ problem }: { problem: PublicProblem }) {
     <div className="h-full overflow-y-auto px-5 py-5">
       <div className="flex flex-wrap items-center gap-2">
         <DifficultyBadge difficulty={problem.difficulty} />
-        {problem.tags.map((tag) => (
-          <span key={tag} className="text-[11px] uppercase tracking-wider text-faint">
-            {tag}
-          </span>
-        ))}
       </div>
 
       <h1 className="mt-2.5 text-lg font-semibold tracking-tight">{problem.title}</h1>
