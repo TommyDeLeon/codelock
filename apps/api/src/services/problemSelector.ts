@@ -226,10 +226,20 @@ async function rankWithLlm(candidates: Problem[], seenCount: number): Promise<Pr
         ],
       }),
     });
-    if (!res.ok) return null;
+    // Both of these used to return null in silence, so an expired key or an
+    // exhausted quota degraded selection to random for weeks with nothing in
+    // the logs to say so. The caller only logs a *rejected* promise, and these
+    // resolve — so if they do not speak here, nobody does.
+    if (!res.ok) {
+      logger.warn({ status: res.status }, 'LLM ranking unavailable; falling back to weighted pick');
+      return null;
+    }
     const body = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = body.choices?.[0]?.message?.content;
-    if (!content) return null;
+    if (!content) {
+      logger.warn('LLM ranking returned an empty completion; falling back to weighted pick');
+      return null;
+    }
     const { slug } = JSON.parse(content) as { slug?: string };
     return candidates.find((c) => c.slug === slug) ?? null;
   } finally {
