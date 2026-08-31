@@ -228,11 +228,7 @@ async function takeScreenFor(sessionId: string): Promise<void> {
   if (locked) return;
   if (refuseToLock()) return;
 
-  const engaged = await engageOnServer(sessionId, {
-    apiUrl: API_URL,
-    readSession,
-    writeSession,
-  });
+  const engaged = await engageOnServer(sessionId, { apiUrl: API_URL });
 
   if (!engaged.ok) {
     console.error(
@@ -243,7 +239,7 @@ async function takeScreenFor(sessionId: string): Promise<void> {
     // not actually due. Retrying that would spin against a settled answer.
     // Anything else is transient, so keep trying rather than silently dropping
     // a lock the user asked for.
-    if (engaged.reason !== 'refused' && engaged.reason !== 'no-session') {
+    if (engaged.reason !== 'refused') {
       setTimeout(() => void takeScreenFor(sessionId), 15_000);
     }
     return;
