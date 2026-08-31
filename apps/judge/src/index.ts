@@ -29,11 +29,29 @@ interface Job {
   request: Parameters<typeof runInSandbox>[0];
   result: RunResult | null;
   createdAt: number;
+  /**
+   * 'bulk' is corpus measurement; 'interactive' is a person waiting.
+   *
+   * One FIFO queue is wrong here because the two workloads differ by three
+   * orders of magnitude: a measurement run enqueues thousands of jobs at once,
+   * and a submission arriving behind them waited past its 60s timeout and came
+   * back "Judging took too long. Your code was not graded." — while the user
+   * was locked out of their own machine.
+   */
+  priority: 'interactive' | 'bulk';
 }
 
 const jobs = new Map<string, Job>();
-const queue: Job[] = [];
+/** Two queues, not a sort: bulk must never delay a person, however long it waits. */
+const interactiveQueue: Job[] = [];
+const bulkQueue: Job[] = [];
 let active = 0;
+
+const queued = (): number => interactiveQueue.length + bulkQueue.length;
+
+function nextJob(): Job | undefined {
+  return interactiveQueue.shift() ?? bulkQueue.shift();
+}
 
 const b64d = (value: string | null | undefined): string =>
   value ? Buffer.from(value, 'base64').toString('utf8') : '';
@@ -41,8 +59,8 @@ const b64e = (value: string | null): string | null =>
   value === null ? null : Buffer.from(value, 'utf8').toString('base64');
 
 function pump(): void {
-  while (active < CONCURRENCY && queue.length > 0) {
-    const job = queue.shift()!;
+  while (active < CONCURRENCY && queued() > 0) {
+    const job = nextJob()!;
     active += 1;
     void runInSandbox(job.request)
       .then((result) => {
@@ -124,7 +142,13 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
 
   if (url.pathname === '/healthz') {
-    return json(res, 200, { ok: true, queued: queue.length, active });
+    return json(res, 200, {
+      ok: true,
+      queued: queued(),
+      interactive: interactiveQueue.length,
+      bulk: bulkQueue.length,
+      active,
+    });
   }
 
   if (url.pathname === '/languages' && req.method === 'GET') {
@@ -145,13 +169,17 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
         cpu_time_limit?: number;
         memory_limit?: number;
       }>;
+      /** Set by the corpus importer so measurement yields to real submissions. */
+      priority?: 'interactive' | 'bulk';
     };
+    const priority = body.priority === 'bulk' ? 'bulk' : 'interactive';
 
     const created = body.submissions.map((s) => {
       const job: Job = {
         token: randomUUID(),
         createdAt: Date.now(),
         result: null,
+        priority,
         request: {
           languageId: s.language_id,
           source: b64d(s.source_code),
@@ -162,7 +190,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
         },
       };
       jobs.set(job.token, job);
-      queue.push(job);
+      (priority === 'bulk' ? bulkQueue : interactiveQueue).push(job);
       return { token: job.token };
     });
 

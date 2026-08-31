@@ -86,6 +86,11 @@ async function submit(runs: Run[]): Promise<string[]> {
         cpu_time_limit: CPU_TIME_LIMIT,
         memory_limit: MEMORY_LIMIT_KB,
       })),
+      // Corpus measurement always yields to a person waiting on a submission.
+      // A measure run enqueues thousands of jobs at once; behind them, a real
+      // submission passed its 60s timeout and came back ungraded while its
+      // author sat locked out of their own machine.
+      priority: 'bulk',
     }),
   });
   if (!res.ok) throw new Error(`judge rejected the batch: ${res.status} ${await res.text()}`);
