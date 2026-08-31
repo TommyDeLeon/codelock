@@ -203,41 +203,50 @@ re-measuring only changed problems — is the obvious next improvement.
 |---|---|---|---|---|
 | 0 Foundations | ~60 | **60** | 60 | complete, measured |
 | 0.5 Implement the DS | ~55 | **55** | 55 | complete, measured |
-| 1 Core patterns | ~150 | **150** | 78 | all 18 families authored; 72 measuring |
-| 2 Variations | ~330 | **123** | 0 | 15 families; not yet gated |
-| 3 Breadth | ~100 | **72** | 0 | 6 batches; not yet gated |
+| 1 Core patterns | ~150 | **150** | 150 | complete, measured — all 18 families |
+| 2 Variations | ~330 | **242** | 0 | up to 3 per Tier 1 problem; measuring |
+| 3 Breadth | ~100 | **82** | 0 | measuring |
 
-**460 authored on disk, all slugs unique. 193 active.**
+**589 authored on disk, all slugs unique. 265 active.**
 
-Counting on disk: use `grep -oh "slug: *'[^']*'" | wc -l`, not `grep -c`. Some
-batches put a whole problem on one line, so counting *lines* undercuts them —
-that is a 17-problem difference at this size. Multiply each file's count by the
-tier its `base` declares.
+Counting on disk: use `grep -oh "slug: *'[^']*'" | wc -l`, not `grep -c` — some
+batches put a whole problem on one line, so counting *lines* undercounts.
 
-**The database is the honest source, and it is now the only one:**
+**Authored is not servable.** A problem goes ACTIVE only once all six reference
+solutions pass its own tests, so the gap between those two columns is where the
+remaining work is. At ~28 judge runs per problem and ~27 runs/minute, measuring
+what is authored but inactive is hours of wall clock that parallel authoring
+cannot compress. The database is the only honest source:
 
 ```
 select tier, "isActive", count(*) from problems group by 1,2 order by 1,2;
 ```
 
-Nothing is active until `--measure` proves every reference solution passes its
-own tests, so "authored" and "servable" are different numbers and the gap is
-where the work actually is.
+### The judge has two queues
+
+`priority: 'bulk'` (set by `scripts/judge-client.ts`) is drained only when
+nothing interactive is waiting. Before that split, a measurement run's thousands
+of queued jobs starved a real submission until it passed its 60s timeout and came
+back "Judging took too long" — while its author sat locked out of their own
+machine. Anything that does not set the flag is treated as interactive, because
+forgetting it must fail safe: a mislabelled measurement is merely slow.
+
+Check both queues with `curl localhost:2358/healthz`.
 
 ### Recovering from a wiped database
 
 The machine was reformatted and the Docker volume went with it, so every row had
-to be re-measured from scratch. If that happens again, the order matters:
+to be re-measured. If that happens again, the order matters:
 
 1. `docker compose --env-file apps/api/.env up -d postgres judge`
 2. `npm run db:migrate -w @codelock/api`
 3. `npm run import:corpus -w @codelock/api` (fast, but everything lands INACTIVE)
 4. Measure **Tier 0.5 first**, then Tier 0, then the rest. Tier 0.5 is the
-   progression gate: until at least one structure problem is active, no user can
-   reach Tier 1 at all, however many Tier 1 problems exist.
+   progression gate: until one structure problem is active, no user can reach
+   Tier 1 at all, however many Tier 1 problems exist.
 
-Compose publishes Postgres on **5433** to match `apps/api/.env`, and compose
-interpolates the JWT secrets from that same file, so every compose command needs
+Compose publishes Postgres on **5433** to match `apps/api/.env`, and interpolates
+the secrets from that same file, so every compose command needs
 `--env-file apps/api/.env` or it fails before starting anything.
 
 **Author in roadmap order, not difficulty order.** `ROADMAP_PREREQUISITES` in
