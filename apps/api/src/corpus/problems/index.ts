@@ -3,54 +3,104 @@ import { TIER_0_PROBLEMS } from './tier0.js';
 import { TIER_0B_PROBLEMS } from './tier0b.js';
 import { TIER_0C_PROBLEMS } from './tier0c.js';
 import { TIER_0D_PROBLEMS } from './tier0d.js';
-import { TIER_05_LINEAR_PROBLEMS } from './tier05-linear.js';
-import { TIER_05_HASHING_PROBLEMS } from './tier05-hashing.js';
-import { TIER_05_TREES_PROBLEMS } from './tier05-trees.js';
-import { TIER_05_HEAPS_GRAPHS_PROBLEMS } from './tier05-heaps-graphs.js';
 import { TIER_05_EXTRA_PROBLEMS } from './tier05-extra.js';
+import { TIER_05_HASHING_PROBLEMS } from './tier05-hashing.js';
+import { TIER_05_HEAPS_GRAPHS_PROBLEMS } from './tier05-heaps-graphs.js';
+import { TIER_05_LINEAR_PROBLEMS } from './tier05-linear.js';
+import { TIER_05_TREES_PROBLEMS } from './tier05-trees.js';
+import { TIER_1_ADVANCED_GRAPHS_PROBLEMS } from './tier1-advanced-graphs.js';
 import { TIER_1_ARRAYS_HASHING_PROBLEMS } from './tier1-arrays-hashing.js';
-import { TIER_1_TWO_POINTERS_PROBLEMS } from './tier1-two-pointers.js';
-import { TIER_1_STACK_PROBLEMS } from './tier1-stack.js';
-import { TIER_1_SLIDING_WINDOW_PROBLEMS } from './tier1-sliding-window.js';
-import { TIER_1_BINARY_SEARCH_PROBLEMS } from './tier1-binary-search.js';
-import { TIER_1_LINKED_LIST_PROBLEMS } from './tier1-linked-list.js';
-import { TIER_1_STACK_B_PROBLEMS } from './tier1-stack-b.js';
-import { TIER_1_SLIDING_WINDOW_B_PROBLEMS } from './tier1-sliding-window-b.js';
-import { TIER_1_TREES_PROBLEMS } from './tier1-trees.js';
 import { TIER_1_BACKTRACKING_PROBLEMS } from './tier1-backtracking.js';
+import { TIER_1_BINARY_SEARCH_PROBLEMS } from './tier1-binary-search.js';
+import { TIER_1_BIT_MANIPULATION_PROBLEMS } from './tier1-bit-manipulation.js';
+import { TIER_1_DP_1D_PROBLEMS } from './tier1-dp1d.js';
+import { TIER_1_DP_2D_PROBLEMS } from './tier1-dp2d.js';
+import { TIER_1_GRAPHS_PROBLEMS } from './tier1-graphs.js';
+import { TIER_1_GREEDY_PROBLEMS } from './tier1-greedy.js';
+import { TIER_1_HEAP_PROBLEMS } from './tier1-heap.js';
+import { TIER_1_INTERVALS_PROBLEMS } from './tier1-intervals.js';
+import { TIER_1_LINKED_LIST_PROBLEMS } from './tier1-linked-list.js';
+import { TIER_1_MATH_GEOMETRY_PROBLEMS } from './tier1-math-geometry.js';
+import { TIER_1_SLIDING_WINDOW_B_PROBLEMS } from './tier1-sliding-window-b.js';
+import { TIER_1_SLIDING_WINDOW_PROBLEMS } from './tier1-sliding-window.js';
+import { TIER_1_STACK_B_PROBLEMS } from './tier1-stack-b.js';
+import { TIER_1_STACK_PROBLEMS } from './tier1-stack.js';
+import { TIER_1_TREES_PROBLEMS } from './tier1-trees.js';
+import { TIER_1_TRIES_PROBLEMS } from './tier1-tries.js';
+import { TIER_1_TWO_POINTERS_PROBLEMS } from './tier1-two-pointers.js';
+import { TIER_2_ARRAYS_HASHING_PROBLEMS } from './tier2-arrays-hashing.js';
+import { TIER_2_BACKTRACKING_PROBLEMS } from './tier2-backtracking.js';
+import { TIER_2_BINARY_SEARCH_PROBLEMS } from './tier2-binary-search.js';
+import { TIER_2_BIT_MANIPULATION_PROBLEMS } from './tier2-bit-manipulation.js';
+import { TIER_2_DP_1D_PROBLEMS } from './tier2-dp1d.js';
+import { TIER_2_DP_2D_PROBLEMS } from './tier2-dp2d.js';
+import { TIER_2_GRAPHS_PROBLEMS } from './tier2-graphs.js';
+import { TIER_2_GREEDY_PROBLEMS } from './tier2-greedy.js';
+import { TIER_2_HEAP_PROBLEMS } from './tier2-heap.js';
+import { TIER_2_INTERVALS_PROBLEMS } from './tier2-intervals.js';
+import { TIER_2_LINKED_LIST_PROBLEMS } from './tier2-linked-list.js';
+import { TIER_2_SLIDING_WINDOW_PROBLEMS } from './tier2-sliding-window.js';
+import { TIER_2_STACK_PROBLEMS } from './tier2-stack.js';
+import { TIER_2_TREES_PROBLEMS } from './tier2-trees.js';
+import { TIER_2_TWO_POINTERS_PROBLEMS } from './tier2-two-pointers.js';
+import { TIER_3_GRIDS_PATHS_PROBLEMS } from './tier3-grids-paths.js';
+import { TIER_3_INTERVALS_SCHEDULING_PROBLEMS } from './tier3-intervals-scheduling.js';
+import { TIER_3_MATRIX_COUNTING_PROBLEMS } from './tier3-matrix-counting.js';
+import { TIER_3_NUMBER_THEORY_PROBLEMS } from './tier3-number-theory.js';
+import { TIER_3_SORTING_SELECTION_PROBLEMS } from './tier3-sorting-selection.js';
+import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
-/**
- * Every authored problem, in tier order.
- *
- * One file per batch rather than one enormous file: batches are authored in
- * parallel, and a single array would be a permanent merge conflict. The
- * importer takes this aggregate, so adding a batch is one import and one line.
- *
- * Slug uniqueness across batches is enforced by a test, not by convention —
- * two authors independently reaching for `reverse-a-string` is the obvious
- * failure mode, and the database's unique constraint would otherwise catch it
- * only at import time, halfway through a run.
- */
 export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_0_PROBLEMS,
   ...TIER_0B_PROBLEMS,
   ...TIER_0C_PROBLEMS,
   ...TIER_0D_PROBLEMS,
-  ...TIER_05_LINEAR_PROBLEMS,
-  ...TIER_05_HASHING_PROBLEMS,
-  ...TIER_05_TREES_PROBLEMS,
-  ...TIER_05_HEAPS_GRAPHS_PROBLEMS,
   ...TIER_05_EXTRA_PROBLEMS,
+  ...TIER_05_HASHING_PROBLEMS,
+  ...TIER_05_HEAPS_GRAPHS_PROBLEMS,
+  ...TIER_05_LINEAR_PROBLEMS,
+  ...TIER_05_TREES_PROBLEMS,
+  ...TIER_1_ADVANCED_GRAPHS_PROBLEMS,
   ...TIER_1_ARRAYS_HASHING_PROBLEMS,
-  ...TIER_1_TWO_POINTERS_PROBLEMS,
-  ...TIER_1_STACK_PROBLEMS,
-  ...TIER_1_SLIDING_WINDOW_PROBLEMS,
-  ...TIER_1_BINARY_SEARCH_PROBLEMS,
-  ...TIER_1_LINKED_LIST_PROBLEMS,
-  ...TIER_1_STACK_B_PROBLEMS,
-  ...TIER_1_SLIDING_WINDOW_B_PROBLEMS,
-  ...TIER_1_TREES_PROBLEMS,
   ...TIER_1_BACKTRACKING_PROBLEMS,
+  ...TIER_1_BINARY_SEARCH_PROBLEMS,
+  ...TIER_1_BIT_MANIPULATION_PROBLEMS,
+  ...TIER_1_DP_1D_PROBLEMS,
+  ...TIER_1_DP_2D_PROBLEMS,
+  ...TIER_1_GRAPHS_PROBLEMS,
+  ...TIER_1_GREEDY_PROBLEMS,
+  ...TIER_1_HEAP_PROBLEMS,
+  ...TIER_1_INTERVALS_PROBLEMS,
+  ...TIER_1_LINKED_LIST_PROBLEMS,
+  ...TIER_1_MATH_GEOMETRY_PROBLEMS,
+  ...TIER_1_SLIDING_WINDOW_B_PROBLEMS,
+  ...TIER_1_SLIDING_WINDOW_PROBLEMS,
+  ...TIER_1_STACK_B_PROBLEMS,
+  ...TIER_1_STACK_PROBLEMS,
+  ...TIER_1_TREES_PROBLEMS,
+  ...TIER_1_TRIES_PROBLEMS,
+  ...TIER_1_TWO_POINTERS_PROBLEMS,
+  ...TIER_2_ARRAYS_HASHING_PROBLEMS,
+  ...TIER_2_BACKTRACKING_PROBLEMS,
+  ...TIER_2_BINARY_SEARCH_PROBLEMS,
+  ...TIER_2_BIT_MANIPULATION_PROBLEMS,
+  ...TIER_2_DP_1D_PROBLEMS,
+  ...TIER_2_DP_2D_PROBLEMS,
+  ...TIER_2_GRAPHS_PROBLEMS,
+  ...TIER_2_GREEDY_PROBLEMS,
+  ...TIER_2_HEAP_PROBLEMS,
+  ...TIER_2_INTERVALS_PROBLEMS,
+  ...TIER_2_LINKED_LIST_PROBLEMS,
+  ...TIER_2_SLIDING_WINDOW_PROBLEMS,
+  ...TIER_2_STACK_PROBLEMS,
+  ...TIER_2_TREES_PROBLEMS,
+  ...TIER_2_TWO_POINTERS_PROBLEMS,
+  ...TIER_3_GRIDS_PATHS_PROBLEMS,
+  ...TIER_3_INTERVALS_SCHEDULING_PROBLEMS,
+  ...TIER_3_MATRIX_COUNTING_PROBLEMS,
+  ...TIER_3_NUMBER_THEORY_PROBLEMS,
+  ...TIER_3_SORTING_SELECTION_PROBLEMS,
+  ...TIER_3_STRINGS_SIMULATION_PROBLEMS,
 ];
 
 export {
@@ -58,19 +108,50 @@ export {
   TIER_0B_PROBLEMS,
   TIER_0C_PROBLEMS,
   TIER_0D_PROBLEMS,
-  TIER_05_LINEAR_PROBLEMS,
-  TIER_05_HASHING_PROBLEMS,
-  TIER_05_TREES_PROBLEMS,
-  TIER_05_HEAPS_GRAPHS_PROBLEMS,
   TIER_05_EXTRA_PROBLEMS,
+  TIER_05_HASHING_PROBLEMS,
+  TIER_05_HEAPS_GRAPHS_PROBLEMS,
+  TIER_05_LINEAR_PROBLEMS,
+  TIER_05_TREES_PROBLEMS,
+  TIER_1_ADVANCED_GRAPHS_PROBLEMS,
   TIER_1_ARRAYS_HASHING_PROBLEMS,
-  TIER_1_TWO_POINTERS_PROBLEMS,
-  TIER_1_STACK_PROBLEMS,
-  TIER_1_SLIDING_WINDOW_PROBLEMS,
-  TIER_1_BINARY_SEARCH_PROBLEMS,
-  TIER_1_LINKED_LIST_PROBLEMS,
-  TIER_1_STACK_B_PROBLEMS,
-  TIER_1_SLIDING_WINDOW_B_PROBLEMS,
-  TIER_1_TREES_PROBLEMS,
   TIER_1_BACKTRACKING_PROBLEMS,
+  TIER_1_BINARY_SEARCH_PROBLEMS,
+  TIER_1_BIT_MANIPULATION_PROBLEMS,
+  TIER_1_DP_1D_PROBLEMS,
+  TIER_1_DP_2D_PROBLEMS,
+  TIER_1_GRAPHS_PROBLEMS,
+  TIER_1_GREEDY_PROBLEMS,
+  TIER_1_HEAP_PROBLEMS,
+  TIER_1_INTERVALS_PROBLEMS,
+  TIER_1_LINKED_LIST_PROBLEMS,
+  TIER_1_MATH_GEOMETRY_PROBLEMS,
+  TIER_1_SLIDING_WINDOW_B_PROBLEMS,
+  TIER_1_SLIDING_WINDOW_PROBLEMS,
+  TIER_1_STACK_B_PROBLEMS,
+  TIER_1_STACK_PROBLEMS,
+  TIER_1_TREES_PROBLEMS,
+  TIER_1_TRIES_PROBLEMS,
+  TIER_1_TWO_POINTERS_PROBLEMS,
+  TIER_2_ARRAYS_HASHING_PROBLEMS,
+  TIER_2_BACKTRACKING_PROBLEMS,
+  TIER_2_BINARY_SEARCH_PROBLEMS,
+  TIER_2_BIT_MANIPULATION_PROBLEMS,
+  TIER_2_DP_1D_PROBLEMS,
+  TIER_2_DP_2D_PROBLEMS,
+  TIER_2_GRAPHS_PROBLEMS,
+  TIER_2_GREEDY_PROBLEMS,
+  TIER_2_HEAP_PROBLEMS,
+  TIER_2_INTERVALS_PROBLEMS,
+  TIER_2_LINKED_LIST_PROBLEMS,
+  TIER_2_SLIDING_WINDOW_PROBLEMS,
+  TIER_2_STACK_PROBLEMS,
+  TIER_2_TREES_PROBLEMS,
+  TIER_2_TWO_POINTERS_PROBLEMS,
+  TIER_3_GRIDS_PATHS_PROBLEMS,
+  TIER_3_INTERVALS_SCHEDULING_PROBLEMS,
+  TIER_3_MATRIX_COUNTING_PROBLEMS,
+  TIER_3_NUMBER_THEORY_PROBLEMS,
+  TIER_3_SORTING_SELECTION_PROBLEMS,
+  TIER_3_STRINGS_SIMULATION_PROBLEMS,
 };
