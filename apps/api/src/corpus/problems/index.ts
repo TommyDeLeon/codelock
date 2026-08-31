@@ -44,9 +44,7 @@ import { TIER_2_STACK_PROBLEMS } from './tier2-stack.js';
 import { TIER_2_TREES_PROBLEMS } from './tier2-trees.js';
 import { TIER_2_TWO_POINTERS_PROBLEMS } from './tier2-two-pointers.js';
 import { TIER_3_GRIDS_PATHS_PROBLEMS } from './tier3-grids-paths.js';
-import { TIER_3_INTERVALS_SCHEDULING_PROBLEMS } from './tier3-intervals-scheduling.js';
 import { TIER_3_MATRIX_COUNTING_PROBLEMS } from './tier3-matrix-counting.js';
-import { TIER_3_NUMBER_THEORY_PROBLEMS } from './tier3-number-theory.js';
 import { TIER_3_SORTING_SELECTION_PROBLEMS } from './tier3-sorting-selection.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
@@ -96,9 +94,7 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_2_TREES_PROBLEMS,
   ...TIER_2_TWO_POINTERS_PROBLEMS,
   ...TIER_3_GRIDS_PATHS_PROBLEMS,
-  ...TIER_3_INTERVALS_SCHEDULING_PROBLEMS,
   ...TIER_3_MATRIX_COUNTING_PROBLEMS,
-  ...TIER_3_NUMBER_THEORY_PROBLEMS,
   ...TIER_3_SORTING_SELECTION_PROBLEMS,
   ...TIER_3_STRINGS_SIMULATION_PROBLEMS,
 ];
@@ -149,9 +145,7 @@ export {
   TIER_2_TREES_PROBLEMS,
   TIER_2_TWO_POINTERS_PROBLEMS,
   TIER_3_GRIDS_PATHS_PROBLEMS,
-  TIER_3_INTERVALS_SCHEDULING_PROBLEMS,
   TIER_3_MATRIX_COUNTING_PROBLEMS,
-  TIER_3_NUMBER_THEORY_PROBLEMS,
   TIER_3_SORTING_SELECTION_PROBLEMS,
   TIER_3_STRINGS_SIMULATION_PROBLEMS,
 };
