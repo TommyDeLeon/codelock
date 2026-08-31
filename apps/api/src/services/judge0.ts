@@ -143,6 +143,15 @@ export async function runBatch(params: {
   cases: Judge0Case[];
   cpuTimeLimit: number;
   memoryLimitKb: number;
+  /**
+   * 'bulk' yields the judge to anyone actually waiting on a submission.
+   *
+   * Defaults to interactive precisely because forgetting it must fail safe:
+   * the cost of mislabelling corpus measurement as interactive is a slower
+   * import, and the cost of the reverse is a locked-out user whose submission
+   * times out.
+   */
+  priority?: 'interactive' | 'bulk';
 }): Promise<BatchResult> {
   const { language, sourceCode, cases, cpuTimeLimit, memoryLimitKb } = params;
 
@@ -159,7 +168,10 @@ export async function runBatch(params: {
 
   const created = await call<Array<{ token: string }>>(
     '/submissions/batch?base64_encoded=true',
-    { method: 'POST', body: JSON.stringify({ submissions }) },
+    {
+      method: 'POST',
+      body: JSON.stringify({ submissions, priority: params.priority ?? 'interactive' }),
+    },
   );
 
   const tokens = created.map((c) => c.token);

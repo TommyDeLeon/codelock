@@ -296,6 +296,15 @@ function isOwnOrigin(url: string): boolean {
   return DEV_RENDERER !== null && origin === new URL(DEV_RENDERER).origin;
 }
 
+/** True for the web app's origin, whatever path is attached. */
+function isWebOrigin(url: string): boolean {
+  try {
+    return new URL(url).origin === new URL(WEB_URL).origin;
+  } catch {
+    return false;
+  }
+}
+
 /** Put the window back on the bundled renderer after a lock resolves. */
 function showRenderer(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -371,6 +380,22 @@ function createWindow(): BrowserWindow {
     if (!isOwnOrigin(url)) {
       event.preventDefault();
       void shell.openExternal(url);
+      return;
+    }
+
+    // The web origin serves exactly one page this window may show: /lock, which
+    // is the editor. Everything else there is the marketing site, and a
+    // storefront has no business inside an installed application — the visitor
+    // has already installed the thing.
+    //
+    // The lock page navigates itself to '/' in three places: the kill switch,
+    // "Back to CodeLock", and the no-session branch. Each one used to land the
+    // window on the landing page, complete with a Download button. Rather than
+    // fix three call sites and hope a fourth is never added, the rule is
+    // enforced here, where the window actually changes.
+    if (isWebOrigin(url) && new URL(url).pathname !== '/lock') {
+      event.preventDefault();
+      showRenderer();
     }
   });
 
