@@ -1,0 +1,15 @@
+-- Drop an index that cannot be used.
+--
+-- `problems_difficulty_isActive_idx` on (difficulty, isActive) is a strict
+-- leading prefix of `problems_difficulty_isActive_tier_patternFamily_idx`,
+-- added later for the selector's hot path. Postgres satisfies any
+-- (difficulty, isActive) lookup from the wider index, so the narrow one earns
+-- nothing and still costs a write on every one of the ~700 upserts a full
+-- corpus import performs.
+--
+-- Confirmed against pg_stat_user_indexes before dropping: 0 scans on this
+-- index against 124 on the composite. The other two candidates were left
+-- alone — problems_tier_isActive_idx is actually being used (7 scans), and
+-- problems_patternFamily_tier_idx is unused but is not a prefix of anything,
+-- so its absence could change a plan rather than merely save a write.
+DROP INDEX IF EXISTS "problems_difficulty_isActive_idx";

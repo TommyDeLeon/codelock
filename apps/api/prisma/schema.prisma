@@ -324,7 +324,6 @@ model Problem {
   submissions  Submission[]
   lockSessions LockSession[]
 
-  @@index([difficulty, isActive])
   @@index([tier, isActive])
   @@index([patternFamily, tier])
   /// The selection query filters on all four at once once the curriculum gate
