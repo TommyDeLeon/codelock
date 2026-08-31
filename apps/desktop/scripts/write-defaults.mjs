@@ -26,6 +26,10 @@ const defaults = {
   apiUrl: process.env.CODELOCK_BUILD_API_URL || 'http://localhost:4000',
   unlockPublicKey: process.env.CODELOCK_BUILD_UNLOCK_PUBLIC_KEY || '',
   unlockSecret: process.env.CODELOCK_BUILD_UNLOCK_SECRET || '',
+  // Without this the auto-start feature in src/backend.ts is unreachable from a
+  // build: config.ts falls back to '' and reports 'not-configured', so the app
+  // opens against a backend nobody started. config.json still overrides it.
+  backendCommand: process.env.CODELOCK_BUILD_BACKEND_COMMAND || '',
 };
 
 mkdirSync(dist, { recursive: true });
@@ -33,7 +37,8 @@ writeFileSync(path.join(dist, 'build-defaults.json'), `${JSON.stringify(defaults
 
 const verifiable = Boolean(defaults.unlockPublicKey || defaults.unlockSecret);
 console.log(
-  `build defaults: webUrl=${defaults.webUrl} unlockKey=${verifiable ? 'set' : 'MISSING'}`,
+  `build defaults: webUrl=${defaults.webUrl} unlockKey=${verifiable ? 'set' : 'MISSING'} ` +
+    `backendCommand=${defaults.backendCommand ? 'set' : 'none'}`,
 );
 if (!verifiable) {
   console.warn(
