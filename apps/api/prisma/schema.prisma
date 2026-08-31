@@ -143,54 +143,10 @@ model User {
   submissions   Submission[]
   lockSessions  LockSession[]
   devices       Device[]
-  refreshTokens RefreshToken[]
-  integrations  Integration[]
   unlockAudits  UnlockAudit[]
-  oauthAccounts OAuthAccount[]
+  learningEvents LearningEvent[]
 
   @@map("users")
-}
-
-enum OAuthProvider {
-  GITHUB
-  GOOGLE
-}
-
-/// An identity from an external provider, bound to one local user.
-///
-/// Deliberately separate from Integration: that model exists to *act* on a
-/// third-party API on the user's behalf and stores an encrypted access token.
-/// This one only answers "who is this", holds no usable credential after
-/// sign-in, and must not be confused with authorisation to push code.
-model OAuthAccount {
-  id                String        @id @default(uuid()) @db.Uuid
-  userId            String        @db.Uuid
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider          OAuthProvider
-  /// The provider's immutable id for the account — never the email, which the
-  /// user can change at the provider and which would then point somewhere else.
-  providerAccountId String
-  /// What the provider called the account at link time. Display only.
-  providerEmail     String?
-  createdAt         DateTime      @default(now())
-
-  @@unique([provider, providerAccountId])
-  @@unique([userId, provider])
-  @@map("oauth_accounts")
-}
-
-model RefreshToken {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @db.Uuid
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// SHA-256 of the opaque token. The raw value is never stored.
-  tokenHash String    @unique
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([userId])
-  @@map("refresh_tokens")
 }
 
 model Device {
@@ -488,7 +444,6 @@ model Submission {
   elapsedSeconds Int?
   createdAt      DateTime         @default(now())
 
-  syncs SyncRecord[]
 
   @@index([userId, createdAt])
   @@index([lockSessionId])
@@ -502,80 +457,6 @@ model Submission {
 // ---------------------------------------------------------------------------
 // External integrations
 // ---------------------------------------------------------------------------
-
-enum IntegrationProvider {
-  /// OAuth. CodeLock commits accepted solutions to a repo the user picks,
-  /// which produces real contribution-graph activity.
-  GITHUB
-  /// Read-only. LeetCode exposes no public write API, so progress can be
-  /// imported for display but never pushed back. Linked by username only.
-  LEETCODE
-}
-
-enum SyncStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  /// Provider refused permanently (revoked token, repo deleted). Do not retry.
-  DISABLED
-}
-
-model Integration {
-  id       String              @id @default(uuid()) @db.Uuid
-  userId   String              @db.Uuid
-  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider IntegrationProvider
-
-  /// The provider-side identity: GitHub login, or LeetCode username.
-  externalUsername  String
-  /// AES-256-GCM ciphertext of the OAuth access token. Null for LEETCODE,
-  /// which needs no credential. Never leaves the server.
-  accessTokenCipher String?
-  /// OAuth scopes actually granted, so the UI can explain what will happen.
-  scopes            String[] @default([])
-
-  /// GITHUB only: "owner/name" of the repo that receives solutions.
-  repoFullName String?
-  /// GITHUB only: branch to commit to.
-  repoBranch   String  @default("main")
-
-  enabled    Boolean   @default(true)
-  lastSyncAt DateTime?
-  lastError  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  syncs       SyncRecord[]
-  /// Cached provider stats (LeetCode solved counts, GitHub streak) as returned
-  /// by the last successful fetch. Avoids hammering unofficial endpoints.
-  cachedStats Json?
-
-  @@unique([userId, provider])
-  @@map("integrations")
-}
-
-/// One attempt to mirror one submission outward. Kept so a failed push can be
-/// retried without re-running the judge, and so the UI can show what synced.
-model SyncRecord {
-  id            String      @id @default(uuid()) @db.Uuid
-  integrationId String      @db.Uuid
-  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  submissionId  String      @db.Uuid
-  submission    Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  status      SyncStatus @default(PENDING)
-  /// Commit SHA on success; provider error message on failure.
-  detail      String?
-  /// Web URL of the created commit, for the "view on GitHub" link.
-  externalUrl String?
-  attempts    Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@unique([integrationId, submissionId])
-  @@index([status])
-  @@map("sync_records")
-}
 
 // ---------------------------------------------------------------------------
 // Audit
@@ -631,4 +512,72 @@ model UnlockAudit {
   @@index([userId, createdAt])
   @@index([outcome, createdAt])
   @@map("unlock_audits")
+}
+
+// ---------------------------------------------------------------------------
+// Learning log
+// ---------------------------------------------------------------------------
+
+/// What kind of step this was. Deliberately coarse: the point is a readable
+/// history, not an analytics funnel, and a kind nobody ever reads back is a
+/// row that costs writes and teaches nothing.
+enum LearningEventKind {
+  TIMER_ARMED
+  LOCK_ENGAGED
+  PROBLEM_SERVED
+  ATTEMPT_FAILED
+  ATTEMPT_PASSED
+  DEBRIEF_OPENED
+  LOCK_BYPASSED
+  DIFFICULTY_CHANGED
+}
+
+/// One step the learner actually took.
+///
+/// This replaces the generated case study. A case study was a polished artefact
+/// written *for someone else* - evidence to show a recruiter. What is useful to
+/// the person learning is duller and more honest: what they met, how many tries
+/// it took, how long they sat with it, and where they gave up. That history is
+/// only worth keeping if it is written as it happens, so every row here is
+/// appended at the moment of the step and never revised.
+///
+/// It is local, and it leaves the machine only if the owner exports it.
+model LearningEvent {
+  id     String            @id @default(uuid()) @db.Uuid
+  userId String            @db.Uuid
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   LearningEventKind
+  at     DateTime          @default(now())
+
+  /// Denormalised on purpose: the log must stay readable after a problem is
+  /// deactivated or reworded, so it keeps the slug it actually showed rather
+  /// than a foreign key that resolves to today's version.
+  problemSlug   String?
+  problemTitle  String?
+  difficulty    Difficulty?
+  tier          Tier?
+  patternFamily PatternFamily?
+  language      Language?
+
+  /// Which try this was, counting from one, for attempt rows.
+  attempt Int?
+  /// Seconds between the lock engaging and this step.
+  elapsedSeconds Int?
+  /// The code that was submitted, kept verbatim on attempt rows.
+  ///
+  /// The submission table already holds this, but a log you can hand to someone
+  /// — or to a model — for feedback has to be self-contained, and it has to
+  /// survive the submission being cleared. Reflection needs the wrong answer
+  /// far more than the right one: what you tried at 11pm is the evidence.
+  sourceCode String?
+  /// The submission this row describes, when there is one.
+  submissionId String? @db.Uuid
+
+  /// Anything kind-specific and small: the failing cases with expected and
+  /// actual output, the minutes armed, the difficulty move.
+  detail Json?
+
+  @@index([userId, at])
+  @@index([userId, kind, at])
+  @@map("learning_events")
 }

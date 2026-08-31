@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
-import { requireAuth, currentUser } from '../middleware/auth.js';
+import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { registerDeviceSchema, timerConfigSchema } from '../validation/schemas.js';
 
 export const settingsRouter = Router();
-settingsRouter.use(requireAuth);
+settingsRouter.use(withLocalUser);
 
 /** GET /settings/timer */
 settingsRouter.get(

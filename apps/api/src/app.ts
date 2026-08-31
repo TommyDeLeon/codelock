@@ -9,14 +9,12 @@ import { prisma } from './lib/prisma.js';
 import { errorHandler, notFoundHandler, asyncHandler } from './middleware/error.js';
 import { requestIdFor, tagResponse } from './lib/observability.js';
 import { generalLimiter, healthLimiter } from './middleware/rateLimit.js';
-import { authRouter } from './routes/auth.js';
-import { oauthRouter } from './routes/oauth.js';
 import { lockRouter } from './routes/lock.js';
 import { problemsRouter } from './routes/problems.js';
+import { logRouter } from './routes/log.js';
 import { submissionsRouter } from './routes/submissions.js';
 import { settingsRouter } from './routes/settings.js';
 import { statsRouter } from './routes/stats.js';
-import { integrationsRouter } from './routes/integrations.js';
 import { demoRouter } from './routes/demo.js';
 
 /**
@@ -114,16 +112,12 @@ export function createApp(): Express {
   );
 
   app.use('/v1', generalLimiter);
-  app.use('/v1/auth', authRouter);
-  // Mounted before nothing in particular, but kept separate from authRouter:
-  // provider sign-in has its own failure modes and its own rate limiting.
-  app.use('/v1/auth/oauth', oauthRouter);
   app.use('/v1/lock', lockRouter);
   app.use('/v1/problems', problemsRouter);
   app.use('/v1/submissions', submissionsRouter);
   app.use('/v1/settings', settingsRouter);
   app.use('/v1/stats', statsRouter);
-  app.use('/v1/integrations', integrationsRouter);
+  app.use('/v1/log', logRouter);
   // Unauthenticated on purpose, and the only such route that runs code. Its own
   // limits live in the router; see the note there for why that is safe.
   app.use('/v1/demo', demoRouter);

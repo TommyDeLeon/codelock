@@ -129,11 +129,6 @@ export function SiteNav() {
               </Link>
             </li>
           ))}
-          <li className="ml-auto">
-            <Link href="/login" className="text-muted transition-colors hover:text-fg">
-              Sign in
-            </Link>
-          </li>
         </ul>
       </nav>
 

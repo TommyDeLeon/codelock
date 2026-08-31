@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
-import { requireAuth, currentUser } from '../middleware/auth.js';
+import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { idParamSchema } from '../validation/schemas.js';
 import { pickProblem } from '../services/problemSelector.js';
 import {
@@ -13,7 +13,7 @@ import {
 import { toPublicProblem } from '../services/lockSessions.js';
 
 export const problemsRouter = Router();
-problemsRouter.use(requireAuth);
+problemsRouter.use(withLocalUser);
 
 /**
  * GET /problems/next — the adaptive pick for this user, at their current tier.
