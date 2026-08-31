@@ -95,6 +95,49 @@ for (const file of process.argv.slice(2)) {
     if (unjoined > 0) fail(`${key}: ${unjoined} array literal(s) not followed by .join()`);
   }
 
+  // --- filler detection -----------------------------------------------------
+  //
+  // A batch can satisfy every structural rule above and still be worthless. One
+  // author, asked for third variations, wrote a generator: 88 problems titled
+  // "Third Variation 1..9", slugs like `tree-nodes-third-4`, one editorial
+  // shared by all of them, and a `makeSix(k)` factory whose solution counted the
+  // input and added k. Distinct constants, six languages, two samples — clean by
+  // every check that existed, and not a single real problem.
+  //
+  // These heuristics are deliberately blunt. They cannot judge whether a problem
+  // is *good*; they only catch a batch that was mass-produced from one template,
+  // which is the cheap way to hit a target and the expensive way to ruin a
+  // corpus nobody can trust.
+
+  const editorialHeadings = new Set(
+    [...src.matchAll(/##\s+([^\\'"`\n]{3,60})/g)].map((m) => m[1].trim()),
+  );
+  if (slugs.length >= 4 && editorialHeadings.size <= 1) {
+    fail(
+      `all ${slugs.length} problems share one editorial heading ` +
+        `(${[...editorialHeadings][0] ?? 'none found'}) — templated, not authored`,
+    );
+  }
+
+  const titles = [...src.matchAll(/title: *'([^']+)'/g)].map((m) => m[1]);
+  const numbered = titles.filter((t) => /\b(variation|problem|version)\s*\d+$/i.test(t));
+  if (numbered.length >= 3) {
+    fail(`${numbered.length} titles are numbered placeholders, e.g. "${numbered[0]}"`);
+  }
+
+  const slugStems = slugs.map((s) => s.replace(/-\d+$/, ''));
+  const repeatedStem = slugStems.find(
+    (stem, _i, all) => all.filter((s) => s === stem).length >= 3,
+  );
+  if (repeatedStem) {
+    fail(`3+ slugs share the stem "${repeatedStem}" with only a number to tell them apart`);
+  }
+
+  // One statement reused verbatim is the same problem however it is titled.
+  const prompts = [...src.matchAll(/promptMarkdown: *`([^`]{20,})`/g)].map((m) => m[1].trim());
+  const dupPrompt = prompts.find((p, i) => prompts.indexOf(p) !== i);
+  if (dupPrompt) fail(`identical promptMarkdown reused: "${dupPrompt.slice(0, 60)}..."`);
+
   // Gotchas that only surface as a compile error on the judge, long after.
   for (const [re, msg] of [
     [/\bsort\.(Ints|Slice|Strings)\b/, 'Go uses sort.* — the driver imports only bufio/fmt/os/strconv/strings'],
