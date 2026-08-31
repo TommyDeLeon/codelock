@@ -28,20 +28,33 @@ import { TIER_1_STACK_PROBLEMS } from './tier1-stack.js';
 import { TIER_1_TREES_PROBLEMS } from './tier1-trees.js';
 import { TIER_1_TRIES_PROBLEMS } from './tier1-tries.js';
 import { TIER_1_TWO_POINTERS_PROBLEMS } from './tier1-two-pointers.js';
+import { TIER_2_ARRAYS_HASHING_B_PROBLEMS } from './tier2-arrays-hashing-b.js';
 import { TIER_2_ARRAYS_HASHING_PROBLEMS } from './tier2-arrays-hashing.js';
+import { TIER_2_BACKTRACKING_B_PROBLEMS } from './tier2-backtracking-b.js';
 import { TIER_2_BACKTRACKING_PROBLEMS } from './tier2-backtracking.js';
+import { TIER_2_BINARY_SEARCH_B_PROBLEMS } from './tier2-binary-search-b.js';
 import { TIER_2_BINARY_SEARCH_PROBLEMS } from './tier2-binary-search.js';
 import { TIER_2_BIT_MANIPULATION_PROBLEMS } from './tier2-bit-manipulation.js';
+import { TIER_2_DP_1D_B_PROBLEMS } from './tier2-dp1d-b.js';
 import { TIER_2_DP_1D_PROBLEMS } from './tier2-dp1d.js';
 import { TIER_2_DP_2D_PROBLEMS } from './tier2-dp2d.js';
+import { TIER_2_GRAPHS_B_PROBLEMS } from './tier2-graphs-b.js';
 import { TIER_2_GRAPHS_PROBLEMS } from './tier2-graphs.js';
+import { TIER_2_GREEDY_B_PROBLEMS } from './tier2-greedy-b.js';
 import { TIER_2_GREEDY_PROBLEMS } from './tier2-greedy.js';
+import { TIER_2_HEAP_B_PROBLEMS } from './tier2-heap-b.js';
 import { TIER_2_HEAP_PROBLEMS } from './tier2-heap.js';
+import { TIER_2_INTERVALS_B_PROBLEMS } from './tier2-intervals-b.js';
 import { TIER_2_INTERVALS_PROBLEMS } from './tier2-intervals.js';
+import { TIER_2_LINKED_LIST_B_PROBLEMS } from './tier2-linked-list-b.js';
 import { TIER_2_LINKED_LIST_PROBLEMS } from './tier2-linked-list.js';
+import { TIER_2_SLIDING_WINDOW_B2_PROBLEMS } from './tier2-sliding-window-b2.js';
 import { TIER_2_SLIDING_WINDOW_PROBLEMS } from './tier2-sliding-window.js';
+import { TIER_2_STACK_B2_PROBLEMS } from './tier2-stack-b2.js';
 import { TIER_2_STACK_PROBLEMS } from './tier2-stack.js';
+import { TIER_2_TREES_B_PROBLEMS } from './tier2-trees-b.js';
 import { TIER_2_TREES_PROBLEMS } from './tier2-trees.js';
+import { TIER_2_TWO_POINTERS_B_PROBLEMS } from './tier2-two-pointers-b.js';
 import { TIER_2_TWO_POINTERS_PROBLEMS } from './tier2-two-pointers.js';
 import { TIER_3_GRIDS_PATHS_PROBLEMS } from './tier3-grids-paths.js';
 import { TIER_3_INTERVALS_SCHEDULING_PROBLEMS } from './tier3-intervals-scheduling.js';
@@ -80,20 +93,33 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_1_TREES_PROBLEMS,
   ...TIER_1_TRIES_PROBLEMS,
   ...TIER_1_TWO_POINTERS_PROBLEMS,
+  ...TIER_2_ARRAYS_HASHING_B_PROBLEMS,
   ...TIER_2_ARRAYS_HASHING_PROBLEMS,
+  ...TIER_2_BACKTRACKING_B_PROBLEMS,
   ...TIER_2_BACKTRACKING_PROBLEMS,
+  ...TIER_2_BINARY_SEARCH_B_PROBLEMS,
   ...TIER_2_BINARY_SEARCH_PROBLEMS,
   ...TIER_2_BIT_MANIPULATION_PROBLEMS,
+  ...TIER_2_DP_1D_B_PROBLEMS,
   ...TIER_2_DP_1D_PROBLEMS,
   ...TIER_2_DP_2D_PROBLEMS,
+  ...TIER_2_GRAPHS_B_PROBLEMS,
   ...TIER_2_GRAPHS_PROBLEMS,
+  ...TIER_2_GREEDY_B_PROBLEMS,
   ...TIER_2_GREEDY_PROBLEMS,
+  ...TIER_2_HEAP_B_PROBLEMS,
   ...TIER_2_HEAP_PROBLEMS,
+  ...TIER_2_INTERVALS_B_PROBLEMS,
   ...TIER_2_INTERVALS_PROBLEMS,
+  ...TIER_2_LINKED_LIST_B_PROBLEMS,
   ...TIER_2_LINKED_LIST_PROBLEMS,
+  ...TIER_2_SLIDING_WINDOW_B2_PROBLEMS,
   ...TIER_2_SLIDING_WINDOW_PROBLEMS,
+  ...TIER_2_STACK_B2_PROBLEMS,
   ...TIER_2_STACK_PROBLEMS,
+  ...TIER_2_TREES_B_PROBLEMS,
   ...TIER_2_TREES_PROBLEMS,
+  ...TIER_2_TWO_POINTERS_B_PROBLEMS,
   ...TIER_2_TWO_POINTERS_PROBLEMS,
   ...TIER_3_GRIDS_PATHS_PROBLEMS,
   ...TIER_3_INTERVALS_SCHEDULING_PROBLEMS,
@@ -133,20 +159,33 @@ export {
   TIER_1_TREES_PROBLEMS,
   TIER_1_TRIES_PROBLEMS,
   TIER_1_TWO_POINTERS_PROBLEMS,
+  TIER_2_ARRAYS_HASHING_B_PROBLEMS,
   TIER_2_ARRAYS_HASHING_PROBLEMS,
+  TIER_2_BACKTRACKING_B_PROBLEMS,
   TIER_2_BACKTRACKING_PROBLEMS,
+  TIER_2_BINARY_SEARCH_B_PROBLEMS,
   TIER_2_BINARY_SEARCH_PROBLEMS,
   TIER_2_BIT_MANIPULATION_PROBLEMS,
+  TIER_2_DP_1D_B_PROBLEMS,
   TIER_2_DP_1D_PROBLEMS,
   TIER_2_DP_2D_PROBLEMS,
+  TIER_2_GRAPHS_B_PROBLEMS,
   TIER_2_GRAPHS_PROBLEMS,
+  TIER_2_GREEDY_B_PROBLEMS,
   TIER_2_GREEDY_PROBLEMS,
+  TIER_2_HEAP_B_PROBLEMS,
   TIER_2_HEAP_PROBLEMS,
+  TIER_2_INTERVALS_B_PROBLEMS,
   TIER_2_INTERVALS_PROBLEMS,
+  TIER_2_LINKED_LIST_B_PROBLEMS,
   TIER_2_LINKED_LIST_PROBLEMS,
+  TIER_2_SLIDING_WINDOW_B2_PROBLEMS,
   TIER_2_SLIDING_WINDOW_PROBLEMS,
+  TIER_2_STACK_B2_PROBLEMS,
   TIER_2_STACK_PROBLEMS,
+  TIER_2_TREES_B_PROBLEMS,
   TIER_2_TREES_PROBLEMS,
+  TIER_2_TWO_POINTERS_B_PROBLEMS,
   TIER_2_TWO_POINTERS_PROBLEMS,
   TIER_3_GRIDS_PATHS_PROBLEMS,
   TIER_3_INTERVALS_SCHEDULING_PROBLEMS,

@@ -6,7 +6,7 @@ import { Lock, SkipForward } from 'lucide-react';
 import { toast } from 'sonner';
 import { LANGUAGES, type GradeResult, type Language, type LockSessionView } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth-store';
+import { useProfile } from '@/lib/profile-store';
 import { Button } from '@/components/ui/button';
 import { CodeEditor } from './code-editor';
 import { ProblemPanel } from './problem-panel';
@@ -28,7 +28,7 @@ export function LockWorkspace({
   onUnlocked: (token: string) => void | Promise<void>;
 }) {
   const problem = session.problem!;
-  const preferred = useAuth((s) => s.user?.preferredLanguage);
+  const preferred = useProfile((s) => s.profile?.preferredLanguage);
 
   // Open in the user's own language. The previous default took the first key of
   // starterCode, whose order is whatever the JSON happened to have — which put
