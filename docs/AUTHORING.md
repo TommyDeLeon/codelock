@@ -138,3 +138,52 @@ ship a problem that does not work, only one that does not exist yet.
 
 Re-run `--measure` after any judge, image or language-version change. An
 uncalibrated speed gate is not a slightly wrong number, it is a lockout.
+
+## Gotchas that have actually cost a batch
+
+Each of these was found by the judge, not by review, and each cost a full
+measurement round trip. Check them before submitting a batch.
+
+**The Go driver imports five packages, and only five.** `bufio`, `fmt`, `os`,
+`strconv`, `strings`. `sort` and `math` are **not** available. A reference
+solution calling `sort.Ints` or `math.Abs` does not fail review — it fails to
+compile on the judge, and Go's error arrives long after you have moved on.
+Write the helper inline.
+
+**The judge hides C++ compile errors.** Its command is
+`g++ ... 2>/tmp/cc.log && ./a.out`, so diagnostics go to a file nobody reads and
+a compile failure surfaces as a *runtime error with empty output and empty
+stderr*. Treat any empty-output C++ failure as a compile failure until proven
+otherwise.
+
+**Check the signature id exists before writing six solutions against it.**
+`fn:list,int->int` looked obvious and does not exist; the problem had to be
+reshaped after all six languages were written. Grep `signatures.ts` first. The
+`list` family is `fn:list->list`, `fn:list->bool`, `fn:list->int`,
+`fn:list,int->list`, `fn:list,list->list` — note there is no list-and-scalar to
+scalar. Reshaping the problem is always cheaper than adding a signature.
+
+**A driver-declared node type must not be redeclared.** `ListNode` and
+`TreeNode` come from the generated driver in every language. Declaring your own
+shadows or conflicts with it. In Java, `public class Main` must also come first
+in the file — single-file source mode runs the first class it finds.
+
+**An unordered answer needs an order in the statement.** The judge compares
+stdout exactly, so "return all subsets" is not a specification. Either state the
+total order the output must be in and produce exactly that, or reshape the
+problem to return a count. This applies to every `int[][]` result.
+
+**Exponential problems need small inputs.** Backtracking and permutation
+problems run under a CPU limit. A twenty-element list will time out and the
+problem will be held INACTIVE with no other symptom. Keep inputs to roughly ten
+elements, and n <= 8 for anything factorial.
+
+**An empty array is an empty line on the wire.** Round-tripping that is fragile.
+Unless empty input is deliberately the edge case under test, state a guarantee
+("the list always has at least one number") instead.
+
+**Measure incrementally.** `--only=slug-a,slug-b` measures just those problems
+and carries every other row's stored runtime forward. A full `--measure` is
+~28 judge runs per problem; at ~25 runs/minute the whole corpus is many hours.
+The importer measures everything *before* it writes, so interrupting a
+measurement run is safe and changes nothing in the database.
