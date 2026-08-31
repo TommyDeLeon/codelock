@@ -16,6 +16,7 @@ import { TIER_1_BINARY_SEARCH_PROBLEMS } from './tier1-binary-search.js';
 import { TIER_1_LINKED_LIST_PROBLEMS } from './tier1-linked-list.js';
 import { TIER_1_STACK_B_PROBLEMS } from './tier1-stack-b.js';
 import { TIER_1_SLIDING_WINDOW_B_PROBLEMS } from './tier1-sliding-window-b.js';
+import { TIER_1_TREES_PROBLEMS } from './tier1-trees.js';
 
 /**
  * Every authored problem, in tier order.
@@ -47,6 +48,7 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_1_LINKED_LIST_PROBLEMS,
   ...TIER_1_STACK_B_PROBLEMS,
   ...TIER_1_SLIDING_WINDOW_B_PROBLEMS,
+  ...TIER_1_TREES_PROBLEMS,
 ];
 
 export {
@@ -67,4 +69,5 @@ export {
   TIER_1_LINKED_LIST_PROBLEMS,
   TIER_1_STACK_B_PROBLEMS,
   TIER_1_SLIDING_WINDOW_B_PROBLEMS,
+  TIER_1_TREES_PROBLEMS,
 };
