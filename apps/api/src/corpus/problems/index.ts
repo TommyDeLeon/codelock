@@ -62,6 +62,7 @@ import { TIER_3_MATRIX_COUNTING_PROBLEMS } from './tier3-matrix-counting.js';
 import { TIER_3_NUMBER_THEORY_PROBLEMS } from './tier3-number-theory.js';
 import { TIER_3_SORTING_SELECTION_PROBLEMS } from './tier3-sorting-selection.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
+import { TIER_3_TEXT_PARSING_PROBLEMS } from './tier3-text-parsing.js';
 
 export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_0_PROBLEMS,
@@ -127,6 +128,7 @@ export const ALL_PROBLEMS: ProblemDefinition[] = [
   ...TIER_3_NUMBER_THEORY_PROBLEMS,
   ...TIER_3_SORTING_SELECTION_PROBLEMS,
   ...TIER_3_STRINGS_SIMULATION_PROBLEMS,
+  ...TIER_3_TEXT_PARSING_PROBLEMS,
 ];
 
 export {
@@ -193,4 +195,5 @@ export {
   TIER_3_NUMBER_THEORY_PROBLEMS,
   TIER_3_SORTING_SELECTION_PROBLEMS,
   TIER_3_STRINGS_SIMULATION_PROBLEMS,
+  TIER_3_TEXT_PARSING_PROBLEMS,
 };
