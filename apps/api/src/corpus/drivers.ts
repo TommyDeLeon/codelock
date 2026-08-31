@@ -243,7 +243,11 @@ const JAVA_HELPERS = `
     static String __fTree(TreeNode root) {
         if (root == null) return "";
         java.util.List<String> out = new java.util.ArrayList<>();
-        java.util.ArrayDeque<TreeNode> q = new java.util.ArrayDeque<>();
+        // LinkedList, not ArrayDeque: level order has to carry the absent
+        // children so they can be printed as "null", and ArrayDeque throws on a
+        // null element. Every non-empty tree returned from Java died here with
+        // a NullPointerException the moment a leaf was reached.
+        java.util.LinkedList<TreeNode> q = new java.util.LinkedList<>();
         q.add(root);
         while (!q.isEmpty()) {
             TreeNode n = q.poll();
