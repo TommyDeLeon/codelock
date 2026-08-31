@@ -188,7 +188,6 @@ export function demoPublicView(): PublicProblem {
     title: DEMO_PROBLEM.title,
     difficulty: DEMO_PROBLEM.difficulty,
     promptMarkdown: DEMO_PROBLEM.promptMarkdown,
-    tags: DEMO_PROBLEM.tags,
     starterCode: DEMO_PROBLEM.starterCode,
     sampleCases: DEMO_CASES.filter((c) => c.isSample).map((c) => ({
       ordinal: c.ordinal,

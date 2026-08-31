@@ -71,7 +71,6 @@ export interface PublicProblem {
   title: string;
   difficulty: Difficulty;
   promptMarkdown: string;
-  tags: string[];
   starterCode: Partial<Record<Language, string>>;
   sampleCases: Array<{ ordinal: number; stdin: string; expectedStdout: string }>;
   avgSolveSeconds: number;
