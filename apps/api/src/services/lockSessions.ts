@@ -13,6 +13,7 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
+import { recordStep } from './learningLog.js';
 import {
   availableFamiliesForTiers,
   availableTiers,
@@ -67,6 +68,7 @@ export async function armSession(params: {
       fireAt: new Date(Date.now() + minutes * 60_000),
     },
   });
+  void recordStep(userId, { kind: 'TIMER_ARMED', detail: { minutes } });
   return toView(session, null);
 }
 
@@ -216,6 +218,13 @@ export async function bypassLock(params: {
     reason: 'skip_allowance',
   });
 
+  // A skip is part of the history too. Hiding the nights you walked away makes
+  // the log a highlight reel, which is the one thing it must not be.
+  void recordStep(params.userId, {
+    kind: 'LOCK_BYPASSED',
+    detail: { skipsRemaining: allowance - usedToday - 1 },
+  });
+
   return { skipsRemaining: allowance - usedToday - 1 };
 }
 
@@ -300,6 +309,13 @@ async function claimDueSession(
   });
 
   const session = await prisma.lockSession.findUniqueOrThrow({ where: { id: sessionId } });
+
+  // Two steps, not one: the lock landing and the problem it landed on are
+  // different facts, and reading the history later you want to see a lock that
+  // engaged even on a night that never produced an attempt.
+  void recordStep(userId, { kind: 'LOCK_ENGAGED', detail: { difficulty } });
+  void recordStep(userId, { kind: 'PROBLEM_SERVED', problem });
+
   return { session, problem };
 }
 
@@ -452,6 +468,11 @@ export async function getDebrief(userId: string, sessionId: string): Promise<Deb
 
   const problem = await loadProblem(session.problemId);
   if (!problem) throw ApiError.notFound('No problem was assigned to this session');
+
+  // Opening the debrief is the moment the pattern gets named, so it belongs in
+  // the history: a solve you never read back is a different event from one you
+  // did, and later the difference is the only way to tell luck from learning.
+  void recordStep(userId, { kind: 'DEBRIEF_OPENED', problem });
 
   return {
     patternFamily: problem.patternFamily,

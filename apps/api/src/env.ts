@@ -11,8 +11,6 @@ const schema = z.object({
 
   DATABASE_URL: z.string().url(),
 
-  JWT_ACCESS_SECRET: z.string().min(32),
-  JWT_REFRESH_SECRET: z.string().min(32),
   JWT_UNLOCK_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
@@ -64,8 +62,6 @@ const schema = z.object({
   /// stored token, forcing users to reconnect — it is not a routine rotation.
   ENCRYPTION_KEY: z.string().min(32),
   GITHUB_API_URL: z.string().url().default('https://api.github.com'),
-  GITHUB_CLIENT_ID: z.string().optional().default(''),
-  GITHUB_CLIENT_SECRET: z.string().optional().default(''),
   /// Must exactly match the callback registered on the GitHub OAuth app.
   GITHUB_CALLBACK_URL: z.string().optional().default(''),
   /// Where to bounce the browser once the OAuth dance finishes.
@@ -74,10 +70,6 @@ const schema = z.object({
   /// from it, and they must match what is registered with the provider exactly
   /// — a mismatch is rejected by the provider rather than by us.
   API_URL: z.string().url().default('http://localhost:4000'),
-  /// Sign in with Google. Empty disables the button rather than breaking it:
-  /// the login screen only offers providers this deployment can complete.
-  GOOGLE_CLIENT_ID: z.string().optional().default(''),
-  GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -94,7 +86,7 @@ if (!parsed.success) {
 const raw = parsed.data;
 
 if (raw.NODE_ENV === 'production') {
-  const secrets = [raw.JWT_ACCESS_SECRET, raw.JWT_REFRESH_SECRET, raw.JWT_UNLOCK_SECRET];
+  const secrets = [raw.JWT_UNLOCK_SECRET];
   if (new Set(secrets).size !== secrets.length) {
     console.error('JWT secrets must be distinct in production.');
     process.exit(1);

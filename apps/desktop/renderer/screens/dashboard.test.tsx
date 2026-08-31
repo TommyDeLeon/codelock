@@ -108,21 +108,21 @@ afterEach(() => {
 describe('auto-lock', () => {
   it('takes the screen when the server says the session is LOCKED', async () => {
     serverReturns(session({ state: 'LOCKED', secondsRemaining: 0 }));
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await waitFor(() => expect(lock).toHaveBeenCalledWith('session-1'));
   });
 
   it('takes the screen when the countdown reaches zero', async () => {
     serverReturns(session({ state: 'ARMED', secondsRemaining: 0 }));
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await waitFor(() => expect(lock).toHaveBeenCalledWith('session-1'));
   });
 
   it('does not take the screen while the countdown is still running', async () => {
     serverReturns(session({ state: 'ARMED', secondsRemaining: 60 }));
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await screen.findByText(/locks at/i);
     expect(lock).not.toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe('auto-lock', () => {
     serverReturns(
       session({ state: 'ARMED', secondsRemaining: 3, pausedAt: new Date().toISOString() }),
     );
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
     await waitFor(() => expect(screen.queryByText(/paused/i)).toBeTruthy());
 
     // Long enough for a 3-second countdown to reach zero twice over.
@@ -161,7 +161,7 @@ describe('auto-lock', () => {
   it('takes the screen when a running countdown ticks down to zero', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     serverReturns(session({ state: 'ARMED', secondsRemaining: 3 }));
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
     await waitFor(() => expect(screen.queryByText(/locks at/i)).toBeTruthy());
 
     await vi.advanceTimersByTimeAsync(6_000);
@@ -176,7 +176,7 @@ describe('auto-lock', () => {
    */
   it('hands a running session to the shell as a scheduled deadline', async () => {
     serverReturns(session({ state: 'ARMED', secondsRemaining: 300 }));
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await screen.findByText(/locks at/i);
     await waitFor(() =>
@@ -193,7 +193,7 @@ describe('auto-lock', () => {
     serverReturns(
       session({ state: 'ARMED', secondsRemaining: 300, pausedAt: new Date().toISOString() }),
     );
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     // Again, wait for the session to actually reach the component. The mount
     // pass always schedules null, so asserting before the fetch lands proves
@@ -219,7 +219,7 @@ describe('when the API is unreachable', () => {
   });
 
   it('shows the outage rather than "No active session"', async () => {
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await waitFor(() =>
       expect(screen.getByText(/cannot reach its database/i)).toBeTruthy(),
@@ -230,7 +230,7 @@ describe('when the API is unreachable', () => {
   });
 
   it('does not offer the duration presets it cannot honour', async () => {
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
 
     await waitFor(() => expect(screen.getByText(/cannot reach its database/i)).toBeTruthy());
     expect(screen.queryByLabelText(/Start a 30 minute session/i)).toBeNull();
@@ -243,7 +243,7 @@ describe('the paused countdown', () => {
     serverReturns(
       session({ state: 'ARMED', secondsRemaining: 90, pausedAt: new Date().toISOString() }),
     );
-    render(<DashboardScreen onSignOut={() => {}} />);
+    render(<DashboardScreen />);
     await waitFor(() => expect(screen.queryByText('01:30')).toBeTruthy());
 
     await vi.advanceTimersByTimeAsync(5_000);

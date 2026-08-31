@@ -2,14 +2,14 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
-import { requireAuth, currentUser } from '../middleware/auth.js';
+import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { submitLimiter } from '../middleware/rateLimit.js';
 import { listQuerySchema, submitSchema, idParamSchema } from '../validation/schemas.js';
 import { gradeSubmission } from '../services/grading.js';
 import { acquireGradeSlot } from '../services/gradeQueue.js';
 
 export const submissionsRouter = Router();
-submissionsRouter.use(requireAuth);
+submissionsRouter.use(withLocalUser);
 
 /**
  * POST /submissions — run code against every test case.

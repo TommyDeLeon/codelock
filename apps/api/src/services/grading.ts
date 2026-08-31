@@ -6,7 +6,7 @@ import { logger } from '../lib/logger.js';
 import { runBatch, JUDGE0_STATUS, type CaseResult } from './judge0.js';
 import { applyOutcome, type ProgressUpdate } from './difficulty.js';
 import { releaseLock, requireOwnedSession } from './lockSessions.js';
-import { mirrorSubmission } from './integrations.js';
+import { recordStep } from './learningLog.js';
 import {
   bestOfRuns,
   evaluatePerformance,
@@ -165,6 +165,38 @@ export async function gradeSubmission(params: {
       where: { id: submission.id },
       data: { status, passedCount, runtimeMs, memoryKb, message, judgeTokens: tokens },
     });
+    // Failures are the part of the history worth keeping. A log that records
+    // only solves flatters the reader and teaches them nothing about where the
+    // time actually went.
+    void recordStep(userId, {
+      kind: 'ATTEMPT_FAILED',
+      problem,
+      language,
+      attempt: session ? session.attempts + 1 : undefined,
+      elapsedSeconds: elapsedSeconds ?? undefined,
+      sourceCode,
+      submissionId: submission.id,
+      detail: {
+        status,
+        passedCount,
+        totalCount: results.length,
+        // The sample cases only. A hidden case's expected output is the answer,
+        // and handing it back on failure would turn the log into a cheat sheet.
+        failedSamples: problem.testCases
+          .map((tc, i) => ({ tc, result: results[i] }))
+          .filter(({ tc, result }) => tc.isSample && result && !result.passed)
+          .map(({ tc, result }) => ({
+            ordinal: tc.ordinal,
+            stdin: tc.stdin,
+            expected: tc.expectedStdout,
+            actual: result?.stdout ?? null,
+            status: result?.statusDescription ?? null,
+          })),
+        hiddenFailures: caseViews.filter((c) => !c.passed && !c.isSample).length,
+        message,
+      },
+    });
+
     return {
       submissionId: submission.id,
       status,
@@ -313,9 +345,18 @@ export async function gradeSubmission(params: {
     gateMs: performance.gateMs,
   });
 
-  // Push to GitHub only after the lock is released, and never await it: a
-  // GitHub outage must not keep anyone locked out of their own machine.
-  mirrorSubmission(userId, submission.id);
+  // Written after the lock is released and never awaited: a log write must not
+  // be able to keep anyone locked out of their own machine.
+  void recordStep(userId, {
+    kind: 'ATTEMPT_PASSED',
+    problem,
+    language: submission.language,
+    attempt: session.attempts + 1,
+    elapsedSeconds: submission.elapsedSeconds ?? undefined,
+    sourceCode,
+    submissionId: submission.id,
+    detail: { runtimeMs, gateMs: performance.gateMs, standing: standing ? { ratio: standing.ratio, bestKnownMs: standing.bestKnownMs } : null },
+  });
 
   return { ...base, unlockToken, progress };
 }
@@ -337,9 +378,18 @@ async function advanceProgress(
 
   const update = applyOutcome(current, outcome);
   const { transition, reason, ...persisted } = update;
-  void transition;
-  void reason;
   await prisma.userProgress.update({ where: { userId }, data: persisted });
+
+  // A move between difficulties is the clearest signal the log can carry, and
+  // the reason matters more than the direction: "held" is not a non-event when
+  // you are trying to work out why the problems stopped getting harder.
+  if (transition !== 'held') {
+    void recordStep(userId, {
+      kind: 'DIFFICULTY_CHANGED',
+      detail: { transition, reason, from: current.currentDifficulty, to: persisted.currentDifficulty },
+    });
+  }
+
   return update;
 }
 

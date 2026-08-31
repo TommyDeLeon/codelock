@@ -68,6 +68,16 @@ export interface CaseResult {
   passed: boolean;
   statusId: number;
   statusDescription: string;
+  /**
+   * What the program actually printed.
+   *
+   * Judge0 already returns this and we already ask for it; it used to be
+   * dropped because grading only needs the verdict. The learning log needs the
+   * output itself — "expected 3, got 5" is the whole lesson, and without it a
+   * failed attempt records only that it failed. Capped, because a runaway loop
+   * can print megabytes.
+   */
+  stdout: string | null;
   timeMs: number;
   memoryKb: number;
   stderr: string | null;
@@ -159,8 +169,12 @@ export async function runBatch(params: {
 
 const FIELDS = 'token,status,stdout,stderr,compile_output,time,memory';
 
+/** A wrong answer is worth reading; a runaway print loop is not. */
+const MAX_STDOUT_CHARS = 2_000;
+
 interface RawResult {
   status: { id: number; description: string };
+  stdout?: string | null;
   stderr?: string | null;
   compile_output?: string | null;
   time?: string | null;
@@ -194,6 +208,7 @@ function toCaseResult(raw: RawResult): CaseResult {
     passed: raw.status.id === STATUS.ACCEPTED,
     statusId: raw.status.id,
     statusDescription: raw.status.description,
+    stdout: unb64(raw.stdout)?.slice(0, MAX_STDOUT_CHARS) ?? null,
     timeMs: Math.round(Number(raw.time ?? 0) * 1000),
     memoryKb: raw.memory ?? 0,
     stderr: unb64(raw.stderr),

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Integration, LeetCodeStats, TimerConfig } from '@codelock/shared';
+import type { TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { openExternal } from '../bridge';
 
@@ -39,40 +39,16 @@ const fromTime = (value: string): number | null => {
  */
 export function SettingsScreen() {
   const [timer, setTimer] = useState<TimerConfig | null>(null);
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [leetcode, setLeetcode] = useState<LeetCodeStats | null>(null);
-  /** Connected, but the last stats fetch failed. Distinct from not connected. */
-  const [leetcodeOffline, setLeetcodeOffline] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
   const [fromText, setFromText] = useState('00:00');
   const [toText, setToText] = useState('24:00');
   const [status, setStatus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [{ timerConfig }, list] = await Promise.all([api.timer(), api.integrations()]);
+      const { timerConfig } = await api.timer();
       setTimer(timerConfig);
       setFromText(toTime(timerConfig.activeFromMinute));
       setToText(toTime(timerConfig.activeToMinute));
-      setIntegrations(list.integrations);
-
-      if (list.integrations.some((i) => i.provider === 'LEETCODE')) {
-        // The upstream endpoint is unofficial and does go down, and that is not
-        // worth failing the whole settings load over — but it is not the same
-        // as being disconnected either. Falling back to null here used to drop
-        // the user into the "enter your LeetCode username" form they had
-        // already filled in.
-        setLeetcodeOffline(null);
-        try {
-          const stats = await api.leetcodeStats();
-          setLeetcode(stats.stats);
-        } catch (err) {
-          setLeetcode(null);
-          setLeetcodeOffline(
-            err instanceof ApiError ? err.message : 'Could not reach LeetCode just now.',
-          );
-        }
-      }
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'Could not reach CodeLock.');
     }
@@ -115,8 +91,6 @@ export function SettingsScreen() {
       </p>
     );
   }
-
-  const github = integrations.find((i) => i.provider === 'GITHUB') ?? null;
 
   // The panels span the window; the prose inside them does not. A 640px column
   // left most of a maximised window empty, but settings text set to 1400px
@@ -229,107 +203,6 @@ export function SettingsScreen() {
         )}
       </section>
 
-      <section className="rule" style={{ paddingTop: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>LeetCode</h2>
-        {leetcode ? (
-          <>
-            <div style={{ display: 'flex', gap: 24 }}>
-              <Stat label="solved" value={leetcode.solved.total} />
-              <Stat label="easy" value={leetcode.solved.easy} />
-              <Stat label="medium" value={leetcode.solved.medium} />
-              <Stat label="hard" value={leetcode.solved.hard} />
-            </div>
-            <p
-              style={{
-                margin: '10px 0 0',
-                fontSize: 12,
-                color: 'var(--faint)',
-              }}
-            >
-              {leetcode.username} · snapshot from{' '}
-              {new Date(leetcode.fetchedAt).toLocaleDateString()}
-            </p>
-            <Quiet onClick={() => void api.disconnect('LEETCODE').then(load)}>Disconnect</Quiet>
-          </>
-        ) : leetcodeOffline ? (
-          <>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>{leetcodeOffline}</p>
-            <Quiet onClick={() => void load()}>Try again</Quiet>
-          </>
-        ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="LeetCode username"
-              aria-label="LeetCode username"
-            />
-            <button
-              type="button"
-              disabled={!username.trim()}
-              onClick={() =>
-                void api
-                  .linkLeetCode(username.trim())
-                  .then((r) => {
-                    setLeetcode(r.stats);
-                    setUsername('');
-                  })
-                  .catch((err: unknown) =>
-                    setStatus(
-                      err instanceof ApiError ? err.message : 'Could not link that account.',
-                    ),
-                  )
-              }
-              className="btn btn-secondary"
-            >
-              Link
-            </button>
-          </div>
-        )}
-      </section>
-
-      <section className="rule" style={{ paddingTop: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>GitHub</h2>
-        {github ? (
-          <>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
-              Connected as {github.externalUsername}
-              {github.repoFullName ? `, mirroring to ${github.repoFullName}` : ''}. Accepted
-              solutions are committed after the lock releases; a failed push never keeps you locked.
-            </p>
-            <Quiet onClick={() => void api.disconnect('GITHUB').then(load)}>Disconnect</Quiet>
-          </>
-        ) : (
-          <>
-            <p
-              style={{
-                margin: '0 0 10px',
-                fontSize: 13,
-                color: 'var(--muted)',
-                // The panel is full width now; a line of prose still is not.
-                maxWidth: '62ch',
-              }}
-            >
-              Mirror accepted solutions to a repository. Sign-in opens in your real browser, so you
-              can see the address bar you are typing a password into.
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                void api
-                  .githubAuthorizeUrl()
-                  .then((r) => openExternal(r.url))
-                  .catch((err: unknown) =>
-                    setStatus(err instanceof ApiError ? err.message : 'GitHub is not configured.'),
-                  )
-              }
-              className="btn btn-secondary"
-            >
-              Connect GitHub
-            </button>
-          </>
-        )}
-      </section>
 
       {status && <p style={{ fontSize: 12.5, color: 'var(--faint)' }}>{status}</p>}
     </div>

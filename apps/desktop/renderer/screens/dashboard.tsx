@@ -17,7 +17,7 @@ const PRESETS = [15, 30, 60, 90] as const;
  * It asks the shell to lock, and the shell verifies a server-signed token
  * before it will ever come back down.
  */
-export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
+export function DashboardScreen() {
   const [stats, setStats] = useState<StatsSummary | null>(null);
   const [session, setSession] = useState<LockSessionView | null>(null);
   const [timer, setTimer] = useState<TimerConfig | null>(null);
@@ -359,10 +359,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         ) : (
           <p style={{ fontSize: 12.5, color: 'var(--faint)' }}>Loading your progress…</p>
         )}
-
-        <button type="button" onClick={onSignOut} className="btn btn-quiet" style={{ marginTop: 10 }}>
-          Sign out
-        </button>
       </aside>
     </div>
   );

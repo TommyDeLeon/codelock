@@ -3,7 +3,7 @@ import { LockState, UnlockOutcome } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
-import { requireAuth, currentUser } from '../middleware/auth.js';
+import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { lockActionLimiter } from '../middleware/rateLimit.js';
 import { abandonSchema, armSessionSchema, idParamSchema } from '../validation/schemas.js';
 import {
@@ -18,7 +18,7 @@ import { recordFailure } from '../services/grading.js';
 import { recordUnlock, secondsLocked } from '../services/audit.js';
 
 export const lockRouter = Router();
-lockRouter.use(requireAuth);
+lockRouter.use(withLocalUser);
 
 /** POST /lock/arm — start (or resume) the countdown for a device. */
 lockRouter.post(

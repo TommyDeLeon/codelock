@@ -1,28 +1,18 @@
-import type {
-  AuthUser,
-  OAuthProviderName,
-  Integration,
-  LeetCodeStats,
-  LockSessionView,
-  StatsSummary,
-  TimerConfig,
-} from '@codelock/shared';
+import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
 
 /**
  * The renderer's API client.
  *
  * Deliberately not shared with the web app's client: that one is written for
- * Next.js and a cookie-bearing same-origin browser, while this runs on an
- * app:// origin and holds its tokens itself. The surface it needs is small
- * enough that a second thin client is cheaper than an abstraction over both.
+ * Next.js and a same-origin browser, while this runs on an app:// origin. The
+ * surface it needs is small enough that a second thin client is cheaper than an
+ * abstraction over both.
  *
- * The access token lives in localStorage of the app:// origin, which nothing
- * outside this bundle can reach — there is no remote page in this window
- * except the lock screen, and that is served from a different origin.
+ * There are no credentials here. The API serves a single local learner and does
+ * not authenticate, so there is no token to store, refresh, or fail to send —
+ * which is what used to strand the lock screen on "Missing bearer token" while
+ * a timer was running.
  */
-
-const ACCESS_KEY = 'codelock.access';
-const REFRESH_KEY = 'codelock.refresh';
 
 let apiUrl = 'http://localhost:4000';
 let webUrl = 'http://localhost:3000';
@@ -38,65 +28,19 @@ export async function loadConfig(): Promise<void> {
 
 export const webAppUrl = (): string => webUrl;
 
-export const isSignedIn = (): boolean => localStorage.getItem(ACCESS_KEY) !== null;
-
-export function signOut(): void {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-  void window.codelock?.clearSession();
-}
-
-/**
- * Re-hand the stored session to the shell.
- *
- * `store()` below shares the session at the moment of signing in, and that was
- * the only time it ever happened — but this origin's localStorage outlives the
- * process, so the next launch renders a signed-in dashboard without logging in
- * again, and the shell is left holding nothing. The two stores then disagree
- * silently, and the failure surfaces somewhere much worse: the lock screen
- * borrows its session from the shell, so it gets null and shows "Missing
- * bearer token" behind an overlay the user cannot dismiss.
- *
- * Called once at startup. Cheap, idempotent, and it makes the shell's copy a
- * consequence of this one rather than something that had to be kept in step.
- */
-export function shareSessionWithShell(): void {
-  const access = localStorage.getItem(ACCESS_KEY);
-  const refresh = localStorage.getItem(REFRESH_KEY);
-  if (!access || !refresh) return;
-  void window.codelock?.setSession({ accessToken: access, refreshToken: refresh });
-}
-
-function store(access: string, refresh: string): void {
-  localStorage.setItem(ACCESS_KEY, access);
-  localStorage.setItem(REFRESH_KEY, refresh);
-  // Hand it to the shell as well. The lock screen runs on the web app's origin
-  // and cannot see this localStorage, so without this the user would be asked
-  // to sign in again from inside a lock screen.
-  void window.codelock?.setSession({ accessToken: access, refreshToken: refresh });
-}
-
 export class ApiError extends Error {}
 
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${apiUrl}${path}`, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeader(),
-        ...(init.headers ?? {}),
-      },
+      headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
     });
   } catch {
     // Distinct from any server-side failure: we know nothing about the user's
     // state, so callers must not render this as "you have no sessions".
     throw new ApiError('Cannot reach CodeLock. Check that the server is running.');
-  }
-
-  if (res.status === 401 && retry && (await refreshTokens())) {
-    return request<T>(path, init, false);
   }
 
   if (!res.ok) {
@@ -107,100 +51,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
-function authHeader(): Record<string, string> {
-  const token = localStorage.getItem(ACCESS_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function refreshTokens(): Promise<boolean> {
-  const refreshToken = localStorage.getItem(REFRESH_KEY);
-  if (!refreshToken) return false;
-
-  const res = await fetch(`${apiUrl}/v1/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  }).catch(() => null);
-
-  if (!res?.ok) {
-    signOut();
-    return false;
-  }
-  const data = (await res.json()) as { accessToken: string; refreshToken: string };
-  store(data.accessToken, data.refreshToken);
-  return true;
-}
-
 export const api = {
-  login: async (email: string, password: string): Promise<AuthUser> => {
-    const data = await request<{ accessToken: string; refreshToken: string; user: AuthUser }>(
-      '/v1/auth/login',
-      { method: 'POST', body: JSON.stringify({ email, password }) },
-      false,
-    );
-    store(data.accessToken, data.refreshToken);
-    return data.user;
-  },
-
-  register: async (input: {
-    email: string;
-    password: string;
-    displayName: string;
-  }): Promise<AuthUser> => {
-    const data = await request<{ accessToken: string; refreshToken: string; user: AuthUser }>(
-      '/v1/auth/register',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          ...input,
-          // The shell knows the machine's zone; asking the user for it would be
-          // a form field that answers itself.
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-      },
-      false,
-    );
-    store(data.accessToken, data.refreshToken);
-    return data.user;
-  },
-
-  /** Which provider buttons this deployment can actually complete. */
-  oauthProviders: () =>
-    request<{ providers: OAuthProviderName[] }>('/v1/auth/oauth/providers', {}, false),
-
-  oauthStart: (provider: OAuthProviderName) =>
-    request<{ url: string; handoff: string }>(
-      `/v1/auth/oauth/${provider.toLowerCase()}/start`,
-      { method: 'POST' },
-      false,
-    ),
-
-  /**
-   * Claim the finished session.
-   *
-   * Separate from the other calls because a 401 here is expected — it simply
-   * means the browser has not finished yet — so it must not trigger the token
-   * refresh path, and the caller polls it rather than treating it as an error.
-   */
-  oauthClaim: async (
-    handoff: string,
-  ): Promise<{ user: AuthUser; accessToken: string; refreshToken: string } | null> => {
-    const res = await fetch(`${apiUrl}/v1/auth/oauth/claim`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handoff }),
-    }).catch(() => null);
-
-    if (!res || !res.ok) return null;
-    const data = (await res.json()) as {
-      user: AuthUser;
-      accessToken: string;
-      refreshToken: string;
-    };
-    store(data.accessToken, data.refreshToken);
-    return data;
-  },
-
   stats: () => request<StatsSummary>('/v1/stats/summary'),
 
   activeLock: () => request<{ session: LockSessionView | null }>('/v1/lock/active'),
@@ -219,24 +70,42 @@ export const api = {
       body: JSON.stringify(patch),
     }),
 
-  integrations: () =>
-    request<{ integrations: Integration[]; available: { github: boolean; leetcode: boolean } }>(
-      '/v1/integrations',
+  /** The learning log: what you met, what you tried, and how it went. */
+  log: (params: { limit?: number; kind?: string[] } = {}) => {
+    const q = new URLSearchParams();
+    if (params.limit) q.set('limit', String(params.limit));
+    for (const k of params.kind ?? []) q.append('kind', k);
+    const qs = q.toString();
+    return request<{ events: LearningEventView[] }>(`/v1/log${qs ? `?${qs}` : ''}`);
+  },
+
+  logSummary: (sinceDays?: number) =>
+    request<{ sinceDays: number | null; summary: LogSummary }>(
+      `/v1/log/summary${sinceDays ? `?sinceDays=${sinceDays}` : ''}`,
     ),
-
-  githubAuthorizeUrl: () => request<{ url: string }>('/v1/integrations/github/authorize'),
-
-  linkLeetCode: (username: string) =>
-    request<{ stats: LeetCodeStats }>('/v1/integrations/leetcode', {
-      method: 'POST',
-      body: JSON.stringify({ username }),
-    }),
-
-  leetcodeStats: (refresh = false) =>
-    request<{ stats: LeetCodeStats; stale: boolean }>(
-      `/v1/integrations/leetcode/stats${refresh ? '?refresh=true' : ''}`,
-    ),
-
-  disconnect: (provider: 'GITHUB' | 'LEETCODE') =>
-    request<void>(`/v1/integrations/${provider.toLowerCase()}`, { method: 'DELETE' }),
 };
+
+export interface LearningEventView {
+  id: string;
+  kind: string;
+  at: string;
+  problemSlug: string | null;
+  problemTitle: string | null;
+  difficulty: string | null;
+  tier: string | null;
+  patternFamily: string | null;
+  language: string | null;
+  attempt: number | null;
+  elapsedSeconds: number | null;
+  detail: unknown;
+}
+
+export interface LogSummary {
+  locksEngaged: number;
+  problemsServed: number;
+  solved: number;
+  bypassed: number;
+  failedAttempts: number;
+  attemptsPerSolve: number | null;
+  solvedByFamily: Array<{ patternFamily: string; solved: number }>;
+}

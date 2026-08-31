@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiFailure, LockSessionView } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth-store';
 import { failureOf } from '@/lib/query-result';
 
 /**
@@ -26,25 +25,9 @@ import { failureOf } from '@/lib/query-result';
 export function useLockSession(options: { pollMs?: number } = {}) {
   const pollMs = options.pollMs ?? 15_000;
 
-  /**
-   * Wait for auth to settle before asking.
-   *
-   * On the lock screen the session is not in this origin's storage — it is
-   * borrowed from the desktop shell by an effect in Providers. That borrow
-   * finishes *after* first render, so an ungated query fired immediately, got
-   * "Missing bearer token", and left the page on its error state: a lock screen
-   * with no problem on it and a Try again button that could only repeat the
-   * same unauthenticated request.
-   *
-   * `status` is 'unknown' only until hydrate() resolves either way, so this
-   * delays the first request by a tick rather than gating on success.
-   */
-  const authSettled = useAuth((s) => s.status) !== 'unknown';
-
   const query = useQuery({
     queryKey: ['lock', 'active'],
     queryFn: () => api.lock.active(),
-    enabled: authSettled,
     refetchInterval: pollMs,
     retry: 1,
   });

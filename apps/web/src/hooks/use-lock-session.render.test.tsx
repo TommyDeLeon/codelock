@@ -3,7 +3,6 @@ import { render, act, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { LockSessionView } from '@codelock/shared';
 import { useLockSession } from './use-lock-session';
-import { useAuth } from '@/lib/auth-store';
 
 /**
  * What the per-second countdown actually costs the lock screen.
@@ -79,16 +78,12 @@ async function runSeconds() {
 }
 
 beforeEach(() => {
-  window.localStorage.setItem('codelock.access', 'test-access-token');
-  window.localStorage.setItem('codelock.refresh', 'test-refresh-token');
   // The hook holds its first request until auth has settled; without this the
   // query stays disabled and nothing ever counts down.
-  useAuth.setState({ status: 'authenticated' });
 });
 
 afterEach(() => {
   cleanup();
-  window.localStorage.clear();
   vi.unstubAllGlobals();
 });
 

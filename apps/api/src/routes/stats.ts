@@ -3,11 +3,11 @@ import { LockState, SubmissionStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
-import { requireAuth, currentUser } from '../middleware/auth.js';
+import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { PROMOTE_AFTER_FAST_SOLVES, DEMOTE_AFTER_FAILURES } from '../services/difficulty.js';
 
 export const statsRouter = Router();
-statsRouter.use(requireAuth);
+statsRouter.use(withLocalUser);
 
 /** GET /stats/summary — everything the dashboard header needs, in one query set. */
 statsRouter.get(
