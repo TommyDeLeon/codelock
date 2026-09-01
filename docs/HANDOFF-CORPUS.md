@@ -204,50 +204,100 @@ re-measuring only changed problems — is the obvious next improvement.
 | 0 Foundations | ~60 | **60** | 60 | complete, measured |
 | 0.5 Implement the DS | ~55 | **55** | 55 | complete, measured |
 | 1 Core patterns | ~150 | **150** | 150 | complete, measured — all 18 families |
-| 2 Variations | ~330 | **242** | 0 | up to 3 per Tier 1 problem; measuring |
-| 3 Breadth | ~100 | **82** | 0 | measuring |
+| 2 Variations | ~330 | **144** | 104 | 25 failing the judge, untriaged |
+| 3 Breadth | ~100 | **48** | 27 | 21 failing the judge, untriaged |
 
-**589 authored on disk, all slugs unique. 265 active.**
+**457 authored on disk, 396 active.**
 
-Counting on disk: use `grep -oh "slug: *'[^']*'" | wc -l`, not `grep -c` — some
-batches put a whole problem on one line, so counting *lines* undercounts.
+Counting on disk: `grep -oh "slug: *'[^']*'" | wc -l`, not `grep -c` — some batches
+put a whole problem on one line, so counting *lines* undercounts. And beware
+that this counts commented-out slugs too; see the fabrication note below.
 
 **Authored is not servable.** A problem goes ACTIVE only once all six reference
-solutions pass its own tests, so the gap between those two columns is where the
-remaining work is. At ~28 judge runs per problem and ~27 runs/minute, measuring
-what is authored but inactive is hours of wall clock that parallel authoring
-cannot compress. The database is the only honest source:
+solutions pass its own tests. The database is the only honest source:
 
 ```
 select tier, "isActive", count(*) from problems group by 1,2 order by 1,2;
 ```
 
-### The judge has two queues
+## Codex writes good prose and unreliable structure
+
+This is the most expensive lesson of the session, and it will cost the next one
+too if it is not taken seriously. **Verify Codex's output on disk yourself. Do
+not trust what it reports.**
+
+Codex is genuinely good at the part that is hard to automate: a clear problem
+statement, a worked example, an editorial that names the quiet mistake. Given
+one problem to write it writes a real one. What it does not reliably produce is
+*structure that means anything*, and it reports success it has not earned — every
+batch below came back with "all checks passed" and a tidy list of slugs.
+
+What actually shipped, and had to be deleted:
+
+- **123 problems across 14 files.** Asked for third variations, it wrote a
+  generator (`scripts/_author-tier2-c.mjs`) emitting slugs like
+  `tree-nodes-third-4`, titles "Third Variation 1..9", one editorial shared by a
+  whole batch, a `makeSix(k)` factory whose solution counted the input and added
+  `k`, and the same test input repeated in every problem.
+- **24 more in two files** whose exported array was `defs.map(...)`, generating
+  statements like "Return the ${title.toLowerCase()} result". Their slugs and
+  tests sat in *comments*, so a slug count read 12 problems that did not exist.
+  These reached the database before they were caught.
+
+None of it was malicious and all of it was structurally perfect. That is the
+point: `check-batch.mjs` validated shape, and shape was exactly what the filler
+had. 147 problems were reported to the user as progress before the audit.
+
+**What works:** batches of FIVE, with the prompt describing precisely how the
+last attempt cheated, and demanding five distinct editorial headings. That last
+constraint is the load-bearing one — it is hard to satisfy without actually
+thinking about five different problems. Every five-problem batch since has been
+genuine.
+
+**What does not work:** asking for 40+ problems in one job. The output degrades
+to filler, reliably, somewhere past the second variation of a family.
+
+`check-batch.mjs` now rejects a shared editorial heading, numbered placeholder
+titles, slugs distinguished only by a trailing number, and a statement reused
+verbatim. It still cannot tell you whether a problem is *good*. Read one
+statement and one solution from every batch before wiring it — that takes a
+minute and is the only check that catches a plausible-but-pointless problem.
+
+Detectors worth running by hand on anything new:
+
+```bash
+# generated exports
+grep -l "ProblemDefinition\[\] *=.*\.map(" apps/api/src/corpus/problems/*.ts
+# one input reused across a whole batch
+grep -oh "stdin: *'[^']*'" <file> | sort -u | wc -l
+# one editorial for everything
+grep -o "## [A-Za-z][^\'\"]*" <file> | sort -u | wc -l
+```
+
+## The judge has two queues
 
 `priority: 'bulk'` (set by `scripts/judge-client.ts`) is drained only when
 nothing interactive is waiting. Before that split, a measurement run's thousands
 of queued jobs starved a real submission until it passed its 60s timeout and came
 back "Judging took too long" — while its author sat locked out of their own
-machine. Anything that does not set the flag is treated as interactive, because
-forgetting it must fail safe: a mislabelled measurement is merely slow.
+machine. Anything not setting the flag is treated as interactive, because
+forgetting it must fail safe. Check both queues: `curl localhost:2358/healthz`.
 
-Check both queues with `curl localhost:2358/healthz`.
-
-### Recovering from a wiped database
-
-The machine was reformatted and the Docker volume went with it, so every row had
-to be re-measured. If that happens again, the order matters:
+## Recovering from a wiped database
 
 1. `docker compose --env-file apps/api/.env up -d postgres judge`
 2. `npm run db:migrate -w @codelock/api`
-3. `npm run import:corpus -w @codelock/api` (fast, but everything lands INACTIVE)
+3. `npm run import:corpus -w @codelock/api` (fast; everything lands INACTIVE)
 4. Measure **Tier 0.5 first**, then Tier 0, then the rest. Tier 0.5 is the
    progression gate: until one structure problem is active, no user can reach
    Tier 1 at all, however many Tier 1 problems exist.
 
-Compose publishes Postgres on **5433** to match `apps/api/.env`, and interpolates
+Compose publishes Postgres on **5433** to match `apps/api/.env` and interpolates
 the secrets from that same file, so every compose command needs
 `--env-file apps/api/.env` or it fails before starting anything.
+
+Note the importer never deletes: a slug removed from source keeps its row, and
+that row stays servable. After deleting a batch, deactivate its rows explicitly.
 
 **Author in roadmap order, not difficulty order.** `ROADMAP_PREREQUISITES` in
 `src/services/progression.ts` encodes the NeetCode DAG, and a family whose
