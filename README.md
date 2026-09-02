@@ -195,6 +195,9 @@ Or run Postgres, the API, and the sandbox together:
 docker compose up
 ```
 
+This reads the secrets from `apps/api/.env`, so do step 2 first. Compose stops
+before starting anything if that file is missing.
+
 ## Tests
 
 ```bash

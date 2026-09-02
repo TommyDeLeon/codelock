@@ -24,16 +24,26 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    # Secrets come from the file the README already has you create.
+    #
+    # They used to be interpolated as ${JWT_ACCESS_SECRET:?set in .env}, which
+    # reads a .env in the *repo root* — a file that does not exist, has no
+    # .env.example, and is mentioned nowhere in the setup. So `docker compose
+    # up` failed on a fresh clone with "required variable ENCRYPTION_KEY is
+    # missing a value: set in .env", naming neither which .env nor where it
+    # goes. Compose also aborts before starting anything, so the failure looked
+    # like an unrelated change having broken the file.
+    #
+    # env_file is read before `environment:`, and `environment:` wins on any key
+    # in both. That is what keeps DATABASE_URL below pointing at the postgres
+    # service rather than the localhost:5433 value a developer needs when
+    # running the API outside Docker.
+    env_file:
+      - apps/api/.env
     environment:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: postgresql://codelock:codelock@postgres:5432/codelock?schema=public
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
-      JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
-      # Encrypts stored OAuth tokens. env.ts requires it, so the container exits
-      # on boot without it — it was missing here while the API ran only locally.
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set in .env}
       APP_URL: http://localhost:3000
       CORS_ORIGINS: http://localhost:3000
       JUDGE0_URL: http://judge:2358
