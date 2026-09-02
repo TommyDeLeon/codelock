@@ -93,6 +93,7 @@ const FUNCTION_SIGNATURES: readonly FunctionSignature[] = [
   fn('fn:tree->tree', 'binary tree in, binary tree out (invert, prune)', ['tree'], 'tree'),
   fn('fn:tree,int->tree', 'binary tree and a scalar in, binary tree out (insert, delete)', ['tree', 'int'], 'tree'),
   fn('fn:tree,int->int', 'binary tree and a scalar in, int out', ['tree', 'int'], 'int'),
+  fn('fn:tree,int->bool', 'binary tree and a scalar in, boolean out', ['tree', 'int'], 'bool'),
 
   // Linked lists
   fn('fn:list->list', 'linked list in, linked list out (reverse, sort)', ['list'], 'list'),
