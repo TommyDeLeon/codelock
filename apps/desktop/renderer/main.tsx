@@ -2,7 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app';
 import { loadConfig } from './api';
+import { applyTheme, readPreference } from './theme';
 import './theme.css';
+
+// Before anything renders, and before the config round trip: the attribute only
+// re-points CSS variables, so applying it first costs nothing and avoids a
+// visible flash of the OS palette on a machine whose owner chose the other one.
+applyTheme(readPreference());
 
 /**
  * Bootstrap.
