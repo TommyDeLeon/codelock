@@ -26,3 +26,7 @@ next-env.d.ts
 
 # Local agent tool caches, not project content
 .claude/sdd-cache/
+
+# Scratch slug list for `import:corpus --only-file=`. Regenerated per run from
+# whichever problems are currently inactive; never the same twice.
+apps/api/.slugs-todo.txt

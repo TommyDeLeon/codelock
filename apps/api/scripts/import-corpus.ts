@@ -16,7 +16,7 @@
  * hypothetical: the speed gate was already a coin flip once, because the seeded
  * runtimes came from faster hardware than the judge.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prisma } from '../src/lib/prisma.js';
@@ -105,8 +105,23 @@ async function main(): Promise<void> {
   // hours of wall time. Without this, fixing one wrong test expectation costs
   // the same as re-verifying everything — the kind of friction that stops
   // people fixing things.
+  //
+  // `--only-file=<path>` reads the same list from a newline-delimited file.
+  // Windows caps a command line at 8191 characters, and 275 slugs is already
+  // past it: the run dies with a bare "The syntax of the command is incorrect"
+  // that names neither the limit nor the argument. Any re-measure of a large
+  // slice of the corpus needs the file form.
   const onlyArg = argv.find((a) => a.startsWith('--only='));
-  const only = onlyArg ? new Set(onlyArg.slice('--only='.length).split(',')) : null;
+  const onlyFileArg = argv.find((a) => a.startsWith('--only-file='));
+  const onlyList = onlyFileArg
+    ? readFileSync(onlyFileArg.slice('--only-file='.length), 'utf8')
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : onlyArg
+      ? onlyArg.slice('--only='.length).split(',')
+      : null;
+  const only = onlyList ? new Set(onlyList) : null;
 
   if (only) {
     const unknown = [...only].filter((slug) => !DEFINITIONS.some((d) => d.slug === slug));

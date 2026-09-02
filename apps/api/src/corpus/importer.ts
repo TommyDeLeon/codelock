@@ -258,6 +258,25 @@ export async function importProblems(
     results.push(result);
   }
 
+  // A problem deleted from the corpus stays in the table, keeps the runtimes it
+  // was measured with, and goes on being served — nothing above ever revisits a
+  // row whose definition is gone. That is how a placeholder titled 'Pending',
+  // with the prompt 'x' and a solution returning 0, was still reachable a whole
+  // rewrite after its slug had been removed: it had valid measurements, so it
+  // stayed active. Deactivating rather than deleting keeps submission history
+  // and lets a slug come back later.
+  //
+  // Safe under `--only`, because this compares against the whole authored
+  // corpus rather than the measured subset. Guarded against the empty case: a
+  // caller that somehow passes no definitions must not deactivate everything,
+  // which is a failure this project has already shipped once.
+  if (!options.dryRun && definitions.length > 0) {
+    await prisma.problem.updateMany({
+      where: { isActive: true, slug: { notIn: definitions.map((d) => d.slug) } },
+      data: { isActive: false },
+    });
+  }
+
   return results;
 }
 
