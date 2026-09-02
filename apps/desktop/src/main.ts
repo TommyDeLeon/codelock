@@ -18,12 +18,15 @@ import { fileURLToPath } from 'node:url';
 import { verifyUnlockToken } from './unlock-verifier.js';
 import { canVerifyUnlocks, configPath, loadConfig } from './config.js';
 import {
+  classifyStartup,
   fileLockStore,
   isLive,
   newLock,
+  recordInterruption,
   unlockTokenOpensLock,
   type LockStateStore,
 } from './lock-state.js';
+import { needsCoverReassert, shouldInterceptWhileLocked } from './lock-guards.js';
 import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
@@ -350,7 +353,7 @@ function createWindow(): BrowserWindow {
 
   // Refuse to close while locked. Quitting is otherwise the simplest bypass.
   window.on('close', (event) => {
-    if (locked) {
+    if (shouldInterceptWhileLocked('close', locked)) {
       event.preventDefault();
       window.focus();
     }
@@ -358,7 +361,7 @@ function createWindow(): BrowserWindow {
   // 'minimize' is not cancellable, so undo it rather than prevent it. In
   // practice setMinimizable(false) means this rarely fires while locked.
   window.on('minimize', () => {
-    if (locked) {
+    if (shouldInterceptWhileLocked('minimize', locked)) {
       window.restore();
       window.focus();
     }
@@ -366,9 +369,9 @@ function createWindow(): BrowserWindow {
   // Losing focus while locked pulls the window straight back, and shoves the
   // covers up with it — whatever stole focus may have stolen z-order too.
   window.on('blur', () => {
-    if (locked) {
+    if (shouldInterceptWhileLocked('blur', locked)) {
       window.focus();
-      reassertCovers();
+      if (needsCoverReassert('blur')) reassertCovers();
     }
   });
 
@@ -814,6 +817,17 @@ void app.whenReady().then(() => {
   // A lock that was live when the process died comes straight back up. The
   // renderer re-checks with the server once it loads, and either confirms it
   // or unlocks properly through the normal verified path.
+  const startup = classifyStartup(lockStore.read());
+  if (startup.kind === 'interrupted') {
+    // Rebooting while locked frees the machine: the OS tears the process down
+    // and the desktop comes back unlocked, with nothing given a chance to
+    // record it. All this launch can observe is that the lock file outlived
+    // its process, so stamp the interruption before re-engaging. Without it an
+    // interrupted session is indistinguishable from one that ran to
+    // completion, and the count is the only evidence the machine was free.
+    lockStore.write(recordInterruption(startup.lock));
+  }
+
   const persisted = lockStore.read();
   if (isLive(persisted)) {
     // Through takeScreenFor, not engageLock: a restored lock is the case where
