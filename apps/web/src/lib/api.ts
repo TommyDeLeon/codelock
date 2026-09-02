@@ -55,22 +55,59 @@ const BASE =
 const ACCESS_KEY = 'codelock.access';
 const REFRESH_KEY = 'codelock.refresh';
 
+/**
+ * Storage that is allowed to not exist.
+ *
+ * `typeof window !== 'undefined'` is not enough. A browser with site data
+ * blocked, Safari in private mode, and jsdom on an opaque origin all give you a
+ * `window` whose `localStorage` is missing or throws on access. Reading it
+ * unguarded threw inside `tokenStore.access`, which every request reads first —
+ * so the failure surfaced as "the API is unreachable", on every call, on a
+ * machine whose network was fine, with nothing pointing at storage.
+ */
+function storage(): Storage | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const tokenStore = {
   get access(): string | null {
-    if (typeof window === 'undefined') return null;
-    return window.localStorage.getItem(ACCESS_KEY);
+    try {
+      return storage()?.getItem(ACCESS_KEY) ?? null;
+    } catch {
+      return null;
+    }
   },
   get refresh(): string | null {
-    if (typeof window === 'undefined') return null;
-    return window.localStorage.getItem(REFRESH_KEY);
+    try {
+      return storage()?.getItem(REFRESH_KEY) ?? null;
+    } catch {
+      return null;
+    }
   },
   set(access: string, refresh: string): void {
-    window.localStorage.setItem(ACCESS_KEY, access);
-    window.localStorage.setItem(REFRESH_KEY, refresh);
+    // Losing persistence costs the user a re-login later. Throwing here costs
+    // them the request they are making now, so swallow it.
+    try {
+      const s = storage();
+      s?.setItem(ACCESS_KEY, access);
+      s?.setItem(REFRESH_KEY, refresh);
+    } catch {
+      /* storage unavailable or full; the in-flight request still proceeds */
+    }
   },
   clear(): void {
-    window.localStorage.removeItem(ACCESS_KEY);
-    window.localStorage.removeItem(REFRESH_KEY);
+    try {
+      const s = storage();
+      s?.removeItem(ACCESS_KEY);
+      s?.removeItem(REFRESH_KEY);
+    } catch {
+      /* nothing to clear if it was never readable */
+    }
   },
 };
 
