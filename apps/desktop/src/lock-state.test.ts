@@ -26,7 +26,13 @@ vi.mock('node:fs', async () => {
 });
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileLockStore, isLive, newLock, MAX_LOCK_LIFETIME_MS } from './lock-state.js';
+import {
+  fileLockStore,
+  isLive,
+  newLock,
+  unlockTokenOpensLock,
+  MAX_LOCK_LIFETIME_MS,
+} from './lock-state.js';
 
 const dirs: string[] = [];
 function scratchFile(): string {
@@ -144,5 +150,36 @@ describe('fileLockStore.write when the filesystem will not cooperate', () => {
     // Crash recovery is lost, but the shell stays alive and the lock still
     // holds in memory. Dying here would hand the machine back.
     expect(() => store.write(newLock('sess-42'))).not.toThrow();
+  });
+});
+
+describe('unlockTokenOpensLock', () => {
+  it('opens the lock the token was earned for', () => {
+    expect(unlockTokenOpensLock('sess-1', 'sess-1')).toBe(true);
+  });
+
+  /**
+   * The bypass this rule exists for.
+   *
+   * Signature verification passes for *any* token the API issued, so before
+   * this check a token earned for one lock released a different one. Solve one
+   * problem, keep the token, replay it at the next lock — which then costs
+   * nothing to open, and looks like a normal unlock while doing it.
+   */
+  it('refuses a token earned for a different session', () => {
+    expect(unlockTokenOpensLock('sess-1', 'sess-2')).toBe(false);
+  });
+
+  it('refuses when no lock is held', () => {
+    expect(unlockTokenOpensLock('sess-1', null)).toBe(false);
+  });
+
+  it('refuses a token carrying no session at all', () => {
+    expect(unlockTokenOpensLock(undefined, 'sess-1')).toBe(false);
+  });
+
+  // Two absent values are not a match, however tempting `a === b` looks.
+  it('refuses when both sides are missing', () => {
+    expect(unlockTokenOpensLock(undefined, null)).toBe(false);
   });
 });

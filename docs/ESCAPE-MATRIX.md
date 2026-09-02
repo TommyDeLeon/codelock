@@ -42,6 +42,7 @@ hardware available at the time of writing.
 | D19 | Hard power-off | **`DEFEATED`** | Nothing in userland prevents this. Combined with D17 it is currently a full escape. |
 | D20 | Boot another OS / safe mode | **`DEFEATED`** | Out of scope for any userland app. |
 | D21 | Hold Escape for 10s | **`DEFEATED` (intended)** | The documented kill switch. Resolves the session as `ABANDONED`, which counts as a failure for adaptive difficulty. |
+| D23 | Replay a *real* unlock token earned on an earlier lock | `HOLDS` | **Was a genuine bypass until 2 Sep 2026.** D22 covers a forged token; this is its opposite — a correctly signed token the user really earned, kept, and presented against a *different* lock inside its five-minute lifetime. Signature verification passes, because the token is authentic. The handler then released the lock without ever comparing the token's `sid` claim against the session being held, so one solved problem opened every lock in that window and the second unlock cost nothing. Now `unlockTokenOpensLock()` requires the claim to match the held session; regression tests live in `lock-state.test.ts`. |
 | D22 | Patch the renderer / call `codelock.unlock('')` from a console | `HOLDS` | **Tested 30 Aug 2026.** Called over the debug protocol against a live lock: `unlock('not.a.token')` and `unlock('')` both returned `{ok: false, reason: 'malformed'}` and the overlay stayed. The token is verified in the main process against a key the renderer cannot read. |
 
 ### Known gap: D17 + D19
