@@ -56,7 +56,7 @@ services:
       dockerfile: apps/judge/Dockerfile
     environment:
       PORT: 2358
-      JUDGE_CONCURRENCY: 4
+      JUDGE_CONCURRENCY: 8
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Sources are written to the host temp dir and bind-mounted into each
