@@ -64,6 +64,28 @@ export function newLock(sessionId: string, now = Date.now()): PersistedLock {
 }
 
 /**
+ * Does an unlock token's session match the lock actually being held?
+ *
+ * A valid signature only proves the API issued the token; it says nothing about
+ * *which* lock it was earned for. Without this comparison every unlock token is
+ * a master key for its five-minute lifetime: solve one problem, keep the token,
+ * and replay it against the next lock, which then costs nothing to open. That
+ * is the whole commitment device gone, and it fails silently — the replayed
+ * unlock looks exactly like an earned one.
+ *
+ * Pure, so the rule can be tested without Electron or a signing key.
+ */
+export function unlockTokenOpensLock(
+  claimSessionId: string | undefined,
+  lockedSessionId: string | null,
+): boolean {
+  // No held session means this process never engaged a lock; nothing to open.
+  if (!lockedSessionId) return false;
+  if (!claimSessionId) return false;
+  return claimSessionId === lockedSessionId;
+}
+
+/**
  * File-backed store with atomic writes.
  *
  * Write-then-rename, because a half-written JSON file read on the next boot

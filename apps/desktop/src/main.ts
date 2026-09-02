@@ -17,7 +17,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { verifyUnlockToken } from './unlock-verifier.js';
 import { canVerifyUnlocks, configPath, loadConfig } from './config.js';
-import { fileLockStore, isLive, newLock, type LockStateStore } from './lock-state.js';
+import {
+  fileLockStore,
+  isLive,
+  newLock,
+  unlockTokenOpensLock,
+  type LockStateStore,
+} from './lock-state.js';
 import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
@@ -629,6 +635,19 @@ ipcMain.handle('codelock:unlock', async (_event, unlockToken: unknown) => {
 
   const verdict = await verifyUnlockToken(unlockToken);
   if (!verdict.ok) return { ok: false, reason: verdict.reason };
+
+  // A valid signature only proves the API issued this token. It does not prove
+  // the token was issued for *this* lock. Without this check the tokens are
+  // interchangeable: solve one problem, keep the token, and replay it against a
+  // later lock inside its five-minute lifetime — which defeats the whole
+  // commitment device, because the second lock then costs nothing to open.
+  //
+  // The token names the session it was earned for, so require that to match the
+  // session currently held. A lock with no session id was never engaged by this
+  // process, and nothing should release it.
+  if (!unlockTokenOpensLock(verdict.sessionId, lockedSessionId)) {
+    return { ok: false, reason: 'wrong-session' };
+  }
 
   releaseLock();
   return { ok: true };
