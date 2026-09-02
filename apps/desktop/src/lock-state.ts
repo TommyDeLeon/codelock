@@ -33,6 +33,53 @@ export interface PersistedLock {
    * this window without server confirmation is treated as debris.
    */
   expiresAt: number;
+  /**
+   * Epoch ms of the last launch that found this lock still held.
+   *
+   * A lock file present at startup means the previous process died holding it —
+   * a reboot, a force-quit, a crash, a power cut. The lock survives on disk,
+   * but the *machine* did not stay locked in the meantime, so that stretch is
+   * time the user got back without solving anything. Recording it is what makes
+   * an interrupted session legible afterwards instead of silently identical to
+   * one that ran to completion.
+   */
+  interruptedAt?: number;
+  /** How many times this session has been interrupted that way. */
+  interruptions?: number;
+}
+
+/**
+ * What a lock file found at startup means.
+ *
+ * `clean` — nothing on disk; the last run released its lock.
+ * `interrupted` — a lock still inside its lifetime. The process died holding
+ *   it, and the machine was free in the meantime.
+ * `expired` — a lock past its lifetime. Debris from a much older run, and
+ *   honouring it would rebuild an overlay nobody can solve their way out of.
+ */
+export type StartupState =
+  | { kind: 'clean' }
+  | { kind: 'interrupted'; lock: PersistedLock; interruptions: number }
+  | { kind: 'expired'; lock: PersistedLock };
+
+export function classifyStartup(
+  lock: PersistedLock | null,
+  now = Date.now(),
+): StartupState {
+  if (!lock) return { kind: 'clean' };
+  if (!isLive(lock, now)) return { kind: 'expired', lock };
+  return { kind: 'interrupted', lock, interruptions: (lock.interruptions ?? 0) + 1 };
+}
+
+/**
+ * Stamp an interruption onto the lock so the count survives the next restart.
+ *
+ * Returns a new object rather than mutating: the caller writes it, and a failed
+ * write must not leave an in-memory lock claiming an interruption that was
+ * never recorded.
+ */
+export function recordInterruption(lock: PersistedLock, now = Date.now()): PersistedLock {
+  return { ...lock, interruptedAt: now, interruptions: (lock.interruptions ?? 0) + 1 };
 }
 
 /** Twelve hours. Longer than any legitimate session, short enough to save you. */

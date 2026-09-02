@@ -27,9 +27,11 @@ vi.mock('node:fs', async () => {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
+  classifyStartup,
   fileLockStore,
   isLive,
   newLock,
+  recordInterruption,
   unlockTokenOpensLock,
   MAX_LOCK_LIFETIME_MS,
 } from './lock-state.js';
@@ -181,5 +183,70 @@ describe('unlockTokenOpensLock', () => {
   // Two absent values are not a match, however tempting `a === b` looks.
   it('refuses when both sides are missing', () => {
     expect(unlockTokenOpensLock(undefined, null)).toBe(false);
+  });
+});
+
+/**
+ * Rebooting while locked frees the machine, and the lock file cannot know that.
+ *
+ * The OS tears the process down and the desktop comes back unlocked; nothing
+ * gets a chance to record anything. All the next launch can observe is that a
+ * lock file is still sitting there, which means the previous process died
+ * holding it. That is the signal, and it is the only one available.
+ */
+describe('classifyStartup', () => {
+  const now = 1_700_000_000_000;
+  const held = { sessionId: 'sess-1', engagedAt: now - 60_000, expiresAt: now + 60_000 };
+
+  it('reports a clean start when no lock was left behind', () => {
+    expect(classifyStartup(null, now)).toEqual({ kind: 'clean' });
+  });
+
+  it('reports an interruption when a live lock outlived its process', () => {
+    expect(classifyStartup(held, now)).toEqual({ kind: 'interrupted', lock: held, interruptions: 1 });
+  });
+
+  it('counts repeated interruptions across restarts', () => {
+    const twice = { ...held, interruptions: 2 };
+    const state = classifyStartup(twice, now);
+    expect(state.kind === 'interrupted' && state.interruptions).toBe(3);
+  });
+
+  /**
+   * Debris, not an interruption.
+   *
+   * Past the lifetime the server can no longer be asked whether the session is
+   * over, so honouring the file would rebuild an overlay with no way out. It is
+   * discarded rather than counted, because counting it would tell the user they
+   * abandoned a session that had already ended on its own.
+   */
+  it('treats a lock past its lifetime as debris', () => {
+    const stale = { sessionId: 'sess-1', engagedAt: now - 2 * MAX_LOCK_LIFETIME_MS, expiresAt: now - 1 };
+    expect(classifyStartup(stale, now)).toEqual({ kind: 'expired', lock: stale });
+  });
+});
+
+describe('recordInterruption', () => {
+  const now = 1_700_000_000_000;
+  const lock = { sessionId: 'sess-1', engagedAt: now - 60_000, expiresAt: now + 60_000 };
+
+  it('stamps the first interruption', () => {
+    expect(recordInterruption(lock, now)).toEqual({ ...lock, interruptedAt: now, interruptions: 1 });
+  });
+
+  it('accumulates rather than overwriting', () => {
+    const once = recordInterruption(lock, now);
+    const twice = recordInterruption(once, now + 1000);
+    expect(twice.interruptions).toBe(2);
+    expect(twice.interruptedAt).toBe(now + 1000);
+  });
+
+  // The caller writes the result to disk, and that write can fail. Mutating in
+  // place would leave the in-memory lock claiming an interruption that was
+  // never recorded, so the next launch would count it twice.
+  it('leaves the original untouched', () => {
+    recordInterruption(lock, now);
+    expect(lock).not.toHaveProperty('interruptedAt');
+    expect(lock).not.toHaveProperty('interruptions');
   });
 });
