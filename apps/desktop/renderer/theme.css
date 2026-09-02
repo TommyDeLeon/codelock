@@ -38,8 +38,21 @@
   color-scheme: light;
 }
 
+/*
+ * Dark is selected two ways, and the order matters.
+ *
+ * `prefers-color-scheme` stays the default: with no stored choice the app
+ * follows the operating system, which is what it always did. `[data-theme]` is
+ * the override, written by the header control, and it has to come *after* the
+ * media query so an explicit choice wins — otherwise picking Light on a
+ * dark-mode machine appears to do nothing at all.
+ *
+ * The media query is also guarded with :not([data-theme]) rather than relying
+ * on source order alone, so a stored choice leaves it genuinely unmatched
+ * instead of merely out-specified.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #0e0e0d;
     --surface: #171716;
     --surface-2: #1f1f1d;
@@ -57,6 +70,49 @@
 
     color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e0e0d;
+  --surface: #171716;
+  --surface-2: #1f1f1d;
+  --border: #302f2b;
+  --fg: #f2f0ec;
+  --muted: #9a968e;
+  --faint: #706c65;
+  --accent: #4ed18f;
+  --accent-fg: #0d1a13;
+  --accent-soft: #10241b;
+  --promo: #12503a;
+  --promo-fg: #eafff4;
+  --danger: #e0685a;
+  --warning: #d5a03f;
+
+  color-scheme: dark;
+}
+
+/*
+ * Light needs its own block even though these values repeat the :root
+ * defaults. Without it, choosing Light on a dark-mode machine leaves the media
+ * query matching and nothing changes.
+ */
+:root[data-theme='light'] {
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-2: #f4f2ee;
+  --border: #ded9d0;
+  --fg: #171614;
+  --muted: #6b6862;
+  --faint: #98948c;
+  --accent: #1b6b4a;
+  --accent-fg: #ffffff;
+  --accent-soft: #e4efe9;
+  --promo: #14523a;
+  --promo-fg: #ffffff;
+  --danger: #a12d20;
+  --warning: #8a6410;
+
+  color-scheme: light;
 }
 
 * {

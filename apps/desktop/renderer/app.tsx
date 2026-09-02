@@ -5,8 +5,70 @@ import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
 import { LockMark } from './lock-mark';
 import { ProviderMark } from './provider-mark';
+import {
+  applyTheme,
+  readPreference,
+  writePreference,
+  THEME_ORDER,
+  type ThemePreference,
+} from './theme';
 
 type Tab = 'dashboard' | 'settings';
+
+/**
+ * Light, dark, or whatever the machine is doing.
+ *
+ * Three states rather than a two-way switch, matching the web app. "System" is
+ * not the same as having picked the OS's current setting: a machine that
+ * changes theme on a schedule should carry the app with it, and only an
+ * explicit Light or Dark should refuse to move.
+ *
+ * The preference is applied before paint in main.tsx; this control only has to
+ * keep the button state and the document attribute in step afterwards.
+ */
+function ThemeToggle() {
+  const [preference, setPreference] = useState<ThemePreference>(readPreference);
+
+  const choose = (next: ThemePreference) => {
+    setPreference(next);
+    writePreference(next);
+    applyTheme(next);
+  };
+
+  const label: Record<ThemePreference, string> = {
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+  };
+
+  return (
+    <div role="group" aria-label="Theme" style={{ display: 'flex', gap: 4 }}>
+      {THEME_ORDER.map((option) => {
+        const active = option === preference;
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => choose(option)}
+            aria-pressed={active}
+            style={{
+              font: 'inherit',
+              fontSize: 12,
+              padding: '4px 10px',
+              cursor: 'pointer',
+              borderRadius: 'var(--radius-xs)',
+              border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+              background: active ? 'var(--accent-soft)' : 'transparent',
+              color: active ? 'var(--accent)' : 'var(--muted)',
+            }}
+          >
+            {label[option]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
  * The desktop shell's own UI.
@@ -43,6 +105,9 @@ export function App() {
         >
           <LockMark size={22} />
           <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em' }}>CodeLock</span>
+          <div style={{ marginLeft: 'auto' }}>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

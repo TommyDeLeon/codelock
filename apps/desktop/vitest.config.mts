@@ -16,6 +16,12 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'renderer/**/*.test.{ts,tsx}'],
     environment: 'node',
     environmentMatchGlobs: [['renderer/**', 'jsdom']],
+    // jsdom without a URL is an opaque origin, and an opaque origin has no
+    // localStorage — reading it throws rather than returning null. The web
+    // workspace had the same gap, where it made every API call look like a
+    // network outage. Here it only breaks the theme specs, but it is the same
+    // one-line cause and worth closing in both places.
+    environmentOptions: { jsdom: { url: 'http://localhost:3000' } },
     restoreMocks: true,
   },
 });
