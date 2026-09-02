@@ -58,7 +58,7 @@ export const TIER_2_ARRAYS_HASHING_B_PROBLEMS: ProblemDefinition[] = [
     },
     tests: [
       { stdin: '8 4 5 6 10 11', expectedStdout: '4', isSample: true },
-      { stdin: '9 1 2 7 8', expectedStdout: '1', isSample: true },
+      { stdin: '9 1 2 7 8', expectedStdout: '7', isSample: true },
       { stdin: '3 3 3', expectedStdout: '3' },
       { stdin: '-4 -3 -2 5', expectedStdout: '-4' },
       { stdin: '12', expectedStdout: '12' },
@@ -79,7 +79,7 @@ export const TIER_2_ARRAYS_HASHING_B_PROBLEMS: ProblemDefinition[] = [
     tests: [
       { stdin: '2 -1 2 3 -2\n3', expectedStdout: '1', isSample: true },
       { stdin: '1 -1 5 -2 3\n3', expectedStdout: '1', isSample: true },
-      { stdin: '4 -2 -2 6\n2', expectedStdout: '3' },
+      { stdin: '4 -2 -2 6\n2', expectedStdout: '2' },
       { stdin: '-5 2 1\n-3', expectedStdout: '2' },
       { stdin: '6 1 -4\n10', expectedStdout: '-1' },
     ],
