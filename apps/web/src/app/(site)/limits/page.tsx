@@ -30,7 +30,22 @@ export const metadata: Metadata = {
  * block already promised that the untested rows say so. They did not. They do
  * now.
  */
-type Verdict = 'holds' | 'defeated' | 'intended' | 'untested';
+/**
+ * 'unit-tested' is the state between "nobody has checked" and "it held".
+ *
+ * The decisions behind these rows — cancel the close, undo the minimise,
+ * re-assert kiosk state and the covers on wake or a display change — now have
+ * automated tests, each checked both while locked and while unlocked, because a
+ * guard that fires unconditionally passes every does-it-hold test and makes the
+ * app impossible to quit.
+ *
+ * That is emphatically not the same as the barrier holding. The tests prove the
+ * shell decides correctly; they say nothing about whether Windows honours the
+ * decision, which is the only thing a person hammering Alt+Tab at 2am cares
+ * about. Folding these into 'holds' would claim exactly the thing nobody has
+ * observed, which is the error this union was widened to fix in the first place.
+ */
+type Verdict = 'holds' | 'defeated' | 'intended' | 'unit-tested' | 'untested';
 
 interface Row {
   attempt: string;
@@ -52,15 +67,15 @@ const DESKTOP: Row[] = [
   {
     // Matrix D1-D4.
     attempt: 'Alt+F4, Ctrl+W, Ctrl+Q, window close',
-    verdict: 'untested',
-    note: 'Swallowed while locked, and the close event is cancelled regardless.',
+    verdict: 'unit-tested',
+    note: 'Swallowed while locked, and the close event is cancelled regardless. The cancel is covered by tests, including that it does not fire when nothing is locked — a close guard with no condition would make the app impossible to quit. Nobody has pressed the keys on hardware.',
   },
   {
     // Matrix D5-D7. Minimising was driven programmatically and held; the
     // keystrokes themselves were not pressed by hand, which is why this is
     // still qualified below rather than claimed outright.
     attempt: 'Minimise, Alt+Tab, Show desktop',
-    verdict: 'untested',
+    verdict: 'unit-tested',
     note: 'Minimising was tested and did not stick — the window came straight back and the lock held. Alt+Tab and the Windows key were not tried by hand. Kiosk mode keeps the window in front; losing focus pulls it straight back.',
   },
   {
@@ -72,14 +87,14 @@ const DESKTOP: Row[] = [
   {
     // Matrix D9-D11.
     attempt: 'Use the second monitor',
-    verdict: 'untested',
-    note: 'Opaque covers on every other display, resynced when you plug one in mid-lock.',
+    verdict: 'unit-tested',
+    note: 'Opaque covers on every other display, resynced when you plug one in mid-lock. Tests cover the decision to re-assert kiosk state and the covers on a display change, rather than only refocusing. No second monitor has been plugged in mid-lock.',
   },
   {
     // Matrix D12-D13.
     attempt: 'Sleep, wake, or lock the OS session',
-    verdict: 'untested',
-    note: 'Every barrier is re-asserted on resume rather than merely refocused.',
+    verdict: 'unit-tested',
+    note: 'Every barrier is re-asserted on resume rather than merely refocused, which is tested — kiosk state and the always-on-top level do not reliably survive a display sleep on Windows, so refocusing alone looks right until another window is raised over it. Nobody has slept a machine mid-lock.',
   },
   {
     // Matrix D15. This said the app relaunches itself. It does not: the
@@ -117,7 +132,7 @@ const DESKTOP: Row[] = [
     // nobody has watched work is never described as one that works.
     attempt: 'Reboot the machine',
     verdict: 'untested',
-    note: 'The lock file survives, and the installed app now registers itself to start at login and re-engage a live lock. Whether that survives a real reboot has not been verified.',
+    note: 'The lock file survives, and the installed app registers itself to start at login and re-engage a live lock. A reboot does free the machine in the meantime, and that gap is now recorded: a lock file that outlived its process is counted as an interrupted session rather than passing silently as one that ran to completion. Whether the relaunch survives a real reboot has not been verified.',
   },
   {
     // Matrix D18 and D19.
@@ -199,6 +214,7 @@ const VERDICT_STYLE: Record<Verdict, { label: string; className: string }> = {
   holds: { label: 'holds', className: 'text-success' },
   defeated: { label: 'defeated', className: 'text-warning' },
   intended: { label: 'by design', className: 'text-muted' },
+  'unit-tested': { label: 'unit-tested', className: 'text-muted' },
   untested: { label: 'untested', className: 'text-muted' },
 };
 
@@ -251,8 +267,10 @@ export default function LimitsPage() {
         <h2 className="display display-md mt-3">Electron kiosk shell</h2>
         <Matrix rows={DESKTOP} />
         <p className="mt-4 text-[13px] text-faint">
-          Reasoned through in full and recorded in the repository; not every row has been exercised
-          on real hardware yet, and macOS and Linux are untested.
+          Reasoned through in full and recorded in the repository. <code>unit-tested</code> means
+          the shell provably makes the right decision, checked both while locked and while
+          unlocked; it does not mean the operating system was observed honouring it. Nothing here
+          has been exercised on real hardware yet, and macOS and Linux are untested throughout.
         </p>
       </section>
 
