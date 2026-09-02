@@ -201,6 +201,15 @@ elements, and n <= 8 for anything factorial.
 Unless empty input is deliberately the edge case under test, state a guarantee
 ("the list always has at least one number") instead.
 
+**Past ~120 slugs, use `--only-file`.** Windows caps a command line at 8191
+characters, so a large `--only=` list dies with a bare `The syntax of the
+command is incorrect` — it names neither the limit nor the argument, and the
+run looks like a broken importer. Put one slug per line in a file instead:
+
+```bash
+npm run import:corpus -w @codelock/api -- --measure --only-file=slugs.txt
+```
+
 **Measure incrementally.** `--only=slug-a,slug-b` measures just those problems
 and carries every other row's stored runtime forward. A full `--measure` is
 ~28 judge runs per problem; at ~25 runs/minute the whole corpus is many hours.
