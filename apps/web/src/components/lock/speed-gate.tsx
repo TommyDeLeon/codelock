@@ -64,7 +64,22 @@ export function SpeedGate({ verdict }: { verdict: PerformanceVerdict }) {
       {!verdict.passed && (
         <p className="mt-1 text-[13px] text-muted">
           Your answer is correct — the lock stays on because it is roughly{' '}
-          <strong className="font-medium text-fg tabular">{verdict.ratio}x</strong> slower than the
+          {/*
+            Rounded here rather than trusting the caller.
+
+            This printed `verdict.ratio` raw, which was survivable only because
+            the API happened to hand back an already-rounded number. The browser
+            judge computes it as a plain division, and the screen read "roughly
+            40.00000002055332x slower" — sixteen significant figures in a
+            sentence whose first word is "roughly".
+
+            A component that is correct only when its data arrives pre-formatted
+            is not correct. Presentation belongs to the thing presenting.
+          */}
+          <strong className="font-medium text-fg tabular">
+            {verdict.ratio.toFixed(1)}x
+          </strong>{' '}
+          slower than the
           best known solution. This is usually a complexity problem, not a
           micro-optimisation one.
         </p>
