@@ -137,11 +137,19 @@ export default function LockPage() {
           session={session}
           onUnlocked={async (token) => {
             // On desktop the shell must verify the token before the overlay
-            // drops. If verification fails we stay locked rather than trusting
-            // this renderer's word for it.
+            // drops. A successful reply is terminal for this remote page: the
+            // main process has already started loading the bundled dashboard,
+            // so rendering the browser-only Continue route here would give two
+            // different processes ownership of the same window navigation.
+            // If verification fails we stay locked rather than trusting this
+            // renderer's word for it.
             if (isDesktop()) {
-              const released = await releaseDesktopLock(token);
-              if (!released) return;
+              // Either way this page stops here. On success the main process is
+              // already loading the bundled dashboard; on failure the overlay
+              // stays up. The two outcomes differ in the shell, not in what this
+              // remote page should do next, which is nothing.
+              await releaseDesktopLock(token);
+              return;
             }
             notifyNativeUnlocked();
             setUnlocked(true);
