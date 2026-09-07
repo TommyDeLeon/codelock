@@ -7,7 +7,7 @@
   --color-fg: #25251f;
   --color-prose: #45453c;
   --color-muted: #656459;
-  --color-faint: #706e62;
+  --color-faint: #656459;
   --color-rule: #cbc7ba;
   --color-border: #cbc7ba;
   --color-border-strong: #999587;
@@ -27,99 +27,38 @@
   --color-border-strong: #828373; --color-accent: #e5a18b; --color-accent-soft: #30312b;
   --color-success: #b4cfb7; --color-success-soft: #364539; --color-danger: #e5a18b; --color-warning: #d8bf8e;
 }
-/*
-  The film stack.
-
-  Until now this page was flat colour fields — a paper ground in light, a warm
-  near-black in dark, and nothing else. That is why it read as *designed* rather
-  than *lit*: there was no light source in the scene, so nothing fell off, and
-  every surface sat at exactly the same distance from the reader. Type and
-  spacing alone cannot make a frame feel photographed.
-
-  Three surfaces fix that, and they are deliberately the only three:
-
-    1. A single key light, off-centre and fixed to the viewport, so it belongs
-       to the frame the way a lamp belongs to a room rather than scrolling away
-       with one section. One source: light arriving from everywhere reads as no
-       light at all.
-    2. A vignette, above the content and above the nav. A vignette that stops
-       short of the chrome reads as an overlay pasted onto the page instead of
-       the edge of the lens everything is seen through.
-    3. Grain, at an opacity that is felt rather than seen.
-
-  Both layers are fixed and pointer-events: none, and both are pseudo-elements
-  on the existing wrapper so no markup changes. The vignette and grain share one
-  element with two background layers, keeping this to two paint layers.
-
-  NO BLEND MODES, and that is a performance decision rather than a taste one. A
-  full-viewport layer with mix-blend-mode forces the compositor to re-blend the
-  whole viewport every scroll frame. None of it shows up in a frame counter,
-  because it is not main-thread work, and it is among the most expensive things
-  a page can ask an integrated GPU to do.
-*/
+/* Clean lighting only: no noise tile. Both lights sit behind the content,
+   so the vignette cannot wash out text, controls, or captured evidence. */
+.marketing-site { isolation: isolate; }
 .marketing-site::before,
 .marketing-site::after {
   content: '';
   position: fixed;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
 }
-
-/* The key. Upper left, falling off well before the opposite corner. */
 .marketing-site::before {
-  z-index: 0;
   background: radial-gradient(
-    58% 54% at 14% 11%,
-    color-mix(in srgb, var(--color-accent) 7%, transparent) 0%,
-    color-mix(in srgb, var(--color-accent) 2%, transparent) 38%,
+    72% 64% at 24% 16%,
+    color-mix(in srgb, var(--color-accent) 5%, transparent),
     transparent 72%
   );
 }
-
 .marketing-site::after {
-  z-index: 60;
-  background:
-    radial-gradient(
-      128% 104% at 50% 40%,
-      transparent 54%,
-      color-mix(in srgb, var(--color-bg) 40%, transparent) 100%
-    ),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.018'/></svg>");
-}
-
-/*
-  Content sits above the key light. Without this the gradient would paint over
-  the page rather than behind it, and the whole point is that it is the room the
-  page stands in.
-*/
-.marketing-site > * { position: relative; z-index: 1; }
-
-/*
-  Dark is the world this is composed for, so the stack runs at full strength.
-
-  Light mode runs far weaker across the board, and that is not timidity: the
-  effect depends on light falling off into darkness, and a paper ground has
-  nowhere to fall off to. Pushing the dark values onto a near-white page
-  produces a dirty sheet, not an atmospheric one.
-*/
-.dark .marketing-site::before {
   background: radial-gradient(
-    62% 58% at 14% 11%,
-    color-mix(in srgb, var(--color-accent) 24%, transparent) 0%,
-    color-mix(in srgb, var(--color-accent) 7%, transparent) 36%,
-    transparent 70%
+    128% 104% at 50% 40%, transparent 54%,
+    color-mix(in srgb, var(--color-bg) 40%, transparent) 100%
   );
 }
-
-.dark .marketing-site::after {
-  background:
-    radial-gradient(
-      130% 106% at 50% 42%,
-      transparent 48%,
-      color-mix(in srgb, var(--color-bg) 84%, transparent) 100%
-    ),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.032'/></svg>");
+.dark .marketing-site::before {
+  background: radial-gradient(
+    72% 64% at 24% 16%,
+    color-mix(in srgb, var(--color-accent) 10%, transparent),
+    transparent 72%
+  );
 }
+.marketing-site > * { position: relative; z-index: 1; }
 
 .marketing-site *, .marketing-site *::before, .marketing-site *::after { box-sizing: border-box; }
 .marketing-site :is(.site-frame, main > section > .max-w-6xl, main > section.max-w-6xl) { width: 100%; max-width: 1680px; padding-inline: var(--site-gutter); margin-inline: auto; }
@@ -169,13 +108,23 @@
   arithmetic, the attempt buttons. That is the distinction.
 */
 .marketing-site .hero-facts { font-size: 13px; line-height: 1.9; color: var(--color-muted); }
-.marketing-site .lock-spread { background: #11120f; color: #e8e7dd; padding-top: 28px; }
+.marketing-site .lock-spread { background: var(--color-surface); color: var(--color-fg); padding-top: 28px; }
 .marketing-site .spread-heading { display: flex; justify-content: space-between; gap: 24px; align-items: baseline; padding-bottom: 26px; }
-.marketing-site .spread-heading .eyebrow { color: #aaa99d; }
+.marketing-site .spread-heading .eyebrow { color: var(--color-muted); }
 .marketing-site .spread-heading > p:last-child { font-family: var(--font-display); font-size: 27px; }
 .marketing-site .reportage { margin: 0; min-width: 0; }
-.marketing-site .capture-link, .marketing-site picture { display: block; }
-.marketing-site .reportage img { display: block; width: 100%; height: auto; }
+.marketing-site .capture-link { display: block; }
+/* One painted image, chosen by the same class as the publication. The JPG
+   declaration also covers browsers that cannot parse typed image-set(). */
+.marketing-site .capture-image {
+  display: block; width: 100%; aspect-ratio: 1600 / 1000;
+  background-image: var(--capture-light-jpg);
+  background-size: 100% 100%; background-repeat: no-repeat;
+}
+.dark .marketing-site .capture-image {
+  background-image: var(--capture-dark-jpg);
+}
+.marketing-site .capture-image[data-capture="codelock-app-lock"] { aspect-ratio: 1600 / 670; }
 .marketing-site .reportage figcaption { display: grid; grid-template-columns: auto 1fr; gap: 12px 24px; padding-block: 20px; font-size: 12px; line-height: 1.65; color: var(--color-muted); }
 /*
   The figure number keeps the mono — it is a reference, like a page number, and
@@ -186,16 +135,15 @@
 .marketing-site .figure-number { font-family: var(--font-mono); font-size: 10px; letter-spacing: .03em; }
 .marketing-site .capture-note { font-size: 12px; letter-spacing: .01em; }
 .marketing-site .capture-note { grid-column: 2; }
-.marketing-site .lock-spread figcaption { padding-inline: var(--site-gutter); color: #bcbcaf; grid-template-columns: auto minmax(0, 65ch) 1fr; }
+.marketing-site .lock-spread figcaption { padding-inline: var(--site-gutter); color: var(--color-muted); grid-template-columns: auto minmax(0, 65ch) 1fr; }
 .marketing-site .lock-spread .capture-note { grid-column: auto; text-align: right; }
 .marketing-site .argument-spread { display: grid; grid-template-columns: .8fr 1.3fr; gap: 8vw; align-items: start; }
 .marketing-site .argument-heading h2 { margin-block: 30px; }
 .marketing-site .argument-heading .prose-site { max-width: 35ch; }
 .marketing-site .verdict-evidence { padding-top: 52px; min-width: 0; }
-/* Crop out the former site's navigation; preserve the complete captured verdict. */
+/* Frame the verdict panel in the current capture. */
 .marketing-site .verdict-crop .capture-link { overflow: hidden; aspect-ratio: 1.3; border-bottom: 1px solid var(--color-rule); }
-.marketing-site .verdict-crop picture { height: 100%; }
-.marketing-site .verdict-crop img { width: 150%; max-width: none; height: 100%; object-fit: cover; object-position: right bottom; margin-left: -50%; }
+.marketing-site .verdict-crop .capture-image { width: 150%; height: 100%; aspect-ratio: auto; background-size: cover; background-position: right bottom; margin-left: -50%; }
 .marketing-site .evidence-footnote { margin-top: 12px; max-width: 55ch; font-size: 12px; line-height: 1.7; color: var(--color-muted); }
 .marketing-site .gate-spread { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8vw; border-block: 1px solid var(--color-rule); }
 .marketing-site .gate-spread h2 { margin-block: 24px; }
@@ -276,7 +224,7 @@
   .marketing-site .lock-spread figcaption { grid-template-columns: auto 1fr; }
   .marketing-site .lock-spread .capture-note { grid-column: 2; text-align: left; }
   .marketing-site .lock-spread .capture-link { overflow: hidden; }
-  .marketing-site .lock-spread img { width: 185%; max-width: none; }
+  .marketing-site .lock-spread .capture-image { width: 185%; max-width: none; }
   .marketing-site .verdict-evidence { padding-top: 0; }
   .marketing-site .argument-heading h2 br:nth-of-type(2) { display: none; }
   .marketing-site .platform-ledger > div { grid-template-columns: 1fr; gap: 12px; }
@@ -289,7 +237,7 @@
   .marketing-site .legal-main { padding-top: 48px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .marketing-site *, .marketing-site *::before, .marketing-site *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .marketing-site, .marketing-site::before, .marketing-site::after, .marketing-site *, .marketing-site *::before, .marketing-site *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 /* Remove empty lower fields from the settings and dashboard documentation. */
 .marketing-site .settings-crop .capture-link { aspect-ratio: 3.5; overflow: hidden; }
@@ -298,8 +246,30 @@
 .marketing-site .demo-intro button { border-radius: 0; }
 @media (max-width: 760px) {
   .marketing-site .settings-crop .capture-link { aspect-ratio: 1.5; }
-  .marketing-site .settings-crop img { width: 200%; max-width: none; }
+  .marketing-site .settings-crop .capture-image { width: 200%; max-width: none; }
   .marketing-site .dashboard-crop .capture-link { aspect-ratio: 1.4; }
-  .marketing-site .dashboard-crop img { width: 150%; max-width: none; }
+  .marketing-site .dashboard-crop .capture-image { width: 150%; max-width: none; }
   .marketing-site .demo-intro h1 { font-size: 58px; }
+}
+
+/* One entrance, on the opening headline only. A fraction of a pixel of
+   softness resolves as the type settles; every letter is visible throughout. */
+@keyframes headline-settle {
+  from { transform: translateY(5px); filter: blur(.2px); }
+  to { transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .marketing-site .landing-hero h1 {
+    animation: headline-settle 1050ms cubic-bezier(.16, 1, .3, 1);
+  }
+  /* The bar already has its correct length on arrival. Only a reader's
+     selection changes it; the numbers and verdict update immediately. */
+  .marketing-site .gate-runtime {
+    transition: width 850ms cubic-bezier(.16, 1, .3, 1);
+  }
+}
+
+@supports (background-image: image-set(url("/images/codelock-app-lock.avif") type("image/avif"))) {
+  .marketing-site .capture-image { background-image: var(--capture-light); }
+  .dark .marketing-site .capture-image { background-image: var(--capture-dark); }
 }

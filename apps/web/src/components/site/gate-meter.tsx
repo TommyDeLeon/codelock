@@ -80,7 +80,7 @@ export function GateMeter() {
               before a word of the readout is read. It was plain ink, which on
               the dark theme is near-white and read as a neutral block. */}
           <div
-            className={`absolute inset-y-2 left-0 rounded-r-xs transition-[width,background-color] duration-700 ease-out ${
+            className={`gate-runtime absolute inset-y-2 left-0 rounded-r-xs ${
               passed ? 'bg-success' : 'bg-danger'
             }`}
             style={{ width: `${pct(measured)}%` }}

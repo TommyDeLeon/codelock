@@ -25,7 +25,7 @@ export default function InstallPage() {
       <p className="prose-site measure-wide mt-8">Free. Source available. No account required. CodeLock runs as a local stack for one person. The API deliberately does not authenticate requests, so keep every service off the public internet.</p>
       <div className="site-actions"><a href={`${readme}#setup`} className="site-button">Open the setup guide →</a><Link href="/limits" className="text-link">Read the limits first →</Link></div>
     </div></section>
-    <div className="site-frame route-capture"><Reportage capture="codelock-app-dashboard-light" className="dashboard-crop" number="04" alt="CodeLock desktop dashboard with focus timer controls" caption="The desktop dashboard is where a focus block begins. The API, database and judge must be running before the shell can enforce the timer." /></div>
+    <div className="site-frame route-capture"><Reportage capture="codelock-app-dashboard" className="dashboard-crop" number="04" alt="CodeLock desktop dashboard with focus timer controls" caption="The desktop dashboard is where a focus block begins. The API, database and judge must be running before the shell can enforce the timer." /></div>
     <section className="rule-b"><div className="site-frame section-space mechanism-layout">
       <div><p className="eyebrow">01 / Prepare</p><h2 className="display display-md mt-4">A local stack,<br />then the shell.</h2></div>
       <div className="prose-site editorial-body">

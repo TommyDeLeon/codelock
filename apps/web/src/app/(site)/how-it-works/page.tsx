@@ -57,7 +57,7 @@ export default function HowItWorksPage() {
           </div>
         </div>
       </section>
-    <div className="site-frame route-capture"><Reportage capture="codelock-verdict-light" number="03" alt="A correct demo submission rejected for exceeding the runtime budget" caption="The two conditions diverge in this recorded run: all tests pass, but the measured runtime exceeds the budget. The demo produces a verdict, never an unlock token." /></div>
+    <div className="site-frame route-capture"><Reportage capture="codelock-verdict" number="03" alt="A correct demo submission rejected for exceeding the runtime budget" caption="The two conditions diverge in this recorded run: all tests pass, but the measured runtime exceeds the budget. The demo produces a verdict, never an unlock token." /></div>
 
       {/* --- 01 The lock --------------------------------------------------- */}
       <section className="rule-b section-arrive">
