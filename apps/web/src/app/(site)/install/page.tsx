@@ -20,7 +20,7 @@ export default function InstallPage() {
   const readme = `${repoUrl()}/blob/main/README.md`;
   return <>
     <section className="rule-b hero-stage"><div className="site-frame section-space">
-      <p className="eyebrow">Install / Private by setup</p>
+      {/* No kicker. "Your machine. Your commitment." needs no label above it. */}
       <h1 className="display display-hero mt-6">Your machine.<br /><em>Your commitment.</em></h1>
       <p className="prose-site measure-wide mt-8">Free. Source available. No account required. CodeLock runs as a local stack for one person. The API deliberately does not authenticate requests, so keep every service off the public internet.</p>
       <div className="site-actions"><a href={`${readme}#setup`} className="site-button">Open the setup guide →</a><Link href="/limits" className="text-link">Read the limits first →</Link></div>

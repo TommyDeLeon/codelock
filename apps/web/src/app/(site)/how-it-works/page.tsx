@@ -44,7 +44,7 @@ export default function HowItWorksPage() {
           already be finished before the first paint. */}
       <section className="rule-b hero-stage">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <p className="eyebrow hero-rise hero-rise-1">How it works</p>
+          {/* No kicker. The heading names the page; the nav already said where you are. */}
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
             The arithmetic,{' '}
             <em>written out.</em>

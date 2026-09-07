@@ -21,7 +21,7 @@ const QUESTIONS = [
 export default function SupportPage() {
   return <>
     <section className="rule-b hero-stage"><div className="site-frame section-space">
-      <p className="eyebrow">Support / Recovery comes first</p>
+      {/* No kicker. "Need out? Start here." is already the plainest possible sign. */}
       <h1 className="display display-hero mt-6">Need out?<br /><em>Start here.</em></h1>
       <div className="recovery-lead"><p className="font-mono text-sm text-accent">DESKTOP / HOLD ESCAPE FOR 10 SECONDS</p><p className="prose-site mt-4">The overlay exits and the session counts as failed. That is an intentional recovery path, including when you need to repair your local setup.</p></div>
     </div></section>
