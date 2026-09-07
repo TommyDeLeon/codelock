@@ -27,6 +27,102 @@
   --color-border-strong: #828373; --color-accent: #e5a18b; --color-accent-soft: #30312b;
   --color-success: #b4cfb7; --color-success-soft: #364539; --color-danger: #e5a18b; --color-warning: #d8bf8e;
 }
+/*
+  The film stack.
+
+  Until now this page was flat colour fields — a paper ground in light, a warm
+  near-black in dark, and nothing else. That is why it read as *designed* rather
+  than *lit*: there was no light source in the scene, so nothing fell off, and
+  every surface sat at exactly the same distance from the reader. Type and
+  spacing alone cannot make a frame feel photographed.
+
+  Three surfaces fix that, and they are deliberately the only three:
+
+    1. A single key light, off-centre and fixed to the viewport, so it belongs
+       to the frame the way a lamp belongs to a room rather than scrolling away
+       with one section. One source: light arriving from everywhere reads as no
+       light at all.
+    2. A vignette, above the content and above the nav. A vignette that stops
+       short of the chrome reads as an overlay pasted onto the page instead of
+       the edge of the lens everything is seen through.
+    3. Grain, at an opacity that is felt rather than seen.
+
+  Both layers are fixed and pointer-events: none, and both are pseudo-elements
+  on the existing wrapper so no markup changes. The vignette and grain share one
+  element with two background layers, keeping this to two paint layers.
+
+  NO BLEND MODES, and that is a performance decision rather than a taste one. A
+  full-viewport layer with mix-blend-mode forces the compositor to re-blend the
+  whole viewport every scroll frame. None of it shows up in a frame counter,
+  because it is not main-thread work, and it is among the most expensive things
+  a page can ask an integrated GPU to do.
+*/
+.marketing-site::before,
+.marketing-site::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The key. Upper left, falling off well before the opposite corner. */
+.marketing-site::before {
+  z-index: 0;
+  background: radial-gradient(
+    58% 54% at 14% 11%,
+    color-mix(in srgb, var(--color-accent) 7%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent) 2%, transparent) 38%,
+    transparent 72%
+  );
+}
+
+.marketing-site::after {
+  z-index: 60;
+  opacity: 0.5;
+  background:
+    radial-gradient(
+      128% 104% at 50% 40%,
+      transparent 54%,
+      color-mix(in srgb, var(--color-bg) 82%, transparent) 100%
+    ),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.5'/></svg>");
+}
+
+/*
+  Content sits above the key light. Without this the gradient would paint over
+  the page rather than behind it, and the whole point is that it is the room the
+  page stands in.
+*/
+.marketing-site > * { position: relative; z-index: 1; }
+
+/*
+  Dark is the world this is composed for, so the stack runs at full strength.
+
+  Light mode runs far weaker across the board, and that is not timidity: the
+  effect depends on light falling off into darkness, and a paper ground has
+  nowhere to fall off to. Pushing the dark values onto a near-white page
+  produces a dirty sheet, not an atmospheric one.
+*/
+.dark .marketing-site::before {
+  background: radial-gradient(
+    62% 58% at 14% 11%,
+    color-mix(in srgb, var(--color-accent) 24%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent) 7%, transparent) 36%,
+    transparent 70%
+  );
+}
+
+.dark .marketing-site::after {
+  opacity: 0.9;
+  background:
+    radial-gradient(
+      130% 106% at 50% 42%,
+      transparent 48%,
+      color-mix(in srgb, var(--color-bg) 92%, transparent) 100%
+    ),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.5'/></svg>");
+}
+
 .marketing-site *, .marketing-site *::before, .marketing-site *::after { box-sizing: border-box; }
 .marketing-site :is(.site-frame, main > section > .max-w-6xl, main > section.max-w-6xl) { width: 100%; max-width: 1680px; padding-inline: var(--site-gutter); margin-inline: auto; }
 .marketing-site .section-space { padding-block: clamp(64px, 8vw, 128px); }
@@ -34,7 +130,7 @@
 .marketing-site .display em { font-style: italic; color: inherit; font-weight: 400; }
 .marketing-site .display-lg { font-size: clamp(48px, 6.4vw, 98px); }
 .marketing-site .display-md { font-size: clamp(36px, 3.8vw, 58px); }
-.marketing-site .eyebrow, .edition-line { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; line-height: 1.7; color: var(--color-muted); }
+.marketing-site .eyebrow, .edition-line { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; line-height: 1.7; color: var(--color-muted); }
 .marketing-site .prose-site { max-width: 60ch; font-size: 16px; line-height: 1.8; color: var(--color-prose); }
 .marketing-site .prose-site p + p { margin-top: 1.25em; }
 .marketing-site .prose-site strong { color: var(--color-fg); }
