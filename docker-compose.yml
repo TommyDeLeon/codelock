@@ -45,7 +45,6 @@ services:
       HOST: 0.0.0.0
       PORT: 4000
       DATABASE_URL: postgresql://codelock:codelock@postgres:5432/codelock?schema=public
-      APP_URL: http://localhost:3000
       CORS_ORIGINS: http://localhost:3000
       JUDGE0_URL: http://judge:2358
     ports: ['127.0.0.1:4000:4000']

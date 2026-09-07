@@ -47,7 +47,7 @@ enum Tier {
 /// Pattern family, from the canonical interview lists.
 ///
 /// The lists themselves are facts — which patterns matter, in what order — and
-/// are free to use; see docs/CORPUS-SOURCES.md. The two trailing members have
+/// are free to use; see the licensing section of README.md. The two trailing members have
 /// no upstream counterpart, because no published list starts below "you can
 /// already program".
 enum PatternFamily {
@@ -256,7 +256,7 @@ model Problem {
   popularitySource    String?
   popularityCheckedAt DateTime?
   // --- provenance ----------------------------------------------------------
-  // Non-null on every row, per rule 4 in docs/CORPUS-SOURCES.md. Attribution is
+  // Non-null on every row, per the corpus provenance rules in README.md. Attribution is
   // per *problem*, not per corpus, because a single upstream dataset can span
   // several licences — CodeContests alone carries five. A blanket credit line
   // in a README cannot express that, and would be wrong for most rows.
@@ -423,6 +423,10 @@ model LockSession {
 
   submissions Submission[]
 
+  /// A partial unique index also enforces one ARMED-or-LOCKED session per user.
+  /// It lives in migrations/20260908020000_one_active_session_per_user because
+  /// Prisma's schema language cannot express a WHERE clause on an index — do
+  /// not "tidy" it away by regenerating this file from the database.
   @@index([userId, state])
   @@index([state, fireAt])
   /// Both are foreign keys with no dedicated index; see the note on

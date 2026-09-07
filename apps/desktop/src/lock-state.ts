@@ -15,7 +15,7 @@ import path from 'node:path';
  *
  * The obvious objection is that a user who can kill the process can also
  * delete this file. True, and it is documented as such in
- * docs/ESCAPE-MATRIX.md — deleting a file in AppData is a deliberate,
+ * the platform-limits section of README.md — deleting a file in AppData is a deliberate,
  * conscious act, which is the bar a commitment device is trying to raise the
  * escape to. It is not trying to beat an adversary with admin rights.
  */

@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * A child of Two Pointers on the roadmap and a parent of Trees, so this family
  * unblocks a large part of the graph. Every statement here is written from the
  * task rather than from anyone's prose — see the non-negotiable at the top of
- * docs/AUTHORING.md.
+ * README.md.
  *
  * The `list` signatures already exist in the registry, so these problems are
  * genuine linked-list problems: the driver builds the nodes from a line of

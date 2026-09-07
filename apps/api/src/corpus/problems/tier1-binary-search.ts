@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * The child of Two Pointers on the roadmap and the parent of Trees, so this
  * family sits on the critical path for a large part of the graph. Every
  * statement here is written from the task rather than from anyone's prose — see
- * the non-negotiable at the top of docs/AUTHORING.md.
+ * the non-negotiable at the top of README.md.
  *
  * The through-line across the nine: binary search does not need a sorted array,
  * it needs a **monotonic predicate**. Half of the family searches an array;

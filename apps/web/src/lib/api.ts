@@ -185,7 +185,7 @@ async function request<T>(
   // and that includes /v1/demo/problem, not only /v1/demo/grade. It is the
   // FIRST request the demo page makes, so on a cold instance (a free-tier host
   // asleep after inactivity can take up to a minute to wake — see
-  // docs/FREE-HOSTING.md) it is the one most likely to be racing a wake-up, and
+  // README.md) it is the one most likely to be racing a wake-up, and
   // it used to carry the 15s "fail fast" budget meant for an already-warm app.
   // Two 15s attempts (retry: 1) settling into an error while the instance is
   // still waking up is what read as the demo being "stuck" rather than slow.

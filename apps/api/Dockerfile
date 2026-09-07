@@ -14,9 +14,12 @@ WORKDIR /app
 # devDependencies, and the build needs prisma and tsc — the failure is an
 # exit code 127 from `npm run build` with no hint of what is missing.
 FROM base AS deps
-# argon2 builds a native addon; python3/make/g++ are needed only here.
+# openssl and CA certificates only. The python3/make/g++ toolchain used to be
+# here to build argon2's native addon — a password hasher left over from the
+# removed account system, which nothing imported. Dropping the dependency
+# drops the compiler from the image.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 make g++ openssl ca-certificates \
+      openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/

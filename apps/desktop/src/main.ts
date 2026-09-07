@@ -68,7 +68,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * on Windows, a forced power-off, booting to another OS, or deleting the state
  * file from AppData all defeat it, and no userland application can prevent
  * that. It is a strong commitment device, not a kernel-level parental control.
- * See docs/ESCAPE-MATRIX.md for what was tried and what worked.
+ * See the platform-limits section of README.md for what was tried and what worked.
  */
 
 // Electron derives userData from the package name, which in this workspace is
@@ -813,7 +813,15 @@ ipcMain.handle('codelock:state', () => ({
 
 ipcMain.handle('codelock:open-external', (_event, url: unknown) => {
   if (typeof url !== 'string') return false;
-  const parsed = new URL(url);
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    // `new URL` throws on anything unparseable, and an uncaught throw inside an
+    // ipcMain.handle rejects into the renderer as an opaque error. A refusal is
+    // the honest answer to a string that is not a URL.
+    return false;
+  }
   // Only ever hand http(s) to the OS; a file:// or custom scheme here would be
   // an arbitrary-execution hole.
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;

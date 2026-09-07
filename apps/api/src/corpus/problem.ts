@@ -45,7 +45,7 @@ export interface ProblemDefinition {
  * All five are required. Not defensive — necessary: `data/NOTICE` is generated
  * from these columns, and a single row with a missing `sourceRef` produces a
  * notice that under-attributes a licence we are relying on. See rule 4 in
- * docs/CORPUS-SOURCES.md.
+ * the licensing section of README.md.
  */
 export interface Provenance {
   /** Short key, e.g. "codelock-authored", "mbpp". */

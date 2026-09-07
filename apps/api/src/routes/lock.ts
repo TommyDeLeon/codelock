@@ -14,6 +14,7 @@ import {
 import {
   armSession,
   bypassLock,
+  claimResolution,
   engageLock,
   getActiveSession,
   requireOwnedSession,
@@ -108,13 +109,13 @@ lockRouter.post(
     const { id } = idParamSchema.parse(req.params);
     const session = await requireArmed(user.id, id, 'cancelled');
 
-    const cancelled = await prisma.lockSession.update({
-      where: { id: session.id },
-      data: { state: LockState.ABANDONED, resolvedAt: new Date() },
-      select: { id: true, state: true },
+    const won = await claimResolution(session.id, [LockState.ARMED], {
+      state: LockState.ABANDONED,
+      resolvedAt: new Date(),
     });
+    if (!won) throw ApiError.conflict('That session has already been resolved');
 
-    res.json({ session: cancelled });
+    res.json({ session: { id: session.id, state: LockState.ABANDONED } });
   }),
 );
 
@@ -136,8 +137,11 @@ lockRouter.post(
 
     if (session.pausedAt) return res.json({ session: await getActiveSession(user.id) });
 
-    await prisma.lockSession.update({
-      where: { id: session.id },
+    // Conditional on still being unpaused, so two clicks cannot each stamp a
+    // pausedAt — the second would move the mark forward and shorten the credit
+    // the user gets back on resume.
+    await prisma.lockSession.updateMany({
+      where: { id: session.id, state: LockState.ARMED, pausedAt: null },
       data: { pausedAt: new Date() },
     });
     res.json({ session: await getActiveSession(user.id) });
@@ -161,8 +165,22 @@ lockRouter.post(
     if (!session.pausedAt) return res.json({ session: await getActiveSession(user.id) });
 
     const pausedMs = Date.now() - session.pausedAt.getTime();
-    await prisma.lockSession.update({
-      where: { id: session.id },
+    // Guarded on `pausedAt` still being set, and that is not a nicety: resume
+    // pushes the deadline forward by the paused interval, so two resumes that
+    // both read the same `pausedAt` would push it forward twice. Double-clicking
+    // Resume would have been free time — a race that weakens the lock rather
+    // than merely duplicating a row.
+    // Match the exact pausedAt this request read, not merely "some pause".
+    //
+    // `pausedAt IS NOT NULL` is an ABA guard: the value can change away and back
+    // between the read and the write. Two resumes both read pause A; the first
+    // resumes, someone pauses again as pause B, and the second still matches —
+    // clearing pause B while crediting pause A's interval, which both restarts a
+    // timer the user meant to hold and moves the deadline by the wrong amount.
+    // Matching the timestamp makes the write apply to the pause it was computed
+    // from, or to nothing.
+    await prisma.lockSession.updateMany({
+      where: { id: session.id, state: LockState.ARMED, pausedAt: session.pausedAt },
       data: { fireAt: new Date(session.fireAt.getTime() + pausedMs), pausedAt: null },
     });
     res.json({ session: await getActiveSession(user.id) });
@@ -263,23 +281,77 @@ lockRouter.post(
       : null;
 
     const resolvedAt = new Date();
-    await prisma.lockSession.update({
+    // Guarded on the states that can still be given up on, and atomic.
+    //
+    // This route used to check ownership and nothing else, then write
+    // unconditionally. Abandoning an already-UNLOCKED session therefore
+    // overwrote a solve with ABANDONED, wrote an audit row contradicting the
+    // one already there, and called recordFailure — so calling it repeatedly
+    // after solving was a way to walk the difficulty ladder *down* on a
+    // problem that had actually been solved. Everything below the guard now
+    // happens only for the caller that genuinely ended the session.
+    // LOCKED first, then ARMED, rather than one guard accepting both.
+    //
+    // The difference is which state the *database* transitioned from, and that
+    // is the fact the ladder decision below depends on. Reading `session.state`
+    // and then writing under a guard that accepts either state reintroduces
+    // exactly the read-then-decide gap this change exists to close: the sweep
+    // can engage the timer in between, so a session read as ARMED is written as
+    // LOCKED and the failure goes unrecorded. Two narrow attempts make the
+    // state that decides the same state that moved.
+    // Try LOCKED, then ARMED, and retry the pair once.
+    //
+    // Two narrow guards rather than one broad one, because the ladder decision
+    // below depends on which state the *database* moved from, not on a state
+    // read earlier. But two guards leave their own gap: a session that is ARMED
+    // when the first attempt runs can be engaged by the sweep before the second
+    // runs, so both miss and a live session is wrongly reported as resolved —
+    // dropping a genuine give-up. One retry closes that, because ARMED to
+    // LOCKED happens at most once per session; there is no path back.
+    let wasLocked = false;
+    let resolvedHere = false;
+    for (let attempt = 0; attempt < 2 && !resolvedHere; attempt++) {
+      wasLocked = await claimResolution(session.id, [LockState.LOCKED], {
+        state: LockState.ABANDONED,
+        resolvedAt,
+      });
+      resolvedHere =
+        wasLocked ||
+        (await claimResolution(session.id, [LockState.ARMED], {
+          state: LockState.ABANDONED,
+          resolvedAt,
+        }));
+    }
+    if (!resolvedHere) {
+      throw ApiError.conflict('That session has already been resolved');
+    }
+
+    // Re-read the fields the sweep can fill in. If it engaged this session
+    // after the read above, the in-memory copy still has null for both, and
+    // the audit row would claim a lock held for no time over no problem.
+    const resolved = await prisma.lockSession.findUnique({
       where: { id: session.id },
-      data: { state: LockState.ABANDONED, resolvedAt },
+      select: { lockedAt: true, problemId: true },
     });
+    const problemId = resolved?.problemId ?? session.problemId;
 
     // Giving up is the one path that ends a lock with no passing submission,
     // which makes it the row an audit exists to capture.
     await recordUnlock({
       userId: user.id,
       lockSessionId: session.id,
-      problemId: session.problemId,
+      problemId,
       outcome: UnlockOutcome.ABANDONED,
-      secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
+      secondsLocked: secondsLocked(resolved?.lockedAt ?? session.lockedAt, resolvedAt),
       reason: body.reason === 'kill_switch' ? 'kill_switch' : 'user_gave_up',
     });
 
-    const progress = await recordFailure(user.id, problem?.avgSolveSeconds ?? 600);
+    // Only a lock that actually landed can be failed. Giving up on a countdown
+    // that never engaged assigned no problem, so there is nothing to have
+    // failed at — the same reasoning /cancel already applies.
+    const progress = wasLocked
+      ? await recordFailure(user.id, problem?.avgSolveSeconds ?? 600)
+      : null;
     res.json({ progress });
   }),
 );

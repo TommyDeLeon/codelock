@@ -12,7 +12,7 @@
  * and version resources of Electron's own signed `electron.exe` to produce
  * `CodeLock.exe`. That edit invalidates Electron's Authenticode signature, so
  * the shipped binary is unsigned even though the binary it was cut from was
- * not. `docs/TRUSTED-INSTALL.md` Track A does not fix this: a self-signed
+ * not. `README.md` Track A does not fix this: a self-signed
  * certificate imported into LocalMachine\Root and TrustedPublisher builds a
  * local trust chain, and SAC does not consult local trust. It wants a
  * Microsoft-reputable signer.

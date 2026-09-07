@@ -2,7 +2,7 @@
  * Measures gzipped client JS per route.
  *
  * Next 16 + Turbopack no longer prints the "First Load JS" column, so the
- * 150 KB budget in docs/DESIGN.md §4a has nothing to be checked against.
+ * 150 KB budget has nothing to be checked against.
  * This reads each prerendered route's HTML, collects every /_next/static
  * script it references, and gzips those files off disk.
  *

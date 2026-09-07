@@ -15,26 +15,20 @@
     "dist": "npm run icon && npm run build && electron-builder --publish never && node scripts/check-windows-policy.mjs",
     "dist:all": "npm run icon && npm run build && electron-builder -mwl --publish never",
     "icon": "node ../../scripts/make-icons.mjs",
-    "test": "vitest run",
     "build:renderer": "vite build",
     "dev:renderer": "vite"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^2.1.9",
     "cross-env": "^7.0.3",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
-    "jsdom": "^30.0.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^5.6.3",
-    "vite": "^6.4.3",
-    "vitest": "^2.1.5"
+    "vite": "^6.4.3"
   },
   "description": "Solve a programming problem to unlock your device",
   "author": {

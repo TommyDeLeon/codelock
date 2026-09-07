@@ -15,7 +15,7 @@
   tray icon, window closes without quitting, timer still armed.
 
   It is not a substitute for a signed installer when shipping to other people.
-  It is the local path for a machine you own. See docs/TRUSTED-INSTALL.md.
+  It is the local path for a machine you own. See README.md, "Desktop packaging and trusted install".
 
 .PARAMETER Source
   The unpacked build to install. Defaults to the x64 output of `npm run dist`.

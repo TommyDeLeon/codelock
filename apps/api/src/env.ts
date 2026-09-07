@@ -52,22 +52,14 @@ const schema = z.object({
   /// unbounded queue only converts CPU exhaustion into memory exhaustion.
   GRADE_QUEUE_DEPTH: z.coerce.number().int().min(0).max(500).default(20),
 
-  // --- observability ---
-  /// Error tracking. Everything stays local when unset; nothing is sent.
-  /// Shown in Sentry and in the health endpoint, so a report can be tied to a
-  /// deployment. CI passes the git sha.
-  RELEASE_SHA: z.string().optional().default('dev'),
-
-  // --- integrations ---
-  /// Encrypts third-party OAuth tokens at rest. Rotating it invalidates every
-  /// stored token, forcing users to reconnect — it is not a routine rotation.
-  ENCRYPTION_KEY: z.string().min(32),
-  /// Must exactly match the callback registered on the GitHub OAuth app.
-  /// Where to bounce the browser once the OAuth dance finishes.
-  APP_URL: z.string().url().default('http://localhost:3000'),
-  /// This API's own public origin. Identity-provider redirect URIs are built
-  /// from it, and they must match what is registered with the provider exactly
-  /// — a mismatch is rejected by the provider rather than by us.
+  // Nothing else belongs here.
+  //
+  // RELEASE_SHA, APP_URL and ENCRYPTION_KEY used to sit below this line, left
+  // behind by the accounts-and-integrations era. The first two were read by
+  // nothing. The third was worse than dead: it was *required*, with no default,
+  // to feed an OAuth-token encryption helper that nothing imported — and it was
+  // absent from .env.example, so following the README's own setup produced an
+  // API that exited with "ENCRYPTION_KEY: Required" and never booted.
 });
 
 const parsed = schema.safeParse(process.env);

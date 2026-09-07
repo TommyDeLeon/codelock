@@ -32,7 +32,7 @@ import { useEffect, useRef } from 'react';
  *
  * Rendered only inside `(site)` sections and the login backdrop. It must never
  * appear on /lock, the desktop dashboard, or the mobile Progress and Settings
- * screens — those are tools, and §1 MOTION of docs/DESIGN.md allows them state
+ * screens — those are tools, and §1 MOTION of README.md allows them state
  * changes and nothing else.
  */
 export function CodeField({ variant = 'hero' }: { variant?: 'hero' | 'close' }) {

@@ -27,12 +27,12 @@ green() { printf '\033[32m%s\033[0m\n' "$1"; }
 }
 
 # Never clobber a live deployment's secrets: rotating JWT_UNLOCK_SECRET
-# invalidates every issued unlock token, and rotating ENCRYPTION_KEY makes every
-# stored integration credential undecryptable.
+# invalidates every unlock token already issued, and rotating POSTGRES_PASSWORD
+# locks the API out of its own database until the URL is updated too.
 if [ -f .env ]; then
   red ".env already exists. Refusing to overwrite it."
   echo "  Delete it first if you really want fresh secrets — but read the note"
-  echo "  above: rotating these invalidates tokens and stored credentials."
+  echo "  above: rotating these invalidates issued unlock tokens."
   exit 1
 fi
 
@@ -68,10 +68,7 @@ set_var() {
   fi
 }
 
-set_var JWT_ACCESS_SECRET "$(secret)"
-set_var JWT_REFRESH_SECRET "$(secret)"
 set_var JWT_UNLOCK_SECRET "$(secret)"
-set_var ENCRYPTION_KEY "$(secret)"
 set_var POSTGRES_PASSWORD "$(secret)"
 
 chmod 600 .env

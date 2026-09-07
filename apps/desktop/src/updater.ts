@@ -19,7 +19,7 @@ import { app } from 'electron';
  * Windows note: electron-updater verifies the *publisher name* on the signed
  * installer against `publisherName` in the builder config. If they disagree,
  * every update fails silently — no error, no dialog, no update, forever. It
- * must be exactly the CN of the signing certificate. See docs/TRUSTED-INSTALL.md.
+ * must be exactly the CN of the signing certificate. See README.md.
  */
 
 // electron-updater ships CommonJS; the named export is not reachable from ESM.

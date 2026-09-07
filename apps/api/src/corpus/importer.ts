@@ -96,7 +96,7 @@ export function validateDefinition(def: ProblemDefinition): void {
   for (const field of ['source', 'sourceUrl', 'sourceLicense', 'sourceRef'] as const) {
     if (!provenance[field]?.trim()) {
       throw new Error(
-        `${def.slug}: provenance.${field} is required (docs/CORPUS-SOURCES.md, rule 4)`,
+        `${def.slug}: provenance.${field} is required (the corpus provenance rules)`,
       );
     }
   }

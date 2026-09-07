@@ -100,7 +100,7 @@ console.warn(
     '  |   .\\release\\win-unpacked\\CodeLock.exe',
     '  |',
     '  | Installing needs a trusted signature, not a code change. See',
-    '  | docs/TRUSTED-INSTALL.md, "Check Smart App Control first".',
+    '  | README.md, "Desktop packaging and trusted install".',
     '  +---------------------------------------------------------------------',
     '',
   ].join('\n'),

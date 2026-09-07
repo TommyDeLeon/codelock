@@ -8,13 +8,12 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
-    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && prisma generate && tsc -p tsconfig.build.json",
     "start": "node --env-file-if-exists=.env dist/index.js",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
     "calibrate": "tsx --env-file-if-exists=.env scripts/calibrate.ts",
     "dev:expire": "tsx --env-file-if-exists=.env scripts/expire-timer.ts",
     "popularity": "tsx --env-file-if-exists=.env scripts/fetch-popularity.ts",
@@ -28,8 +27,6 @@
   "dependencies": {
     "@codelock/shared": "*",
     "@prisma/client": "^5.22.0",
-    "@sentry/node": "^10.70.0",
-    "argon2": "^0.41.1",
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
@@ -45,12 +42,9 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^24.0.0",
-    "@types/supertest": "^7.2.1",
     "pino-pretty": "^13.0.0",
     "prisma": "^5.22.0",
-    "supertest": "^7.2.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.5"
+    "typescript": "^5.6.3"
   }
 }

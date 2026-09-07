@@ -4,7 +4,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * Tier 1 — Stack.
  *
  * Stack sits directly under Arrays & Hashing on the roadmap, so it is one of
- * the two families that open first. See docs/AUTHORING.md; every statement is
+ * the two families that open first. See README.md; every statement is
  * written from the task, not from anyone's prose.
  *
  * `valid-parentheses` keeps its original slug on purpose. It is one of the

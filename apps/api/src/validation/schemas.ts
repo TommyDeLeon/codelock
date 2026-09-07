@@ -3,23 +3,6 @@ import { Language, Platform } from '@prisma/client';
 
 const languageEnum = z.nativeEnum(Language);
 
-export const registerSchema = z.object({
-  email: z.string().email().max(254).toLowerCase(),
-  // Length over composition rules: NIST 800-63B, and it is what actually helps.
-  password: z.string().min(12).max(128),
-  displayName: z.string().min(1).max(60).trim(),
-  timezone: z.string().max(64).default('UTC'),
-});
-
-export const loginSchema = z.object({
-  email: z.string().email().max(254).toLowerCase(),
-  password: z.string().min(1).max(128),
-});
-
-export const refreshSchema = z.object({
-  refreshToken: z.string().min(20).max(200),
-});
-
 /**
  * What the learner may change about themselves.
  *

@@ -42,7 +42,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not (Test-Path $PfxPath)) {
-  throw "No certificate at $PfxPath. See docs/TRUSTED-INSTALL.md to create one."
+  throw "No certificate at $PfxPath. See README.md, "Desktop packaging and trusted install", to create one."
 }
 
 # signtool ships with the Windows SDK and is not on PATH by default.

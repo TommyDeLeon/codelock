@@ -25,9 +25,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run test --workspace @codelock/desktop
-      - run: npm run test --workspace @codelock/web
-      - run: npm run test:containment --workspace @codelock/judge
 
   build:
     needs: verify

@@ -148,7 +148,7 @@ export default function LandingPage() {
               <h2 className="display display-sm mt-3">Difficulty you can predict.</h2>
               <div className="prose-site mt-4 text-[14.5px]">
                 <p>
-                  Two fast solves out of three moves you up. Two failures move you down. That is
+                  Three fast solves in a row moves you up. Two failures move you down. That is
                   the whole rule, and it is the rule the interface shows you.
                 </p>
                 <p>

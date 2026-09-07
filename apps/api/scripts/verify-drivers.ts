@@ -8,7 +8,7 @@
  * the operation-log driver passes standalone, in all six, before a single
  * "implement the data structure" problem is written.
  *
- * Deliberately separate from `vitest`: it needs Docker, it takes minutes, and a
+ * Deliberately a standalone script: it needs Docker, it takes minutes, and a
  * test suite that cannot run on a laptop is a test suite people stop running.
  *
  *   npm run verify:drivers -w @codelock/api

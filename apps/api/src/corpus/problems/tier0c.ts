@@ -3,7 +3,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
 /**
  * Tier 0 — foundations, third batch. Completes the tier.
  *
- * Same audience and contract as `tier0.ts`; see docs/AUTHORING.md. Written in a
+ * Same audience and contract as `tier0.ts`; see README.md. Written in a
  * more compact form than the first two batches — the helpers below build the
  * statement and editorial skeletons, so each entry carries only what is
  * actually different about it. The prose obligations are unchanged: name the

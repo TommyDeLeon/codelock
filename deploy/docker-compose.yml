@@ -73,10 +73,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-codelock}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-codelock}?schema=public
       JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
       JUDGE0_URL: http://judge:2358
-      APP_URL: https://${APP_DOMAIN}
       CORS_ORIGINS: https://${APP_DOMAIN}
-      # Sign-in redirect URIs are built from this, so it has to be the origin
-      # the provider was told about — not the container's internal address.
       PERF_TOLERANCE: ${PERF_TOLERANCE:-1.35}
       PERF_FLOOR_MS: ${PERF_FLOOR_MS:-40}
       PERF_BEST_OF: ${PERF_BEST_OF:-2}
@@ -105,7 +102,7 @@ services:
 
   # SECURITY: the socket mount is root-equivalent on this host. Anyone who
   # compromises the judge process controls the box. See apps/judge/README.md and
-  # docs/DEPLOY.md — this is the single biggest trade-off in the deployment.
+  # README.md, "Security boundaries" — the single biggest deployment trade-off.
   judge:
     build:
       context: ..

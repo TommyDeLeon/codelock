@@ -58,9 +58,10 @@ require() {
   fi
 }
 
-for name in APP_DOMAIN API_DOMAIN TLS_EMAIL \
-            JWT_ACCESS_SECRET JWT_REFRESH_SECRET JWT_UNLOCK_SECRET \
-            ENCRYPTION_KEY POSTGRES_PASSWORD; do
+# One signing secret, not four. JWT_ACCESS_SECRET, JWT_REFRESH_SECRET and
+# ENCRYPTION_KEY belonged to the account system and the OAuth integrations,
+# both removed; requiring them meant inventing three secrets that unlock nothing.
+for name in APP_DOMAIN API_DOMAIN TLS_EMAIL             JWT_UNLOCK_SECRET POSTGRES_PASSWORD; do
   require "$name"
 done
 
@@ -75,15 +76,6 @@ fi
 if [ ${#placeholder[@]} -gt 0 ]; then
   red "Still set to the example value in deploy/.env:"
   printf '  - %s\n' "${placeholder[@]}"
-  exit 1
-fi
-
-# Distinct secrets, checked here as well as in the API, because finding out at
-# boot means a container crash-looping behind a proxy that returns 502.
-if [ "$JWT_ACCESS_SECRET" = "$JWT_REFRESH_SECRET" ] ||
-   [ "$JWT_ACCESS_SECRET" = "$JWT_UNLOCK_SECRET" ] ||
-   [ "$JWT_REFRESH_SECRET" = "$JWT_UNLOCK_SECRET" ]; then
-  red "The three JWT secrets must all differ."
   exit 1
 fi
 
@@ -102,7 +94,7 @@ if printf %s "$POSTGRES_PASSWORD" | LC_ALL=C grep -q '[^A-Za-z0-9._~-]'; then
   exit 1
 fi
 
-for name in JWT_ACCESS_SECRET JWT_REFRESH_SECRET JWT_UNLOCK_SECRET ENCRYPTION_KEY; do
+for name in JWT_UNLOCK_SECRET; do
   value=${!name}
   if [ ${#value} -lt 32 ]; then
     red "$name is ${#value} characters; the API requires at least 32."

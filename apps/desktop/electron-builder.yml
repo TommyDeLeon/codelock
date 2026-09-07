@@ -46,7 +46,7 @@ win:
   # installer against it, and a mismatch makes every update fail *silently*:
   # no error, no dialog, no update, ever. It is passed at release time by
   # .github/workflows/release-desktop.yml, so an unsigned local build does not
-  # need it. See docs/TRUSTED-INSTALL.md.
+  # need it. See README.md, "Desktop packaging and trusted install".
 
 nsis:
   oneClick: false

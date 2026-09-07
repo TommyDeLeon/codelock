@@ -3,7 +3,7 @@
 You are authoring a batch of coding problems for the CodeLock corpus.
 
 ## Read first (mandatory, in this order)
-1. `docs/AUTHORING.md` — the full contract. Every rule there is load-bearing.
+1. `README.md` — the full contract. Every rule there is load-bearing.
 2. `apps/api/src/corpus/problems/tier2-two-pointers.ts` — the exact style/format
    target. Match its density, its prose voice, and its formatting exactly.
 3. `apps/api/src/corpus/signatures.ts` — the ONLY signature ids that exist.

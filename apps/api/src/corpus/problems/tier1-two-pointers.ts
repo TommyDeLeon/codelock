@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * The family that sits directly under Arrays & Hashing in the roadmap, and the
  * parent of Binary Search, Sliding Window and Linked List. Every statement here
  * is written from the task rather than from anyone's prose — see the
- * non-negotiable at the top of docs/AUTHORING.md.
+ * non-negotiable at the top of README.md.
  *
  * The through-line across the nine: a hash map buys you O(1) lookup at the cost
  * of memory, and two pointers buys you the same speed-up for free whenever the

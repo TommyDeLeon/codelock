@@ -5,7 +5,7 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { runBatch, JUDGE0_STATUS, type CaseResult } from './judge0.js';
 import { applyOutcome, type ProgressUpdate } from './difficulty.js';
-import { releaseLock, requireOwnedSession } from './lockSessions.js';
+import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessions.js';
 import { recordStep } from './learningLog.js';
 import {
   bestOfRuns,
@@ -364,13 +364,18 @@ export async function gradeSubmission(params: {
     where: { lockSessionId: session.id, id: { not: submission.id } },
   });
 
-  const progress = await advanceProgress(userId, {
-    solved: true,
-    elapsedSeconds: elapsedSeconds ?? undefined,
-    problemAvgSeconds: problem.avgSolveSeconds,
-    firstTry: priorAttempts === 0,
-  });
-
+  // Release first, then move the ladder.
+  //
+  // The order used to be the other way round, and the gap between them is real:
+  // judging takes seconds, so a submission can start while LOCKED and finish
+  // after /abandon or /skip has already resolved the session. The ladder was
+  // advanced with solved: true regardless, and only then did releaseLock throw
+  // — so one session could be recorded as a failure by abandon *and* a solve by
+  // the grader. The per-user grade slot does not help here: it serialises
+  // grading against grading, not grading against abandon.
+  //
+  // releaseLock's conditional transition is what decides. If it loses, it
+  // throws before the ladder is touched at all.
   const { unlockToken } = await releaseLock({
     userId,
     sessionId: session.id,
@@ -380,6 +385,17 @@ export async function gradeSubmission(params: {
     runtimeMs,
     gateMs: performance.gateMs,
   });
+
+  const progress = await advanceProgress(userId, {
+    solved: true,
+    elapsedSeconds: elapsedSeconds ?? undefined,
+    problemAvgSeconds: problem.avgSolveSeconds,
+    firstTry: priorAttempts === 0,
+  });
+
+  // Now, and not inside releaseLock: the recurring timer arms the next block at
+  // the difficulty the ladder holds *after* this solve is counted.
+  await rearmAfterSession(userId);
 
   // Written after the lock is released and never awaited: a log write must not
   // be able to keep anyone locked out of their own machine.

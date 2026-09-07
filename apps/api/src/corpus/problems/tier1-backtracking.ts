@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * The child of Trees on the roadmap and the parent of Graphs and 1-D dynamic
  * programming, so this family gates the whole right-hand branch. Every
  * statement here is written from the task rather than from anyone's prose —
- * see the non-negotiable at the top of docs/AUTHORING.md.
+ * see the non-negotiable at the top of README.md.
  *
  * The through-line across the nine: choose, recurse, un-choose. One shared
  * working buffer walked by a recursion that promises to hand it back exactly

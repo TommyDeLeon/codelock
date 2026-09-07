@@ -3,6 +3,7 @@ import {
   LockState,
   UnlockOutcome,
   type LockSession,
+  type Prisma,
   type Problem,
 } from '@prisma/client';
 // The cross-client contract. Declaring these locally is how `pausedAt` drifted
@@ -38,8 +39,14 @@ export async function armSession(params: {
 }): Promise<LockSessionView> {
   const { userId, deviceId } = params;
 
+  // Per user, not per device. Scoping this to a device meant two device ids
+  // produced two live sessions, and the daily skip allowance is counted per
+  // user but spent per session — so a second active session was a second
+  // allowance. A partial unique index enforces the same rule in the database
+  // (see migrations/20260908020000_one_active_session_per_user); this read is
+  // the fast path, not the guarantee.
   const existing = await prisma.lockSession.findFirst({
-    where: { userId, deviceId: deviceId ?? null, state: { in: [LockState.ARMED, LockState.LOCKED] } },
+    where: { userId, state: { in: [LockState.ARMED, LockState.LOCKED] } },
     orderBy: { armedAt: 'desc' },
   });
   if (existing) return toView(existing, await loadProblem(existing.problemId));
@@ -61,14 +68,29 @@ export async function armSession(params: {
   }
 
   const minutes = params.durationMinutesOverride ?? config.durationMinutes;
-  const session = await prisma.lockSession.create({
-    data: {
-      userId,
-      deviceId: deviceId ?? null,
-      difficulty: progress?.currentDifficulty ?? Difficulty.EASY,
-      fireAt: new Date(Date.now() + minutes * 60_000),
-    },
-  });
+  let session: LockSession;
+  try {
+    session = await prisma.lockSession.create({
+      data: {
+        userId,
+        deviceId: deviceId ?? null,
+        difficulty: progress?.currentDifficulty ?? Difficulty.EASY,
+        fireAt: new Date(Date.now() + minutes * 60_000),
+      },
+    });
+  } catch (err) {
+    // Lost the race to another /arm. The index did its job; the caller asked
+    // for an armed session and there is one, so return it rather than failing
+    // a request whose intent was satisfied.
+    if ((err as { code?: string }).code === 'P2002') {
+      const winner = await prisma.lockSession.findFirst({
+        where: { userId, state: { in: [LockState.ARMED, LockState.LOCKED] } },
+        orderBy: { armedAt: 'desc' },
+      });
+      if (winner) return toView(winner, await loadProblem(winner.problemId));
+    }
+    throw err;
+  }
   void recordStep(userId, { kind: 'TIMER_ARMED', sessionId: session.id, detail: { minutes } });
   return toView(session, null);
 }
@@ -113,6 +135,38 @@ export async function engageLock(params: {
   return toView(claimed.session, claimed.problem);
 }
 
+/**
+ * End a session, once.
+ *
+ * Every path that resolves a lock used to read the state, decide, and then
+ * write unconditionally. That is a *check-then-act race*: two requests both
+ * read LOCKED, both decide they are allowed, and both write — so a
+ * double-clicked Skip spent two days of a one-per-day allowance, and two
+ * concurrent passing submissions issued two unlock tokens and two audit rows
+ * for one lock.
+ *
+ * This closes the window by making the decision and the write the same
+ * operation. `updateMany` with the expected state in its WHERE clause is a
+ * single atomic statement: the database, not the application, decides who
+ * wins, and the loser gets `count === 0` and stops. Callers must treat a
+ * `false` return as "someone else already ended this session" and skip
+ * everything that follows — the audit row, the ladder move, the re-arm.
+ *
+ * `engageLock` has always worked this way (see `claimDueSession`); this brings
+ * the endings in line with the beginning.
+ */
+export async function claimResolution(
+  sessionId: string,
+  from: LockState[],
+  data: Prisma.LockSessionUpdateManyMutationInput,
+): Promise<boolean> {
+  const { count } = await prisma.lockSession.updateMany({
+    where: { id: sessionId, state: { in: from } },
+    data,
+  });
+  return count === 1;
+}
+
 /** Called after a submission passes every test case. Issues the unlock proof. */
 export async function releaseLock(params: {
   userId: string;
@@ -129,14 +183,16 @@ export async function releaseLock(params: {
 
   const unlockToken = signUnlockToken(params.userId, session.id);
   const resolvedAt = new Date();
-  await prisma.lockSession.update({
-    where: { id: session.id },
-    data: {
-      state: LockState.UNLOCKED,
-      resolvedAt,
-      unlockTokenHash: sha256(unlockToken),
-    },
+  const won = await claimResolution(session.id, [LockState.LOCKED], {
+    state: LockState.UNLOCKED,
+    resolvedAt,
+    unlockTokenHash: sha256(unlockToken),
   });
+  // Lost the race: another passing submission already released this lock. The
+  // screen is open either way, so this is not an error the user should see —
+  // but a second audit row, a second re-arm and a second token would all be
+  // records of something that only happened once.
+  if (!won) throw ApiError.conflict('This session has already been released');
 
   await recordUnlock({
     userId: params.userId,
@@ -149,8 +205,10 @@ export async function releaseLock(params: {
     secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
   });
 
-  await rearmAfterSession(params.userId);
-
+  // The re-arm is deliberately NOT here. The next session's difficulty is read
+  // from the ladder, and the ladder only moves after this call returns — so
+  // re-arming here would arm the next block at the difficulty the user just
+  // graduated from. `gradeSubmission` re-arms once the outcome is committed.
   return { unlockToken, expiresInSeconds: 300 };
 }
 
@@ -174,7 +232,7 @@ export async function releaseLock(params: {
  *
  * Turning it off is a single field: PATCH /settings/timer { autoRearm: false }.
  */
-async function rearmAfterSession(userId: string): Promise<void> {
+export async function rearmAfterSession(userId: string): Promise<void> {
   const config = await prisma.timerConfig.findUnique({ where: { userId } });
   if (!config?.autoRearm) return;
 
@@ -211,10 +269,16 @@ export async function bypassLock(params: {
   if (usedToday >= allowance) throw ApiError.forbidden('No skips left today');
 
   const resolvedAt = new Date();
-  await prisma.lockSession.update({
-    where: { id: session.id },
-    data: { state: LockState.BYPASSED, resolvedAt, escapeReason: 'skip_allowance' },
+  // The allowance check above is a read, so two skips racing would both see the
+  // same `usedToday`. Guarding the transition is what actually bounds it: only
+  // one request can move this session out of LOCKED, and a user has at most one
+  // locked session, so at most one skip can be spent per lock.
+  const won = await claimResolution(session.id, [LockState.LOCKED], {
+    state: LockState.BYPASSED,
+    resolvedAt,
+    escapeReason: 'skip_allowance',
   });
+  if (!won) throw ApiError.conflict('That session has already been resolved');
 
   await recordUnlock({
     userId: params.userId,
@@ -380,18 +444,39 @@ export async function reapStaleSessions(): Promise<number> {
   if (stale.length === 0) return 0;
 
   const resolvedAt = new Date();
-  const { count } = await prisma.lockSession.updateMany({
-    where: { id: { in: stale.map((s) => s.id) } },
-    data: { state: LockState.ABANDONED, resolvedAt },
-  });
 
+  // One guarded transition per session, and an audit row only for the ones that
+  // actually moved.
+  //
+  // The bulk `updateMany` this replaces was keyed on ids alone, and the loop
+  // below it audited every row the read had selected. So a session solved,
+  // skipped or abandoned between the read and the write was overwritten with
+  // ABANDONED and given a REAPED audit contradicting the ending it really had —
+  // the reaper quietly undoing a solve. Two overlapping sweeps could also audit
+  // one ending twice. The sweep runs over a handful of rows, so a query each is
+  // a fair price for not corrupting completed sessions.
+  let count = 0;
   for (const session of stale) {
+    const won = await claimResolution(session.id, [LockState.ARMED, LockState.LOCKED], {
+      state: LockState.ABANDONED,
+      resolvedAt,
+    });
+    if (!won) continue;
+
+    // Re-read rather than trust the snapshot: a session that engaged between
+    // the read and this write has a lockedAt and a problem the snapshot lacks.
+    const current = await prisma.lockSession.findUnique({
+      where: { id: session.id },
+      select: { lockedAt: true, problemId: true },
+    });
+
+    count += 1;
     await recordUnlock({
       userId: session.userId,
       lockSessionId: session.id,
-      problemId: session.problemId,
+      problemId: current?.problemId ?? session.problemId,
       outcome: UnlockOutcome.REAPED,
-      secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
+      secondsLocked: secondsLocked(current?.lockedAt ?? session.lockedAt, resolvedAt),
       reason: 'stale_sweep',
     });
   }

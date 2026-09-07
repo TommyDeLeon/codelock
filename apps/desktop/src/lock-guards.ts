@@ -7,7 +7,7 @@
  * answers move here and `main.ts` keeps just the wiring.
  *
  * The point is not that the predicates are hard. It is that each one is a row
- * in docs/ESCAPE-MATRIX.md that was reasoned through and never executed, and
+ * in the platform-limits section of README.md that was reasoned through and never executed, and
  * that deleting any single `if (locked)` from main.ts would leave a passing
  * test suite and an escapable lock.
  */

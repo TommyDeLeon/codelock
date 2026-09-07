@@ -4,7 +4,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * Tier 0 — foundations, fourth batch.
  *
  * Same audience and contract as `tier0.ts` and `tier0c.ts`; see
- * docs/AUTHORING.md. Written in the compact form introduced by `tier0c.ts`:
+ * README.md. Written in the compact form introduced by `tier0c.ts`:
  * the `ask` / `why` helpers carry the statement and editorial skeletons so
  * each entry holds only what is different about it. The prose obligations are
  * unchanged — name the edge case, name the quiet mistake, give the complexity.

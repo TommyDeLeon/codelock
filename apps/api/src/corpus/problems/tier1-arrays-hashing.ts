@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * The first pattern family, and the one the canonical interview lists agree on
  * most: nine problems, each the canonical representative of one idea. Every
  * statement is written from the task, not from anyone's prose — see the
- * non-negotiable at the top of docs/AUTHORING.md.
+ * non-negotiable at the top of README.md.
  *
  * Tier 1 assumes Tier 0.5: the progression gate will not serve these until the
  * user has built a dynamic array, a hash map and a hash set. That is the point

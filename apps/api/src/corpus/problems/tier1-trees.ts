@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * The hinge of the roadmap: Tries, Backtracking and Heap / Priority Queue all
  * hang off this family, so nothing in that third of the graph is reachable
  * until these exist. Every statement here is written from the task rather than
- * from anyone's prose — see the non-negotiable at the top of docs/AUTHORING.md.
+ * from anyone's prose — see the non-negotiable at the top of README.md.
  *
  * The through-line across the nine: a recursive call on a subtree is a
  * *promise* — "give me a node, I will hand back the answer for everything

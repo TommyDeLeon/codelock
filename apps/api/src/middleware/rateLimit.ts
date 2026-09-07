@@ -3,69 +3,6 @@ import type { Request } from 'express';
 
 const keyByUserOrIp = (req: Request): string => req.user?.id ?? req.ip ?? 'unknown';
 
-/** Credential endpoints: brute-force resistance. */
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60_000,
-  limit: 10,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts, try again later' } },
-});
-
-/**
- * Registration, separately from login.
- *
- * A 409 from /register still tells an anonymous caller that an email is taken,
- * and that cannot be hidden while a successful registration hands back a
- * session — closing it properly needs an emailed verification link. What can be
- * done is make reading the oracle in bulk pointless: nobody legitimately
- * creates six accounts an hour from one address, and at this limit enumerating
- * a list of any useful size takes longer than the list stays interesting.
- *
- * Kept apart from authLimiter so tightening it cannot lock people out of
- * signing in.
- */
-export const registerLimiter = rateLimit({
-  windowMs: 60 * 60_000,
-  limit: 5,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: {
-    error: { code: 'RATE_LIMITED', message: 'Too many sign-up attempts, try again later' },
-  },
-});
-
-/**
- * Refresh tokens are 48 random bytes, so guessing one is infeasible — but this
- * endpoint takes an unauthenticated credential and hits the database on every
- * call, which makes it the cheapest way to load the API from outside. Looser
- * than the login limit because a legitimate client with several tabs open can
- * rotate more than once in a window.
- */
-export const refreshLimiter = rateLimit({
-  windowMs: 15 * 60_000,
-  limit: 60,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many refresh attempts' } },
-});
-
-/**
- * Endpoints that call someone else's API on our behalf: GitHub and LeetCode.
- * Without a cap, one user can burn the GitHub rate limit for everyone sharing
- * the token, or get the server's IP blocked by LeetCode's unofficial endpoint.
- */
-export const integrationLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 20,
-  keyGenerator: keyByUserOrIp,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: {
-    error: { code: 'RATE_LIMITED', message: 'Too many requests to connected services' },
-  },
-});
-
 /**
  * Judging costs money and CPU. Generous enough for genuine iteration on a hard
  * problem, tight enough that a loop cannot drain the Judge0 quota.

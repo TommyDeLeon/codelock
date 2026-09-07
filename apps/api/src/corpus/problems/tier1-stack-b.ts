@@ -20,7 +20,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * `min-stack-running-minimum` prints its answers through `fn:strings->strings`
  * rather than a `strings->ints` signature, which does not exist. The wire
  * format is identical — space-separated numbers on one line — and reshaping the
- * problem is what docs/AUTHORING.md asks for over adding a signature.
+ * problem is what README.md asks for over adding a signature.
  *
  * Every statement here is written from the task, not from anyone's prose.
  */

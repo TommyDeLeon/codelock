@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 /**
  * The honest limits page.
  *
- * Kept deliberately close to docs/ESCAPE-MATRIX.md, which is the engineering
+ * Kept deliberately close to the platform-limits section of README.md, which is the engineering
  * record of the same question. If the two ever disagree, the matrix is right
  * and this page is a marketing lie — so the wording is copied rather than
  * re-spun, and the rows that are untested say so.
@@ -54,7 +54,7 @@ interface Row {
 }
 
 /*
-  Verdicts below are copied from docs/ESCAPE-MATRIX.md, row for row. Where one
+  Verdicts below are copied from the platform-limits section of README.md, row for row. Where one
   line here covers several matrix rows it takes the weakest verdict of the set,
   because a row that is partly unproven is unproven.
 

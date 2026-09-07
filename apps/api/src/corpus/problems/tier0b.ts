@@ -4,7 +4,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * Tier 0 — foundations, continued.
  *
  * A direct continuation of `tier0.ts`; same audience, same house style. See
- * docs/AUTHORING.md. Written from scratch and released CC0.
+ * README.md. Written from scratch and released CC0.
  *
  * Kept in a second file rather than appended because batches are authored in
  * parallel and one array would be a permanent merge conflict.

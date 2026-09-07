@@ -6,7 +6,7 @@ import { AUTHORED, type ProblemDefinition } from '../problem.js';
  * A child of Trees on the roadmap, and the family that pays off the Tier 0.5
  * `cls:trie` exercise: there the user builds the structure, here they use the
  * idea to answer a question no scan answers cheaply. Every statement is written
- * from the task — see the non-negotiable at the top of docs/AUTHORING.md.
+ * from the task — see the non-negotiable at the top of README.md.
  *
  * The through-line: a list of words has enormous redundancy in its prefixes,
  * and a trie is what you get when you refuse to re-walk the same prefix twice.
