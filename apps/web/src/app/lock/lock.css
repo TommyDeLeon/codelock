@@ -1,0 +1,24 @@
+/* Always-dark product palette. Only colour and typography belong here. */
+.lock-surface.dark {
+  --color-bg: #22231f;
+  --color-surface: #292a25;
+  --color-surface-2: #30312b;
+  --color-fg: #efecdf;
+  --color-prose: #d2cfc3;
+  --color-muted: #b4b2a5;
+  --color-faint: #aaa899;
+  --color-rule: #515247;
+  --color-border: #515247;
+  --color-border-strong: #828373;
+  --color-accent: #e5a18b;
+  --color-accent-fg: #22231f;
+  --color-accent-soft: #443029;
+  /* Verdicts keep their established green / red / amber meanings. */
+  --color-success: #b4cfb7;
+  --color-success-soft: #364539;
+  --color-danger: #ec9b90;
+  --color-danger-soft: #442b28;
+  --color-warning: #d8bf8e;
+  --color-warning-soft: #3d3526;
+  font-family: var(--font-sans);
+}

@@ -3,7 +3,7 @@
  *
  * The manifest referenced /icons/icon-192.png and friends, none of which
  * existed — so every install attempt 404'd and there was no favicon at all.
- * This draws the same green padlock as the desktop app from the same tokens,
+ * This keeps the padlock silhouette in the publication's warm paper and rust,
  * then box-downsamples to each required size.
  *
  *   node scripts/make-favicons.mjs
@@ -22,9 +22,9 @@ import path from 'node:path';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MASTER = 512;
 
-const BG = [23, 23, 22];
-const ACCENT = [86, 178, 131];
-const EDGE = [43, 43, 40];
+const BG = [243, 240, 232]; // #f3f0e8, warm paper
+const ACCENT = [153, 61, 41]; // #993d29, rust; silhouette carries the 16px mark
+const EDGE = [203, 199, 186]; // #cbc7ba, editorial rule
 
 /** Draw the mark at MASTER resolution; every export is a downsample of this. */
 function drawMaster() {

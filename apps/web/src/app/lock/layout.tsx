@@ -1,5 +1,6 @@
 import { ConnectionBanner } from '@/components/connection-banner';
 import type { Metadata } from 'next';
+import './lock.css';
 
 // Pages under this route are client components and cannot export metadata
 // themselves, so each segment carries its own here.
@@ -36,7 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
    * still show through around it.
    */
   return (
-    <div className="dark min-h-screen bg-bg text-fg">
+    <div className="lock-surface dark min-h-screen bg-bg text-fg">
       <ConnectionBanner />
       {children}
     </div>

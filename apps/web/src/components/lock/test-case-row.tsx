@@ -42,7 +42,7 @@ function OutputBlock({
   const empty = value === null || value === undefined || value === '';
   return (
     <div className="min-w-0">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">{label}</p>
+      <p className="mb-1 text-[11px] font-mono font-medium uppercase tracking-wide text-faint">{label}</p>
       <pre
         className={cn(
           'max-h-32 overflow-auto whitespace-pre-wrap break-words rounded-xs px-2.5 py-2 font-mono text-[12px] leading-relaxed',

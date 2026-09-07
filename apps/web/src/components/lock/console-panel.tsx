@@ -58,7 +58,7 @@ export function ConsolePanel({
         <div className="px-4 py-3">
           <label
             htmlFor="run-stdin"
-            className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-faint"
+            className="mb-1.5 block text-[12px] font-mono font-medium uppercase tracking-wide text-faint"
           >
             Input
           </label>
@@ -162,7 +162,7 @@ function Block({
 }) {
   return (
     <div className="mb-2 last:mb-0">
-      <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-faint">{label}</p>
+      <p className="mb-1 text-[12px] font-mono font-medium uppercase tracking-wide text-faint">{label}</p>
       <pre
         className={cn(
           'max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-xs px-2.5 py-2 font-mono text-[12px] leading-relaxed',

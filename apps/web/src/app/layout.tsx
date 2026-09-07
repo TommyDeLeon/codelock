@@ -1,55 +1,34 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
+import { IBM_Plex_Mono, Literata, Source_Sans_3 } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
 
-/**
- * Three families, each with a job.
- *
- * The default stack was system-ui everywhere, which is the single loudest
- * signal that nobody chose anything. Inter carries both the interface and the
- * display type — the rebrand replaced the display serif with a grotesque, and
- * that is Inter at bold weight, not a third family. The mono is finally a real
- * face rather than a fallback chain, which matters because runtimes and gate
- * figures are the product's evidence.
- *
- * There were three. Instrument Serif survived the rebrand as a dead import:
- * still fetched, still preloaded at the highest priority, referenced by no CSS
- * rule at all — 30 KB of the render-blocking budget spent on a face that never
- * appeared on screen.
- *
- * next/font self-hosts and inlines the metrics, so there is no layout shift and
- * no request to Google at runtime.
- */
-const sans = Inter({
+/** Three registers: editorial display, quiet reading, and measured evidence. */
+const sans = Source_Sans_3({
   subsets: ['latin'],
   variable: '--font-sans-loaded',
   display: 'swap',
+  fallback: ['Segoe UI', 'Helvetica Neue', 'Arial', 'sans-serif'],
 });
 
-/**
- * The display face, and the only reason to carry a third family.
- *
- * Inter was doing both jobs, which is why the headings read as body copy set
- * large rather than as display type. Space Grotesk has the wide apertures and
- * squared terminals that hold up at 80px, and enough character at 11px that the
- * section eyebrows stop looking like faded small caps.
- *
- * Two static weights, not the variable face: 500 for eyebrows and 700 for
- * headings is the whole range this design uses, and the variable file is
- * several times the size of the two instances.
- */
-const display = Space_Grotesk({
+const display = Literata({
   subsets: ['latin'],
-  weight: ['500', '700'],
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
   variable: '--font-display-loaded',
   display: 'swap',
+  // Keep a serif fallback; an automatically inserted Arial would erase the register.
+  adjustFontFallback: false,
+  fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 
-const mono = JetBrains_Mono({
+const mono = IBM_Plex_Mono({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-mono-loaded',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['Cascadia Mono', 'Consolas', 'Menlo', 'Courier New', 'monospace'],
 });
 
 // Set NEXT_PUBLIC_SITE_URL in production so Open Graph image URLs resolve

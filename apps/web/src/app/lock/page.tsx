@@ -116,7 +116,7 @@ export default function LockPage() {
   if (session.state === 'ARMED') {
     return (
       <main id="main" className="flex h-dvh flex-col items-center justify-center gap-3 p-4">
-        <p className="text-[13px] uppercase tracking-wider text-muted">Locks in</p>
+        <p className="font-mono text-[13px] uppercase tracking-wider text-muted">Locks in</p>
         <p className="tabular text-6xl font-semibold tracking-tight">
           {formatDuration(secondsRemaining)}
         </p>

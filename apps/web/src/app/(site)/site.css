@@ -17,7 +17,6 @@
   --color-success-soft: #dce4d8;
   --color-danger: #993d29;
   --color-warning: #79591f;
-  --font-display: var(--font-editorial), Georgia, serif;
   display: flex; flex-direction: column; min-height: 100dvh;
   color: var(--color-fg); background: var(--color-bg);
 }
@@ -31,7 +30,7 @@
 .marketing-site *, .marketing-site *::before, .marketing-site *::after { box-sizing: border-box; }
 .marketing-site :is(.site-frame, main > section > .max-w-6xl, main > section.max-w-6xl) { width: 100%; max-width: 1680px; padding-inline: var(--site-gutter); margin-inline: auto; }
 .marketing-site .section-space { padding-block: clamp(64px, 8vw, 128px); }
-.marketing-site .display { font-family: var(--font-editorial), Georgia, serif; font-weight: 400; letter-spacing: -.055em; line-height: .98; text-wrap: balance; }
+.marketing-site .display { font-family: var(--font-display); font-weight: 400; letter-spacing: -.025em; line-height: 1.04; font-optical-sizing: auto; text-wrap: balance; }
 .marketing-site .display em { font-style: italic; color: inherit; font-weight: 400; }
 .marketing-site .display-lg { font-size: clamp(48px, 6.4vw, 98px); }
 .marketing-site .display-md { font-size: clamp(36px, 3.8vw, 58px); }
@@ -48,7 +47,7 @@
 .marketing-site .marketing-nav { position: relative; z-index: 20; background: var(--color-bg); }
 .marketing-site .nav-row { min-height: 88px; display: flex; gap: 28px; align-items: center; position: relative; }
 .marketing-site .nav-row::after { content: ''; position: absolute; bottom: 0; left: var(--site-gutter); right: var(--site-gutter); border-bottom: 2px solid var(--color-fg); }
-.marketing-site .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-editorial), Georgia, serif; font-size: 30px; letter-spacing: -.06em; font-weight: 600; }
+.marketing-site .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-size: 30px; letter-spacing: -.025em; font-weight: 600; }
 .marketing-site .brand svg { width: 19px; color: var(--color-fg); }
 .marketing-site .desktop-links { display: flex; margin-left: auto; gap: 26px; font-size: 12px; }
 .marketing-site .marketing-nav nav a { display: flex; align-items: center; min-height: 44px; color: var(--color-muted); }
@@ -60,18 +59,38 @@
 .marketing-site .edition-line { display: flex; justify-content: space-between; gap: 20px; }
 .marketing-site .landing-hero h1 { font-size: clamp(66px, 10.7vw, 170px); margin-block: 54px 44px; max-width: none; }
 .marketing-site .hero-deck { display: grid; grid-template-columns: .9fr 1.35fr .65fr; gap: 48px; padding-top: 24px; border-top: 1px solid var(--color-rule); }
-.marketing-site .hero-standfirst { font-family: var(--font-editorial), Georgia, serif; font-size: clamp(28px, 2.8vw, 42px); line-height: 1.12; letter-spacing: -.025em; }
+.marketing-site .hero-standfirst { font-family: var(--font-display); font-size: clamp(28px, 2.8vw, 42px); line-height: 1.12; letter-spacing: -.025em; }
 .marketing-site .hero-copy .prose-site { font-size: 15px; line-height: 1.75; }
-.marketing-site .hero-facts { font-family: var(--font-mono); font-size: 10px; line-height: 2.2; color: var(--color-muted); }
+/*
+  Set in the reading face, not the mono, and not at 10px.
+
+  "Free / Source available / No account required / No metered application APIs"
+  are four marketing statements. None of them is code, data, or a measurement,
+  which are the only things that earn a typewriter face — everything else is
+  monospace worn as a costume for technical credibility, and it is one of the
+  most reliable signals that a page was assembled from the idea of a developer
+  tool rather than composed as one. At 10px it was also simply hard to read.
+
+  The mono is still doing real work elsewhere on this page: runtimes, the gate
+  arithmetic, the attempt buttons. That is the distinction.
+*/
+.marketing-site .hero-facts { font-size: 13px; line-height: 1.9; color: var(--color-muted); }
 .marketing-site .lock-spread { background: #11120f; color: #e8e7dd; padding-top: 28px; }
 .marketing-site .spread-heading { display: flex; justify-content: space-between; gap: 24px; align-items: baseline; padding-bottom: 26px; }
 .marketing-site .spread-heading .eyebrow { color: #aaa99d; }
-.marketing-site .spread-heading > p:last-child { font-family: var(--font-editorial), Georgia, serif; font-size: 27px; }
+.marketing-site .spread-heading > p:last-child { font-family: var(--font-display); font-size: 27px; }
 .marketing-site .reportage { margin: 0; min-width: 0; }
 .marketing-site .capture-link, .marketing-site picture { display: block; }
 .marketing-site .reportage img { display: block; width: 100%; height: auto; }
 .marketing-site .reportage figcaption { display: grid; grid-template-columns: auto 1fr; gap: 12px 24px; padding-block: 20px; font-size: 12px; line-height: 1.65; color: var(--color-muted); }
-.marketing-site .figure-number, .marketing-site .capture-note { font-family: var(--font-mono); font-size: 9px; letter-spacing: .03em; }
+/*
+  The figure number keeps the mono — it is a reference, like a page number, and
+  reads as one. The capture note does not: "Actual capture / Open full size" is
+  a sentence about the picture, and at 9px in a typewriter face it was neither
+  legible nor honest about what it is.
+*/
+.marketing-site .figure-number { font-family: var(--font-mono); font-size: 10px; letter-spacing: .03em; }
+.marketing-site .capture-note { font-size: 12px; letter-spacing: .01em; }
 .marketing-site .capture-note { grid-column: 2; }
 .marketing-site .lock-spread figcaption { padding-inline: var(--site-gutter); color: #bcbcaf; grid-template-columns: auto minmax(0, 65ch) 1fr; }
 .marketing-site .lock-spread .capture-note { grid-column: auto; text-align: right; }
@@ -96,7 +115,7 @@
 .marketing-site .mechanism-layout h2 { margin-top: 24px; }
 .marketing-site .proof-line { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--font-mono); font-size: 13px; padding-block: 18px; border-block: 1px solid var(--color-rule); }
 .marketing-site .proof-and { color: var(--color-accent); }
-.marketing-site .proof-result { font-family: var(--font-editorial), Georgia, serif; font-size: 36px; line-height: 1.1; margin-block: 26px; }
+.marketing-site .proof-result { font-family: var(--font-display); font-size: 36px; line-height: 1.1; margin-block: 26px; }
 .marketing-site .mechanism-proof .prose-site + .prose-site { margin-top: 22px; }
 .marketing-site .limits-band { border-top: 1px solid var(--color-rule); }
 .marketing-site .section-intro { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px 8vw; }
@@ -104,7 +123,7 @@
 .marketing-site .section-intro .prose-site { align-self: end; max-width: 44ch; }
 .marketing-site .platform-ledger { margin-block: 48px 20px; border-top: 1px solid var(--color-fg); }
 .marketing-site .platform-ledger > div { display: grid; grid-template-columns: .6fr 1fr 1fr; gap: 36px; padding-block: 28px; border-bottom: 1px solid var(--color-rule); font-size: 14px; line-height: 1.7; }
-.marketing-site .platform-ledger dt { font-family: var(--font-editorial), Georgia, serif; font-size: 32px; line-height: 1.15; }
+.marketing-site .platform-ledger dt { font-family: var(--font-display); font-size: 32px; line-height: 1.15; }
 .marketing-site .closing-band { border-top: 2px solid var(--color-fg); }
 .marketing-site .closing-band h2 { margin-top: 36px; font-size: clamp(58px, 9vw, 138px); }
 /* The companion pages retain their factual ledgers and reading order. */
@@ -123,14 +142,14 @@
 .marketing-site .recovery-lead { border-left: 2px solid var(--color-accent); padding-left: 24px; margin-top: 40px; max-width: 60ch; margin-left: auto; }
 .marketing-site .support-questions { border-top: 1px solid var(--color-fg); margin-top: 40px; }
 .marketing-site .support-questions > div { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8vw; padding-block: 32px; border-bottom: 1px solid var(--color-rule); }
-.marketing-site .support-questions dt { font-family: var(--font-editorial), Georgia, serif; font-size: 28px; line-height: 1.15; max-width: 26ch; }
+.marketing-site .support-questions dt { font-family: var(--font-display); font-size: 28px; line-height: 1.15; max-width: 26ch; }
 .marketing-site .route-capture { padding-block: 48px 16px; }
 .marketing-site .route-capture .reportage { max-width: 1120px; margin-inline: auto; }
 .marketing-site .legal-main { width: 100%; max-width: 900px; padding: 72px var(--site-gutter) 100px; margin-inline: auto; }
 .marketing-site .legal-main h1 { font-size: clamp(72px, 9vw, 120px); margin-bottom: 24px; }
 .marketing-site .legal { margin-top: 56px; }
 .marketing-site .legal section { margin-bottom: 36px; }
-.marketing-site .legal h2 { font-family: var(--font-editorial), Georgia, serif; font-size: 28px; font-weight: 500; }
+.marketing-site .legal h2 { font-family: var(--font-display); font-size: 28px; font-weight: 500; }
 .marketing-site .legal section > div { font-size: 15px; line-height: 1.8; color: var(--color-prose); }
 .marketing-site footer { margin-top: auto; padding-block: 24px; border-color: var(--color-rule); }
 .marketing-site footer > div { max-width: 1680px; padding-inline: var(--site-gutter); font-size: 11px; }
@@ -153,7 +172,7 @@
   .marketing-site .edition-line { font-size: 9px; }
   .marketing-site .edition-line > span:last-child { display: none; }
   .marketing-site .landing-hero { padding-top: 20px; padding-bottom: 40px; }
-  .marketing-site .landing-hero h1 { font-size: clamp(57px, 12.4vw, 94px); margin-block: 40px 32px; letter-spacing: -.065em; }
+  .marketing-site .landing-hero h1 { font-size: clamp(57px, 12.4vw, 94px); margin-block: 40px 32px; letter-spacing: -.035em; }
   .marketing-site .hero-deck, .marketing-site .argument-spread, .marketing-site .gate-spread, .marketing-site .mechanism-layout, .marketing-site .section-intro { grid-template-columns: 1fr; gap: 32px; }
   .marketing-site .hero-standfirst { font-size: 30px; }
   .marketing-site .hero-standfirst br { display: none; }

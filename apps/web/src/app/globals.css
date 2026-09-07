@@ -60,19 +60,13 @@
   --radius-md: 12px;
   --radius-lg: 20px;
 
-  /* Loaded by next/font in layout.tsx, each with a fallback chain so a blocked
-     font request degrades rather than breaks. */
+  /* Explicit fallback species preserve the three registers without webfonts. */
   --font-sans:
-    var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+    var(--font-sans-loaded), 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-mono:
-    var(--font-mono-loaded), ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas,
-    monospace;
-/* Display face. The retail direction wants a heavy grotesque rather than a
-     serif, so this now points at the sans stack at a heavier weight. */
+    var(--font-mono-loaded), 'Cascadia Mono', Consolas, Menlo, 'Courier New', monospace;
   --font-display:
-    var(--font-display-loaded), var(--font-sans-loaded), ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', sans-serif;
+    var(--font-display-loaded), Georgia, Cambria, 'Times New Roman', serif;
 
   --shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);

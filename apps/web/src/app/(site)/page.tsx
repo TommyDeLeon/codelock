@@ -19,7 +19,18 @@ const PLATFORM_LIMITS = [
 export default function LandingPage() {
   return <>
     <section className="landing-hero site-frame">
-      <div className="edition-line"><span>A private, single-user commitment device</span><span>Focus / Code / Return</span></div>
+      {/*
+        No edition line above the headline.
+
+        It read "A private, single-user commitment device / Focus / Code /
+        Return" — masthead furniture, and still a label announcing the heading
+        beneath it. "Correct is only half the answer." is the product's entire
+        argument in six words; anything set above it is a hedge against the
+        possibility that it does not land, and it lands.
+
+        The description was not lost: it is the page's meta description and the
+        first thing the mechanism section says.
+      */}
       <h1 className="display">Correct is only<br /><em>half the answer.</em></h1>
       <div className="hero-deck">
         {/*
@@ -56,6 +67,6 @@ export default function LandingPage() {
       <div className="section-intro"><p className="eyebrow">05 / The limits, before you install</p><h2 className="display display-lg">A commitment.<br /><em>Not a cage.</em></h2><p className="prose-site">Every platform has a way out. The purpose is to make returning to the work a deliberate choice. The hardware is still yours.</p></div>
       <dl className="platform-ledger">{PLATFORM_LIMITS.map(row => <div key={row.platform}><dt>{row.platform}</dt><dd>{row.detail}</dd><dd>{row.escape}</dd></div>)}</dl><Link href="/limits" className="text-link">The complete escape ledger, including unverified behavior →</Link>
     </section>
-    <section className="closing-band site-frame section-space"><p className="eyebrow">The next move is yours</p><h2 className="display">Put a problem<br /><em>in the way.</em></h2><div className="site-actions"><Link href="/install" className="site-button">Install CodeLock ↗</Link><span className="text-muted">Free. Source available. Yours to run privately.</span></div></section>
+    <section className="closing-band site-frame section-space">{/* No kicker here. The numbered eyebrows above encode a real sequence and earn their place; this one labelled nothing and merely announced the heading under it, which the heading does perfectly well by itself. */}<h2 className="display">Put a problem<br /><em>in the way.</em></h2><div className="site-actions"><Link href="/install" className="site-button">Install CodeLock ↗</Link><span className="text-muted">Free. Source available. Yours to run privately.</span></div></section>
   </>;
 }
