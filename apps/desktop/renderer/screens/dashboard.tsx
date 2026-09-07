@@ -25,6 +25,8 @@ export function DashboardScreen() {
   const [outage, setOutage] = useState<string | null>(null);
   const [lockFailed, setLockFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Reset is two-step. It ends the block outright and sits next to Pause.
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Distinguishes "the server says there is no session" from "we could not ask".
   const asked = useRef(false);
@@ -191,9 +193,63 @@ export function DashboardScreen() {
                     time here while paused would be the second untruth after
                     a number that is no longer counting down. */}
                 {paused
-                  ? 'Paused. Resume it from the web or mobile app.'
+                  ? 'Paused. The clock is holding and gives the time back when you resume.'
                   : `locks at ${session ? new Date(session.fireAt).toLocaleTimeString() : '—'}`}
               </p>
+
+              {/* Only before the lock lands. Afterwards the server refuses all
+                  three, and offering buttons that can only fail would read as
+                  the lock being negotiable when it is not. */}
+              {session?.state === 'ARMED' && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void setPaused(!paused)}
+                    className="btn btn-chip"
+                  >
+                    {paused ? 'Resume' : 'Pause'}
+                  </button>
+
+                  {confirmReset ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void reset()}
+                        className="btn btn-chip"
+                        style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                      >
+                        Reset — sure?
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setConfirmReset(false)}
+                        className="btn btn-chip"
+                      >
+                        Keep it
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmReset(true)}
+                      className="btn btn-chip"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {confirmReset && (
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--faint)' }}>
+                  Resetting ends this block and starts nothing. It is not recorded as a failure —
+                  no problem has been assigned yet.
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -236,6 +292,34 @@ export function DashboardScreen() {
                 </p>
               )}
             </>
+          )}
+
+          {/* The recurring timer, and the way out of it.
+              A repeat that can only be stopped two screens away is a trap: the
+              moment a user wants it off is the moment they are staring at the
+              next countdown, not browsing Settings. */}
+          {timer?.autoRearm && !fired && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                margin: '14px 0 0',
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
+                Repeating: another {timer.durationMinutes}-minute countdown starts
+                when this session ends.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void stopRepeating()}
+                className="btn btn-quiet"
+              >
+                Stop repeating
+              </button>
+            </div>
           )}
 
           {outage && asked.current && (
@@ -363,6 +447,59 @@ export function DashboardScreen() {
     </div>
   );
 
+  /**
+   * Hold the clock, or give the time back.
+   *
+   * Both replace the whole session from the response rather than patching
+   * `pausedAt` locally, because resume also moves `fireAt` forward by exactly
+   * the paused interval. Recomputing that here would be a second copy of the
+   * server's arithmetic, and the two would drift the first time either changed.
+   */
+  async function setPaused(next: boolean) {
+    if (!session) return;
+    setBusy(true);
+    try {
+      const { session: updated } = next ? await api.pause(session.id) : await api.resume(session.id);
+      if (updated) {
+        setSession(updated);
+        setRemaining(updated.secondsRemaining);
+      }
+      setOutage(null);
+    } catch (err) {
+      setOutage(
+        err instanceof ApiError ? err.message : `Could not ${next ? 'pause' : 'resume'} the timer.`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Stop the timer outright.
+   *
+   * Confirmed rather than immediate: it sits beside the pause button and it ends
+   * the block. The server records no failure for it — nothing was ever assigned
+   * to fail at — so the cost is the lost interval, not the difficulty ladder.
+   */
+  async function reset() {
+    if (!session) return;
+    setBusy(true);
+    try {
+      await api.cancel(session.id);
+      setSession(null);
+      setRemaining(null);
+      setConfirmReset(false);
+      setOutage(null);
+      // The stats panel counts sessions, so re-read it rather than guess at
+      // what cancelling did.
+      void refresh();
+    } catch (err) {
+      setOutage(err instanceof ApiError ? err.message : 'Could not reset the timer.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function arm(minutes: number) {
     setBusy(true);
     try {
@@ -372,6 +509,30 @@ export function DashboardScreen() {
       setOutage(null);
     } catch (err) {
       setOutage(err instanceof ApiError ? err.message : 'Could not start a session.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Turn the repeat off, from here.
+   *
+   * It does not touch the session already running: a countdown that is armed
+   * keeps its deadline, and stopping the repeat is a promise about the *next*
+   * one. Cancelling the current lock from a button labelled "stop repeating"
+   * would be a free reset, which is the one thing this product may never offer.
+   */
+  async function stopRepeating() {
+    if (!timer) return;
+    const previous = timer;
+    setTimer({ ...timer, autoRearm: false });
+    setBusy(true);
+    try {
+      const { timerConfig } = await api.saveTimer({ autoRearm: false });
+      setTimer(timerConfig);
+    } catch (err) {
+      setTimer(previous);
+      setOutage(err instanceof ApiError ? err.message : 'Could not stop the repeat.');
     } finally {
       setBusy(false);
     }

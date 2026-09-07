@@ -62,6 +62,26 @@ export const api = {
       body: JSON.stringify({ durationMinutes }),
     }),
 
+  /**
+   * Hold the countdown, and give the time back on resume.
+   *
+   * All three are ARMED-only on the server, and that is the point rather than a
+   * limitation: pausing a lock that has already landed would be an unlock with
+   * extra steps. The shell does not re-check that rule — the API owns it, and a
+   * second copy here would be one more thing to forget.
+   */
+  pause: (id: string) =>
+    request<{ session: LockSessionView | null }>(`/v1/lock/${id}/pause`, { method: 'POST' }),
+
+  resume: (id: string) =>
+    request<{ session: LockSessionView | null }>(`/v1/lock/${id}/resume`, { method: 'POST' }),
+
+  /** Stop the timer outright. Records no failure: no problem was ever assigned. */
+  cancel: (id: string) =>
+    request<{ session: { id: string; state: string } }>(`/v1/lock/${id}/cancel`, {
+      method: 'POST',
+    }),
+
   timer: () => request<{ timerConfig: TimerConfig }>('/v1/settings/timer'),
 
   saveTimer: (patch: Partial<TimerConfig>) =>

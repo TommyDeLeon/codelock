@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
 
 /**
@@ -24,6 +24,9 @@ const { apiMock, lock, schedule, FakeApiError } = vi.hoisted(() => ({
     activeLock: vi.fn(),
     timer: vi.fn(),
     arm: vi.fn(),
+    pause: vi.fn(),
+    resume: vi.fn(),
+    cancel: vi.fn(),
   },
   lock: vi.fn(),
   schedule: vi.fn(),
@@ -252,5 +255,97 @@ describe('the paused countdown', () => {
     // deadline stands still is a claim the server would contradict.
     expect(screen.queryByText('01:30')).toBeTruthy();
     expect(screen.queryByText('01:25')).toBeNull();
+  });
+});
+
+/**
+ * Pausing and resetting.
+ *
+ * The API has had all three endpoints the whole time; the dashboard rendered a
+ * paused countdown and then told you to go and resume it somewhere else. These
+ * cover the wiring, and the one rule that matters: the controls exist only
+ * before the lock lands.
+ */
+describe('holding and stopping the timer', () => {
+  it('pauses a running timer and shows the session as held', async () => {
+    serverReturns(session());
+    apiMock.pause.mockResolvedValue({ session: session({ pausedAt: new Date().toISOString() }) });
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Pause' }));
+
+    await waitFor(() => expect(apiMock.pause).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole('button', { name: 'Resume' })).toBeTruthy();
+  });
+
+  /**
+   * Resume moves `fireAt` forward by the paused interval, so the whole session
+   * is taken from the response. Patching `pausedAt` alone would leave the
+   * deadline where it was and quietly steal the paused time.
+   */
+  it('takes the new deadline from the resume response', async () => {
+    serverReturns(session({ pausedAt: new Date().toISOString(), secondsRemaining: 60 }));
+    apiMock.resume.mockResolvedValue({
+      session: session({ pausedAt: null, secondsRemaining: 90 }),
+    });
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Resume' }));
+
+    await waitFor(() => expect(apiMock.resume).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('01:30')).toBeTruthy();
+  });
+
+  it('asks before resetting, and does nothing until confirmed', async () => {
+    serverReturns(session());
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset' }));
+
+    expect(await screen.findByRole('button', { name: /sure/i })).toBeTruthy();
+    expect(apiMock.cancel).not.toHaveBeenCalled();
+  });
+
+  it('backs out of a reset without touching the session', async () => {
+    serverReturns(session());
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Keep it' }));
+
+    expect(await screen.findByRole('button', { name: 'Reset' })).toBeTruthy();
+    expect(apiMock.cancel).not.toHaveBeenCalled();
+  });
+
+  it('cancels the session once confirmed', async () => {
+    serverReturns(session());
+    apiMock.cancel.mockImplementation(async () => {
+      // The reset re-reads the dashboard afterwards, so the server has to stop
+      // handing the cancelled session back or the screen would rebuild it.
+      apiMock.activeLock.mockResolvedValue({ session: null });
+      return { session: { id: 'session-1', state: 'ABANDONED' } };
+    });
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset' }));
+    fireEvent.click(await screen.findByRole('button', { name: /sure/i }));
+
+    await waitFor(() => expect(apiMock.cancel).toHaveBeenCalledTimes(1));
+    // Back to the starting state, offering the presets again.
+    expect(await screen.findByRole('button', { name: /Start a 60 minute session/ })).toBeTruthy();
+  });
+
+  /**
+   * The rule the server enforces, mirrored so the buttons are not offered at
+   * all. Pausing a lock that has already landed would be an unlock with extra
+   * steps, and a button that can only fail reads as the lock being negotiable.
+   */
+  it('offers neither control once the lock has landed', async () => {
+    serverReturns(session({ state: 'LOCKED' }));
+    render(<DashboardScreen />);
+
+    await waitFor(() => expect(apiMock.activeLock).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
   });
 });
