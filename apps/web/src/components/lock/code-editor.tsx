@@ -50,6 +50,7 @@ export function CodeEditor({
   onChange,
   onLanguageChange,
   disabled,
+  languages,
   alwaysDark = false,
 }: {
   language: Language;
@@ -57,6 +58,16 @@ export function CodeEditor({
   onChange: (next: string) => void;
   onLanguageChange: (next: Language) => void;
   disabled?: boolean;
+  /**
+   * Narrows the languages on offer. Defaults to all of them.
+   *
+   * The public demo grades in a Web Worker, which can only run JavaScript, so
+   * it passes a single-entry list. Offering a Python option there would let a
+   * visitor write a perfectly good Python answer and be told it has a syntax
+   * error — the worst kind of demo, one that makes the product look broken
+   * rather than limited. The lock screen passes nothing and keeps all six.
+   */
+  languages?: readonly Language[];
   /**
    * Ignore the theme preference and keep the editor dark.
    *
@@ -83,7 +94,7 @@ export function CodeEditor({
           onChange={(e) => onLanguageChange(e.target.value as Language)}
           className="h-11 rounded-sm border border-border-strong bg-surface px-2 text-base disabled:opacity-50 sm:h-7 sm:text-[13px]"
         >
-          {LANGUAGES.map((lang) => (
+          {(languages ?? LANGUAGES).map((lang) => (
             <option key={lang} value={lang}>
               {LANGUAGE_LABELS[lang]}
             </option>

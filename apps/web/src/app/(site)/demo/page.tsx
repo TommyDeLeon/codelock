@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import type { DemoGradeResult, Language } from '@codelock/shared';
-import { api } from '@/lib/api';
-import { failureOf } from '@/lib/query-result';
+import { DEMO_PROBLEM, gradeLocally } from '@/lib/demo-local';
 import { CodeEditor } from '@/components/lock/code-editor';
 import { ProblemPanel } from '@/components/lock/problem-panel';
 import { TestResults } from '@/components/lock/test-results';
 import { Button } from '@/components/ui/button';
-import { ErrorState, Skeleton } from '@/components/ui/primitives';
+// ErrorState and Skeleton went with the fetch they existed to cover.
 import { formatDuration } from '@/lib/utils';
 
 /**
@@ -44,13 +42,12 @@ export default function DemoPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const seededFor = useRef<Language | null>(null);
 
-  const problemQuery = useQuery({
-    queryKey: ['demo', 'problem'],
-    queryFn: () => api.demo.problem(),
-    staleTime: Infinity,
-  });
-  const problem = problemQuery.data?.problem ?? null;
-  const problemFailure = problem ? null : failureOf(problemQuery);
+  /*
+    The problem is static and the judge is local, so there is no query here any
+    more — and with it goes the loading state, the failure state and the retry
+    banner. The demo cannot fail to fetch something it never fetches.
+  */
+  const problem = DEMO_PROBLEM;
 
   // Seed the editor once per language, and never overwrite work in progress —
   // clobbering a half-written answer because a query refetched is the kind of
@@ -75,13 +72,21 @@ export default function DemoPage() {
     setRunning(true);
     setSubmitError(null);
     try {
-      setResult(await api.demo.grade({ language, sourceCode: source }));
+      /*
+        Runs in a Web Worker on this machine. It yields to the event loop first
+        so React can paint the running state — the hidden case is 30,000 values
+        and a quadratic answer will block the worker for a noticeable moment,
+        which is the entire point, but the button should still have visibly
+        responded before that happens.
+      */
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      setResult(await gradeLocally(source));
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'The demo judge did not respond.');
+      setSubmitError(err instanceof Error ? err.message : 'The demo judge could not run.');
     } finally {
       setRunning(false);
     }
-  }, [language, source]);
+  }, [source]);
 
   return (
     <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col">
@@ -100,18 +105,13 @@ export default function DemoPage() {
 
       {phase === 'fired' && (
         <section className="flex-1">
-          {problemFailure ? (
-            <div className="mx-auto max-w-2xl px-5 py-20">
-              <ErrorState
-                message={`${problemFailure.message} The demo needs the CodeLock API to run your code.`}
-                retry={() => void problemQuery.refetch()}
-              />
-            </div>
-          ) : !problem ? (
-            <div className="mx-auto max-w-6xl px-5 py-10">
-              <Skeleton className="h-96" />
-            </div>
-          ) : (
+          {/*
+            No failure branch and no skeleton any more. Both existed to cover a
+            fetch that no longer happens: the problem is a module constant, so
+            there is no request to be slow and none to fail. Keeping either
+            would be dead code pretending the page still has a dependency.
+          */}
+          {(
             <div className="mx-auto grid max-w-7xl gap-px bg-rule lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
               <div className="bg-bg">
                 <ProblemPanel problem={problem} />
@@ -121,6 +121,13 @@ export default function DemoPage() {
                 <div className="flex-1">
                   <CodeEditor
                     language={language}
+                    /*
+                      JavaScript only, because the browser judge is a Web
+                      Worker. See the note on CodeEditor's `languages` prop —
+                      and the honest accounting in lib/demo-local.ts, which the
+                      copy below now reflects.
+                    */
+                    languages={['JAVASCRIPT']}
                     value={source}
                     onChange={setSource}
                     onLanguageChange={(next) => {
@@ -180,8 +187,9 @@ function DemoBanner() {
       <div className="mx-auto flex max-w-7xl flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-2 sm:px-8">
         <p className="eyebrow text-warning">Demo</p>
         <p className="text-[13px] text-fg">
-          Your code really runs in the sandbox and the verdict is real. Nothing is locked, and
-          solving this <strong className="font-semibold">cannot unlock anything</strong>.
+          Your code really runs and the verdict is real — in this tab, on your machine, with
+          no server involved. Nothing is locked, and solving this{' '}
+          <strong className="font-semibold">cannot unlock anything</strong>.
         </p>
         <Link
           href="/install"
@@ -225,17 +233,32 @@ function Intro({ onArm }: { onArm: () => void }) {
           <div className="lg:col-span-5">
             <dl className="rule-t">
               {[
+                /*
+                  Rewritten when the demo stopped calling the API.
+
+                  These three lines described a throwaway container with dropped
+                  capabilities and a clock inside it. That was true of the real
+                  judge and is no longer true of this page, which runs the
+                  submission in a Web Worker on the reader's own machine. A demo
+                  that overstates its own sandbox is a strange thing to put in
+                  front of people evaluating a product whose credibility rests
+                  on admitting its limits.
+                */
                 [
-                  'Runs your code',
-                  'In the same throwaway container: no network, dropped capabilities, read-only filesystem.',
+                  'Runs in your browser',
+                  'A Web Worker on this machine — no server, no upload, nothing to keep running. The installed judge uses a throwaway container per submission instead: no network, dropped capabilities, read-only filesystem.',
                 ],
                 [
-                  'Times it honestly',
-                  'Measured inside the container, worst case across the suite, not around the call.',
+                  'Times it against itself',
+                  'A reference solution runs here too, moments before yours, and the budget comes from that measurement. Absolute milliseconds are your machine’s; the ratio is the part that means something anywhere.',
+                ],
+                [
+                  'JavaScript only',
+                  'A browser can run one of the six languages the real judge accepts. Shipping a Python runtime to a marketing page would cost megabytes to widen a demo.',
                 ],
                 [
                   'Unlocks nothing',
-                  'There is no session and no token. The response has nowhere to put one.',
+                  'There is no session and no token, and nothing here talks to an API that could issue one.',
                 ],
               ].map(([term, detail]) => (
                 <div key={term} className="rule-b py-4">

@@ -40,6 +40,19 @@ export function LockWorkspace({
   const problem = session.problem!;
   const preferred = useProfile((s) => s.profile?.preferredLanguage);
 
+  /*
+    Hydrated here rather than in the root Providers.
+
+    The profile is only ever read by this component, and Providers wraps the
+    public marketing pages too — so fetching it there meant every visitor to the
+    landing page issued a request to a private API. This is the one surface that
+    needs it, and it is already behind the lock.
+  */
+  const hydrateProfile = useProfile((s) => s.hydrate);
+  useEffect(() => {
+    void hydrateProfile();
+  }, [hydrateProfile]);
+
   // Open in the user's own language. The previous default took the first key of
   // starterCode, whose order is whatever the JSON happened to have — which put
   // people into Go. Fall back through the declared LANGUAGES order so the

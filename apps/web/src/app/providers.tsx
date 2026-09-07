@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
-import { useProfile } from '@/lib/profile-store';
 
 /**
  * CodeLock keeps working while nobody is looking at it.
@@ -57,10 +56,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [queryClient]);
 
-  const hydrate = useProfile((s) => s.hydrate);
-  useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
+  /*
+    The profile is NOT hydrated here any more, and that is the point.
+
+    Providers wraps every route, so this effect fired a request to
+    /v1/settings/profile on every marketing page load — the landing page, the
+    limits ledger, the demo. Those pages are served publicly and have no
+    business talking to a private, unauthenticated API that a visitor's browser
+    cannot reach in the first place. The visible symptom was a console full of
+    connection failures on a page that appeared to work; the real cost was that
+    the public site had a hard dependency on infrastructure nobody had told the
+    reader about.
+
+    Only the lock workspace uses the profile, so it hydrates it on mount. The
+    marketing site now makes no API call at all.
+  */
 
   return (
     <QueryClientProvider client={queryClient}>
