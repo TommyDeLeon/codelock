@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * The speed gate, drawn to scale.
@@ -47,13 +47,72 @@ const pct = (ms: number) => Math.min(100, (ms / SCALE_MS) * 100);
 
 export function GateMeter() {
   const [index, setIndex] = useState(0);
+
+  /*
+    The instrument demonstrates itself, until someone takes it over.
+
+    It cycles the three attempts on its own, because a reader who never touches
+    it should still see the point being made: all three pass the tests, and only
+    one clears the gate. A static first frame makes that argument only to people
+    who happen to click.
+
+    The moment anyone does interact, the cycle stops for good. That is not a
+    nicety — WCAG 2.2.2 requires a mechanism to stop content that moves or
+    updates automatically, and a control that also stops the automation is the
+    least intrusive mechanism available here. It never resumes, because content
+    that starts moving again after you have deliberately chosen a view is worse
+    than content that never stopped.
+  */
+  const [auto, setAuto] = useState(true);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const take = useCallback((next: number) => {
+    setAuto(false);
+    setIndex(next);
+  }, []);
+
+  useEffect(() => {
+    if (!auto) return;
+
+    // Automatic movement is exactly what this preference asks not to see, and
+    // the attempts stay reachable by the buttons either way.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let onScreen = true;
+    let timer = 0;
+
+    const tick = () => {
+      // Nothing advances behind a hidden tab or an instrument scrolled past:
+      // it would spend battery narrating to nobody, and the reader would return
+      // to a frame they did not choose.
+      if (!document.hidden && onScreen) {
+        setIndex((i) => (i + 1) % ATTEMPTS.length);
+      }
+      timer = window.setTimeout(tick, 3600);
+    };
+    timer = window.setTimeout(tick, 3600);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const latest = entries[entries.length - 1];
+        if (latest) onScreen = latest.isIntersecting;
+      },
+      { threshold: 0.35 },
+    );
+    if (rootRef.current) observer.observe(rootRef.current);
+
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [auto]);
   const attempt = ATTEMPTS[index]!;
   const measured = Math.min(...attempt.runs);
   const passed = measured <= gateMs;
   const ratio = measured / BEST_MS;
 
   return (
-    <div className="gate-instrument">
+    <div className="gate-instrument" ref={rootRef}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <p className="eyebrow">Two Sum · JavaScript</p>
         <p className="font-mono text-[11px] text-faint">
@@ -130,9 +189,8 @@ export function GateMeter() {
         {ATTEMPTS.map((a, i) => (
           <button
             key={a.complexity}
-            onClick={() => {
-              setIndex(i);
-            }}
+            onClick={() => take(i)}
+            onFocus={() => setAuto(false)}
             aria-label={`Show the ${a.complexity} attempt`}
             aria-pressed={i === index}
             className={`gate-attempt ${
