@@ -12,7 +12,6 @@ import { TestResults } from '@/components/lock/test-results';
 import { Button } from '@/components/ui/button';
 import { ErrorState, Skeleton } from '@/components/ui/primitives';
 import { formatDuration } from '@/lib/utils';
-import { CodeField } from '@/components/site/code-field';
 
 /**
  * The demo.
@@ -198,15 +197,14 @@ function DemoBanner() {
 
 function Intro({ onArm }: { onArm: () => void }) {
   return (
-    <section className="hero-stage flex flex-1 items-center">
-      <CodeField />
+    <section className="hero-stage demo-intro flex flex-1 items-center">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <p className="eyebrow hero-rise hero-rise-1">Try it</p>
             <h1 className="display display-hero hero-rise-headline hero-rise-2 mt-6">
-              Arm a timer.{' '}
-              <em>See what happens</em> when it fires.
+              Eight seconds.<br />
+              <em>Then a problem.</em>
             </h1>
             <div className="prose-site measure hero-rise hero-rise-3 mt-8 text-[15.5px]">
               <p>

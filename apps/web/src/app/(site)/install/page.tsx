@@ -1,287 +1,56 @@
 import type { Metadata } from 'next';
+import { Reportage } from '@/components/site/reportage';
 import Link from 'next/link';
-import { hasRelease, releaseAsset, releasePageUrl, sourceUrl } from '@/lib/releases';
-import { CodeField } from '@/components/site/code-field';
+import { hasRelease, releaseAsset, releasePageUrl, repoUrl } from '@/lib/releases';
 
 export const metadata: Metadata = {
   title: 'Install',
-  description:
-    'Install CodeLock on Windows, macOS, Linux and Android — with the security warnings explained honestly rather than hidden.',
+  description: 'Run CodeLock privately on your own machine. Setup requirements, platform availability and unsigned build limitations.',
   robots: { index: true, follow: true },
 };
 
-/**
- * The download page.
- *
- * Two rules it exists to follow:
- *
- *  1. **Never offer a download that does not exist.** No signed release has been
- *     published yet, so this page says so and gives the build-from-source path
- *     instead of a dead button. When a release is cut, `status` becomes
- *     'available' and the real asset URLs and checksums go in.
- *  2. **Explain the warning before the user meets it.** An unsigned installer
- *     makes Windows show a full-screen SmartScreen panel. Being surprised by
- *     that is how people conclude software is malware, so it is described here,
- *     including which two buttons to press, rather than glossed over.
- */
-
-type Status = 'available' | 'unpublished' | 'blocked';
-
-interface Platform {
-  name: string;
-  requirement: string;
-  format: string;
-  status: Status;
-  /** What the user will actually see on first run, stated plainly. */
-  warning: string | null;
-  note: string;
-}
-
-const PLATFORMS: Platform[] = [
-  {
-    name: 'Windows',
-    requirement: 'Windows 10 or 11, 64-bit',
-    format: 'NSIS installer (.exe)',
-    status: 'unpublished',
-    warning:
-      'Windows 10, and Windows 11 with Smart App Control off, show a blue “Windows protected your PC” panel because the build is not signed by a certificate authority Microsoft recognises. Click “More info”, then “Run anyway”.',
-    note: 'On a clean Windows 11 install, Smart App Control is on and there is no “Run anyway”. It blocks the installer before it runs — no panel, no error, no log. The installer window closes and nothing is installed, which looks exactly like an app that will not start. Check Settings → Windows Security → App & browser control. A self-signed certificate does not help here: Smart App Control does not consult certificates you trust locally, so the options are to turn it off (permanent — re-enabling it needs a Windows reinstall) or to run the unpacked build instead of installing.',
-  },
-  {
-    name: 'macOS',
-    requirement: 'macOS 12 or later, Intel or Apple silicon',
-    format: 'Disk image (.dmg)',
-    status: 'unpublished',
-    warning:
-      'Gatekeeper refuses to open an unnotarised app on first launch. Open System Settings → Privacy & Security and choose “Open Anyway”.',
-    note: 'CodeLock asks for Accessibility permission to keep the lock window in front. macOS ties that grant to the app’s signature, so it has to be re-granted after an unsigned rebuild.',
-  },
-  {
-    name: 'Linux',
-    requirement: 'Any x86-64 distribution with FUSE',
-    format: 'AppImage or .deb',
-    status: 'unpublished',
-    warning: null,
-    note: 'Releases carry a detached GPG signature. Verify it before running anything that intends to take over your screen.',
-  },
-  {
-    name: 'Android',
-    requirement: 'Android 8.0 or later',
-    format: 'Signed APK, direct install',
-    status: 'unpublished',
-    warning:
-      'Android asks you to allow installs from your file manager, once. After that, signed updates install normally.',
-    note: 'Not on the Play Store. An app that draws over other apps draws manual review, and direct installation is the honest fallback.',
-  },
-  {
-    name: 'iOS',
-    requirement: 'iOS 16.4 or later',
-    format: 'TestFlight',
-    status: 'blocked',
-    warning: null,
-    note: 'Needs a paid Apple Developer account to distribute at all, and iOS cannot block other apps regardless. Read the limits before deciding it is worth it.',
-  },
+const PLATFORMS = [
+  { name: 'Windows', format: 'NSIS installer · .exe', detail: 'The desktop packaging path produces an unsigned installer. SmartScreen may warn, and Smart App Control can refuse installation. Check the installed binary rather than trusting an installer exit code. Signing and auto-update have not been exercised end to end.' },
+  { name: 'macOS', format: 'Desktop build configuration', detail: 'Build configuration exists. macOS behavior has not been verified on hardware; do not treat it as a tested equivalent of the Windows build.' },
+  { name: 'Linux', format: 'Desktop build configuration', detail: 'Build configuration exists. Linux behavior has not been verified on hardware.' },
+  { name: 'Android', format: 'Native build required', detail: 'Expo Go cannot load the overlay module. A native build needs notifications, display-over-other-apps permission and a battery-optimisation exemption. The overlay has not been verified on a device.' },
 ];
 
-/**
- * What the Download button does while no release exists.
- *
- * Not an apology — a path that works right now. Every command is complete and
- * in order, because "build from source" is only an answer if the reader does
- * not have to reconstruct it.
- */
-/** A platform is only "available" when a real asset URL exists for it. */
-function statusOf(platform: Platform): Status {
-  if (platform.status === 'blocked') return 'blocked';
-  return releaseAsset(platform.name) ? 'available' : 'unpublished';
-}
-
-function BuildFromSource() {
-  const clone = sourceUrl();
-
-  return (
-    <section className="rule-b bg-warning-soft/60 section-arrive">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-8">
-          <p className="eyebrow shrink-0 text-warning">No binaries yet</p>
-          <p className="prose-site text-[14.5px]">
-            No signed release has been cut, so this page will not offer you a file that does not
-            exist. Building it yourself takes about five minutes, needs Node 24, and produces
-            exactly the same application.
-          </p>
-        </div>
-
-        <pre className="mt-5 overflow-x-auto rounded-md border border-border bg-surface px-4 py-3.5 font-mono text-[12.5px] leading-relaxed">
-{`${clone ? `git clone ${clone}
-cd codelock
-` : ''}npm install
-npm run build
-npm run dist -w @codelock/desktop`}
-        </pre>
-
-        <p className="prose-site mt-3 text-[13.5px] text-muted">
-          The installer lands in <code className="font-mono text-[12.5px]">apps/desktop/release/</code>.
-          {' '}Point it at your server by editing <code className="font-mono text-[12.5px]">config.json</code>{' '}
-          in the app’s data directory on first run — it is created for you, and the app tells you
-          where it is.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-const STATUS_LABEL: Record<Status, { text: string; className: string }> = {
-  available: { text: 'available', className: 'text-success' },
-  unpublished: { text: 'not published yet', className: 'text-warning' },
-  blocked: { text: 'unavailable', className: 'text-faint' },
-};
-
 export default function InstallPage() {
-  return (
-    <>
-      {/* Above the fold: load reveal, not section-arrive. A view() entry
-          animation is already at 100% before first paint here, so it never
-          plays — see globals.css, "Cinematic marketing surfaces". */}
-      <section className="rule-b hero-stage">
-        <CodeField />
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <p className="eyebrow hero-rise hero-rise-1">Install</p>
-          <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
-            Get it onto{' '}
-            <em>the machine that distracts you.</em>
-          </h1>
-          <div className="prose-site measure-wide hero-rise hero-rise-3 mt-8 text-[15.5px]">
-            <p>
-              CodeLock only works installed. A browser cannot lock anything, so there is no hosted
-              version of the product — only the demo, and it tells you it is a demo.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {hasRelease() ? (
-        <section className="rule-b section-arrive">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 sm:flex-row sm:items-baseline sm:gap-8 sm:px-8">
-            <p className="eyebrow shrink-0 text-success">Released</p>
-            <p className="prose-site text-[14.5px]">
-              Pick your platform below. SHA-256 checksums for every asset are on the{' '}
-              <a href={releasePageUrl()!} className="underline underline-offset-4">
-                release page
-              </a>
-              . Verify them before running software that intends to take over your screen.
-            </p>
-          </div>
-        </section>
-      ) : (
-        <BuildFromSource />
-      )}
-
-      <section className="section-arrive mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="rule-t">
-          {PLATFORMS.map((platform) => (
-            <article key={platform.name} className="rule-b py-7">
-              <div className="grid gap-x-8 gap-y-4 lg:grid-cols-[13rem_1fr]">
-                <div>
-                  <h2 className="display display-sm">{platform.name}</h2>
-                  {/* Derived, not declared: the status cannot claim "available"
-                      unless there is an asset URL to back it up. */}
-                  <p
-                    className={`mt-1 font-mono text-[12px] ${STATUS_LABEL[statusOf(platform)].className}`}
-                  >
-                    {STATUS_LABEL[statusOf(platform)].text}
-                  </p>
-                  <dl className="mt-4 space-y-1 text-[13px] text-faint">
-                    <div>
-                      <dt className="sr-only">Requirement</dt>
-                      <dd>{platform.requirement}</dd>
-                    </div>
-                    <div>
-                      <dt className="sr-only">Format</dt>
-                      <dd className="font-mono">{platform.format}</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div className="prose-site text-[14.5px]">
-                  {releaseAsset(platform.name) && (
-                    <p className="mb-4">
-                      <a
-                        href={releaseAsset(platform.name)!}
-                        className="inline-flex h-11 items-center rounded-md bg-accent px-5 text-[15px]
-                                   font-medium text-accent-fg transition-opacity hover:opacity-90"
-                      >
-                        Download for {platform.name}
-                      </a>
-                      <span className="ml-3 font-mono text-[12px] text-faint">
-                        {platform.format}
-                      </span>
-                    </p>
-                  )}
-                  {platform.warning && (
-                    <p className="mb-3 border-l-2 border-warning pl-4 text-[14px] text-fg">
-                      <strong className="font-semibold">What you will see: </strong>
-                      {platform.warning}
-                    </p>
-                  )}
-                  <p>{platform.note}</p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="relative isolate rule-t bg-surface-2/50">
-        <CodeField variant="close" />
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <p className="eyebrow">Why the warnings</p>
-              <h2 className="display display-md mt-3">
-                We would rather explain it{' '}
-                <em>than hide it.</em>
-              </h2>
-              <div className="prose-site mt-5 text-[15px]">
-                <p>
-                  Operating systems warn about software from developers they cannot identify. That
-                  warning is doing its job — it just cannot tell a solo project apart from
-                  something hostile.
-                </p>
-                <p>
-                  Silencing it costs money and, on Windows, a registered company. Until then the
-                  warning stays, and the least we can do is tell you it is coming and exactly which
-                  buttons to press.
-                </p>
-                <p>
-                  Windows 11 raised that bar again. Smart App Control does not warn — it refuses,
-                  with no dialog to click through, and an installer it blocks still closes as
-                  though it worked. That failure is indistinguishable from a broken app, so it is
-                  written out in full above rather than left for you to diagnose.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <p className="eyebrow">Before you install</p>
-              <h2 className="display display-md mt-3">Read what it cannot do.</h2>
-              <div className="prose-site mt-5 text-[15px]">
-                <p>
-                  Every platform has a way out, and on iOS there is effectively nothing but a
-                  reminder. Knowing that beforehand is the difference between a tool you trust and
-                  one you feel misled by.
-                </p>
-              </div>
-              <Link
-                href="/limits"
-                className="mt-6 inline-flex h-11 items-center rounded-md border border-border-strong
-                           bg-surface px-5 text-[15px] font-medium transition-colors hover:bg-surface-2"
-              >
-                See the limits
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
-  );
+  const readme = `${repoUrl()}/blob/main/README.md`;
+  return <>
+    <section className="rule-b hero-stage"><div className="site-frame section-space">
+      <p className="eyebrow">Install / Private by setup</p>
+      <h1 className="display display-hero mt-6">Your machine.<br /><em>Your commitment.</em></h1>
+      <p className="prose-site measure-wide mt-8">Free. Source available. No account required. CodeLock runs as a local stack for one person. The API deliberately does not authenticate requests, so keep every service off the public internet.</p>
+      <div className="site-actions"><a href={`${readme}#setup`} className="site-button">Open the setup guide →</a><Link href="/limits" className="text-link">Read the limits first →</Link></div>
+    </div></section>
+    <div className="site-frame route-capture"><Reportage capture="codelock-app-dashboard-light" className="dashboard-crop" number="04" alt="CodeLock desktop dashboard with focus timer controls" caption="The desktop dashboard is where a focus block begins. The API, database and judge must be running before the shell can enforce the timer." /></div>
+    <section className="rule-b"><div className="site-frame section-space mechanism-layout">
+      <div><p className="eyebrow">01 / Prepare</p><h2 className="display display-md mt-4">A local stack,<br />then the shell.</h2></div>
+      <div className="prose-site editorial-body">
+        <p>You need <strong>Node.js 24, Docker Desktop and Git</strong>. The API, Postgres database and bundled judge run alongside the web app. Only the desktop shell enforces the desktop lock.</p>
+        <ol className="setup-steps">
+          <li>Install the repository dependencies and copy the API and web environment templates.</li>
+          <li>Generate an unlock-signing secret. Set it in the API and give the desktop shell the matching secret, as described in the setup guide. The shell refuses to lock without its verification configuration.</li>
+          <li>Start the stack, then initialise the database and problem set. The first start downloads database and language images.</li>
+          <li>Calibrate reference runtimes on the same judge and hardware you will use, then launch the desktop shell.</li>
+        </ol>
+        <p>The <a href={`${readme}#setup`}>README contains the commands in order</a>, including configuration and database setup. Read them before running a reset on an existing installation.</p>
+        <p><strong>No metered application APIs.</strong> Grading uses the bundled local judge. Electricity, hardware and any external services you independently keep can still cost money.</p>
+      </div>
+    </div></section>
+    <section className="rule-b bg-surface-2/50"><div className="site-frame section-space">
+      <p className="eyebrow">02 / Platform availability</p>
+      <h2 className="display display-md mt-4">{hasRelease() ? 'Configured release downloads.' : 'Build from source for now.'}</h2>
+      <p className="prose-site mt-5">{hasRelease() ? <>Review the <a href={releasePageUrl()!}>release notes and available assets</a> before installing.</> : <>No release is configured for this site. Follow the <a href={`${readme}#desktop-packaging-and-trusted-install`}>desktop packaging guide</a> to build the installer from source.</>}</p>
+      <dl className="platform-ledger">{PLATFORMS.map(platform => <div key={platform.name}>
+        <dt>{platform.name}<span className="block mt-2 font-mono text-xs font-normal text-muted">{platform.format}</span></dt>
+        <dd>{platform.detail}</dd>
+        <dd>{releaseAsset(platform.name) ? <a className="text-link" href={releaseAsset(platform.name)!}>Download for {platform.name} →</a> : <span className="font-mono text-xs text-muted">No download configured</span>}</dd>
+      </div>)}</dl>
+      <p className="prose-site"><strong>iOS has no hard lock.</strong> The module reports it as unsupported. Family Controls is not implemented.</p>
+    </div></section>
+    <section className="closing-band"><div className="site-frame section-space"><p className="eyebrow">Before the first timer</p><h2 className="display display-md mt-4">Know the way out.</h2><p className="prose-site mt-5">On desktop, hold Escape for ten seconds to leave a held session. It counts as a failed session. Keep the recovery instructions within reach while you verify your setup.</p><div className="site-actions"><Link href="/support" className="site-button">Recovery and support →</Link></div></div></section>
+  </>;
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: 'Limits',
@@ -68,7 +67,7 @@ const DESKTOP: Row[] = [
     // Matrix D1-D4.
     attempt: 'Alt+F4, Ctrl+W, Ctrl+Q, window close',
     verdict: 'unit-tested',
-    note: 'Swallowed while locked, and the close event is cancelled regardless. The cancel is covered by tests, including that it does not fire when nothing is locked — a close guard with no condition would make the app impossible to quit. Nobody has pressed the keys on hardware.',
+    note: 'Swallowed while locked, and the close event is cancelled regardless. Historical tests covered the cancel, including that it does not fire when nothing is locked — a close guard with no condition would make the app impossible to quit. Nobody has pressed the keys on hardware.',
   },
   {
     // Matrix D5-D7. Minimising was driven programmatically and held; the
@@ -88,13 +87,13 @@ const DESKTOP: Row[] = [
     // Matrix D9-D11.
     attempt: 'Use the second monitor',
     verdict: 'unit-tested',
-    note: 'Opaque covers on every other display, resynced when you plug one in mid-lock. Tests cover the decision to re-assert kiosk state and the covers on a display change, rather than only refocusing. No second monitor has been plugged in mid-lock.',
+    note: 'Opaque covers on every other display, resynced when you plug one in mid-lock. Historical tests covered the decision to re-assert kiosk state and the covers on a display change, rather than only refocusing. No second monitor has been plugged in mid-lock.',
   },
   {
     // Matrix D12-D13.
     attempt: 'Sleep, wake, or lock the OS session',
     verdict: 'unit-tested',
-    note: 'Every barrier is re-asserted on resume rather than merely refocused, which is tested — kiosk state and the always-on-top level do not reliably survive a display sleep on Windows, so refocusing alone looks right until another window is raised over it. Nobody has slept a machine mid-lock.',
+    note: 'Every barrier is re-asserted on resume rather than merely refocused, which was covered by historical tests — kiosk state and the always-on-top level do not reliably survive a display sleep on Windows, so refocusing alone looks right until another window is raised over it. Nobody has slept a machine mid-lock.',
   },
   {
     // Matrix D15. This said the app relaunches itself. It does not: the
@@ -214,7 +213,7 @@ const VERDICT_STYLE: Record<Verdict, { label: string; className: string }> = {
   holds: { label: 'holds', className: 'text-success' },
   defeated: { label: 'defeated', className: 'text-warning' },
   intended: { label: 'by design', className: 'text-muted' },
-  'unit-tested': { label: 'unit-tested', className: 'text-muted' },
+  'unit-tested': { label: 'prior tests', className: 'text-muted' },
   untested: { label: 'untested', className: 'text-muted' },
 };
 
@@ -224,7 +223,7 @@ function Matrix({ rows }: { rows: Row[] }) {
       {rows.map((row) => (
         <div
           key={row.attempt}
-          className="rule-b grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[1fr_5.5rem_1.4fr]"
+          className="rule-b grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[1fr_7rem_1.4fr]"
         >
           <dt className="text-[14.5px] font-medium text-fg">{row.attempt}</dt>
           <dd className={`font-mono text-[12.5px] ${VERDICT_STYLE[row.verdict].className}`}>
@@ -241,12 +240,11 @@ export default function LimitsPage() {
   return (
     <>
       <section className="rule-b hero-stage">
-        <CodeField />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <p className="eyebrow hero-rise hero-rise-1">Limits</p>
+          <p className="eyebrow hero-rise hero-rise-1">Limits / The escape ledger</p>
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
-            Everything we tried,
-            and <em>what got through.</em>
+            The way out,
+            <em>in full.</em>
           </h1>
           <div className="prose-site measure-wide hero-rise hero-rise-3 mt-8 text-[15.5px]">
             <p>
@@ -256,7 +254,7 @@ export default function LimitsPage() {
             </p>
             <p>
               The design goal is not that escape is impossible. It is that no escape happens by
-              reflex, and that the cheap ones cost you a recorded failure.
+              reflex, and the deliberate Escape exit records a failed session.
             </p>
           </div>
         </div>
@@ -267,10 +265,9 @@ export default function LimitsPage() {
         <h2 className="display display-md mt-3">Electron kiosk shell</h2>
         <Matrix rows={DESKTOP} />
         <p className="mt-4 text-[13px] text-faint">
-          Reasoned through in full and recorded in the repository. <code>unit-tested</code> means
-          the shell provably makes the right decision, checked both while locked and while
-          unlocked; it does not mean the operating system was observed honouring it. Nothing here
-          has been exercised on real hardware yet, and macOS and Linux are untested throughout.
+          “Prior tests” describes historical checks of the shell’s decisions, not hardware
+          verification. Those test suites have since been removed. Most escape routes and reboot
+          recovery remain unverified on hardware; macOS and Linux are unverified throughout.
         </p>
       </section>
 
@@ -280,7 +277,7 @@ export default function LimitsPage() {
           <h2 className="display display-md mt-3">Overlay above other apps</h2>
           <Matrix rows={ANDROID} />
           <p className="mt-4 text-[13px] text-faint">
-            Needs two permissions you grant by hand: “Display over other apps”, which Android only
+            Android has not been verified on a device. Needs two permissions you grant by hand: “Display over other apps”, which Android only
             offers from a Settings screen, and a battery-optimisation exemption.
           </p>
         </div>
@@ -296,16 +293,11 @@ export default function LimitsPage() {
               </h2>
               <div className="prose-site mt-5 text-[15px]">
                 <p>
-                  No public API lets one iOS app prevent you leaving it or draw over another. This
-                  is a decision Apple made, not a gap in our work, and no amount of effort here
-                  changes it.
+                  No app can block another through CodeLock. The iOS module reports hard
+                  locking as unsupported. Apple’s Family Controls framework uses restricted
+                  entitlements and is not implemented here.
                 </p>
-                <p>
-                  CodeLock takes over its own screen and notifies you. That is the ceiling. Any app
-                  claiming a true iOS block is either using a request-gated parental-controls
-                  entitlement or misrepresenting what it does. Pair it with Screen Time if you want
-                  a hard limit.
-                </p>
+                <p>Use the desktop shell for the lock mechanism; iOS is not an equivalent lock surface.</p>
               </div>
             </div>
 
@@ -327,7 +319,6 @@ export default function LimitsPage() {
       </section>
 
       <section className="relative isolate rule-t bg-surface-2/50">
-        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             So it is a commitment device,{' '}

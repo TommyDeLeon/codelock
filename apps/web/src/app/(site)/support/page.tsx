@@ -1,320 +1,45 @@
 import type { Metadata } from 'next';
+import { Reportage } from '@/components/site/reportage';
 import Link from 'next/link';
+import { hasRelease, releasePageUrl, repoUrl } from '@/lib/releases';
 
 export const metadata: Metadata = {
   title: 'Support',
-  description:
-    'Common questions, how to get out if something goes wrong, and where to report a bug.',
+  description: 'Get out of a held session, troubleshoot a local CodeLock installation, or report a problem.',
   robots: { index: true, follow: true },
 };
-
-/**
- * Support.
- *
- * Recovery comes first, above the FAQ and above the release notes: someone
- * reading this at 2am with a screen they cannot dismiss needs the way out
- * without scrolling past a changelog.
- *
- * Two values stay configuration rather than content, for the same reason the
- * footer treats the contact address that way: a fork or a private deployment is
- * not this repository, and pointing its users at someone else's issue tracker
- * would be worse than saying nothing. The default is the canonical repo;
- * override it, or set it empty, and the page adjusts what it claims.
- */
-const REPO_URL =
-  process.env.NEXT_PUBLIC_REPO_URL ?? 'https://github.com/TommyDeLeon/codelock';
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || '';
-
-interface Entry {
-  q: string;
-  a: React.ReactNode;
-}
-
-const RECOVERY: Entry[] = [
-  {
-    q: 'The lock screen is up and I need out now.',
-    a: (
-      <>
-        On desktop, <strong>hold Escape for ten seconds</strong>. The countdown appears on screen
-        while you hold it. This resolves the session as abandoned, which counts as a failed session
-        for the difficulty ladder — the exit is real, it is just not free.
-      </>
-    ),
-  },
-  {
-    q: 'It says it cannot reach the server, and it will not unlock.',
-    a: (
-      <>
-        That is deliberate. An unreachable server is never evidence that nothing is locked, so the
-        desktop shell <strong>fails closed</strong> and keeps retrying rather than opening on a
-        network error. The kill switch still works while it retries.
-      </>
-    ),
-  },
-  {
-    q: 'I solved it, but the overlay will not come down.',
-    a: (
-      <>
-        The shell could not verify the unlock signature, which almost always means it has no key
-        configured. CodeLock shows a dialog at startup naming the exact file to edit, and refuses
-        to start any timer until it is set — an install that cannot unlock does not lock, because
-        being stuck behind a screen that will never open is worse than not being locked at all.
-      </>
-    ),
-  },
-  {
-    q: 'Could I be locked out permanently?',
-    a: (
-      <>
-        No. Beyond the kill switch, a lock has a <strong>twelve-hour maximum lifetime</strong> on
-        disk — anything older is treated as debris and ignored on the next start — and every
-        platform has its own documented escape, listed on the{' '}
-        <Link href="/limits">limits page</Link>. Uninstalling always works.
-      </>
-    ),
-  },
-  {
-    q: 'Android: I need it off and the overlay is covering everything.',
-    a: (
-      <>
-        Pull down the status bar — system UI always draws above app overlays — then Settings → Apps
-        → CodeLock → <strong>Force stop</strong>. Booting into Safe Mode also works, since
-        third-party apps do not run there.
-      </>
-    ),
-  },
+const QUESTIONS = [
+  { q: 'Every test passes. Why am I still locked?', a: 'Correctness is one condition. Your measured runtime must also meet the language-specific budget: best × 1.35 + 40ms. The faster of two timed runs counts. Calibrate on your own judge hardware if correct answers consistently miss the budget.' },
+  { q: 'The API cannot be reached.', a: 'Check that the local API, database and judge are running. An unreachable API is not proof that a session has ended. On desktop, use the ten-second Escape exit if you need to leave the overlay while you repair the stack.' },
+  { q: 'The desktop shell refuses to lock.', a: 'Check its configuration dialog. The desktop shell needs the same unlock-signing secret as the API, or the corresponding public key for RS256 verification. A shell without verification configuration deliberately refuses to lock.' },
+  { q: 'The unsigned Windows installer did not install anything.', a: 'Smart App Control can refuse an unsigned build. Check Windows Security → App & browser control and verify the installed binary’s timestamp. A successful installer exit code alone is not evidence that the app was installed.' },
+  { q: 'Reboot recovery or the Android overlay did not work.', a: 'Reboot recovery has not been verified on hardware, and Android has not been verified on a device. On Android, check overlay permissions and battery controls. Do not depend on either behavior until you have checked it on your own machine.' },
+  { q: 'Where does my code go?', a: 'To your local API and bundled judge. Submissions and history are stored in your CodeLock database. There are no accounts, GitHub pushes, LeetCode connections or metered application APIs. Keep the stack on your machine or a trusted private network.' },
 ];
-
-const TROUBLESHOOTING: Entry[] = [
-  {
-    q: 'Windows warns me the installer is unsafe.',
-    a: (
-      <>
-        Expected, and explained in full on the <Link href="/install">install page</Link>. The build
-        is not signed by an authority Microsoft recognises. Click “More info”, then “Run anyway”.
-      </>
-    ),
-  },
-  {
-    q: 'Android: the overlay never appears when the timer fires.',
-    a: (
-      <>
-        Two likely causes. Either “Display over other apps” was never granted — Android only offers
-        it from a Settings screen, never a dialog — or your phone&apos;s battery manager killed the
-        foreground service. Xiaomi, Huawei, Samsung and OnePlus all do this; exempt CodeLock from
-        battery optimisation.
-      </>
-    ),
-  },
-  {
-    q: 'macOS asks for Accessibility permission every time I rebuild.',
-    a: (
-      <>
-        macOS ties that grant to the app&apos;s code signature, and an ad-hoc signature differs on
-        every build. Use a stable signing identity — even a free one — if you are iterating.
-      </>
-    ),
-  },
-  {
-    q: 'Rebooting my computer got past the lock.',
-    a: (
-      <>
-        It should not. The lock state survives the reboot and CodeLock registers itself to launch
-        at login, hidden, so the overlay comes back on its own. If it did not, the login item was
-        never registered — that only happens for installed builds, never when running from source.
-        The remaining honest gap is the window between power-on and the app starting.
-      </>
-    ),
-  },
-  {
-    q: 'The editor is blank.',
-    a: (
-      <>
-        The code editor needs JavaScript and local storage. Both are usually blocked by a strict
-        privacy extension rather than by the browser itself.
-      </>
-    ),
-  },
-];
-
-const FAQ: Entry[] = [
-  {
-    q: 'My solution is correct. Why am I still locked?',
-    a: (
-      <>
-        Because correctness is not the bar. Your fastest of two runs has to come in under{' '}
-        <code className="font-mono text-[13px]">best × 1.35 + 40ms</code>, so a working but
-        quadratic answer stays locked and tells you how far off it is. The whole calculation is on{' '}
-        <Link href="/how-it-works">how it works</Link>.
-      </>
-    ),
-  },
-  {
-    q: 'Can I try it without an account?',
-    a: (
-      <>
-        Yes — the <Link href="/demo">demo</Link> runs your code through the real judge and gives a
-        real verdict, with no sign-up. It cannot lock anything, because a browser tab cannot.
-      </>
-    ),
-  },
-  {
-    q: 'Does it watch what else I am doing?',
-    a: (
-      <>
-        No. CodeLock can only see its own window. There is no keylogger, no screen capture and no
-        record of which applications you use. What is stored is listed line by line on{' '}
-        <Link href="/how-it-works">how it works</Link>.
-      </>
-    ),
-  },
-  {
-    q: 'Is my code private?',
-    a: (
-      <>
-        Submissions are stored against your account and run in a container with no network access.
-        They are pushed to GitHub only if you connect it, and only to a repository you nominate.
-      </>
-    ),
-  },
-  {
-    q: 'Can I run my own server?',
-    a: (
-      <>
-        Yes, and it is the intended setup for a single user. The whole stack — database, API,
-        sandbox and this site — comes up on one machine with one command, with automatic TLS and
-        nightly backups.
-      </>
-    ),
-  },
-  {
-    q: 'Why is there no iOS lock?',
-    a: (
-      <>
-        Because iOS does not permit one. No public API lets an app block another, so CodeLock takes
-        over its own screen and notifies you — and says exactly that rather than implying more.
-      </>
-    ),
-  },
-];
-
-function Questions({ entries }: { entries: Entry[] }) {
-  return (
-    <dl className="rule-t">
-      {entries.map((entry) => (
-        <div key={entry.q} className="rule-b grid gap-x-10 gap-y-2 py-5 lg:grid-cols-[1fr_1.4fr]">
-          <dt className="text-[15px] font-medium text-fg">{entry.q}</dt>
-          <dd className="prose-site text-[14.5px]">{entry.a}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
 
 export default function SupportPage() {
-  return (
-    <>
-      <section className="rule-b">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-          <p className="eyebrow">Support</p>
-          <h1 className="display display-lg measure-wide mt-5">
-            Something went wrong,
-            or <em>you want out.</em>
-          </h1>
-          <div className="prose-site measure-wide mt-7 text-[15.5px]">
-            <p>
-              The way out is first, because if you are reading this with a screen you cannot dismiss
-              you should not have to scroll past a changelog to find it.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="rule-b bg-accent-soft/40">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="eyebrow text-accent">Getting out</p>
-          <h2 className="display display-md mt-3">Recovery</h2>
-          <div className="mt-6">
-            <Questions entries={RECOVERY} />
-          </div>
-        </div>
-      </section>
-
-      <section className="rule-b">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="eyebrow">Troubleshooting</p>
-          <h2 className="display display-md mt-3">When it misbehaves</h2>
-          <div className="mt-6">
-            <Questions entries={TROUBLESHOOTING} />
-          </div>
-        </div>
-      </section>
-
-      <section className="rule-b bg-surface-2/50">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="eyebrow">Questions</p>
-          <h2 className="display display-md mt-3">Asked often enough</h2>
-          <div className="mt-6">
-            <Questions entries={FAQ} />
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <p className="eyebrow">Releases</p>
-              <h2 className="display display-md mt-3">Nothing published yet.</h2>
-              <div className="prose-site mt-5 text-[15px]">
-                <p>
-                  No release has been cut, so there is no version history to list and no changelog
-                  that would not be fiction. When the first one lands it appears here and on the{' '}
-                  <Link href="/install">install page</Link>, with checksums.
-                </p>
-                <p>Building from source works today and is the same code.</p>
-              </div>
-            </div>
-
-            <div>
-              <p className="eyebrow">Reporting a bug</p>
-              <h2 className="display display-md mt-3">Tell someone.</h2>
-              <div className="prose-site mt-5 text-[15px]">
-                {REPO_URL ? (
-                  <p>
-                    Open an issue on <a href={`${REPO_URL}/issues`}>the issue tracker</a>. Include
-                    your platform, what you expected, and what happened instead.
-                  </p>
-                ) : (
-                  <p>
-                    This deployment has not published an issue tracker. Whoever operates this
-                    instance is the person to tell.
-                  </p>
-                )}
-                <p>
-                  If the API gave you an error it came with a <strong>request id</strong>. Quoting
-                  that one string is the difference between finding your request in the logs and
-                  searching an hour of traffic.
-                </p>
-                {CONTACT_EMAIL ? (
-                  <p>
-                    Or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
-                  </p>
-                ) : (
-                  // Say so, rather than rendering nothing. An absent contact
-                  // line is indistinguishable from a page that forgot one, and
-                  // someone who has just been told to "tell someone" needs to
-                  // know that the tracker above is the whole of the answer.
-                  <p>
-                    There is no published email address for this deployment — the issue tracker is
-                    the way to reach someone.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
-  );
+  return <>
+    <section className="rule-b hero-stage"><div className="site-frame section-space">
+      <p className="eyebrow">Support / Recovery comes first</p>
+      <h1 className="display display-hero mt-6">Need out?<br /><em>Start here.</em></h1>
+      <div className="recovery-lead"><p className="font-mono text-sm text-accent">DESKTOP / HOLD ESCAPE FOR 10 SECONDS</p><p className="prose-site mt-4">The overlay exits and the session counts as failed. That is an intentional recovery path, including when you need to repair your local setup.</p></div>
+    </div></section>
+    <div className="site-frame route-capture"><Reportage capture="codelock-app-settings-light" number="05" className="settings-crop" alt="CodeLock settings with permitted days, hours and default timer length" caption="The local settings define when CodeLock can interrupt: days, hours and the default block length. These scheduling controls are separate from the shell’s unlock-verification configuration." /></div>
+    <section className="rule-b"><div className="site-frame section-space mechanism-layout">
+      <div><p className="eyebrow">Other exits</p><h2 className="display display-md mt-4">The hardware<br />is still yours.</h2></div>
+      <div className="prose-site"><p><strong>Android:</strong> pull down the status bar, open Settings → Apps → CodeLock → Force stop. Safe Mode, uninstall and revoked permissions also defeat the overlay.</p><p><strong>Windows:</strong> Ctrl+Alt+Del and ending the process defeat the lock. Relaunching CodeLock restores the stored lock; killing it does not erase the session.</p><p>The <Link href="/limits">full limits ledger</Link> distinguishes known escapes from behavior that is still unverified.</p></div>
+    </div></section>
+    <section className="rule-b bg-surface-2/50"><div className="site-frame section-space"><p className="eyebrow">Troubleshooting</p><h2 className="display display-md mt-4">Check the mechanism.</h2>
+      <dl className="support-questions">{QUESTIONS.map(entry => <div key={entry.q}><dt>{entry.q}</dt><dd className="prose-site">{entry.a}</dd></div>)}</dl>
+      <Link href="/how-it-works" className="text-link">The runtime calculation, explained →</Link>
+    </div></section>
+    <section><div className="site-frame section-space mechanism-layout">
+      <div><p className="eyebrow">Report a problem</p><h2 className="display display-md mt-4">Leave a useful trail.</h2></div>
+      <div className="prose-site"><p>Include your platform, the action you took, what you expected and what happened. If the API returned a request ID, include it. Leave secrets and submitted code out of public reports.</p>
+      {repoUrl() ? <p><a href={`${repoUrl()}/issues`}>Open the issue tracker →</a></p> : <p>No issue tracker is configured. Check the source repository you used for this installation.</p>}
+      {CONTACT_EMAIL && <p>Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>}
+      <p>{hasRelease() ? <a href={releasePageUrl()!}>Read the configured release notes.</a> : <>No release is configured here. See <Link href="/install">installation from source</Link>.</>}</p></div>
+    </div></section>
+  </>;
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
+import { Reportage } from '@/components/site/reportage';
 import Link from 'next/link';
-import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -23,48 +23,12 @@ export const metadata: Metadata = {
  * what leaves their machine.
  */
 
-const DATA_ROWS: Array<{ what: string; where: string; tone: 'server' | 'local' | 'third' }> = [
-  {
-    what: 'Your submitted code',
-    where:
-      'Sent to the API and run in a throwaway container with no network. Stored against your account so your history is readable later.',
-    tone: 'server',
-  },
-  {
-    what: 'Session times and verdicts',
-    where: 'Stored server-side. They are what the difficulty ladder is computed from.',
-    tone: 'server',
-  },
-  {
-    what: 'Your access token',
-    where:
-      'Held in browser local storage and sent only to the CodeLock API. On desktop the unlock key lives in the main process, where the page cannot read it.',
-    tone: 'local',
-  },
-  {
-    what: 'Which apps you use, what you type elsewhere',
-    where: 'Never collected. CodeLock cannot see outside its own window.',
-    tone: 'local',
-  },
-  {
-    what: 'Accepted solutions',
-    where:
-      'Pushed to a GitHub repository you nominate — only if you connect it, and only on a pass.',
-    tone: 'third',
-  },
-  {
-    what: 'Your LeetCode username',
-    where:
-      'Sent to LeetCode to read your public profile — only if you link it. Nothing about your CodeLock activity goes the other way.',
-    tone: 'third',
-  },
+const DATA_ROWS = [
+  { what: 'Submitted code', where: 'Sent to your local API, run in a throwaway container with no network access, and stored in your CodeLock Postgres database.' },
+  { what: 'Timers, verdicts and progress', where: 'Stored in the same local database, along with submissions and the learning log.' },
+  { what: 'Unlock proof', where: 'Signed by the API. Verified by the desktop main process against the session being held.' },
+  { what: 'External services', where: 'No account system, OAuth, GitHub sync or LeetCode connection. No OpenAI requests and no telemetry.' },
 ];
-
-const TONE_LABEL = {
-  server: { text: 'server', className: 'text-muted' },
-  local: { text: 'stays local', className: 'text-success' },
-  third: { text: 'third party', className: 'text-warning' },
-} as const;
 
 const GATE_FACTS: Array<[string, string]> = [
   ['Tolerance', '1.35 — you may be 35% slower than the best known answer'],
@@ -79,7 +43,6 @@ export default function HowItWorksPage() {
       {/* Above the fold, so a load reveal — a scroll-linked entry would
           already be finished before the first paint. */}
       <section className="rule-b hero-stage">
-        <CodeField />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <p className="eyebrow hero-rise hero-rise-1">How it works</p>
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
@@ -94,6 +57,7 @@ export default function HowItWorksPage() {
           </div>
         </div>
       </section>
+    <div className="site-frame route-capture"><Reportage capture="codelock-verdict-light" number="03" alt="A correct demo submission rejected for exceeding the runtime budget" caption="The two conditions diverge in this recorded run: all tests pass, but the measured runtime exceeds the budget. The demo produces a verdict, never an unlock token." /></div>
 
       {/* --- 01 The lock --------------------------------------------------- */}
       <section className="rule-b section-arrive">
@@ -101,7 +65,7 @@ export default function HowItWorksPage() {
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
               <p className="eyebrow">01 / The lock</p>
-              <h2 className="display display-md mt-3">Nothing local decides.</h2>
+              <h2 className="display display-md mt-3">The API decides.</h2>
             </div>
             <div className="prose-site text-[14.5px] lg:col-span-8">
               <p>
@@ -114,10 +78,10 @@ export default function HowItWorksPage() {
                 Otherwise you could read it during the focus block, which defeats the point.
               </p>
               <p>
-                When you pass, the API issues a short-lived token signed against one user and one
-                session. The desktop shell verifies that signature in its main process with a key
-                the page cannot read. A patched front end, an injected script, or the console
-                calling the unlock channel by hand all fail the check, and the overlay stays.
+                When both conditions pass, the API signs an unlock token. The desktop shell
+                verifies the signature in its main process and checks that it names the held
+                session. This separates the page from the unlock decision. It does not make
+                the API safe to expose: it has no caller authentication.
               </p>
             </div>
           </div>
@@ -170,9 +134,9 @@ export default function HowItWorksPage() {
                   jitter. The floor keeps fast problems winnable.
                 </p>
                 <p>
-                  <strong>The bar moves.</strong> When someone posts a faster accepted answer it
+                  <strong>The bar moves.</strong> When you submit a faster accepted answer it
                   becomes the new <code className="font-mono text-[13px]">best</code>, and the
-                  budget tightens for everyone, including them.
+                  budget tightens for your future attempts.
                 </p>
               </div>
 
@@ -254,7 +218,7 @@ export default function HowItWorksPage() {
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
               <p className="eyebrow">04 / Data</p>
-              <h2 className="display display-md mt-3">What leaves your machine.</h2>
+              <h2 className="display display-md mt-3">Where your data lives.</h2>
               <p className="prose-site mt-4 text-[14.5px]">
                 A tool that interrupts your work has to be specific about this. CodeLock can only
                 see its own window — it has no view of your other apps, and no keylogger.
@@ -266,76 +230,25 @@ export default function HowItWorksPage() {
                 {DATA_ROWS.map((row) => (
                   <div
                     key={row.what}
-                    className="rule-b grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[1fr_6rem_1.5fr]"
+                    className="rule-b grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[1fr_2fr]"
                   >
                     <dt className="text-[14.5px] font-medium text-fg">{row.what}</dt>
-                    <dd className={`font-mono text-[12px] ${TONE_LABEL[row.tone].className}`}>
-                      {TONE_LABEL[row.tone].text}
-                    </dd>
                     <dd className="text-[13.5px] leading-relaxed text-muted">{row.where}</dd>
                   </div>
                 ))}
               </dl>
 
               <p className="prose-site mt-5 text-[14px]">
-                No analytics, no third-party trackers, no cookies. Error reporting is off unless
-                whoever runs your instance turns it on, and a self-hosted install sends nothing at
-                all. The full statement is on the <Link href="/privacy">privacy page</Link>.
+                No telemetry and no metered application APIs. Keep the API and judge on your
+                own machine or a trusted private network. CORS is a browser control, not
+                authentication. See the <Link href="/privacy">privacy notice</Link> for data removal.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* --- 05 Integrations ----------------------------------------------- */}
-      <section className="rule-b section-arrive">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="eyebrow">05 / Integrations</p>
-          <h2 className="display display-md mt-3">Both optional, both narrow.</h2>
-
-          <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <h3 className="display display-sm">GitHub</h3>
-              <div className="prose-site mt-3 text-[14.5px]">
-                <p>
-                  Accepted solutions are committed to a repository you nominate, so a month of
-                  locks leaves something behind. CodeLock asks for{' '}
-                  <code className="font-mono text-[13px]">public_repo</code> and never requests
-                  access to private repositories.
-                </p>
-                <p>
-                  Your token is encrypted at rest with AES-256-GCM under a key held in the
-                  server&apos;s environment, never beside the ciphertext — a database dump on its
-                  own is not enough to use it.
-                </p>
-                <p>
-                  <strong>A failed push never keeps you locked.</strong> The commit is attempted
-                  after the unlock token has already been issued, and a GitHub outage is logged and
-                  dropped rather than propagated.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="display display-sm">LeetCode</h3>
-              <div className="prose-site mt-3 text-[14.5px]">
-                <p>
-                  Link a username and CodeLock reads your public profile to seed a starting
-                  difficulty, so you are not made to grind Easy problems you solved years ago.
-                </p>
-                <p>
-                  It is read-only and one-directional: nothing about your CodeLock sessions is sent
-                  to LeetCode. The endpoint is unofficial and occasionally changes, so the last
-                  successful snapshot is cached and shown with its age when it breaks.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="relative isolate">
-        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             Now go and see it{' '}

@@ -1,5 +1,4 @@
-import { SiteNav } from '@/components/site/site-nav';
-import { SiteFooter } from '@/components/site-footer';
+import { EditorialShell } from '@/components/site/editorial-shell';
 
 /**
  * Shared chrome for the legal pages.
@@ -19,17 +18,15 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <SiteNav />
+    <EditorialShell>
 
-      <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <main id="main" className="legal-main">
+        <h1 className="display">{title}</h1>
         <p className="mt-1 text-[13px] text-faint">Last updated {updated}</p>
         <div className="legal mt-7">{children}</div>
       </main>
 
-      <SiteFooter />
-    </div>
+    </EditorialShell>
   );
 }
 
