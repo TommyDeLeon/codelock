@@ -145,6 +145,21 @@ export interface GradeResult {
     passed: boolean;
     status: string;
     timeMs: number;
+    /**
+     * What the case actually ran, so it can be reviewed afterwards.
+     *
+     * Present on sample cases only, and absent rather than blanked on hidden
+     * ones. A hidden case's expected output *is* the answer, so returning it
+     * would turn the verdict panel into a cheat sheet — the same rule the
+     * learning log already applies to failed samples. For a sample these leak
+     * nothing: the problem statement has already shown both sides.
+     */
+    stdin?: string;
+    expectedStdout?: string;
+    /** What the submission printed. Null when it produced nothing at all. */
+    actualStdout?: string | null;
+    /** A traceback or compiler diagnostic, when the case errored. */
+    stderr?: string | null;
   }>;
   /** Every test passed. Necessary for an unlock, but not sufficient. */
   correct: boolean;
@@ -449,6 +464,21 @@ export interface DemoGradeResult {
     passed: boolean;
     status: string;
     timeMs: number;
+    /**
+     * What the case actually ran, so it can be reviewed afterwards.
+     *
+     * Present on sample cases only, and absent rather than blanked on hidden
+     * ones. A hidden case's expected output *is* the answer, so returning it
+     * would turn the verdict panel into a cheat sheet — the same rule the
+     * learning log already applies to failed samples. For a sample these leak
+     * nothing: the problem statement has already shown both sides.
+     */
+    stdin?: string;
+    expectedStdout?: string;
+    /** What the submission printed. Null when it produced nothing at all. */
+    actualStdout?: string | null;
+    /** A traceback or compiler diagnostic, when the case errored. */
+    stderr?: string | null;
   }>;
   /** Every test passed, whatever the clock said. */
   correct: boolean;

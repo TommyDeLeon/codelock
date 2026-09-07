@@ -148,6 +148,20 @@ export async function gradeSubmission(params: {
     passed: results[i]?.passed ?? false,
     status: results[i]?.statusDescription ?? 'Unknown',
     timeMs: results[i]?.timeMs ?? 0,
+    // Sample cases carry what they ran, so the panel can show why a case passed
+    // or failed. Hidden cases carry nothing extra, and the fields are omitted
+    // rather than nulled: a hidden case's expected output is the answer, so
+    // sending it at all — even for the client to hide — puts it in the response
+    // body for anyone with the network tab open. This is the same rule the
+    // learning log applies to failed samples below.
+    ...(tc.isSample
+      ? {
+          stdin: tc.stdin,
+          expectedStdout: tc.expectedStdout,
+          actualStdout: results[i]?.stdout ?? null,
+          stderr: results[i]?.stderr ?? null,
+        }
+      : {}),
   }));
 
   if (session) {

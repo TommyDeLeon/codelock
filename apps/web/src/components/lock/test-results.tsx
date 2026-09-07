@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { STATUS_LABELS, type DemoGradeResult, type GradeResult } from '@codelock/shared';
 import { SpeedGate } from './speed-gate';
 import { Standing } from './standing';
+import { TestCaseRow } from './test-case-row';
 import { cn } from '@/lib/utils';
 
 /**
@@ -28,6 +30,11 @@ export function TestResults({
   result: GradeResult | DemoGradeResult | null;
   running: boolean;
 }) {
+  // Which case is open, by ordinal. Declared above the early returns because a
+  // hook cannot sit behind a condition — and it must survive them, so that a
+  // re-run does not silently reset the panel the user is reading.
+  const [openCase, setOpenCase] = useState<number | null>(null);
+
   if (running) {
     return (
       <div role="status" className="px-4 py-6 text-center text-[13px] text-muted">
@@ -83,28 +90,23 @@ export function TestResults({
         </pre>
       )}
 
-      <ul role="list" className="max-h-44 overflow-auto">
+      {/* Taller than the old max-h-44 so an opened case has somewhere to go, and
+          it scrolls rather than clipping when several outputs are long. One case
+          open at a time: this panel shares a column with the editor, and an
+          accordion that allows several keeps pushing the thing you were reading
+          off the bottom. */}
+      <ul role="list" className="max-h-80 overflow-y-auto overscroll-contain">
         {result.cases.map((testCase) => (
-          <li
+          <TestCaseRow
             key={testCase.ordinal}
-            className="flex items-center gap-2.5 px-4 py-2 text-[13px]"
-          >
-            <span
-              className={cn(
-                'flex size-4 shrink-0 items-center justify-center rounded-xs',
-                testCase.passed ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger',
-              )}
-            >
-              {testCase.passed ? <Check className="size-3" aria-hidden /> : <X className="size-3" aria-hidden />}
-            </span>
-            <span className="text-muted">
-              Case {testCase.ordinal + 1}
-              {testCase.isSample ? ' (sample)' : ''}
-            </span>
-            <span className="ml-auto text-faint">
-              {testCase.passed ? `${testCase.timeMs} ms` : testCase.status}
-            </span>
-          </li>
+            testCase={testCase}
+            expanded={openCase === testCase.ordinal}
+            // Derived from the previous state rather than read from `openCase`,
+            // so a burst of fast clicks cannot settle on a stale value.
+            onToggle={() =>
+              setOpenCase((current) => (current === testCase.ordinal ? null : testCase.ordinal))
+            }
+          />
         ))}
       </ul>
 

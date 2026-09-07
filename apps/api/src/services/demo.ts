@@ -220,13 +220,27 @@ export async function gradeDemo(params: {
     memoryLimitKb: DEMO_PROBLEM.memoryLimitKb,
   });
 
-  const cases = batch.results.map((result, index) => ({
-    ordinal: DEMO_CASES[index]!.ordinal,
-    isSample: DEMO_CASES[index]!.isSample,
-    passed: result.passed,
-    status: result.statusDescription,
-    timeMs: result.timeMs,
-  }));
+  const cases = batch.results.map((result, index) => {
+    const testCase = DEMO_CASES[index]!;
+    return {
+      ordinal: testCase.ordinal,
+      isSample: testCase.isSample,
+      passed: result.passed,
+      status: result.statusDescription,
+      timeMs: result.timeMs,
+      // Samples only, exactly as the real grader does it. The hidden case here
+      // is the 30,000-value one the whole demo is built around, and echoing its
+      // expected output would hand over the answer.
+      ...(testCase.isSample
+        ? {
+            stdin: testCase.stdin,
+            expectedStdout: testCase.expectedStdout,
+            actualStdout: result.stdout ?? null,
+            stderr: result.stderr ?? null,
+          }
+        : {}),
+    };
+  });
 
   const passedCount = cases.filter((c) => c.passed).length;
   const allPassed = passedCount === cases.length;
