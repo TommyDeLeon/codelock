@@ -1,0 +1,1 @@
+Bundled from the Google Fonts repository (https://github.com/google/fonts/tree/main/ofl) on 2026-09-08. Original, unmodified font files; each family's SIL Open Font License is included alongside it. Local CSS loading keeps the desktop renderer offline-capable without a package dependency.

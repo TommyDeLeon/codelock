@@ -1,30 +1,25 @@
-/*
- * The same tokens as the web app's @theme block, transcribed for the desktop
- * bundle. Kept in sync by hand: pulling Tailwind into the Electron build to
- * share one stylesheet would be far more machinery than a dozen colours
- * justify, and the mobile client already carries its own copy for the same
- * reason.
- *
- * Follows the web app's retail direction: a green promotional band, a dark
- * section strip, softer corners and a bold grotesque for display type. Pine
- * green remains the brand.
+/* Palette values mirrored from apps/web/src/app/(site)/site.css.
+ * Change the values in BOTH places when the publication palette changes.
+ * Desktop aliases keep existing controls and theme selection intact.
  */
+@import './fonts.css';
+
 :root {
-  --bg: #fbfaf8;
-  --surface: #ffffff;
-  --surface-2: #f4f2ee;
-  --border: #ded9d0;
-  --fg: #171614;
-  --muted: #6b6862;
-  --faint: #98948c;
-  --accent: #1b6b4a;
-  --accent-fg: #ffffff;
-  --accent-soft: #e4efe9;
-  /* The promotional band, a deeper pine so white on it clears AA comfortably. */
-  --promo: #14523a;
-  --promo-fg: #ffffff;
-  --danger: #a12d20;
-  --warning: #8a6410;
+  --bg: #f3f0e8;
+  --surface: #f8f6f0;
+  --surface-2: #eae6dc;
+  --prose: #45453c;
+  --border: #cbc7ba;
+  --fg: #25251f;
+  --muted: #656459;
+  --faint: #656459;
+  --accent: #993d29;
+  --accent-fg: #f3f0e8;
+  --accent-soft: #eae6dc;
+  --promo: #993d29;
+  --promo-fg: #f3f0e8;
+  --danger: #993d29;
+  --warning: #79591f;
 
   /* Matching the web app: varied by element weight, not one value. */
   --radius-xs: 4px;
@@ -32,8 +27,9 @@
   --radius-md: 12px;
   --radius-lg: 20px;
 
-  --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --display: 'Literata', Georgia, Cambria, serif;
+  --sans: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   color-scheme: light;
 }
@@ -53,40 +49,42 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #0e0e0d;
-    --surface: #171716;
-    --surface-2: #1f1f1d;
-    --border: #302f2b;
-    --fg: #f2f0ec;
-    --muted: #9a968e;
-    --faint: #706c65;
-    --accent: #4ed18f;
-    --accent-fg: #0d1a13;
-    --accent-soft: #10241b;
-    --promo: #12503a;
-    --promo-fg: #eafff4;
-    --danger: #e0685a;
-    --warning: #d5a03f;
+    --bg: #22231f;
+    --surface: #292a25;
+    --surface-2: #30312b;
+    --prose: #d2cfc3;
+    --border: #515247;
+    --fg: #efecdf;
+    --muted: #b4b2a5;
+    --faint: #aaa899;
+    --accent: #e5a18b;
+    --accent-fg: #22231f;
+    --accent-soft: #30312b;
+    --promo: #e5a18b;
+    --promo-fg: #22231f;
+    --danger: #e5a18b;
+    --warning: #d8bf8e;
 
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #0e0e0d;
-  --surface: #171716;
-  --surface-2: #1f1f1d;
-  --border: #302f2b;
-  --fg: #f2f0ec;
-  --muted: #9a968e;
-  --faint: #706c65;
-  --accent: #4ed18f;
-  --accent-fg: #0d1a13;
-  --accent-soft: #10241b;
-  --promo: #12503a;
-  --promo-fg: #eafff4;
-  --danger: #e0685a;
-  --warning: #d5a03f;
+  --bg: #22231f;
+  --surface: #292a25;
+  --surface-2: #30312b;
+  --prose: #d2cfc3;
+  --border: #515247;
+  --fg: #efecdf;
+  --muted: #b4b2a5;
+  --faint: #aaa899;
+  --accent: #e5a18b;
+  --accent-fg: #22231f;
+  --accent-soft: #30312b;
+  --promo: #e5a18b;
+  --promo-fg: #22231f;
+  --danger: #e5a18b;
+  --warning: #d8bf8e;
 
   color-scheme: dark;
 }
@@ -97,20 +95,21 @@
  * query matching and nothing changes.
  */
 :root[data-theme='light'] {
-  --bg: #fbfaf8;
-  --surface: #ffffff;
-  --surface-2: #f4f2ee;
-  --border: #ded9d0;
-  --fg: #171614;
-  --muted: #6b6862;
-  --faint: #98948c;
-  --accent: #1b6b4a;
-  --accent-fg: #ffffff;
-  --accent-soft: #e4efe9;
-  --promo: #14523a;
-  --promo-fg: #ffffff;
-  --danger: #a12d20;
-  --warning: #8a6410;
+  --bg: #f3f0e8;
+  --surface: #f8f6f0;
+  --surface-2: #eae6dc;
+  --prose: #45453c;
+  --border: #cbc7ba;
+  --fg: #25251f;
+  --muted: #656459;
+  --faint: #656459;
+  --accent: #993d29;
+  --accent-fg: #f3f0e8;
+  --accent-soft: #eae6dc;
+  --promo: #993d29;
+  --promo-fg: #f3f0e8;
+  --danger: #993d29;
+  --warning: #79591f;
 
   color-scheme: light;
 }
@@ -188,8 +187,12 @@ button {
     color 140ms ease;
 }
 
-.btn:disabled {
-  opacity: 0.5;
+.btn.btn:disabled {
+  opacity: 1;
+  /* Preserve readable text even while a control is unavailable. */
+  background: var(--surface-2);
+  color: var(--muted);
+  border-color: var(--border);
   cursor: not-allowed;
 }
 
@@ -216,7 +219,7 @@ button {
   border-color: color-mix(in oklab, var(--border) 60%, var(--fg));
 }
 .btn-secondary:active:not(:disabled) {
-  background: color-mix(in oklab, var(--surface-2) 90%, var(--fg));
+  background: color-mix(in oklab, var(--surface-2) 95%, var(--fg));
 }
 
 /*
@@ -280,6 +283,12 @@ button {
   color: var(--fg);
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 input,
 textarea {
   caret-color: var(--accent);
@@ -323,10 +332,16 @@ input {
   }
 }
 
-/* Display type, matching the web app: a bold grotesque with tight tracking and
-   balanced wrapping, rather than the serif the earlier system used. */
+/* Editorial headings use the publication display face; measurements stay mono. */
+h1, h2, h3 {
+  font-family: var(--display);
+  font-optical-sizing: auto;
+}
+
 .display {
-  font-weight: 700;
+  font-family: var(--display);
+  font-optical-sizing: auto;
+  font-weight: 400;
   letter-spacing: -0.022em;
   line-height: 1.1;
   text-wrap: balance;

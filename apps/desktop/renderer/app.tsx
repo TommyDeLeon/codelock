@@ -104,7 +104,7 @@ export function App() {
           }}
         >
           <LockMark size={22} />
-          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em' }}>CodeLock</span>
+          <span style={{ fontFamily: 'var(--display)', fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>CodeLock</span>
           <div style={{ marginLeft: 'auto' }}>
             <ThemeToggle />
           </div>
