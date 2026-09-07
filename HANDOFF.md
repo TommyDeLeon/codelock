@@ -189,6 +189,11 @@ slug per line, and regenerate the list from current source each time.
 
 ## Owed
 
+- **Session review is specced but not started** — see
+  [`docs/HANDOFF-SESSION-LOG.md`](docs/HANDOFF-SESSION-LOG.md). Most of the
+  machinery already exists and is simply unreachable from any interface; the one
+  real gap is that `LearningEvent` has no `sessionId`, so a migration comes
+  first.
 - Tag problems with `learn` roadmap stages (see above — highest value for you).
 - **Ten problems fail their own tests** and are held inactive. Re-run the
   measurement to list them; each needs its answer re-derived from the statement.
