@@ -204,6 +204,57 @@ export function SettingsScreen() {
       </section>
 
 
+      {/* --- the recurring timer --------------------------------------- */}
+      <section className="rule" style={{ paddingTop: 20 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 6px' }}>Repeat sessions</h2>
+        <p
+          style={{
+            margin: '0 0 12px',
+            fontSize: 12.5,
+            color: 'var(--muted)',
+            maxWidth: 560,
+          }}
+        >
+          When a session ends — solved, or skipped — start the next countdown
+          straight away, for {timer.durationMinutes} minutes. It keeps running on
+          its own until you stop it here, and it stops by itself outside the
+          hours above.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={timer.autoRearm}
+            onClick={() => void save({ autoRearm: !timer.autoRearm })}
+            className={timer.autoRearm ? 'btn btn-chip' : 'btn btn-quiet'}
+          >
+            {timer.autoRearm ? 'Repeating' : 'Off'}
+          </button>
+          {/* Named rather than implied. A toggle whose off-state is a quieter
+              shade of the on-state is the wrong control for something a user
+              may want to stop in a hurry, so the way out says what it does. */}
+          {timer.autoRearm && (
+            <Quiet onClick={() => void save({ autoRearm: false })}>
+              Stop repeating
+            </Quiet>
+          )}
+        </div>
+
+        {timer.autoRearm && (
+          <p
+            style={{
+              margin: '10px 0 0',
+              fontSize: 12.5,
+              color: 'var(--faint)',
+            }}
+          >
+            Holding Escape to force a lock open never re-arms — that exit stays
+            an exit.
+          </p>
+        )}
+      </section>
+
       {status && <p style={{ fontSize: 12.5, color: 'var(--faint)' }}>{status}</p>}
     </div>
   );

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { Language } from '@prisma/client';
 import { env } from '../env.js';
 import { ApiError } from '../lib/errors.js';
@@ -34,7 +35,7 @@ export const JUDGE0_LANGUAGE_IDS: Record<Language, number> = {
  */
 export async function verifyLanguageIds(): Promise<void> {
   try {
-    const res = await fetch(`${env.JUDGE0_URL}/languages`, { headers: headers() });
+    const res = await fetch(`${env.JUDGE0_URL}/languages`, { headers: headers(), signal: AbortSignal.timeout(env.JUDGE0_TIMEOUT_MS), redirect: 'error' });
     if (!res.ok) return;
     const languages = (await res.json()) as Array<{ id: number; name: string }>;
     const byId = new Map(languages.map((l) => [l.id, l.name]));
@@ -94,16 +95,10 @@ const unb64 = (s: string | null | undefined): string | null =>
   s ? Buffer.from(s, 'base64').toString('utf8') : null;
 
 function headers(): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (env.JUDGE0_KEY) {
-    // RapidAPI-hosted Judge0. Self-hosted instances need neither header.
-    h['X-RapidAPI-Key'] = env.JUDGE0_KEY;
-    if (env.JUDGE0_HOST) h['X-RapidAPI-Host'] = env.JUDGE0_HOST;
-  }
-  return h;
+  return { 'Content-Type': 'application/json' };
 }
 
-async function call<T>(path: string, init: RequestInit): Promise<T> {
+async function call(path: string, init: RequestInit): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), env.JUDGE0_TIMEOUT_MS);
   try {
@@ -111,13 +106,14 @@ async function call<T>(path: string, init: RequestInit): Promise<T> {
       ...init,
       headers: { ...headers(), ...(init.headers ?? {}) },
       signal: controller.signal,
+      redirect: 'error',
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       logger.error({ status: res.status, path, body: body.slice(0, 500) }, 'judge0 error');
       throw ApiError.upstream(`Judge0 responded ${res.status}`);
     }
-    return (await res.json()) as T;
+    return await res.json();
   } catch (err) {
     if (err instanceof ApiError) throw err;
     if ((err as Error).name === 'AbortError') {
@@ -155,6 +151,10 @@ export async function runBatch(params: {
 }): Promise<BatchResult> {
   const { language, sourceCode, cases, cpuTimeLimit, memoryLimitKb } = params;
 
+  if (cases.length === 0 || cases.length > 250) {
+    throw ApiError.upstream('A grade requires between 1 and 250 test cases');
+  }
+
   const submissions = cases.map((c) => ({
     language_id: JUDGE0_LANGUAGE_IDS[language],
     source_code: b64(sourceCode),
@@ -166,7 +166,7 @@ export async function runBatch(params: {
     // "42\n" and "42" are the same answer.
   }));
 
-  const created = await call<Array<{ token: string }>>(
+  const response = await call(
     '/submissions/batch?base64_encoded=true',
     {
       method: 'POST',
@@ -174,7 +174,10 @@ export async function runBatch(params: {
     },
   );
 
-  const tokens = created.map((c) => c.token);
+  const created = z.array(z.object({ token: z.string().uuid() })).length(cases.length).safeParse(response);
+  if (!created.success) throw ApiError.upstream('Execution service returned an invalid submission batch');
+  const tokens = created.data.map((c) => c.token);
+  if (new Set(tokens).size !== tokens.length) throw ApiError.upstream('Execution service returned duplicate tokens');
   const results = await pollBatch(tokens);
   return { token: tokens, results };
 }
@@ -184,14 +187,21 @@ const FIELDS = 'token,status,stdout,stderr,compile_output,time,memory';
 /** A wrong answer is worth reading; a runaway print loop is not. */
 const MAX_STDOUT_CHARS = 2_000;
 
-interface RawResult {
-  status: { id: number; description: string };
-  stdout?: string | null;
-  stderr?: string | null;
-  compile_output?: string | null;
-  time?: string | null;
-  memory?: number | null;
-}
+const outputSchema = z.string().max(1_500_000).nullable().optional();
+const rawResultSchema = z.object({
+  token: z.string().uuid(),
+  status: z.object({ id: z.number().int().min(1).max(14), description: z.string().max(200) }),
+  stdout: outputSchema,
+  stderr: outputSchema,
+  compile_output: outputSchema,
+  time: z.string().regex(/^\d+(?:\.\d+)?$/).refine((value) => Number.isFinite(Number(value))).nullable().optional(),
+  memory: z.number().finite().nonnegative().nullable().optional(),
+}).superRefine((result, ctx) => {
+  if (result.status.id === STATUS.ACCEPTED && (result.time == null || result.memory == null)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Accepted results require timing and memory' });
+  }
+});
+type RawResult = z.infer<typeof rawResultSchema>;
 
 async function pollBatch(tokens: string[]): Promise<CaseResult[]> {
   const query = `tokens=${tokens.join(',')}&base64_encoded=true&fields=${FIELDS}`;
@@ -199,14 +209,21 @@ async function pollBatch(tokens: string[]): Promise<CaseResult[]> {
   let delay = 300;
 
   while (Date.now() < deadline) {
-    const body = await call<{ submissions: RawResult[] }>(
+    const response = await call(
       `/submissions/batch?${query}`,
       { method: 'GET' },
     );
-    const pending = body.submissions.some(
+    const body = z.object({ submissions: z.array(rawResultSchema).length(tokens.length) }).safeParse(response);
+    if (!body.success) throw ApiError.upstream('Execution service returned invalid or incomplete results');
+    const byToken = new Map(body.data.submissions.map((result) => [result.token, result]));
+    if (byToken.size !== tokens.length || tokens.some((token) => !byToken.has(token))) {
+      throw ApiError.upstream('Execution results do not match the requested tests');
+    }
+    const ordered = tokens.map((token) => byToken.get(token)!);
+    const pending = ordered.some(
       (s) => s.status.id === STATUS.IN_QUEUE || s.status.id === STATUS.PROCESSING,
     );
-    if (!pending) return body.submissions.map(toCaseResult);
+    if (!pending) return ordered.map(toCaseResult);
 
     await sleep(delay);
     delay = Math.min(delay * 1.5, 2_000); // back off; Judge0 queues can be slow

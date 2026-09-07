@@ -5,7 +5,12 @@ import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { lockActionLimiter } from '../middleware/rateLimit.js';
-import { abandonSchema, armSessionSchema, idParamSchema } from '../validation/schemas.js';
+import {
+  abandonSchema,
+  armSessionSchema,
+  hintRequestSchema,
+  idParamSchema,
+} from '../validation/schemas.js';
 import {
   armSession,
   bypassLock,
@@ -15,7 +20,9 @@ import {
   getDebrief,
 } from '../services/lockSessions.js';
 import { recordFailure } from '../services/grading.js';
+import { HINT_COUNT, hintAt } from '../services/hints.js';
 import { recordUnlock, secondsLocked } from '../services/audit.js';
+import { recordStep } from '../services/learningLog.js';
 
 export const lockRouter = Router();
 lockRouter.use(withLocalUser);
@@ -187,6 +194,50 @@ lockRouter.post(
     const user = currentUser(req);
     const { id } = idParamSchema.parse(req.params);
     res.json(await bypassLock({ userId: user.id, sessionId: id }));
+  }),
+);
+
+/**
+ * POST /lock/:id/hint — one nudge, while the lock is still up.
+ *
+ * Deliberately *not* gated behind the solve, unlike the editorial. Someone
+ * stuck with no way forward has two moves otherwise — abandon the session, or
+ * stare at it — and neither one teaches anything. A hint that names the idea
+ * without writing the code is what keeps them working.
+ *
+ * Free, and never counted against difficulty: charging for help is how a
+ * learning tool teaches people not to ask for it. It is written to the log
+ * though, because which problems needed help is the most useful thing that log
+ * can tell its owner later.
+ */
+lockRouter.post(
+  '/:id/hint',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const { index } = hintRequestSchema.parse(req.body ?? {});
+
+    const session = await requireOwnedSession(user.id, id);
+    // Only a live lock. Before the lock there is no problem to hint at, and
+    // after it the debrief has the editorial and the worked solution.
+    if (session.state !== LockState.LOCKED || !session.problemId) {
+      throw ApiError.conflict('Hints are available while a lock is live');
+    }
+
+    const problem = await prisma.problem.findUnique({ where: { id: session.problemId } });
+    if (!problem) throw ApiError.notFound('No problem was assigned to this session');
+
+    const text = hintAt(problem, index);
+    if (text === null) throw ApiError.badRequest('No hint at that index');
+
+    void recordStep(user.id, {
+      kind: 'HINT_REVEALED',
+      problem,
+      detail: { index, attempts: session.attempts },
+    });
+
+    res.json({ index, total: HINT_COUNT, text });
   }),
 );
 

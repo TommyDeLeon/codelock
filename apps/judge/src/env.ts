@@ -13,6 +13,7 @@
 
 interface JudgeEnv {
   PORT: number;
+  HOST: string;
   JUDGE_CONCURRENCY: number;
   DOCKER_BIN: string;
   LOG_LEVEL: string;
@@ -43,6 +44,9 @@ function stringVar(name: string, fallback: string): string {
 
 const parsed: JudgeEnv = {
   PORT: intVar('PORT', 2358, 1, 65_535),
+  // Loopback is the safe default: this service has no application-level auth.
+  // Containers must opt into their private-network interface with HOST=0.0.0.0.
+  HOST: stringVar('HOST', '127.0.0.1'),
   // Each concurrent run gets a full core, so this is a CPU budget. Above 64 the
   // host is being asked for more than it has on any plausible box.
   JUDGE_CONCURRENCY: intVar('JUDGE_CONCURRENCY', 4, 1, 64),

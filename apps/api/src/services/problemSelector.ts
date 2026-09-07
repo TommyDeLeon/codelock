@@ -2,7 +2,6 @@ import { Difficulty, Prisma, type PatternFamily, type Problem, type Tier } from 
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { env } from '../env.js';
 import { bucketedPick } from './valueSelection.js';
 
 /** Do not serve a problem the user has already seen within this window. */
@@ -163,14 +162,6 @@ export async function pickProblem(
     throw ApiError.notFound('No active problems at any difficulty');
   }
 
-  if (env.DIFFICULTY_MODE === 'hybrid' && env.OPENAI_API_KEY) {
-    const chosen = await rankWithLlm(candidates, seen.length).catch((err) => {
-      logger.warn({ err }, 'LLM problem ranking failed; falling back to random');
-      return null;
-    });
-    if (chosen) return chosen;
-  }
-
   return bucketedPick(candidates);
 }
 
@@ -192,57 +183,4 @@ export async function pickProblem(
  */
 export function weightedPick(candidates: Problem[], random: () => number = Math.random): Problem {
   return bucketedPick(candidates, random);
-}
-
-async function rankWithLlm(candidates: Problem[], seenCount: number): Promise<Problem | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4_000);
-  try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You pick one coding problem for a focus-break exercise. Favour topic variety ' +
-              'and a clean, self-contained statement. Reply as {"slug": "<slug>"} only.',
-          },
-          {
-            role: 'user',
-            content: JSON.stringify({
-              problemsSolvedRecently: seenCount,
-              candidates: candidates.map((c) => ({ slug: c.slug, title: c.title, tags: c.tags })),
-            }),
-          },
-        ],
-      }),
-    });
-    // Both of these used to return null in silence, so an expired key or an
-    // exhausted quota degraded selection to random for weeks with nothing in
-    // the logs to say so. The caller only logs a *rejected* promise, and these
-    // resolve — so if they do not speak here, nobody does.
-    if (!res.ok) {
-      logger.warn({ status: res.status }, 'LLM ranking unavailable; falling back to weighted pick');
-      return null;
-    }
-    const body = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = body.choices?.[0]?.message?.content;
-    if (!content) {
-      logger.warn('LLM ranking returned an empty completion; falling back to weighted pick');
-      return null;
-    }
-    const { slug } = JSON.parse(content) as { slug?: string };
-    return candidates.find((c) => c.slug === slug) ?? null;
-  } finally {
-    clearTimeout(timer);
-  }
 }

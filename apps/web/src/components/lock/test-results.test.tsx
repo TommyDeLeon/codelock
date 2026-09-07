@@ -59,12 +59,28 @@ const passingSample: CaseView = {
   stderr: null,
 };
 
+/**
+ * A hidden case that FAILED. The grader sends its input and what the code did
+ * with it — but never the expected output, which is the answer.
+ */
 const hidden: CaseView = {
   ordinal: 2,
   isSample: false,
   passed: false,
   status: 'Wrong Answer',
   timeMs: 51,
+  stdin: '\n0',
+  actualStdout: null,
+  stderr: 'IndexError: string index out of range',
+};
+
+/** A hidden case that PASSED. Nothing to debug, so the grader sends nothing. */
+const hiddenPassed: CaseView = {
+  ordinal: 3,
+  isSample: false,
+  passed: true,
+  status: 'Accepted',
+  timeMs: 44,
 };
 
 const row = (n: number) => screen.getByRole('button', { name: new RegExp(`^Case ${n}`) });
@@ -191,18 +207,43 @@ describe('what each kind of case shows', () => {
   });
 
   /**
-   * The privacy rule, which the grader enforces by omitting the fields
-   * entirely. The row still has to open — a dead row reads as a broken button.
+   * The rule that makes a failure reviewable.
+   *
+   * "Case 4 failed" and nothing else is not a bug report, it is a shrug — and
+   * for a tool aimed at someone learning, close to the least useful thing it
+   * could say. The input is what turns a failure into something you can reason
+   * about. Working out the right answer is still yours, which is why the
+   * expected output stays behind until the session resolves.
    */
-  it('opens a hidden case without revealing it', async () => {
+  it('reveals the input and the traceback for a failed hidden case', async () => {
     const user = userEvent.setup();
     render(<TestResults result={verdict([hidden])} running={false} />);
 
     await user.click(row(3));
     const panel = document.getElementById('case-panel-2')!;
 
+    expect(panel.textContent).toContain('Input');
+    expect(panel.textContent).toContain('IndexError');
+    // The answer is still withheld, and the panel says so rather than leaving
+    // a gap the reader has to interpret.
+    expect(panel.textContent).not.toContain('Expected output');
+    expect(panel.textContent).toContain('until this session ends');
+  });
+
+  /**
+   * The privacy rule, which now applies only where it earns its keep. A passed
+   * hidden case has nothing to debug, so its input is pure leak. The row still
+   * has to open — a dead row reads as a broken button.
+   */
+  it('opens a passed hidden case without revealing it', async () => {
+    const user = userEvent.setup();
+    render(<TestResults result={verdict([hiddenPassed])} running={false} />);
+
+    await user.click(row(4));
+    const panel = document.getElementById('case-panel-3')!;
+
     expect(panel.textContent).toContain('hidden test case');
-    expect(panel.textContent).toContain('failed this category');
+    expect(panel.textContent).toContain('handled it correctly');
     expect(panel.textContent).not.toContain('Expected output');
     expect(panel.textContent).not.toContain('Input');
   });

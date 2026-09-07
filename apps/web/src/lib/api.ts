@@ -12,6 +12,7 @@ import type {
   LockSessionView,
   OAuthProviderName,
   PublicProblem,
+  RunResult,
   StatsSummary,
   TimerConfig,
 } from '@codelock/shared';
@@ -190,6 +191,7 @@ async function request<T>(
   // still waking up is what read as the demo being "stuck" rather than slow.
   const grading =
     path.startsWith('/v1/submissions') ||
+    path === '/v1/run' ||
     path === '/v1/demo/grade' ||
     path === '/v1/demo/problem';
   const timeoutMs = grading ? 120_000 : 15_000;
@@ -300,6 +302,14 @@ export const api = {
     cancel: (id: string) =>
       post<{ session: { id: string; state: string } }>(`/v1/lock/${id}/cancel`),
     skip: (id: string) => post<{ skipsRemaining: number }>(`/v1/lock/${id}/skip`),
+    /**
+     * One of the three hints, while the lock is still live.
+     *
+     * Asked for one at a time rather than fetched as a set: a panel holding all
+     * three has already given you all three, whatever it renders.
+     */
+    hint: (id: string, index: number) =>
+      post<{ index: number; total: number; text: string }>(`/v1/lock/${id}/hint`, { index }),
     abandon: (id: string, reason?: 'user_gave_up' | 'kill_switch') =>
       post<{ progress: unknown }>(`/v1/lock/${id}/abandon`, reason ? { reason } : undefined),
   },
@@ -328,6 +338,21 @@ export const api = {
       sourceCode: string;
     }) => post<GradeResult>('/v1/submissions', input),
   },
+
+  /**
+   * Run the code without spending an attempt.
+   *
+   * `stdin` omitted runs the sample cases; `stdin` present — empty string
+   * included — runs exactly that input once. Nothing here can unlock a
+   * session: `RunResult` has no token to return.
+   */
+  run: (input: {
+    problemId: string;
+    lockSessionId?: string;
+    language: Language;
+    sourceCode: string;
+    stdin?: string;
+  }) => post<RunResult>('/v1/run', input),
 
   settings: {
     profile: () =>

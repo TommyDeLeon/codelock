@@ -4,81 +4,90 @@ import { LegalPage, Section } from '@/components/legal-page';
 
 export const metadata: Metadata = {
   title: 'Terms',
-  description: 'The terms you accept by using CodeLock, and the limits of what it can do.',
+  description: 'The conditions and practical limits of using a private CodeLock installation.',
   robots: { index: true, follow: true },
 };
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of use" updated="21 August 2026">
+    <LegalPage title="Terms of use" updated="7 September 2026">
+      <Section heading="Private local use">
+        <p>
+          CodeLock is currently built for one person on their own devices or a trusted private
+          network. The API uses one local identity and does not authenticate requests. By running
+          it, you accept responsibility for the computer, network, database, Docker daemon, and
+          submitted code. Public or multi-user hosting is outside the supported use of this build.
+        </p>
+      </Section>
+
       <Section heading="What CodeLock does">
         <p>
-          CodeLock runs a timer. When it expires, it presents a programming problem and keeps its
-          lock screen in front until you submit a solution that passes every test case and runs
-          within a time budget. It is a commitment device you choose to install.
+          CodeLock runs a timer, then presents a programming problem. A supported lock client stays
+          in front until the bundled judge reports that the submission passes the tests and its
+          measured runtime is within the configured budget. It is a voluntary commitment tool, not
+          a security boundary, parental-control system, or emergency-access control.
         </p>
       </Section>
 
-      <Section heading="What it cannot do">
-        <p>
-          Be clear about this before you rely on it. CodeLock is an ordinary application, not a
-          kernel driver or a parental control:
-        </p>
+      <Section heading="Platform limits and verification">
         <ul>
-          <li>
-            On <strong>desktop</strong>, Ctrl+Alt+Del, a forced power-off, or booting another
-            operating system all get past it.
-          </li>
-          <li>
-            On <strong>Android</strong>, force-stopping the app, Safe Mode, or uninstalling all get
-            past it.
-          </li>
-          <li>
-            On <strong>iOS</strong>, no application is permitted to block another. CodeLock controls
-            only its own screen and sends notifications.
-          </li>
-          <li>
-            In a <strong>browser</strong>, the tab can always be closed.
-          </li>
+          <li><strong>Windows desktop:</strong> the main lock behavior has been exercised on Windows 11, but Ctrl+Alt+Del, power-off, another operating system, administrator action, or removing the application can defeat a user-space lock. Code signing and automatic updating have not been verified end to end.</li>
+          <li><strong>macOS and Linux desktop:</strong> packaging configuration exists, but current lock behavior, signing, installation, permissions, and updating have not been verified on those platforms.</li>
+          <li><strong>Android:</strong> overlay and foreground-service source exists, but it has not been compiled or tested on a device in the recorded project state. Even when working, force-stop, Safe Mode, uninstall, revoked permissions, or device-specific battery management can end the overlay.</li>
+          <li><strong>iOS:</strong> the current native module reports hard locking as unsupported. CodeLock cannot claim to block other applications on iOS.</li>
+          <li><strong>Browser:</strong> the lock route is advisory and the tab can be closed.</li>
         </ul>
         <p>
-          Do not use CodeLock as a safety control, or in any situation where being unable to reach
-          your device could cause harm.
+          Do not rely on CodeLock where delayed device access, a false unlock, or a failed lock
+          could affect health, safety, employment, finances, legal obligations, or access to
+          essential services.
         </p>
       </Section>
 
-      <Section heading="Your account">
+      <Section heading="Submitted code and the judge">
         <p>
-          You are responsible for your credentials and for the code you submit. Do not submit code
-          you are not entitled to share, and do not attempt to break out of the execution sandbox or
-          use it to reach other systems.
+          Submit only code you are entitled to use. Do not attempt to escape the execution
+          container, access the Docker daemon, reach another system, exhaust the host, or interfere
+          with another process. Container isolation reduces risk but does not make untrusted code
+          harmless. The judge&apos;s Docker socket access is powerful enough to control its host, so
+          the service must remain private.
         </p>
       </Section>
 
-      <Section heading="Connected accounts">
+      <Section heading="No paid service promise">
         <p>
-          If you connect GitHub, you authorise CodeLock to commit your accepted solutions to the
-          repository you nominate, and those commits are public if the repository is. You can
-          disconnect at any time, which deletes the stored token. LeetCode integration is read-only.
+          The current supported runtime uses the bundled local judge and contains no payment flow.
+          This does not cancel subscriptions or resources created through an older setup, and it
+          cannot guarantee what an external provider may charge. You are responsible for reviewing
+          and closing those accounts and for the ordinary cost of your own hardware, electricity,
+          internet access, registries, app-store programs, or optional distribution certificates.
         </p>
       </Section>
 
-      <Section heading="Availability and liability">
+      <Section heading="Software and corpus rights">
         <p>
-          CodeLock is provided as is, without warranty. It may be unavailable, and grading depends
-          on an execution service that can fail. To the extent permitted by law, the operator is not
-          liable for lost work, missed deadlines, or any consequence of the lock screen appearing or
-          failing to appear.
+          No general source-code licence is granted by this repository unless a separate software
+          licence file is added. Problem content has separate terms described by the corpus
+          licence and attribution notice. Do not assume that access to the repository grants a
+          right to redistribute every file.
+        </p>
+      </Section>
+
+      <Section heading="Availability and warranty">
+        <p>
+          CodeLock is a work in progress and is provided as is, without a promise that it is secure,
+          lawful for every use, continuously available, or free of defects. Grading, timers,
+          storage, installers, operating-system permissions, and containers can fail. To the extent
+          permitted by applicable law, the operator and contributors disclaim warranties and are
+          not responsible for losses caused by using or being unable to use the software. Some
+          jurisdictions do not allow every limitation, so mandatory local law still applies.
         </p>
       </Section>
 
       <Section heading="Privacy">
         <p>
-          What is stored and who it is shared with is described in the{' '}
-          <Link className="underline underline-offset-4" href="/privacy">
-            privacy policy
-          </Link>
-          .
+          The current data flow and deletion responsibilities are described in the{' '}
+          <Link className="underline underline-offset-4" href="/privacy">privacy notice</Link>.
         </p>
       </Section>
     </LegalPage>

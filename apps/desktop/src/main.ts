@@ -31,6 +31,7 @@ import { HoldToRelease, HOLD_TO_RELEASE_MS } from './kill-switch.js';
 import { reassertCovers, removeCovers, syncCovers } from './display-cover.js';
 import { initUpdater, installIfIdle } from './updater.js';
 import { engageOnServer } from './server-lock.js';
+import { checkLockStillHeld } from './lock-watchdog.js';
 import { diagnose, ensureBackend, isBackendUp, readBackendStatus } from './backend.js';
 import {
   clearSession as clearStoredSession,
@@ -273,6 +274,47 @@ function clearScheduledLock(): void {
   fireTimer = null;
 }
 
+/**
+ * How often a live lock re-checks that the server still holds it.
+ *
+ * Short, because this is the exit for every ending that has no unlock token to
+ * present — a spent skip, above all. Five seconds of a screen that should have
+ * come down is a bug the user forgives; a minute of it is the app being broken.
+ */
+const LOCK_WATCHDOG_MS = 5_000;
+let watchdogTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Poll the server for as long as the screen is held.
+ *
+ * The shell asks permission to lock and then, until this existed, never asked
+ * again. A session ended any way other than by solving it left the API saying
+ * "resolved" and this process still covering the screen with nothing able to
+ * open it. So the same authority that starts a lock now also ends it.
+ */
+function startLockWatchdog(): void {
+  stopLockWatchdog();
+  watchdogTimer = setInterval(() => {
+    if (!locked) return stopLockWatchdog();
+    const sessionId = lockedSessionId;
+    void checkLockStillHeld(sessionId, { apiUrl: API_URL }).then((verdict) => {
+      // Re-check on the way back in: the poll is async, and a solve may have
+      // released and even re-locked while it was in flight. Releasing on a
+      // verdict about a session we no longer hold would drop a live lock.
+      if (!verdict.release || !locked || lockedSessionId !== sessionId) return;
+      console.warn(
+        `CodeLock: releasing — the server no longer holds session ${sessionId ?? '(none)'}.`,
+      );
+      releaseLock();
+    });
+  }, LOCK_WATCHDOG_MS);
+}
+
+function stopLockWatchdog(): void {
+  if (watchdogTimer) clearInterval(watchdogTimer);
+  watchdogTimer = null;
+}
+
 // Windows and Linux: a second launch focuses the existing window instead of
 // starting a rival instance that would not know about the lock.
 if (!app.requestSingleInstanceLock()) {
@@ -318,6 +360,38 @@ function isWebOrigin(url: string): boolean {
 function showRenderer(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   void mainWindow.loadURL(DEV_RENDERER ?? APP_ENTRY);
+}
+
+/**
+ * The web origin serves exactly one page this window may show: /lock, the
+ * editor. Everything else there is the marketing site, and a storefront has no
+ * business inside an installed application — the visitor has already installed
+ * the thing.
+ */
+function isStrayWebPage(url: string): boolean {
+  try {
+    return isWebOrigin(url) && new URL(url).pathname !== '/lock';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Where a stray web page goes, and it depends on whether the screen is held.
+ *
+ * Unlocked, the answer is the app — that is the whole "stay in the app" rule.
+ * Locked, sending the window to the dashboard would leave a kiosk with no lock
+ * screen in it and no editor to solve out of, which is the lockout this file
+ * has already produced once. So a lock that is still up goes back to /lock, and
+ * the watchdog is what decides the lock is genuinely over.
+ */
+function leaveStrayWebPage(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (locked) {
+    void mainWindow.loadURL(new URL('/lock', WEB_URL).toString());
+    return;
+  }
+  showRenderer();
 }
 
 function createWindow(): BrowserWindow {
@@ -392,20 +466,24 @@ function createWindow(): BrowserWindow {
       return;
     }
 
-    // The web origin serves exactly one page this window may show: /lock, which
-    // is the editor. Everything else there is the marketing site, and a
-    // storefront has no business inside an installed application — the visitor
-    // has already installed the thing.
-    //
-    // The lock page navigates itself to '/' in three places: the kill switch,
-    // "Back to CodeLock", and the no-session branch. Each one used to land the
-    // window on the landing page, complete with a Download button. Rather than
-    // fix three call sites and hope a fourth is never added, the rule is
-    // enforced here, where the window actually changes.
-    if (isWebOrigin(url) && new URL(url).pathname !== '/lock') {
+    if (isStrayWebPage(url)) {
       event.preventDefault();
-      showRenderer();
+      leaveStrayWebPage();
     }
+  });
+
+  // The same rule again, for the navigations 'will-navigate' never sees.
+  //
+  // The lock screen is a Next.js app, so router.replace('/') is a pushState —
+  // an in-page navigation, which does not fire 'will-navigate' at all. The
+  // guard above was therefore enforcing the rule on exactly the call sites that
+  // did not use it: the kill switch and the no-session branch both slipped
+  // through and parked an installed application on the marketing site. Worse,
+  // they did it while the lock was still up, so the user got a kiosk window
+  // showing a landing page with a Download button and no way out of it.
+  window.webContents.on('did-navigate-in-page', (_event, url, isMainFrame) => {
+    if (!isMainFrame) return;
+    if (isStrayWebPage(url)) leaveStrayWebPage();
   });
 
   // The kill switch lives here rather than on a global shortcut: a global
@@ -510,6 +588,7 @@ function engageLock(sessionId: string | null): void {
 
   syncCovers(mainWindow);
   registerEscapeSuppression();
+  startLockWatchdog();
   refreshTray(trayActions);
 }
 
@@ -525,6 +604,7 @@ function reassertLock(): void {
 
 function releaseLock(): void {
   clearScheduledLock();
+  stopLockWatchdog();
   locked = false;
   lockedSessionId = null;
   releasedIntentionally = true;

@@ -79,6 +79,23 @@ export const submitLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMITED', message: 'Wait a moment before submitting again' } },
 });
 
+/**
+ * Running code, which is cheaper per call and far more frequent than grading.
+ *
+ * Deliberately looser than `submitLimiter`. Iteration is the behaviour this
+ * feature exists to encourage, and a learner who has to ration runs is back to
+ * the problem Run was added to solve. It is still capped: a run is a container,
+ * and `acquireGradeSlot` is what actually protects the host.
+ */
+export const runLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 40,
+  keyGenerator: keyByUserOrIp,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'Wait a moment before running again' } },
+});
+
 export const generalLimiter = rateLimit({
   windowMs: 60_000,
   limit: 240,

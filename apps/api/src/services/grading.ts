@@ -139,7 +139,7 @@ export async function gradeSubmission(params: {
   }
 
   const passedCount = results.filter((r) => r.passed).length;
-  const correct = passedCount === results.length;
+  const correct = cases.length > 0 && results.length === cases.length && passedCount === cases.length;
   const memoryKb = Math.max(0, ...results.map((r) => r.memoryKb));
   const message = firstMessage(results);
   const caseViews = problem.testCases.map((tc, i) => ({
@@ -148,12 +148,27 @@ export async function gradeSubmission(params: {
     passed: results[i]?.passed ?? false,
     status: results[i]?.statusDescription ?? 'Unknown',
     timeMs: results[i]?.timeMs ?? 0,
-    // Sample cases carry what they ran, so the panel can show why a case passed
-    // or failed. Hidden cases carry nothing extra, and the fields are omitted
-    // rather than nulled: a hidden case's expected output is the answer, so
-    // sending it at all — even for the client to hide — puts it in the response
-    // body for anyone with the network tab open. This is the same rule the
-    // learning log applies to failed samples below.
+    // What each case is allowed to reveal, in three tiers.
+    //
+    // Samples reveal everything: the problem statement already showed both
+    // sides, so there is nothing left to protect.
+    //
+    // A hidden case that FAILED reveals its input, what the submission printed
+    // and the traceback — but not the expected output. This is the rule every
+    // judge worth learning on uses, and the reason is simple: "case 4 failed"
+    // with nothing else is not a bug report, it is a shrug. The input is what
+    // turns a failure into something you can reason about, and you still have
+    // to work out the right answer yourself, which is the part being tested.
+    //
+    // A hidden case that PASSED reveals nothing. There is nothing to debug,
+    // and handing over inputs for cases the code already handles is pure leak
+    // with no teaching value.
+    //
+    // Expected output for hidden cases is withheld throughout and appears only
+    // in the debrief, once the session has resolved. It is the answer, and an
+    // answer in the response body is an answer to anyone with the network tab
+    // open — which would make hard-coding five outputs a faster way out than
+    // solving, and this is a lock before it is a tutor.
     ...(tc.isSample
       ? {
           stdin: tc.stdin,
@@ -161,7 +176,13 @@ export async function gradeSubmission(params: {
           actualStdout: results[i]?.stdout ?? null,
           stderr: results[i]?.stderr ?? null,
         }
-      : {}),
+      : results[i]?.passed === false
+        ? {
+            stdin: tc.stdin,
+            actualStdout: results[i]?.stdout ?? null,
+            stderr: results[i]?.stderr ?? null,
+          }
+        : {}),
   }));
 
   if (session) {

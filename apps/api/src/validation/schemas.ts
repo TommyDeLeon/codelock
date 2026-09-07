@@ -42,6 +42,10 @@ export const timerConfigSchema = z.object({
   activeFromMinute: z.number().int().min(0).max(1440).optional(),
   activeToMinute: z.number().int().min(0).max(1440).optional(),
   dailySkipAllowance: z.number().int().min(0).max(10).optional(),
+  /// The recurring timer. Absent from this schema until now, which meant the
+  /// column existed, was read on every solve, and could not be turned on by
+  /// any client — the feature was unreachable rather than missing.
+  autoRearm: z.boolean().optional(),
 }).refine(
   (v) =>
     v.activeFromMinute === undefined ||
@@ -56,6 +60,12 @@ export const armSessionSchema = z.object({
   durationMinutes: z.number().int().min(5).max(600).optional(),
 });
 
+/// Which of the three hints to reveal. Bounded here rather than in the route so
+/// an out-of-range index is a 400 with a field name, not a null deep inside.
+export const hintRequestSchema = z.object({
+  index: z.number().int().min(0).max(2),
+});
+
 export const abandonSchema = z.object({
   /// Why the lock ended without a solve. Recorded in the audit trail, so it is
   /// a closed set rather than free text a client can write anything into.
@@ -67,6 +77,16 @@ export const submitSchema = z.object({
   lockSessionId: z.string().uuid().optional(),
   language: languageEnum,
   sourceCode: z.string().min(1).max(64 * 1024),
+});
+
+/**
+ * Running is a superset of submitting in shape and a subset in consequence:
+ * the same source, plus optional input of the learner's own. `stdin` absent
+ * means "the samples"; `stdin` present and empty means an empty input, which
+ * is a different question and a legitimate one.
+ */
+export const runSchema = submitSchema.extend({
+  stdin: z.string().max(8 * 1024).nullish(),
 });
 
 export const registerDeviceSchema = z.object({

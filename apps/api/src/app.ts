@@ -13,6 +13,7 @@ import { lockRouter } from './routes/lock.js';
 import { problemsRouter } from './routes/problems.js';
 import { logRouter } from './routes/log.js';
 import { submissionsRouter } from './routes/submissions.js';
+import { runRouter } from './routes/run.js';
 import { settingsRouter } from './routes/settings.js';
 import { statsRouter } from './routes/stats.js';
 import { demoRouter } from './routes/demo.js';
@@ -28,7 +29,7 @@ export function createApp(): Express {
 
   // Render/Fly/Vercel put a proxy in front; without this, rate limiting keys on
   // the proxy IP and throttles every user as one.
-  app.set('trust proxy', 1);
+  app.set('trust proxy', env.TRUST_PROXY ? env.TRUST_PROXY.split(',').map((ip) => ip.trim()) : false);
 
   app.use(helmet());
   app.use(
@@ -115,6 +116,7 @@ export function createApp(): Express {
   app.use('/v1/lock', lockRouter);
   app.use('/v1/problems', problemsRouter);
   app.use('/v1/submissions', submissionsRouter);
+  app.use('/v1/run', runRouter);
   app.use('/v1/settings', settingsRouter);
   app.use('/v1/stats', statsRouter);
   app.use('/v1/log', logRouter);

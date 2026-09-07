@@ -21,6 +21,7 @@ import {
 } from './progression.js';
 import { isWithinActiveWindow } from './schedule.js';
 import { recordUnlock, secondsLocked } from './audit.js';
+import { hintsFor } from './hints.js';
 
 /** A session left LOCKED longer than this is reaped as ABANDONED. */
 export const SESSION_MAX_AGE_HOURS = 12;
@@ -148,7 +149,7 @@ export async function releaseLock(params: {
     secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
   });
 
-  await rearmAfterSolve(params.userId);
+  await rearmAfterSession(params.userId);
 
   return { unlockToken, expiresInSeconds: 300 };
 }
@@ -156,18 +157,24 @@ export async function releaseLock(params: {
 /**
  * Start the next countdown, if the user asked for that.
  *
- * Called only from the solved path. A lock ended by the kill switch or left to
- * be abandoned must not re-arm: holding Escape for ten seconds would then buy
- * ten seconds of freedom before the next timer, which turns the one documented
- * way out into a trap.
+ * This is the recurring timer: a session ending is what schedules the next one,
+ * so the user decides once rather than re-deciding after every lock.
+ *
+ * Called from the two paths that end a session *deliberately* — solved, and a
+ * skip spent from the daily allowance. A lock ended by the kill switch or left
+ * to be abandoned must not re-arm: holding Escape for ten seconds would then
+ * buy ten seconds of freedom before the next timer, which turns the one
+ * documented way out into a trap.
  *
  * Failures are swallowed on purpose. `armSession` refuses outside the active
  * hours and when the timer is disabled, and both are correct answers here — the
  * day is over, or the user turned it off. Neither is a reason to fail a release
  * the user has already earned: the screen is theirs the moment the token is
  * signed, and nothing after that point may take it back.
+ *
+ * Turning it off is a single field: PATCH /settings/timer { autoRearm: false }.
  */
-async function rearmAfterSolve(userId: string): Promise<void> {
+async function rearmAfterSession(userId: string): Promise<void> {
   const config = await prisma.timerConfig.findUnique({ where: { userId } });
   if (!config?.autoRearm) return;
 
@@ -224,6 +231,10 @@ export async function bypassLock(params: {
     kind: 'LOCK_BYPASSED',
     detail: { skipsRemaining: allowance - usedToday - 1 },
   });
+
+  // A skip ends the session, so the recurring timer starts the next one, just
+  // as a solve does. Without this, spending a skip quietly ended the day.
+  await rearmAfterSession(params.userId);
 
   return { skipsRemaining: allowance - usedToday - 1 };
 }
@@ -444,6 +455,25 @@ export interface Debrief {
   editorialUrl: string | null;
   referenceSolution: Record<string, string>;
   outcome: LockState;
+  /**
+   * Every test case, hidden ones included, with their inputs and expected
+   * outputs.
+   *
+   * Withheld entirely while the lock is live — an expected output is the
+   * answer, and five of them in the response body would make hard-coding a
+   * faster way out than solving. Once the session has resolved there is nothing
+   * left to protect, and the case that broke you is the single most useful
+   * thing to look at: "case 5 failed" during the lock becomes "case 5 was the
+   * empty string, and here is what it wanted" afterwards.
+   */
+  cases: Array<{
+    ordinal: number;
+    isSample: boolean;
+    stdin: string;
+    expectedStdout: string;
+  }>;
+  /** The three hints, whether or not they were used during the session. */
+  hints: string[];
 }
 
 /**
@@ -474,6 +504,15 @@ export async function getDebrief(userId: string, sessionId: string): Promise<Deb
   // did, and later the difference is the only way to tell luck from learning.
   void recordStep(userId, { kind: 'DEBRIEF_OPENED', problem });
 
+  // Read separately rather than through `loadProblem`'s include: the test cases
+  // are wanted here and nowhere else, and widening that shared loader would put
+  // expected outputs on every path that touches a problem.
+  const cases = await prisma.testCase.findMany({
+    where: { problemId: problem.id },
+    orderBy: { ordinal: 'asc' },
+    select: { ordinal: true, isSample: true, stdin: true, expectedStdout: true },
+  });
+
   return {
     patternFamily: problem.patternFamily,
     patternTags: problem.patternTags,
@@ -481,6 +520,8 @@ export async function getDebrief(userId: string, sessionId: string): Promise<Deb
     editorialUrl: problem.editorialUrl,
     referenceSolution: (problem.referenceSolution ?? {}) as Record<string, string>,
     outcome: session.state,
+    cases,
+    hints: hintsFor(problem),
   };
 }
 

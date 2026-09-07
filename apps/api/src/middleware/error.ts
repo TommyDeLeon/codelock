@@ -4,7 +4,6 @@ import { ZodError } from 'zod';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../env.js';
-import { captureError } from '../lib/observability.js';
 
 export function notFoundHandler(_req: Request, res: Response): void {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No such route' } });
@@ -62,7 +61,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   // body is not an incident, and a tracker full of them is a tracker nobody
   // reads.
   logger.error({ err, requestId }, 'unhandled error');
-  captureError(err, { requestId, path: req.path, method: req.method });
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',

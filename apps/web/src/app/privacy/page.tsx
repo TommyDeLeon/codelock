@@ -3,7 +3,7 @@ import { LegalPage, Section } from '@/components/legal-page';
 
 export const metadata: Metadata = {
   title: 'Privacy',
-  description: 'What CodeLock stores, why, who it is shared with, and how to delete it.',
+  description: 'What a private CodeLock installation stores and where the data goes.',
   robots: { index: true, follow: true },
 };
 
@@ -11,109 +11,98 @@ const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '';
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy" updated="22 August 2026">
+    <LegalPage title="Privacy" updated="7 September 2026">
+      <Section heading="Scope">
+        <p>
+          CodeLock is currently a single-user application intended to run on your own computer or
+          on a trusted private network. It has no sign-in system and its API does not authenticate
+          callers. Do not expose the web app, API, database, or code-execution service to the public
+          internet.
+        </p>
+      </Section>
+
       <Section heading="What is stored">
         <ul>
           <li>
-            <strong>Account</strong> — your email address, display name, timezone, and a hash of
-            your password. Passwords are hashed with argon2id and are never stored or logged in a
-            readable form.
+            <strong>Local profile and settings</strong> — a fixed local-user record, display name,
+            timezone, preferred language, timer schedule, and lock preferences. The database still
+            contains columns and tables from the former account and integration design, but the
+            current application has no account, password, OAuth, GitHub, or LeetCode flow.
           </li>
           <li>
-            <strong>Activity</strong> — your focus sessions, which problems were assigned, the code
-            you submitted, its runtime, and whether it passed.
+            <strong>Learning activity</strong> — focus and lock sessions, assigned problems,
+            submissions, submitted source code, runtimes, verdicts, progress, hints, debriefs, and
+            the learning log.
           </li>
           <li>
-            <strong>Lock audit trail</strong> — one row each time a lock ends, recording the
-            session, the problem, the outcome (solved, skipped, abandoned, or swept up after
-            being left open), how long it was locked, and for a solve the runtime and the speed
-            gate it had to beat. This is what makes it possible to answer whether a machine ever
-            unlocked without a passing submission. It is append-only and is deleted with your
-            account.
+            <strong>Operational logs</strong> — request identifiers, routes, response status, and
+            errors written by the local API. The logger is configured to redact authorization
+            headers and request bodies, including submitted source code.
           </li>
           <li>
-            <strong>Server logs</strong> — each request produces a log line with a request id, the
-            route, and the status. Authorization headers, passwords, and submitted source code are
-            stripped before anything is written.
-          </li>
-          <li>
-            <strong>Connected accounts</strong> — if you connect GitHub, an access token encrypted
-            at rest with AES-256-GCM and the repository you nominated. If you link LeetCode, your
-            public username and a cached copy of your public stats.
+            <strong>Device storage</strong> — the web, desktop, and mobile clients may keep local
+            preferences and current lock state needed to resume the application.
           </li>
         </ul>
       </Section>
 
-      <Section heading="Who it is shared with">
-        <p>CodeLock does not sell data or use it for advertising. It is sent to:</p>
-        <ul>
-          <li>
-            <strong>The code execution sandbox</strong> — your submitted code, so it can be run and
-            graded. Submissions run with no network access.
-          </li>
-          <li>
-            <strong>GitHub</strong>, only if you connect it, and only to commit accepted solutions
-            to the repository you chose. CodeLock requests the <code>public_repo</code> scope and
-            never asks for access to private repositories.
-          </li>
-          <li>
-            <strong>LeetCode</strong>, only if you link a username, and only to read your public
-            profile. Nothing is sent to LeetCode about your CodeLock activity.
-          </li>
-          <li>
-            <strong>An error tracker (Sentry)</strong>, only if the operator has configured one.
-            It is off by default and a self-hosted install sends nothing at all. When enabled it
-            receives exception details, the request id, and the route — request bodies are
-            discarded before sending, so your code never leaves with them.
-          </li>
-          <li>
-            <strong>OpenAI</strong>, only if the operator has enabled hybrid problem selection. In
-            that case problem titles and tags are sent — never your code, email, or submissions.
-          </li>
-        </ul>
-      </Section>
-
-      <Section heading="Payments">
+      <Section heading="Where data goes">
         <p>
-          CodeLock does not take payments. No card details are collected, stored, logged, or passed
-          through its servers.
+          The supported configuration keeps application data in your Postgres database and sends
+          submitted code only to CodeLock&apos;s bundled judge. The judge starts temporary Docker
+          containers with networking disabled. CodeLock does not include analytics, advertising,
+          payments, hosted AI selection, hosted Judge0, OAuth, or error-tracking integrations in
+          the current runtime.
+        </p>
+        <p>
+          Docker and the selected language images remain third-party software running on your
+          machine. Installing dependencies or images can contact their package registries. Review{' '}
+          <a className="underline underline-offset-4" href="https://www.docker.com/legal/privacy/">
+            Docker&apos;s privacy policy
+          </a>
+          .
         </p>
       </Section>
 
       <Section heading="Retention and deletion">
         <p>
-          Data is kept while your account exists. Deleting your account removes your sessions,
-          submissions, progress, and connected-account tokens; problems remain because they are
-          shared and not yours. Disconnecting GitHub deletes the stored token immediately. Commits
-          already pushed to your repository belong to you and are not touched.
+          CodeLock does not currently provide an account-deletion button because there is no
+          account. Data remains in the local Postgres volume until the operator deletes it. Remove
+          the CodeLock database or its Docker volume to erase application records; also remove any
+          separately copied database dumps and clear client storage on each device. Deleting a
+          volume is irreversible, so inspect the target before doing it.
         </p>
         <p>
-          Server logs are not stored in the database and live only as long as whoever runs this
-          instance keeps them. Database backups are taken nightly and kept for fourteen days by
-          default, so deleted data can survive in a backup until it ages out.
+          If you previously created RapidAPI, OpenAI, Sentry, GitHub OAuth, Google OAuth, Render,
+          Vercel, Neon, or similar accounts for an older CodeLock setup, removing keys from this
+          repository does not cancel those services. Revoke their keys and OAuth grants, stop or
+          delete their resources, remove saved payment methods where the provider permits it, and
+          close the accounts from each provider&apos;s billing or account page. Check the provider&apos;s
+          final invoice and confirmation email; CodeLock cannot do that on your behalf.
         </p>
       </Section>
 
       <Section heading="Cookies and tracking">
         <p>
-          CodeLock sets no cookies and runs no analytics or third-party trackers. Your session is
-          held in your browser&apos;s local storage and is sent only to the CodeLock API.
+          The current application has no advertising, analytics, or third-party tracking code.
+          Browser storage used by the app stays under the CodeLock origin unless you export or
+          clear it yourself.
         </p>
       </Section>
 
       <Section heading="Contact">
         {CONTACT_EMAIL ? (
           <p>
-            For access, correction, or deletion requests, email{' '}
+            Questions about this notice can be sent to{' '}
             <a className="underline underline-offset-4" href={`mailto:${CONTACT_EMAIL}`}>
               {CONTACT_EMAIL}
             </a>
-            .
+            . The person operating the installation controls its local data.
           </p>
         ) : (
           <p>
-            This deployment has not published a contact address. Whoever operates this instance is
-            the party to contact about your data.
+            No contact address is configured. The person operating the installation controls its
+            local data.
           </p>
         )}
       </Section>

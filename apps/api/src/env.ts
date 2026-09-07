@@ -7,19 +7,24 @@ import { z } from 'zod';
  */
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(4000),
+  PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  HOST: z.string().default('127.0.0.1'),
+  TRUST_PROXY: z.string().default(''),
 
   DATABASE_URL: z.string().url(),
 
   JWT_UNLOCK_SECRET: z.string().min(32),
-  ACCESS_TOKEN_TTL: z.string().default('15m'),
-  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
 
-  JUDGE0_URL: z.string().url(),
-  JUDGE0_KEY: z.string().optional().default(''),
-  JUDGE0_HOST: z.string().optional().default(''),
+  // Only the bundled loopback/Compose judge is supported; no metered endpoint.
+  JUDGE0_URL: z.string().url().refine((value) => {
+    const url = new URL(value);
+    return url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]', 'judge'].includes(url.hostname)
+      && !url.username && !url.password && !url.search && !url.hash
+      && url.pathname === '/';
+  }, 'Use the bundled judge at http://127.0.0.1:2358 or http://judge:2358')
+    .default('http://127.0.0.1:2358'),
   JUDGE0_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
   // Language ids differ per Judge0 release; defaults match judge0:1.13.1 as
   // pinned in docker-compose.yml. See services/judge0.ts.
@@ -30,7 +35,6 @@ const schema = z.object({
   JUDGE0_LANG_CPP: z.coerce.number().int().positive().default(54),
   JUDGE0_LANG_GO: z.coerce.number().int().positive().default(60),
 
-  DIFFICULTY_MODE: z.enum(['rules', 'hybrid']).default('rules'),
 
   // --- performance gate ---
   /// Multiplier on the best known runtime. 1.35 = 'within 35% of the best'.
@@ -39,7 +43,6 @@ const schema = z.object({
   PERF_FLOOR_MS: z.coerce.number().int().min(0).max(5000).default(40),
   /// Timed runs for an otherwise-passing submission; the fastest one counts.
   PERF_BEST_OF: z.coerce.number().int().min(1).max(5).default(2),
-  OPENAI_API_KEY: z.string().optional().default(''),
 
   // --- admission control ---
   /// Concurrent grades across this process. Each one is a container holding a
@@ -51,8 +54,6 @@ const schema = z.object({
 
   // --- observability ---
   /// Error tracking. Everything stays local when unset; nothing is sent.
-  SENTRY_DSN: z.string().optional().default(''),
-  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
   /// Shown in Sentry and in the health endpoint, so a report can be tied to a
   /// deployment. CI passes the git sha.
   RELEASE_SHA: z.string().optional().default('dev'),
@@ -61,15 +62,12 @@ const schema = z.object({
   /// Encrypts third-party OAuth tokens at rest. Rotating it invalidates every
   /// stored token, forcing users to reconnect — it is not a routine rotation.
   ENCRYPTION_KEY: z.string().min(32),
-  GITHUB_API_URL: z.string().url().default('https://api.github.com'),
   /// Must exactly match the callback registered on the GitHub OAuth app.
-  GITHUB_CALLBACK_URL: z.string().optional().default(''),
   /// Where to bounce the browser once the OAuth dance finishes.
   APP_URL: z.string().url().default('http://localhost:3000'),
   /// This API's own public origin. Identity-provider redirect URIs are built
   /// from it, and they must match what is registered with the provider exactly
   /// — a mismatch is rejected by the provider rather than by us.
-  API_URL: z.string().url().default('http://localhost:4000'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -86,12 +84,7 @@ if (!parsed.success) {
 const raw = parsed.data;
 
 if (raw.NODE_ENV === 'production') {
-  const secrets = [raw.JWT_UNLOCK_SECRET];
-  if (new Set(secrets).size !== secrets.length) {
-    console.error('JWT secrets must be distinct in production.');
-    process.exit(1);
-  }
-  if (secrets.some((s) => s.startsWith('change-me'))) {
+  if (raw.JWT_UNLOCK_SECRET.startsWith('change-me')) {
     console.error('Refusing to boot with placeholder JWT secrets.');
     process.exit(1);
   }

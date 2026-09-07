@@ -19,15 +19,25 @@ type CaseView = GradeResult['cases'][number];
  * something a hand-rolled version forgets.
  */
 
-/** Blank output is invisible inside a `<pre>`, so name it rather than show nothing. */
+/**
+ * Blank output is invisible inside a `<pre>`, so name it rather than show
+ * nothing.
+ *
+ * The name has to fit the block, which is why it is a prop. An input that is
+ * the empty string is a real and often decisive test case — it is exactly the
+ * one that breaks `a[b]` — and labelling it "(nothing printed)" described the
+ * wrong side of the case entirely.
+ */
 function OutputBlock({
   label,
   value,
   tone = 'neutral',
+  emptyLabel = '(nothing printed)',
 }: {
   label: string;
   value: string | null | undefined;
   tone?: 'neutral' | 'good' | 'bad';
+  emptyLabel?: string;
 }) {
   const empty = value === null || value === undefined || value === '';
   return (
@@ -41,7 +51,7 @@ function OutputBlock({
           tone === 'neutral' && 'bg-surface-2 text-muted',
         )}
       >
-        {empty ? <span className="italic opacity-70">(nothing printed)</span> : value}
+        {empty ? <span className="italic opacity-70">{emptyLabel}</span> : value}
       </pre>
     </div>
   );
@@ -91,9 +101,14 @@ export function TestCaseRow({
   const panelId = `case-panel-${testCase.ordinal}`;
   const buttonId = `case-button-${testCase.ordinal}`;
   const hint =
-    testCase.isSample && testCase.expectedStdout !== undefined && !testCase.passed
+    testCase.expectedStdout !== undefined && !testCase.passed
       ? describeMismatch(testCase.expectedStdout, testCase.actualStdout ?? null)
       : null;
+
+  // The API sends `stdin` exactly when the case is reviewable — every sample,
+  // and any hidden case that failed. Reading presence rather than re-deriving
+  // the rule keeps one policy in one place.
+  const revealsInput = testCase.stdin !== undefined;
 
   return (
     <li className="border-b border-border last:border-b-0">
@@ -148,10 +163,29 @@ export function TestCaseRow({
             {testCase.passed ? 'Passed' : 'Failed'} · {testCase.status} · {testCase.timeMs} ms
           </p>
 
-          {testCase.isSample ? (
+          {/* Three tiers, matching what the API actually sent. A sample shows
+              everything; a failed hidden case shows its input and what your
+              code did with it, but not the answer; a passed hidden case has
+              nothing worth showing. Driven off field presence rather than a
+              second copy of the policy, so the panel cannot claim to be hiding
+              something the response already contains. */}
+          {revealsInput ? (
             <>
-              <OutputBlock label="Input" value={testCase.stdin} />
-              <OutputBlock label="Expected output" value={testCase.expectedStdout} tone="good" />
+              <OutputBlock label="Input" value={testCase.stdin} emptyLabel="(empty input)" />
+              {testCase.expectedStdout !== undefined ? (
+                <OutputBlock
+                  label="Expected output"
+                  value={testCase.expectedStdout}
+                  tone="good"
+                  emptyLabel="(expected: no output at all)"
+                />
+              ) : (
+                <p className="text-[12px] leading-relaxed text-muted">
+                  The expected output is held back until this session ends — five of them in one
+                  panel would make copying them out faster than solving. You get every case in full
+                  in the debrief.
+                </p>
+              )}
               <OutputBlock
                 label="Your output"
                 value={testCase.actualStdout}
@@ -161,16 +195,20 @@ export function TestCaseRow({
               {testCase.stderr && (
                 <OutputBlock label="Error output" value={testCase.stderr} tone="bad" />
               )}
+              {!testCase.isSample && (
+                <p className="text-[12px] leading-relaxed text-faint">
+                  A hidden case, shown because it failed. Working out what it should have printed is
+                  the part being tested.
+                </p>
+              )}
             </>
           ) : (
-            /* The privacy rule said plainly rather than by omission. An empty
-               panel reads as a bug; this reads as a decision. */
+            /* The rule said plainly rather than by omission. An empty panel
+               reads as a bug; this reads as a decision. */
             <p className="text-[12px] leading-relaxed text-muted">
-              This is a hidden test case. Its private input is not shown, because seeing it would
-              let you write code for that one answer instead of solving the problem.{' '}
-              {testCase.passed
-                ? 'Your solution handled it correctly.'
-                : 'Your result failed this category.'}
+              A hidden test case, and your solution handled it correctly. Its input stays private
+              while the lock is live — there is nothing to debug here, and the full set of cases is
+              revealed in the debrief once this session ends.
             </p>
           )}
         </div>

@@ -1,285 +1,266 @@
 # CodeLock
 
-Earn your screen time. When the timer ends, your device locks until you solve a
-programming problem — **correctly and fast enough**.
+CodeLock is a private, single-user commitment app. When a focus timer expires,
+it presents a programming problem and keeps the supported lock client in front
+until the submitted solution passes the tests and meets the configured runtime
+budget.
 
-## Packages
+The current product is designed for one person on one computer, with optional
+mobile access over a trusted private network. It has no account system and the
+API does not authenticate requests. Keep every service off the public internet.
 
-| Path | What |
-|---|---|
-| `apps/api` | Node 24, Express, Prisma, Postgres. Auth, adaptive problems, grading, the speed gate, GitHub/LeetCode sync |
-| `apps/web` | Next.js 16 / React 19 / Tailwind 4 PWA — dashboard, lock screen, connections |
-| `apps/desktop` | Electron shell: kiosk lock, key suppression, server-verified unlock |
-| `apps/judge` | Docker-backed execution sandbox, Judge0-compatible |
-| `apps/mobile` | Expo app: Android overlay, iOS soft lock |
-| `packages/shared` | The API contract, consumed as TypeScript source by every client |
-| `data/` | Problem corpus content and attribution. **Licensed separately — see below.** |
+## Current architecture
 
-## Code and data are licensed separately
-
-The code in this repository is free software. The problem corpus is not one
-thing: problems written for CodeLock are CC0, and some corpora worth importing
-carry non-commercial or share-alike terms. Those are fine for CodeLock, which is
-free and non-commercial, but they are **not free by OSI standards**.
-
-So they live under `data/`, never in `apps/` or `packages/`, with their own
-[`data/LICENSE`](data/LICENSE) and a generated [`data/NOTICE`](data/NOTICE)
-listing every source and its terms, per problem. If you are reusing code from
-this repository, `data/` is the directory to check before you assume.
-
-Two rules that follow, set out in full in
-[`docs/CORPUS-SOURCES.md`](docs/CORPUS-SOURCES.md): LeetCode statement text is
-never ingested from any source, and a source with no stated licence is excluded
-rather than assumed permissive.
-
-## The unlock rule
-
-Passing the tests is **not** enough. A submission unlocks the device only when
-both hold:
-
-1. Every test case passes, including a deliberately large hidden case.
-2. The runtime is within budget: `best_known_runtime × 1.35 + 40 ms`, measured
-   as the **fastest of 2 runs**.
-
-A correct O(n²) answer to a sliding-window problem passes step 1, fails step 2,
-and leaves you locked with the verdict *"roughly 9.4x slower than the best known
-solution — look for a better algorithm."*
-
-Three things make that rule survivable in practice:
-
-**Budgets are per language.** A JVM cold start is ~100 ms before any user code
-runs; the equivalent C++ program finishes in single digits. One global number
-would make the gate unreachable in Java and free in C++, so every problem stores
-a runtime per language.
-
-**Best-of-N, not a single sample.** The judge reports wall-clock time on shared
-hardware and varies by tens of milliseconds run to run. Timing a solution once
-would reject genuinely optimal code on an unlucky sample — and on a device lock
-that means being shut out of your own machine for no reason.
-
-**A noise floor, not just a percentage.** A 35% band around an 8 ms target is
-3 ms, which is smaller than the judge's own jitter. The `+40 ms` floor is what
-keeps fast problems winnable.
-
-Tune all three with `PERF_TOLERANCE`, `PERF_BEST_OF`, and `PERF_FLOOR_MS`. Set
-`PERF_TOLERANCE=99` to effectively disable the gate.
-
-> **Calibrate before you trust it.** The seeded reference runtimes are estimates.
-> Run `npm run calibrate -w @codelock/api -- --write` against your own judge, or
-> the gate will be measuring the wrong hardware. Calibration stores the *median*
-> of samples: grading takes the fastest of N, so a min-based reference would be
-> the luckiest run ever recorded and would reject correct optimal solutions.
-
-## The lock is server-authoritative
-
-Clients never decide they are unlocked. The API issues a JWT signed with
-`JWT_UNLOCK_SECRET`, bound to one `{userId, sessionId}`, only after the judge
-reports a pass *and* the speed gate clears. The Electron shell verifies that
-signature in the main process using a key the renderer cannot read, so a patched
-web app, an injected script, or DevTools calling `unlock('')` all stay locked.
-
-The problem is chosen at **fire** time, not arm time — otherwise a client could
-prefetch and pre-solve it before the lock ever appeared.
-
-## What each platform actually enforces
-
-| Platform | Enforcement | Honest limits |
+| Path | Responsibility | Current state |
 |---|---|---|
-| Desktop (Electron) | Kiosk window, always-on-top, all workspaces, close/minimise refused, escape shortcuts swallowed | Ctrl+Alt+Del, a forced power-off, or booting another OS all defeat it. No userland app can prevent that. |
-| Android | `SYSTEM_ALERT_WINDOW` overlay + foreground service | Force-stop, Safe Mode, and uninstall get past it. Only a Device Owner (enterprise enrollment, factory reset) can truly block. |
-| iOS | **None** | No public API lets one app block another. CodeLock owns its own screen and notifies; that is the ceiling. Pair with Screen Time. |
-| Browser | Route-level, `beforeunload` warning | A tab can always be closed. Advisory only. |
+| `apps/web` | Next.js dashboard, problem workspace, learning log, privacy, and terms | Runs locally in a browser and supplies the UI used by the desktop shell |
+| `apps/api` | Node 24, Express, Prisma, Postgres, timers, grading, progress, hints, and unlock proofs | Uses one automatically created local learner; no login or OAuth routes |
+| `apps/judge` | Judge0-compatible service that starts one temporary Docker container per submission | Bundled and local; no hosted judge or API key |
+| `apps/desktop` | Electron dashboard and lock shell | Windows behavior has been exercised; other desktop targets remain unverified |
+| `apps/mobile` | Expo client and native lock module | Android native source is unverified on a device; iOS hard locking is unsupported |
+| `packages/shared` | Shared API types | Imported by the clients and server |
 
-It is a strong commitment device, not a kernel-level parental control. Anything
-claiming otherwise on iOS is either using the case-by-case `FamilyControls`
-entitlement or misrepresenting itself.
+Postgres remains the source of truth for timers, lock sessions, submissions,
+progress, and learning history. Old account and integration columns remain in
+the migration history to preserve existing databases, but the current runtime
+does not expose account, password, OAuth, GitHub, or LeetCode features.
 
-## Integrations
+## No metered APIs
 
-**GitHub** — OAuth (`public_repo` only, never private code). Every solution that
-clears the gate is committed to a repo you nominate, so the work shows up on
-your contribution graph. Tokens are AES-256-GCM encrypted at rest under
-`ENCRYPTION_KEY`. Pushes happen *after* the unlock and never block it — a GitHub
-outage must not hold you hostage.
+The supported runtime uses the bundled judge at `http://127.0.0.1:2358` during
+direct local development or `http://judge:2358` inside Docker Compose. The API
+rejects remote judge URLs. Problem selection is local and deterministic; no
+OpenAI request is made. Sentry and the former hosted integrations are absent
+from the runtime.
 
-**LeetCode** — **read-only, by necessity.** LeetCode publishes no public write
-API, so solving a problem here cannot mark it solved there. What works is
-importing your public profile stats (solved counts, streak, calendar) for
-display next to your CodeLock progress. Username only, no password, nothing sent.
+This prevents CodeLock itself from creating new usage on those services. It
+does not cancel accounts or subscriptions created for an older setup. To avoid
+unexpected charges, sign in to every provider you previously used and:
 
-## Running it locally
+1. Revoke API keys and OAuth applications.
+2. Stop and delete deployed services, databases, storage, and monitoring.
+3. Cancel paid plans and remove saved payment methods where the provider allows it.
+4. Check the billing page for pending usage or a final invoice.
+5. Save the cancellation confirmation, then close the account if it is no longer needed.
 
-Needs Docker (for Postgres and the sandbox) and Node 24.
+Relevant account pages include [RapidAPI billing](https://rapidapi.com/developer/billing),
+[OpenAI API billing](https://platform.openai.com/settings/organization/billing/overview),
+[Sentry billing](https://sentry.io/settings/billing/),
+[Render billing](https://dashboard.render.com/billing),
+[Vercel billing](https://vercel.com/docs/accounts/plans-and-billing), and
+[Neon billing](https://neon.com/docs/introduction/billing). Provider interfaces
+and cancellation rules can change, so verify completion on the provider itself.
 
-```bash
-npm install
+## Local setup
+
+You need [Node.js 24](https://nodejs.org/en/download),
+[Docker Desktop](https://docs.docker.com/desktop/), and Git.
+
+Install the JavaScript dependencies:
+
+```powershell
+npm.cmd install
 ```
 
-**1. Database.**
+Copy the environment templates:
 
-```bash
-docker run -d --name codelock-pg -e POSTGRES_USER=codelock -e POSTGRES_PASSWORD=codelock -e POSTGRES_DB=codelock -p 5433:5432 postgres:16-alpine
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env.local
 ```
 
-**2. Config.** Copy `apps/api/.env.example` to `apps/api/.env` and fill in the
-four secrets (`openssl rand -base64 48` each). Point `DATABASE_URL` at
-`postgresql://codelock:codelock@localhost:5433/codelock?schema=public`. Then
-copy `apps/web/.env.example` to `apps/web/.env.local`.
+Generate one unlock-signing secret of at least 32 characters and put it in
+`apps/api/.env` as `JWT_UNLOCK_SECRET`. One PowerShell option is:
 
-**3. Schema and problems.**
-
-```bash
-npm run db:reset
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
 ```
 
-**4. Sandbox images**, once. Skipping this makes the first submission in each
-language look like a hang while the image downloads.
+Do not commit the filled environment file. The Compose stack supplies its own
+internal database and judge addresses, so the remaining template defaults are
+appropriate for local use.
 
-```bash
-npm run pull -w @codelock/judge
+Build and start the complete local stack:
+
+```powershell
+docker compose up --build
 ```
 
-**5. Three processes, three terminals.**
+The web app is available at [http://127.0.0.1:3000](http://127.0.0.1:3000).
+On the first start, Docker may need to download Postgres and language images.
+That network traffic is an image download, not a metered CodeLock API call.
 
-```bash
-npm run dev:judge
+Initialize or refresh the database schema and authored problem set from a
+second terminal:
+
+```powershell
+npm.cmd run db:reset
 ```
 
-```bash
-npm run dev:api
+Calibrate the runtime gate on the same judge and hardware that will grade
+submissions:
+
+```powershell
+npm.cmd run calibrate -- --write
 ```
 
-```bash
-npm run dev:web
+Calibration matters because runtime measurements include hardware and container
+noise. A budget measured on a faster machine can reject an appropriate solution
+on a slower one.
+
+Stop the stack without deleting its Postgres volume:
+
+```powershell
+docker compose down
 ```
 
-**6. Calibrate the speed gate for your hardware.** The seeded reference runtimes
-are estimates; without this the gate is measuring someone else's machine.
+## Running individual applications
 
-```bash
-npm run calibrate -- --write
+For active development, start the database and judge, then run these in separate
+terminals:
+
+```powershell
+npm.cmd run dev:judge
+npm.cmd run dev:api
+npm.cmd run dev:web
 ```
 
-Then open http://localhost:3000.
+Start the Electron shell after the web app and API are available:
 
-### Seeing the lock screen without waiting
-
-The shortest session the API accepts is five minutes, deliberately — anything
-shorter is not a focus block. To trigger a lock immediately, start a block on
-the dashboard, then:
-
-```bash
-npm run dev:expire
+```powershell
+npm.cmd run dev:desktop
 ```
 
-Reload the dashboard and it will hand you the lock screen. This writes straight
-to the database and is not reachable through the API, so it cannot be used to
-skip a real lock.
+To exercise the lock screen without waiting for a timer, arm a focus session,
+then run the development-only expiry helper:
 
-### Worth trying
-
-Submit a **correct but slow** answer first — a nested loop for Two Sum, or an
-O(n²) scan for the substring problem. Every test passes, the verdict reads
-*"Correct, but too slow"*, and the device stays locked. Then submit the hash-map
-or sliding-window version and watch it open. That contrast is the whole product.
-
-Desktop shell against the running web app:
-
-```bash
-npm run dev:desktop
+```powershell
+npm.cmd run dev:expire
 ```
 
-Or run Postgres, the API, and the sandbox together:
+That helper writes to the local database and is not exposed as an API route.
 
-```bash
-docker compose up
+## Mobile on a trusted private network
+
+The API and web service bind to loopback by default. That is the safe desktop
+default, but a phone cannot reach another computer&apos;s loopback interface. For a
+mobile development build, deliberately bind the web and API services to the
+computer&apos;s private LAN address, set the mobile API and web URLs to that address,
+allow only the private subnet through the host firewall, and return to loopback
+when finished. Do not use router port forwarding, a public tunnel, or a public
+cloud deployment: the API has no caller authentication.
+
+Expo Go cannot load the Android overlay module. Android requires a native
+development build:
+
+```powershell
+npm.cmd run prebuild -w @codelock/mobile
+npm.cmd run android -w @codelock/mobile
 ```
 
-This reads the secrets from `apps/api/.env`, so do step 2 first. Compose stops
-before starting anything if that file is missing.
+Android asks the user to allow notifications, display over other apps, and a
+battery-optimization exemption. The source includes a foreground overlay
+service and reboot recovery, but this repository&apos;s recorded state has not
+verified them on a real device. Force-stop, Safe Mode, uninstall, revoked
+permissions, and manufacturer battery controls can still defeat the overlay.
 
-## Tests
+The iOS module intentionally reports hard locking as unsupported. Apple&apos;s
+[Family Controls framework](https://developer.apple.com/documentation/familycontrols)
+uses restricted entitlements and is not implemented here. The browser route is
+also advisory because its tab can be closed.
 
-```bash
-npm test -w @codelock/api
+## Unlock and grading rules
+
+The server chooses a problem when a timer fires. A submission unlocks the held
+session only when every test passes and its measured runtime falls within:
+
+```text
+best known runtime × PERF_TOLERANCE + PERF_FLOOR_MS
 ```
 
-38 tests, no services required:
+The defaults use a tolerance of `1.35`, a `40 ms` noise floor, and the fastest
+of two timed runs. Reference runtimes are stored per language because startup
+and compilation costs differ. Raise the settings deliberately if the gate is
+too strict; recalibrate after changing the judge, language images, or hardware.
 
-| Suite | What it proves |
-|---|---|
-| `services/difficulty.test.ts` | The promote/demote ladder — a pure function, no I/O |
-| `services/performance.test.ts` | Gate arithmetic: tolerance band, noise floor, per-language targets, and records ratcheting the bar down |
-| `db/schema.test.ts` | The migration applied to a real Postgres (PGlite, Postgres compiled to WASM): constraints, cascades, defaults, and the hand-written SQL in `stats.ts` |
+The API signs an unlock proof with `JWT_UNLOCK_SECRET` and binds it to the held
+session. The Electron main process validates that proof before releasing its
+window. This protects the normal application path, but it cannot withstand an
+administrator who changes the program or database.
 
-The schema suite earns its place because several guarantees live only in the
-database and nowhere in TypeScript: the compound unique that `upsert` depends
-on, and the cascade that stops a deleted user leaving an encrypted GitHub token
-behind.
+## Security boundaries
 
-## Documentation
+CodeLock is a commitment device, not a hardened security product.
 
-| Doc | What it covers |
-|---|---|
-| [docs/LAUNCH.md](docs/LAUNCH.md) | **Start here.** Everything still standing between this repo and a working install, in order. |
-| [docs/DESIGN.md](docs/DESIGN.md) | Design system and the structure of every screen |
-| [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) | Running the whole stack for nothing: which free tiers work, and why the judge rules most of them out |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | One-command VPS deploy, backups, and the Docker-socket trade-off |
-| [docs/TRUSTED-INSTALL.md](docs/TRUSTED-INSTALL.md) | Code signing per platform, and the warnings users see without it |
-| [docs/SIGNING-KEYS.md](docs/SIGNING-KEYS.md) | Key inventory: where each lives, when it expires, what breaks if lost |
-| [docs/ESCAPE-MATRIX.md](docs/ESCAPE-MATRIX.md) | Every way we tried to defeat the lock, per platform, and what worked |
-| [HANDOFF.md](HANDOFF.md) | **Current state**: what is live, how to use it today, and what is left of the corpus |
-| [docs/AUTHORING.md](docs/AUTHORING.md) | The contract for adding problems to the corpus |
-| [docs/CORPUS-SOURCES.md](docs/CORPUS-SOURCES.md) | Which problem sources may be redistributed and which may not, with the licence read from each canonical URL |
-| [docs/HANDOFF-CORPUS.md](docs/HANDOFF-CORPUS.md) | State of the problem corpus: the signature registry, the ranker, and what is still owed |
+- The API has rate limits, request-size limits, CORS checks, and loopback binding,
+  but it has no authentication. CORS is a browser control and does not stop a
+  direct HTTP client.
+- Submitted code runs in temporary containers with networking disabled, a
+  read-only filesystem, dropped Linux capabilities, a non-root user, and CPU,
+  memory, process, and temporary-storage limits.
+- The judge reaches the Docker daemon to create those containers. Docker socket
+  access is effectively host-administrator access if the judge process is
+  compromised. Keep it private and run only code you are prepared to execute on
+  your machine.
+- Windows user-space locking cannot intercept Ctrl+Alt+Del or survive power-off,
+  another operating system, administrator intervention, or removal of the app.
+- Windows signing and automatic updating have not been verified end to end.
+  macOS and Linux packaging and lock behavior have not been verified on those
+  platforms.
 
-## Deploying
+Docker documents its daemon security model in
+[Docker daemon attack surface](https://docs.docker.com/engine/security/#docker-daemon-attack-surface),
+and OWASP explains why CORS is not authentication in its
+[REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
 
-| Target | Config |
-|---|---|
-| API | `apps/api/Dockerfile` — see [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) |
-| Web | `apps/web/vercel.json` (Vercel, with CSP) |
-| Desktop | `.github/workflows/release-desktop.yml` — signed installers for Windows/macOS/Linux on tag push |
-| Mobile | `apps/mobile/eas.json` — `eas build --platform android|ios` |
+No review can promise that software is free of every vulnerability or legal
+risk. The repository should be reassessed before public, commercial, shared, or
+safety-critical use.
 
-The sandbox needs a Docker daemon, so it cannot run on Render or Vercel. Give it
-a small VM of its own and point the API at it over a private network.
+## Data, privacy, and removal
 
-### The execution sandbox
+The database stores the local profile and preferences, focus and lock sessions,
+submitted source code, verdicts, runtimes, progress, hints, debriefs, and the
+learning log. Requests are logged locally with sensitive request bodies and
+authorization headers redacted. There is no account-deletion screen because
+there is no account.
 
-CodeLock ships its own sandbox (`apps/judge`) and uses it by default. Each
-submission runs in a throwaway container with no network, a read-only
-filesystem, dropped capabilities, a memory cap, and uid 65534 — verified
-behaviours, not aspirations.
+To erase application data, remove the CodeLock Postgres database or Docker
+volume, any separately copied backups, and CodeLock client storage on each
+device. Inspect the exact volume first: deletion is irreversible. See the
+in-app `/privacy` and `/terms` pages for the current user-facing notices.
 
-It exists because **Judge0 cannot run on Docker Desktop**: Judge0 1.13.x
-sandboxes with `isolate`, which requires cgroup v1, while Docker Desktop (WSL2,
-macOS) provides only v2. The workers start and then every submission fails with
-`Failed to create control group`. Setting `systemd.unified_cgroup_hierarchy=0`
-does not help — the flag reaches the kernel but no systemd acts on it — and
-1.13.1 (Apr 2024) is the newest image.
+## Licensing and corpus provenance
 
-Judge0 remains supported: run it on a cgroup-v1 Linux host, point `JUDGE0_URL`
-at it, and set `JUDGE0_LANG_*` to that instance's ids.
+This repository does not currently contain a general software licence. Access
+to the source does not by itself grant permission to copy, modify, or
+redistribute it. Add a deliberate root licence before describing the code as
+open source or accepting outside reuse.
 
-> **Read `apps/judge/README.md` before exposing it to untrusted input.** Access
-> to the Docker socket is root-equivalent on the host.
+Problem content has separate terms in [`data/LICENSE`](data/LICENSE), with the
+generated attribution record in [`data/NOTICE`](data/NOTICE). Those legal files
+must remain with the corpus. The authored problem definitions currently live
+under `apps/api/src/corpus/problems`; the `data/` directory holds the corpus
+licence and notice rather than all corpus text.
 
-### Language ids drift between Judge0 versions
+The current notice records 728 CodeLock-authored problems under CC0. Keep that
+claim only while provenance review supports it. Never copy LeetCode problem
+statements, and exclude material whose licence cannot be confirmed from its
+primary source. Creative Commons explains CC0 at
+[creativecommons.org/public-domain/cc0](https://creativecommons.org/public-domain/cc0/).
 
-The same number means different runtimes in different releases, and a wrong id
-returns a bare `422`. The API logs every mapping at boot and errors loudly on a
-mismatch, so check the startup output before assuming the judge is healthy:
+## Packaging status
 
-```
-INFO  judge0 language mapped   language=JAVASCRIPT id=63 judge0="JavaScript (Node.js 12.14.0)"
-ERROR judge0 language id not offered by this judge   language=JAVA id=62
-```
+Electron build configuration exists for Windows, macOS, and Linux. A local
+unsigned Windows package has been built, but Windows Smart App Control and
+SmartScreen may block an unsigned installer. Local certificate creation,
+trusted installation, production signing, and automatic update from one
+released version to another have not been completed as an end-to-end check.
+macOS and Linux artifacts have not been verified on matching hardware.
 
-## Node version
-
-Node 24 across the monorepo (`engines`, Dockerfile, CI). The one exception is
-the *sandbox*: Judge0 CE runs whatever runtimes its image ships (Node 18 for
-JavaScript). That is the execution environment for submitted code, not ours —
-adjust `JUDGE0_LANGUAGE_IDS` in `apps/api/src/services/judge0.ts` if your Judge0
-offers newer ones.
+Android release signing needs a stable keystore; losing it can prevent an
+installed direct-distribution build from accepting later updates. iOS device
+distribution normally requires Apple&apos;s developer services. Consult the current
+[Android app-signing guidance](https://developer.android.com/studio/publish/app-signing)
+and [Apple code-signing overview](https://developer.apple.com/support/code-signing/)
+before producing release builds.

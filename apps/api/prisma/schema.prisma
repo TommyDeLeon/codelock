@@ -184,16 +184,17 @@ model TimerConfig {
   /// timezone. Outside it, arming is refused. from > to wraps past midnight.
   activeFromMinute   Int      @default(0)
   activeToMinute     Int      @default(1440)
-  /// Start the next countdown as soon as a lock is solved.
+  /// Start the next countdown as soon as a lock ends: the recurring timer.
   ///
   /// The point of the product is that the decision to be interrupted is made
   /// once, in advance, rather than each time — and the moment right after
-  /// earning your screen back is the least honest moment to ask. Only a SOLVED
-  /// release re-arms: the kill switch and an abandoned session deliberately do
-  /// not, or holding Escape would buy ten seconds before the next countdown and
-  /// the documented escape hatch would become a trap. The active-hours window
+  /// earning your screen back is the least honest moment to ask. A SOLVED
+  /// release and a spent skip both re-arm; the kill switch and an abandoned
+  /// session deliberately do not, or holding Escape would buy ten seconds
+  /// before the next countdown and the documented escape hatch would become a
+  /// trap. The active-hours window
   /// still applies, so this stops on its own at the end of the day.
-  autoRearm          Boolean  @default(false)
+  autoRearm          Boolean  @default(true)
   /// How many "skip this one" escapes per day. 0 disables the escape hatch.
   dailySkipAllowance Int      @default(1)
   updatedAt          DateTime @updatedAt
@@ -283,6 +284,22 @@ model Problem {
   /// starter stubs. See src/corpus/signatures.ts. Empty means "not yet wired",
   /// and the importer refuses to activate such a row.
   signatureId   String        @default("")
+
+  /// Three nudges, revealed one at a time while the lock is still up.
+  ///
+  /// Unlike the editorial, these are available *during* the session — that is
+  /// the whole point. A learner stuck at minute forty with no way forward
+  /// either abandons the lock or stares at it, and neither teaches anything. A
+  /// hint that names the idea without writing the code keeps them working.
+  ///
+  /// Ordered from vaguest to most concrete: the first names the shape of the
+  /// problem, the second the technique, the third the concrete invariant or
+  /// the complexity to aim for. None of them contains a solution.
+  ///
+  /// Empty for most of the corpus, and that is expected: `hintsFor()` derives
+  /// three from the pattern family and constraints when this is empty, so
+  /// every problem has hints from day one and authored ones simply override.
+  hints String[] @default([])
 
   // --- editorial -----------------------------------------------------------
   // Revealed only after the session resolves, SOLVED or BYPASSED. A user who
@@ -527,6 +544,9 @@ enum LearningEventKind {
   ATTEMPT_FAILED
   ATTEMPT_PASSED
   DEBRIEF_OPENED
+  /// A hint was asked for mid-lock. Free, but written down: which problems
+  /// needed help is the most useful thing this log can tell you later.
+  HINT_REVEALED
   LOCK_BYPASSED
   DIFFICULTY_CHANGED
 }

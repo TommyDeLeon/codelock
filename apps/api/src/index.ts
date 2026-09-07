@@ -4,15 +4,8 @@ import { logger } from './lib/logger.js';
 import { prisma } from './lib/prisma.js';
 import { engageDueSessions, reapStaleSessions } from './services/lockSessions.js';
 import { verifyLanguageIds } from './services/judge0.js';
-import { captureError, initErrorTracking } from './lib/observability.js';
-
-// Started before the server binds. The dynamic import inside resolves on the
-// next microtask, long before any request arrives.
-// A no-op unless SENTRY_DSN is set — a self-hosted install sends nothing.
-void initErrorTracking();
-
 const app = createApp();
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, env.HOST, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'CodeLock API listening');
   // Surfaces a judge/language mismatch at boot rather than as an opaque 422 on
   // someone's first locked submission.
@@ -65,7 +58,6 @@ process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('unhandledRejection', (err) => {
   logger.error({ err }, 'unhandled rejection');
-  captureError(err, { kind: 'unhandledRejection' });
 });
 
 // An uncaught exception leaves the process in an unknown state. Report it, give
@@ -73,6 +65,5 @@ process.on('unhandledRejection', (err) => {
 // corrupted state is worse than one that restarts.
 process.on('uncaughtException', (err) => {
   logger.fatal({ err }, 'uncaught exception');
-  captureError(err, { kind: 'uncaughtException' });
   setTimeout(() => process.exit(1), 1000).unref();
 });

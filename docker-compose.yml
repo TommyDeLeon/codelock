@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: codelock
       POSTGRES_PASSWORD: codelock
       POSTGRES_DB: codelock
-    ports: ['5433:5432']
+    ports: ['127.0.0.1:5433:5432']
     volumes: ['pgdata:/var/lib/postgresql/data']
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U codelock']
@@ -42,12 +42,13 @@ services:
       - apps/api/.env
     environment:
       NODE_ENV: production
+      HOST: 0.0.0.0
       PORT: 4000
       DATABASE_URL: postgresql://codelock:codelock@postgres:5432/codelock?schema=public
       APP_URL: http://localhost:3000
       CORS_ORIGINS: http://localhost:3000
       JUDGE0_URL: http://judge:2358
-    ports: ['4000:4000']
+    ports: ['127.0.0.1:4000:4000']
     depends_on:
       postgres: { condition: service_healthy }
       judge: { condition: service_started }
@@ -65,6 +66,7 @@ services:
       context: .
       dockerfile: apps/judge/Dockerfile
     environment:
+      HOST: 0.0.0.0
       PORT: 2358
       JUDGE_CONCURRENCY: 8
     volumes:
@@ -72,7 +74,6 @@ services:
       # Sources are written to the host temp dir and bind-mounted into each
       # sandbox, so the path must mean the same thing to judge and daemon.
       - /tmp:/tmp
-    ports: ["2358:2358"]
 
   # The desktop shell loads the lock screen from this origin, so a self-hosted
   # install needs it up alongside the API — without it the app opens on a dead
@@ -92,7 +93,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-    ports: ['3000:3000']
+    ports: ['127.0.0.1:3000:3000']
     depends_on:
       api:
         condition: service_started

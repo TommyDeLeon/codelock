@@ -116,9 +116,10 @@ export interface TimerConfig {
   activeToMinute: number;
   dailySkipAllowance: number;
   /**
-   * Start the next countdown as soon as a lock is solved. Only a solved
-   * release re-arms — never the kill switch, or the escape hatch would buy ten
-   * seconds before the next timer. The active-hours window still applies.
+   * The recurring timer: start the next countdown as soon as a lock ends. A
+   * solve and a spent skip both re-arm — never the kill switch, or the escape
+   * hatch would buy ten seconds before the next timer. The active-hours window
+   * still applies, so it stops on its own at the end of the day.
    */
   autoRearm: boolean;
 }
@@ -148,11 +149,21 @@ export interface GradeResult {
     /**
      * What the case actually ran, so it can be reviewed afterwards.
      *
-     * Present on sample cases only, and absent rather than blanked on hidden
-     * ones. A hidden case's expected output *is* the answer, so returning it
-     * would turn the verdict panel into a cheat sheet — the same rule the
-     * learning log already applies to failed samples. For a sample these leak
-     * nothing: the problem statement has already shown both sides.
+     * Three tiers, and the difference between them is the whole policy:
+     *
+     * - A **sample** carries everything. The statement already showed both
+     *   sides, so there is nothing left to protect.
+     * - A **failed hidden case** carries `stdin`, `actualStdout` and `stderr`,
+     *   but never `expectedStdout`. "Case 4 failed" on its own is not a bug
+     *   report, it is a shrug; the input is what makes a failure something you
+     *   can reason about, and working out the right answer is still yours.
+     * - A **passed hidden case** carries nothing. Nothing to debug, so handing
+     *   over its input would be leak without teaching.
+     *
+     * Fields are absent rather than nulled when withheld: a value sent for the
+     * client to hide is a value in the response body for anyone with the
+     * network tab open. Expected outputs for hidden cases appear only in the
+     * debrief, once the session has resolved.
      */
     stdin?: string;
     expectedStdout?: string;
@@ -485,4 +496,60 @@ export interface DemoGradeResult {
   performance: PerformanceVerdict | null;
   /** Correct and inside the speed budget. In the demo this unlocks nothing. */
   accepted: boolean;
+}
+
+/**
+ * The result of *running* code, as opposed to submitting it.
+ *
+ * Deliberately not a `GradeResult`. Running exists so that trying something out
+ * costs nothing: no submission row, no attempt against the session, no movement
+ * on the difficulty ladder, and — the reason it is a separate type rather than
+ * a flag — no `unlockToken` field for a run to accidentally carry. There is
+ * nothing here that can end a lock, and the compiler is what guarantees that.
+ *
+ * A run sees only what the learner is already allowed to see: the sample cases
+ * from the statement, or input they typed themselves. Hidden cases never run
+ * here, because a run reports actual output verbatim, and reporting actual
+ * output on a hidden input turns Run into a way to farm the answer one case at
+ * a time.
+ */
+export interface RunResult {
+  readonly ran: true;
+  /** One entry per case executed, in the order they were sent. */
+  cases: RunCase[];
+  /**
+   * A compiler diagnostic, when the source did not build.
+   *
+   * Hoisted out of the cases because a compile error is a property of the
+   * program, not of any one input — every case fails identically and showing
+   * the same wall of text five times buries the one line that matters.
+   */
+  compileError: string | null;
+}
+
+export interface RunCase {
+  /**
+   * Which sample this was, or null for input the learner typed.
+   *
+   * The ordinal matches the numbering in the test-results panel, so "Case 2"
+   * means the same thing in both places.
+   */
+  ordinal: number | null;
+  /** The input the program received. Always known: it is public either way. */
+  stdin: string;
+  /** What the program printed. Null when it printed nothing at all. */
+  stdout: string | null;
+  /** A traceback, when it crashed. */
+  stderr: string | null;
+  /** The judge's own words: 'Accepted', 'Runtime Error (NZEC)', and so on. */
+  status: string;
+  timeMs: number;
+  /**
+   * The expected output, for a sample only — and `null` for typed input,
+   * where there is nothing to be right about. A run against your own input is
+   * not a verdict, and pretending otherwise would teach the wrong lesson.
+   */
+  expectedStdout: string | null;
+  /** Whether output matched, for a sample. Null when there is nothing to match. */
+  matched: boolean | null;
 }
