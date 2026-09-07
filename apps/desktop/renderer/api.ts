@@ -1,4 +1,9 @@
-import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
+import type {
+  LockSessionView,
+  SessionReviewView,
+  StatsSummary,
+  TimerConfig,
+} from '@codelock/shared';
 
 /**
  * The renderer's API client.
@@ -98,6 +103,14 @@ export const api = {
     const qs = q.toString();
     return request<{ events: LearningEventView[] }>(`/v1/log${qs ? `?${qs}` : ''}`);
   },
+
+  /**
+   * One session, read back. The server decides what a live session may show —
+   * the shell does not re-derive that rule, it renders whatever came back and
+   * prints `withheld` where something is missing.
+   */
+  sessionReview: (id: string) =>
+    request<{ review: SessionReviewView }>(`/v1/log/session/${id}`),
 
   logSummary: (sinceDays?: number) =>
     request<{ sinceDays: number | null; summary: LogSummary }>(

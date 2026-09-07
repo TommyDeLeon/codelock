@@ -2,7 +2,15 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
-import { renderReviewPacket, reviewPacket, summary, timeline } from '../services/learningLog.js';
+import {
+  renderReviewPacket,
+  renderSessionReview,
+  reviewPacket,
+  sessionReview,
+  sessionsIndex,
+  summary,
+  timeline,
+} from '../services/learningLog.js';
 
 /**
  * The learner's own history, read back.
@@ -22,6 +30,7 @@ const KINDS = [
   'DEBRIEF_OPENED',
   'LOCK_BYPASSED',
   'DIFFICULTY_CHANGED',
+  'HINT_REVEALED',
 ] as const;
 
 const timelineQuery = z.object({
@@ -84,5 +93,47 @@ logRouter.get(
       return;
     }
     res.json({ review: packet });
+  }),
+);
+
+const sessionsQuery = z.object({ limit: z.coerce.number().int().min(1).max(200).optional() });
+
+/** GET /log/sessions — recent lock sessions, newest first, for picking one. */
+logRouter.get(
+  '/sessions',
+  asyncHandler(async (req, res) => {
+    const { limit } = sessionsQuery.parse(req.query);
+    const user = currentUser(req);
+    res.json({ sessions: await sessionsIndex(user.id, limit) });
+  }),
+);
+
+const idParam = z.object({ id: z.string().uuid() });
+
+/**
+ * GET /log/session/:id — one evening, step by step.
+ *
+ * A session that has not ended yet returns its shape but not its answers: the
+ * editorial is withheld and `withheld` says so. That rule lives in the service
+ * rather than here, so it cannot be skipped by a second caller.
+ *
+ * `?format=markdown` returns the same thing as prose, ready to read back or
+ * paste into a model.
+ */
+logRouter.get(
+  '/session/:id',
+  asyncHandler(async (req, res) => {
+    const { id } = idParam.parse(req.params);
+    const user = currentUser(req);
+    const review = await sessionReview(user.id, id);
+    if (!review) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No such session' } });
+      return;
+    }
+    if (req.query.format === 'markdown') {
+      res.type('text/markdown').send(renderSessionReview(review));
+      return;
+    }
+    res.json({ review });
   }),
 );

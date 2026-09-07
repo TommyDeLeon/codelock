@@ -69,7 +69,7 @@ export async function armSession(params: {
       fireAt: new Date(Date.now() + minutes * 60_000),
     },
   });
-  void recordStep(userId, { kind: 'TIMER_ARMED', detail: { minutes } });
+  void recordStep(userId, { kind: 'TIMER_ARMED', sessionId: session.id, detail: { minutes } });
   return toView(session, null);
 }
 
@@ -229,6 +229,7 @@ export async function bypassLock(params: {
   // the log a highlight reel, which is the one thing it must not be.
   void recordStep(params.userId, {
     kind: 'LOCK_BYPASSED',
+    sessionId: session.id,
     detail: { skipsRemaining: allowance - usedToday - 1 },
   });
 
@@ -324,8 +325,8 @@ async function claimDueSession(
   // Two steps, not one: the lock landing and the problem it landed on are
   // different facts, and reading the history later you want to see a lock that
   // engaged even on a night that never produced an attempt.
-  void recordStep(userId, { kind: 'LOCK_ENGAGED', detail: { difficulty } });
-  void recordStep(userId, { kind: 'PROBLEM_SERVED', problem });
+  void recordStep(userId, { kind: 'LOCK_ENGAGED', sessionId, detail: { difficulty } });
+  void recordStep(userId, { kind: 'PROBLEM_SERVED', sessionId, problem });
 
   return { session, problem };
 }
@@ -502,7 +503,7 @@ export async function getDebrief(userId: string, sessionId: string): Promise<Deb
   // Opening the debrief is the moment the pattern gets named, so it belongs in
   // the history: a solve you never read back is a different event from one you
   // did, and later the difference is the only way to tell luck from learning.
-  void recordStep(userId, { kind: 'DEBRIEF_OPENED', problem });
+  void recordStep(userId, { kind: 'DEBRIEF_OPENED', sessionId: session.id, problem });
 
   // Read separately rather than through `loadProblem`'s include: the test cases
   // are wanted here and nowhere else, and widening that shared loader would put

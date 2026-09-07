@@ -553,3 +553,72 @@ export interface RunCase {
   /** Whether output matched, for a sample. Null when there is nothing to match. */
   matched: boolean | null;
 }
+
+
+/**
+ * One lock session read back afterwards: what happened, in order.
+ *
+ * The privacy rule lives on the server (`sessionReview` in the API's
+ * learningLog service) and is visible in this shape: `editorial` is null and
+ * `withheld` is non-empty while the session is unresolved, because a review is
+ * readable from outside the lock screen and the editorial names the pattern.
+ * Hints appear as an index, never as text.
+ */
+export interface SessionReviewView {
+  session: {
+    id: string;
+    state: LockState;
+    difficulty: Difficulty;
+    armedAt: string;
+    lockedAt: string | null;
+    resolvedAt: string | null;
+    attempts: number;
+    escapeReason: string | null;
+  };
+  /** The session has ended. Solution-bearing fields are populated only then. */
+  resolved: boolean;
+  problem: {
+    slug: string;
+    title: string;
+    difficulty: Difficulty;
+    tier: string | null;
+    patternFamily: string | null;
+    patternTags: string[];
+  } | null;
+  editorial: string | null;
+  steps: SessionReviewStep[];
+  /** No attributable steps: the session predates session-scoped logging. */
+  partial: boolean;
+  /** Plain-language notes about what was left out, and why. */
+  withheld: string[];
+}
+
+export interface SessionReviewStep {
+  at: string;
+  kind: string;
+  attempt: number | null;
+  language: Language | null;
+  elapsedSeconds: number | null;
+  /** The learner's own submission. Never withheld — it is theirs. */
+  sourceCode: string | null;
+  minutes?: number | null;
+  engagedDifficulty?: string | null;
+  verdict?: string | null;
+  passedCount?: number | null;
+  totalCount?: number | null;
+  hiddenFailures?: number | null;
+  failedSamples?: Array<{
+    ordinal: number | null;
+    stdin: string | null;
+    expected: string | null;
+    actual: string | null;
+    status: string | null;
+  }>;
+  runtimeMs?: number | null;
+  gateMs?: number | null;
+  /** Which hint was spent. The text is never sent. */
+  hintIndex?: number | null;
+  skipsRemaining?: number | null;
+  transition?: string | null;
+  reason?: string | null;
+}

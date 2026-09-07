@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
+import { SessionReviewPanel } from './session-review';
 import { bridge } from '../bridge';
 import { PersonalBests, RankReadout, StreakPips, TierLadder } from '../game';
 
@@ -27,6 +28,8 @@ export function DashboardScreen() {
   const [busy, setBusy] = useState(false);
   // Reset is two-step. It ends the block outright and sits next to Pause.
   const [confirmReset, setConfirmReset] = useState(false);
+  // Which past session is open for review, if any. Null is the dashboard.
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   // Distinguishes "the server says there is no session" from "we could not ask".
   const asked = useRef(false);
@@ -375,17 +378,33 @@ export function DashboardScreen() {
             ) : (
               <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>
                 {stats.locks.recent.map((lock) => (
-                  <li
-                    key={lock.id}
-                    className="rule"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      padding: '9px 0',
-                      fontSize: 13,
-                    }}
-                  >
+                  <li key={lock.id} className="rule">
+                    {/* A real button, so the row is reachable by Tab and
+                        announced as something that can be opened — the whole
+                        point is that "abandoned" stops being the end of the
+                        story. */}
+                    <button
+                      type="button"
+                      onClick={() => setReviewing(lock.id)}
+                      className="log-row"
+                      aria-label={`Review the session on ${
+                        lock.resolvedAt ? new Date(lock.resolvedAt).toLocaleDateString() : 'an unknown date'
+                      }`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 16,
+                        padding: '9px 0',
+                        fontSize: 13,
+                        width: '100%',
+                        background: 'none',
+                        border: 0,
+                        color: 'inherit',
+                        font: 'inherit',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
                     <span className="mono" style={{ color: 'var(--faint)', width: 88 }}>
                       {lock.resolvedAt ? new Date(lock.resolvedAt).toLocaleDateString() : '—'}
                     </span>
@@ -416,7 +435,8 @@ export function DashboardScreen() {
                       }}
                     >
                       {OUTCOME[lock.state] ?? lock.state.toLowerCase()}
-                    </span>
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -424,6 +444,10 @@ export function DashboardScreen() {
           </section>
         )}
       </div>
+
+      {reviewing && (
+        <SessionReviewPanel sessionId={reviewing} onClose={() => setReviewing(null)} />
+      )}
 
       {/* --- the game layer ---------------------------------------------- */}
       <aside style={{ display: 'grid', gap: 24, alignContent: 'start' }}>

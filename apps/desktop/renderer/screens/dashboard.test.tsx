@@ -27,6 +27,7 @@ const { apiMock, lock, schedule, FakeApiError } = vi.hoisted(() => ({
     pause: vi.fn(),
     resume: vi.fn(),
     cancel: vi.fn(),
+    sessionReview: vi.fn(),
   },
   lock: vi.fn(),
   schedule: vi.fn(),
@@ -347,5 +348,141 @@ describe('holding and stopping the timer', () => {
     await waitFor(() => expect(apiMock.activeLock).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+  });
+});
+
+/**
+ * Reading a past session back.
+ *
+ * The run log could say "abandoned" and stop there, which tells you the night
+ * went badly and nothing about why. These cover the row being openable at all,
+ * and the one thing the panel must get right: it prints what the server sent,
+ * including the note explaining what the server refused to send.
+ */
+describe('opening a session from the run log', () => {
+  const EDITORIAL = 'Use a sliding window.';
+
+  function reviewReturns(overrides: Record<string, unknown> = {}) {
+    apiMock.sessionReview.mockResolvedValue({
+      review: {
+        session: {
+          id: 'past-1',
+          state: 'ABANDONED',
+          difficulty: 'EASY',
+          armedAt: '2026-09-07T20:00:00.000Z',
+          lockedAt: '2026-09-07T20:30:00.000Z',
+          resolvedAt: '2026-09-07T20:52:00.000Z',
+          attempts: 3,
+          escapeReason: null,
+        },
+        resolved: true,
+        problem: {
+          slug: 'p',
+          title: 'Longest Unique Substring',
+          difficulty: 'EASY',
+          tier: null,
+          patternFamily: null,
+          patternTags: [],
+        },
+        editorial: EDITORIAL,
+        steps: [
+          {
+            at: '2026-09-07T20:31:00.000Z',
+            kind: 'ATTEMPT_FAILED',
+            attempt: 1,
+            language: 'PYTHON',
+            elapsedSeconds: 60,
+            sourceCode: 'print(0)',
+            verdict: 'WRONG_ANSWER',
+            passedCount: 2,
+            totalCount: 5,
+            hiddenFailures: 2,
+            failedSamples: [{ ordinal: 0, stdin: 'abc', expected: '3', actual: '1' }],
+          },
+        ],
+        partial: false,
+        withheld: [],
+        ...overrides,
+      },
+    });
+  }
+
+  /** A run log with one past session in it. */
+  function withHistory() {
+    apiMock.stats.mockResolvedValue({
+      ...STATS,
+      locks: {
+        ...STATS.locks,
+        recent: [
+          {
+            id: 'past-1',
+            state: 'ABANDONED',
+            difficulty: 'EASY',
+            lockedAt: '2026-09-07T20:30:00.000Z',
+            resolvedAt: '2026-09-07T20:52:00.000Z',
+            attempts: 3,
+            problem: { slug: 'p', title: 'Longest Unique Substring' },
+          },
+        ],
+      },
+    });
+    apiMock.timer.mockResolvedValue({ timerConfig: TIMER });
+    apiMock.activeLock.mockResolvedValue({ session: null });
+  }
+
+  it('opens the session behind a run-log row', async () => {
+    withHistory();
+    reviewReturns();
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Review the session/ }));
+
+    await waitFor(() => expect(apiMock.sessionReview).toHaveBeenCalledWith('past-1'));
+    expect(await screen.findByRole('dialog', { name: 'Session review' })).toBeTruthy();
+    expect(screen.getByText(/WRONG_ANSWER/)).toBeTruthy();
+  });
+
+  it('shows the failing sample and the code that produced it', async () => {
+    withHistory();
+    reviewReturns();
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Review the session/ }));
+
+    expect(await screen.findByText(/expected: 3/)).toBeTruthy();
+    expect(screen.getByText('print(0)')).toBeTruthy();
+    // A count, never the hidden cases themselves.
+    expect(screen.getByText(/Plus 2 hidden cases failing/)).toBeTruthy();
+  });
+
+  /**
+   * The privacy rule, from the client's side. The server decides; the panel's
+   * job is to print the explanation rather than leave a gap that reads as a
+   * missing feature.
+   */
+  it('prints the withholding note instead of the editorial for a live session', async () => {
+    withHistory();
+    reviewReturns({
+      resolved: false,
+      editorial: null,
+      withheld: ['The editorial is hidden until this session ends.'],
+    });
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Review the session/ }));
+
+    expect(await screen.findByText(/editorial is hidden until this session ends/i)).toBeTruthy();
+    expect(screen.queryByText(EDITORIAL)).toBeNull();
+  });
+
+  it('closes again and puts the dashboard back', async () => {
+    withHistory();
+    reviewReturns();
+    render(<DashboardScreen />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Review the session/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Close' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });

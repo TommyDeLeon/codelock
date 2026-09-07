@@ -234,6 +234,7 @@ lockRouter.post(
     void recordStep(user.id, {
       kind: 'HINT_REVEALED',
       problem,
+      sessionId: session.id,
       detail: { index, attempts: session.attempts },
     });
 

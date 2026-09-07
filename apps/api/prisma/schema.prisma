@@ -596,7 +596,16 @@ model LearningEvent {
   /// actual output, the minutes armed, the difficulty move.
   detail Json?
 
+  /// Which lock session this step belonged to, for reading one evening back.
+  ///
+  /// Nullable on purpose: TIMER_ARMED happens before a session exists and
+  /// DIFFICULTY_CHANGED belongs to no single lock. Not a foreign key, for the
+  /// same reason the problem fields above are denormalised — a cascade delete
+  /// would erase the record of exactly the sessions worth reviewing.
+  sessionId String? @db.Uuid
+
   @@index([userId, at])
   @@index([userId, kind, at])
+  @@index([sessionId, at])
   @@map("learning_events")
 }

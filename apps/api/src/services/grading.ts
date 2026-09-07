@@ -206,6 +206,7 @@ export async function gradeSubmission(params: {
     void recordStep(userId, {
       kind: 'ATTEMPT_FAILED',
       problem,
+      sessionId: session?.id ?? null,
       language,
       attempt: session ? session.attempts + 1 : undefined,
       elapsedSeconds: elapsedSeconds ?? undefined,
@@ -385,6 +386,7 @@ export async function gradeSubmission(params: {
   void recordStep(userId, {
     kind: 'ATTEMPT_PASSED',
     problem,
+    sessionId: session.id,
     language: submission.language,
     attempt: session.attempts + 1,
     elapsedSeconds: submission.elapsedSeconds ?? undefined,
