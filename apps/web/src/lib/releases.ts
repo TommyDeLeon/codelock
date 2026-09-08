@@ -14,9 +14,35 @@
  * returns null and the caller has to render the fallback.
  */
 
-const REPO_URL = (
-  process.env.NEXT_PUBLIC_REPO_URL ?? 'https://github.com/TommyDeLeon/codelock'
-).replace(/\/+$/, '');
+const DEFAULT_REPO_URL = 'https://github.com/TommyDeLeon/codelock';
+
+/**
+ * A repository URL, or nothing.
+ *
+ * This was `process.env.NEXT_PUBLIC_REPO_URL ?? DEFAULT`, which trusted the
+ * variable completely. In production it had been set to the API host, so every
+ * link derived from it — the setup guide, the desktop-packaging section, the
+ * issue tracker — pointed at `https://api.codelock.../blob/main/README.md` and
+ * died on DNS. The fallback was right; nothing checked that the override was.
+ *
+ * A repository URL always addresses a repository, so it carries at least an
+ * owner and a name in its path. A bare host does not, and that is the shape of
+ * this mistake. Anything failing the check is ignored in favour of the default,
+ * which still allows a self-hosted `https://git.example.com/group/project`.
+ */
+const asRepoUrl = (value: string | undefined): string | null => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    const segments = url.pathname.split('/').filter(Boolean);
+    return segments.length >= 2 ? value.replace(/\/+$/, '') : null;
+  } catch {
+    return null;
+  }
+};
+
+const REPO_URL = asRepoUrl(process.env.NEXT_PUBLIC_REPO_URL) ?? DEFAULT_REPO_URL;
 const RELEASE_TAG = process.env.NEXT_PUBLIC_RELEASE_TAG || '';
 
 /** The version stamped into the asset filenames, without the leading `v`. */

@@ -1,13 +1,5 @@
 import Link from 'next/link';
-
-/**
- * The contact address is configuration, not content.
- *
- * Hard-coding a personal address into a public page is the owner's decision to
- * make, so the contact line only renders once this is set. Nothing here invents
- * a plausible-looking address to fill the gap.
- */
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '';
+import { CONTACT_EMAIL } from '@/lib/contact';
 
 /**
  * Every link here is its own tap target, sized to 44px.

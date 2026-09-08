@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { LegalPage, Section } from '@/components/legal-page';
+import { CONTACT_EMAIL } from '@/lib/contact';
 
 export const metadata: Metadata = {
   title: 'Privacy',
   description: 'What a private CodeLock installation stores and where the data goes.',
   robots: { index: true, follow: true },
 };
-
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '';
 
 export default function PrivacyPage() {
   return (

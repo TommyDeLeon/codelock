@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { Reportage } from '@/components/site/reportage';
 import Link from 'next/link';
 import { hasRelease, releasePageUrl, repoUrl } from '@/lib/releases';
+import { CONTACT_EMAIL } from '@/lib/contact';
 
 export const metadata: Metadata = {
   title: 'Support',
   description: 'Get out of a held session, troubleshoot a local CodeLock installation, or report a problem.',
   robots: { index: true, follow: true },
 };
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || '';
 const QUESTIONS = [
   { q: 'Every test passes. Why am I still locked?', a: 'Correctness is one condition. Your measured runtime must also meet the language-specific budget: best × 1.35 + 40ms. The faster of two timed runs counts. Calibrate on your own judge hardware if correct answers consistently miss the budget.' },
   { q: 'The API cannot be reached.', a: 'Check that the local API, database and judge are running. An unreachable API is not proof that a session has ended. On desktop, use the ten-second Escape exit if you need to leave the overlay while you repair the stack.' },
