@@ -79,7 +79,10 @@
 .marketing-site .site-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 28px; }
 /* The capture, opened in place. No new tab, no bare JPEG on a browser's own
    grey ground — the page stays underneath and Escape brings you back to it. */
-.capture-dialog { padding: 0; border: 0; max-width: min(1600px, 94vw); max-height: 92vh; background: var(--color-surface); color: var(--color-fg); box-shadow: 0 40px 120px -30px rgb(0 0 0 / .55); }
+/* margin: auto is what centres a native dialog, and Tailwind's preflight zeroes
+   margin on every element — which is why this opened pinned to the top left.
+   Restated here rather than fought with in preflight. */
+.capture-dialog { margin: auto; padding: 0; border: 0; max-width: min(1600px, 94vw); max-height: 92vh; background: var(--color-surface); color: var(--color-fg); box-shadow: 0 40px 120px -30px rgb(0 0 0 / .55); }
 .capture-dialog::backdrop { background: rgb(12 12 10 / .82); }
 .capture-dialog-inner { display: flex; flex-direction: column; max-height: 92vh; }
 .capture-dialog-inner img { display: block; min-height: 0; max-width: 100%; object-fit: contain; background: var(--color-bg); }
@@ -354,16 +357,35 @@
     transform-origin: left center;
   }
 
-  /* Scroll entrances. Never from nothing — .4 to 1. */
+  /* ── Scroll ─────────────────────────────────────────────────────────────
+     Every chapter of the landing page and the companion pages arrives as it
+     is scrolled to, not just the two that happened to carry a class. Never
+     from nothing: .4 is the floor, so a reader scrolling fast still reads a
+     section that has not finished arriving.
+
+     `animation-range: entry N% cover M%` finishes each element well before it
+     reaches the middle of the screen — motion belongs to the approach, not to
+     the reading. */
   @supports (animation-timeline: view()) {
     @keyframes arrive { from { opacity: .4; transform: translateY(26px); } }
+    @keyframes arrive-heading { from { opacity: .35; transform: translateY(34px); } }
     @keyframes capture-settle {
       from { opacity: .72; transform: scale(1.015); clip-path: inset(0 0 6% 0); }
     }
-    .marketing-site .section-arrive > * {
+    .marketing-site .section-arrive > *,
+    .marketing-site :is(.argument-heading, .gate-spread > div, .mechanism-layout > div,
+                        .section-intro, .spread-heading, .closing-band > *) {
       animation: arrive 1ms linear both;
       animation-timeline: view();
       animation-range: entry 4% cover 22%;
+    }
+    /* The chapter headings travel further than the prose beneath them, which
+       is what makes the page feel layered rather than uniformly sliding. */
+    .marketing-site :is(.argument-heading h2, .gate-spread h2, .mechanism-layout h2,
+                        .section-intro h2, .closing-band h2) {
+      animation: arrive-heading 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 30%;
     }
     .marketing-site .reportage .capture-link {
       animation: capture-settle 1ms linear both;
@@ -371,6 +393,27 @@
       animation-range: entry 2% cover 26%;
     }
   }
+
+  /* ── Actions ────────────────────────────────────────────────────────────
+     Everything that can be pressed or followed answers the pointer, on the
+     same curve as the page's entrances so the site moves in one language. */
+  .marketing-site :is(.text-link, .marketing-nav nav a, .nav-install, .menu-toggle) {
+    transition: color 240ms var(--ease-editorial), text-underline-offset 300ms var(--ease-editorial), opacity 240ms ease;
+  }
+  .marketing-site .text-link:hover { text-underline-offset: 7px; }
+  .marketing-site .marketing-nav nav a:hover { text-underline-offset: 8px; }
+  .marketing-site .capture-note { transition: color 260ms var(--ease-editorial), text-decoration-color 260ms var(--ease-editorial); }
+
+  /* The gate's attempt buttons, the one control on the landing page a reader
+     actually operates. */
+  .marketing-site .gate-meter button { transition: color 220ms var(--ease-editorial), border-color 220ms var(--ease-editorial), background-color 220ms var(--ease-editorial), transform 320ms var(--ease-editorial); }
+  .marketing-site .gate-meter button:hover { transform: translateY(-1px); }
+
+  /* The dialog does not appear; it comes forward. */
+  @keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+  @keyframes backdrop-in { from { opacity: 0; } }
+  .capture-dialog[open] { animation: dialog-in 420ms var(--ease-editorial); }
+  .capture-dialog[open]::backdrop { animation: backdrop-in 420ms ease; }
 
   /* The capture answers the pointer before it is clicked, which is what tells
      you it opens. */
