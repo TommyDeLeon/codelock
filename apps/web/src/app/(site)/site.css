@@ -235,7 +235,12 @@
    "Contact". Mono for the field names because they are labels; the reading
    face for the values because they are meant to be read and copied. */
 .marketing-site footer { margin-top: auto; padding-block: 0; border-color: var(--color-rule); }
-.marketing-site footer > div { max-width: 1680px; padding-inline: var(--site-gutter); }
+/* margin-inline: auto is what keeps this in the same column as .site-frame.
+   Without it the footer sat hard against the left edge while every section
+   above it was centred — invisible at 1440px, where the viewport is narrower
+   than the 1680px cap, and 160px out at 2000px. Same three values as
+   .site-frame on purpose; they must stay in step. */
+.marketing-site footer > div { width: 100%; max-width: 1680px; padding-inline: var(--site-gutter); margin-inline: auto; }
 
 .marketing-site .colophon-row { display: flex; flex-wrap: wrap; gap: 32px 64px; padding-block: 44px 36px; }
 .marketing-site .colophon-who { min-width: 0; }
