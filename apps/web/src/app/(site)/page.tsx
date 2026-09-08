@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GateMeter } from '@/components/site/gate-meter';
 import { Reportage } from '@/components/site/reportage';
+import { ArrowOut } from '@/components/ui/arrow-out';
 
 export const metadata: Metadata = {
   title: { absolute: 'CodeLock — correct is only half the answer' },
@@ -43,7 +44,7 @@ export default function LandingPage() {
           only thing separating the words when it is not.
         */}
         <p className="hero-standfirst">Your next break <br />has a condition.</p>
-        <div className="hero-copy"><p className="prose-site">Set a focus timer. When it expires, CodeLock takes the screen. The way back is code that passes every test <strong>and meets the runtime budget.</strong></p><div className="site-actions"><Link href="/demo" className="site-button">Try the mechanism <span aria-hidden>↗</span></Link><Link href="/how-it-works" className="text-link">Read how it works →</Link></div></div>
+        <div className="hero-copy"><p className="prose-site">Set a focus timer. When it expires, CodeLock takes the screen. The way back is code that passes every test <strong>and meets the runtime budget.</strong></p><div className="site-actions"><Link href="/demo" className="site-button">Try the mechanism <ArrowOut /></Link><Link href="/how-it-works" className="text-link">Read how it works →</Link></div></div>
         <p className="hero-facts">Free<br />Source available<br />No account required<br />No metered application APIs</p>
       </div>
     </section>
@@ -67,6 +68,6 @@ export default function LandingPage() {
       <div className="section-intro"><p className="eyebrow">05 / The limits, before you install</p><h2 className="display display-lg">A commitment.<br /><em>Not a cage.</em></h2><p className="prose-site">Every platform has a way out. The purpose is to make returning to the work a deliberate choice. The hardware is still yours.</p></div>
       <dl className="platform-ledger">{PLATFORM_LIMITS.map(row => <div key={row.platform}><dt>{row.platform}</dt><dd>{row.detail}</dd><dd>{row.escape}</dd></div>)}</dl><Link href="/limits" className="text-link">The complete escape ledger, including unverified behavior →</Link>
     </section>
-    <section className="closing-band site-frame section-space">{/* No kicker here. The numbered eyebrows above encode a real sequence and earn their place; this one labelled nothing and merely announced the heading under it, which the heading does perfectly well by itself. */}<h2 className="display">Put a problem<br /><em>in the way.</em></h2><div className="site-actions"><Link href="/install" className="site-button">Install CodeLock ↗</Link><span className="text-muted">Free. Source available. Yours to run privately.</span></div></section>
+    <section className="closing-band site-frame section-space">{/* No kicker here. The numbered eyebrows above encode a real sequence and earn their place; this one labelled nothing and merely announced the heading under it, which the heading does perfectly well by itself. */}<h2 className="display">Put a problem<br /><em>in the way.</em></h2><div className="site-actions"><Link href="/install" className="site-button">Install CodeLock <ArrowOut /></Link><span className="text-muted">Free. Source available. Yours to run privately.</span></div></section>
   </>;
 }

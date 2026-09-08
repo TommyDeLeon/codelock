@@ -182,8 +182,11 @@ export default function DemoPage() {
  * time it mattered, so this one cannot be closed.
  */
 function DemoBanner() {
+  // top-0, not top-14: the marketing nav is `position: relative`, so a 56px
+  // offset left the banner floating in open page, with content visible above it
+  // once the nav scrolled away. Flush to the edge, it reads as one bar.
   return (
-    <div className="rule-b sticky top-14 z-30 bg-warning-soft">
+    <div className="rule-b sticky top-0 z-30 bg-warning-soft">
       <div className="mx-auto flex max-w-7xl flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-2 sm:px-8">
         <p className="eyebrow text-warning">Demo</p>
         <p className="text-[13px] text-fg">

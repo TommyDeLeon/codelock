@@ -77,6 +77,25 @@
 .marketing-site .site-button:hover { opacity: .8; }
 .marketing-site .text-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; text-decoration: underline; text-underline-offset: 5px; }
 .marketing-site .site-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 28px; }
+/* The capture, opened in place. No new tab, no bare JPEG on a browser's own
+   grey ground — the page stays underneath and Escape brings you back to it. */
+.capture-dialog { padding: 0; border: 0; max-width: min(1600px, 94vw); max-height: 92vh; background: var(--color-surface); color: var(--color-fg); box-shadow: 0 40px 120px -30px rgb(0 0 0 / .55); }
+.capture-dialog::backdrop { background: rgb(12 12 10 / .82); }
+.capture-dialog-inner { display: flex; flex-direction: column; max-height: 92vh; }
+.capture-dialog-inner img { display: block; min-height: 0; max-width: 100%; object-fit: contain; background: var(--color-bg); }
+.capture-dialog-bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 20px; border-top: 1px solid var(--color-rule); font-size: 12px; color: var(--color-muted); }
+.capture-dialog-bar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.capture-dialog-bar > button { appearance: none; background: none; border: 1px solid var(--color-rule); color: var(--color-fg); font: inherit; padding: 8px 18px; min-height: 44px; cursor: pointer; }
+.capture-dialog-bar > button:hover { border-color: var(--color-fg); }
+@media (max-width: 760px) {
+  .capture-dialog { max-width: 96vw; }
+  .capture-dialog-bar { padding: 12px 14px; gap: 12px; }
+}
+
+/* Sized in em so it tracks whatever type it sits in, and nudged up to sit on
+   the cap line rather than the baseline. */
+.arrow-out { width: .74em; height: .74em; flex: none; display: inline-block; vertical-align: -.02em; margin-left: .12em; }
+
 .marketing-site .marketing-nav { position: relative; z-index: 20; background: var(--color-bg); }
 .marketing-site .nav-row { min-height: 88px; display: flex; gap: 28px; align-items: center; position: relative; }
 .marketing-site .nav-row::after { content: ''; position: absolute; bottom: 0; left: var(--site-gutter); right: var(--site-gutter); border-bottom: 2px solid var(--color-fg); }
@@ -113,7 +132,15 @@
 .marketing-site .spread-heading .eyebrow { color: var(--color-muted); }
 .marketing-site .spread-heading > p:last-child { font-family: var(--font-display); font-size: 27px; }
 .marketing-site .reportage { margin: 0; min-width: 0; }
-.marketing-site .capture-link { display: block; }
+/* Both are <button> now, not <a> — they open the capture in place instead of
+   navigating away — so the UA button chrome has to come off first. */
+.marketing-site .capture-link,
+.marketing-site .capture-note { appearance: none; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: inherit; cursor: zoom-in; }
+.marketing-site .capture-link { display: block; width: 100%; }
+.marketing-site .capture-note { justify-self: start; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--color-rule); cursor: pointer; }
+.marketing-site .capture-note:hover { color: var(--color-fg); text-decoration-color: currentColor; }
+.marketing-site .lock-spread .capture-note { justify-self: end; }
+@media (max-width: 900px) { .marketing-site .lock-spread .capture-note { justify-self: start; } }
 /* One painted image, chosen by the same class as the publication. The JPG
    declaration also covers browsers that cannot parse typed image-set(). */
 .marketing-site .capture-image {
@@ -197,12 +224,15 @@
 .marketing-site footer > div { max-width: 1680px; padding-inline: var(--site-gutter); font-size: 11px; }
 @media (min-width: 1680px) { .marketing-site .lock-spread .reportage { max-width: 1680px; margin-inline: auto; } }
 @media (max-width: 1000px) {
-  .marketing-site .desktop-theme { display: none; }
+  .marketing-site .desktop-links { gap: 18px; }
   .marketing-site .hero-deck { grid-template-columns: .8fr 1.2fr; gap: 24px; }
   .marketing-site .hero-facts { grid-column: 2; }
   .marketing-site .argument-spread { gap: 40px; }
 }
 @media (max-width: 760px) {
+  /* Only here, where the Menu disclosure below carries its own toggle. Hiding
+     it at 1000px left a 240px band with no way to change the theme at all. */
+  .marketing-site .desktop-theme { display: none; }
   .marketing-site .nav-row { min-height: 72px; gap: 18px; }
   .marketing-site .brand { font-size: 27px; }
   .marketing-site .desktop-links { display: none; }
