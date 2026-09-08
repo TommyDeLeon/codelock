@@ -195,7 +195,13 @@
 .marketing-site .platform-ledger dt { font-family: var(--font-display); font-size: 32px; line-height: 1.15; }
 .marketing-site .closing-band { border-top: 2px solid var(--color-fg); }
 .marketing-site .closing-band h2 { margin-top: 36px; font-size: clamp(58px, 9vw, 138px); }
-/* The companion pages retain their factual ledgers and reading order. */
+/* The companion pages retain their factual ledgers and reading order.
+
+   This neutralises the OLDER motion system in app/globals.css, which is shared
+   with the lock app and animates .section-arrive from `opacity: 0` with a
+   rotateX depth tilt. On a tall viewport that leaves whole sections invisible,
+   and its own comment says so. The marketing site's entrances are authored at
+   the foot of this file instead, and those rules come later, so they win. */
 .marketing-site :is(.hero-rise, .hero-rise-headline, .hero-recede, .section-arrive) { animation: none; opacity: 1; transform: none; }
 .marketing-site .hero-stage { perspective: none; background: transparent; }
 .marketing-site .hero-stage > div { padding-block: 66px 76px; }
@@ -282,20 +288,104 @@
   .marketing-site .demo-intro h1 { font-size: 58px; }
 }
 
-/* One entrance, on the opening headline only. A fraction of a pixel of
-   softness resolves as the type settles; every letter is visible throughout. */
-@keyframes headline-settle {
-  from { transform: translateY(5px); filter: blur(.2px); }
-  to { transform: none; filter: none; }
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   Motion.
+
+   The previous pass moved the opening headline 5px and blurred it by 0.2px.
+   At clamp(58px, 9vw, 138px) that is below the threshold of noticing, which
+   is why the site read as having no motion at all. What follows is sized to
+   be felt.
+
+   Two rules govern everything here:
+
+   1. Above the fold animates on LOAD and is finished inside 1.3s. Nothing is
+      gated on scrolling into view, so there is no reading position at which
+      the page is waiting for you.
+   2. Below the fold never disappears. Section entrances start at opacity .4,
+      not 0, and run on `animation-timeline: view()` behind @supports — so a
+      browser without it (Safari, Firefox) renders the final state and loses
+      nothing. A skimming reader never meets a blank band.
+
+   `backwards` fill is what makes the resting state authoritative: with the
+   animation removed, every element is already at its finished appearance,
+   which is exactly what the reduced-motion rule above relies on.
+   ───────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
-  .marketing-site .landing-hero h1 {
-    animation: headline-settle 1050ms cubic-bezier(.16, 1, .3, 1);
+  .marketing-site { --ease-editorial: cubic-bezier(.16, 1, .3, 1); }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } }
+
+  /* The headline arrives under its own weight: further and slower than the
+     rest, out of a mask that opens from the baseline up, so the letterforms
+     are uncovered rather than faded in.
+
+     Deliberately NO opacity here. app/globals.css records a measured finding
+     that Chrome will not accept an element painted at zero opacity as an LCP
+     candidate, so fading the largest text on the page stamps LCP at first
+     paint plus the whole animation delay instead of at first paint. A mask and
+     a translate cost nothing on that metric and read stronger anyway. */
+  @keyframes rise-headline {
+    from { transform: translateY(34px); clip-path: inset(0 0 26% 0); }
   }
+
+  @keyframes rule-draw { from { transform: scaleX(0); } }
+
+  .marketing-site :is(.landing-hero h1, .hero-rise-headline) {
+    animation: rise-headline 1150ms var(--ease-editorial) backwards;
+    transform-origin: left bottom;
+  }
+  .marketing-site :is(.hero-rise, .landing-hero .hero-deck > *) {
+    animation: rise 820ms var(--ease-editorial) backwards;
+  }
+
+  /* A stagger, so the page assembles in reading order instead of arriving as
+     one slab. Small intervals: this is a settle, not a performance. */
+  .marketing-site .hero-rise-1 { animation-delay: 40ms; }
+  .marketing-site .hero-rise-2 { animation-delay: 130ms; }
+  .marketing-site .hero-rise-3 { animation-delay: 250ms; }
+  .marketing-site .landing-hero .hero-deck > *:nth-child(1) { animation-delay: 220ms; }
+  .marketing-site .landing-hero .hero-deck > *:nth-child(2) { animation-delay: 310ms; }
+  .marketing-site .landing-hero .hero-deck > *:nth-child(3) { animation-delay: 400ms; }
+
+  /* The rule under the opening headline draws rather than appears. It is the
+     one piece of furniture on the page that is literally a line being made. */
+  .marketing-site .nav-row::after {
+    animation: rule-draw 1100ms var(--ease-editorial) 120ms backwards;
+    transform-origin: left center;
+  }
+
+  /* Scroll entrances. Never from nothing — .4 to 1. */
+  @supports (animation-timeline: view()) {
+    @keyframes arrive { from { opacity: .4; transform: translateY(26px); } }
+    @keyframes capture-settle {
+      from { opacity: .72; transform: scale(1.015); clip-path: inset(0 0 6% 0); }
+    }
+    .marketing-site .section-arrive > * {
+      animation: arrive 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 4% cover 22%;
+    }
+    .marketing-site .reportage .capture-link {
+      animation: capture-settle 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 26%;
+    }
+  }
+
+  /* The capture answers the pointer before it is clicked, which is what tells
+     you it opens. */
+  .marketing-site .capture-link { transition: transform 520ms var(--ease-editorial), filter 520ms var(--ease-editorial); }
+  .marketing-site .capture-link:hover { transform: scale(1.006); filter: brightness(1.04); }
+
+  .marketing-site .site-button { transition: opacity 180ms ease, transform 380ms var(--ease-editorial); }
+  .marketing-site .site-button:hover { transform: translateY(-2px); }
+  .marketing-site .arrow-out { transition: transform 380ms var(--ease-editorial); }
+  .marketing-site .site-button:hover .arrow-out { transform: translate(2px, -2px); }
+
   /* The bar already has its correct length on arrival. Only a reader's
      selection changes it; the numbers and verdict update immediately. */
   .marketing-site .gate-runtime {
-    transition: width 850ms cubic-bezier(.16, 1, .3, 1);
+    transition: width 850ms var(--ease-editorial);
   }
 }
 
