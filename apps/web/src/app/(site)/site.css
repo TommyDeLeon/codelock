@@ -369,8 +369,11 @@
   @supports (animation-timeline: view()) {
     @keyframes arrive { from { opacity: .4; transform: translateY(26px); } }
     @keyframes arrive-heading { from { opacity: .35; transform: translateY(34px); } }
+    /* No scale. These captures run full-bleed, so scaling one up by even 1.5%
+       pushed it 9px past the viewport and gave the whole landing page a
+       horizontal scrollbar. The mask opening does the settling on its own. */
     @keyframes capture-settle {
-      from { opacity: .72; transform: scale(1.015); clip-path: inset(0 0 6% 0); }
+      from { opacity: .72; clip-path: inset(0 0 9% 0); }
     }
     .marketing-site .section-arrive > *,
     .marketing-site :is(.argument-heading, .gate-spread > div, .mechanism-layout > div,
@@ -417,8 +420,9 @@
 
   /* The capture answers the pointer before it is clicked, which is what tells
      you it opens. */
-  .marketing-site .capture-link { transition: transform 520ms var(--ease-editorial), filter 520ms var(--ease-editorial); }
-  .marketing-site .capture-link:hover { transform: scale(1.006); filter: brightness(1.04); }
+  /* Brightness only, for the same reason: a full-bleed element cannot grow. */
+  .marketing-site .capture-link { transition: filter 520ms var(--ease-editorial); }
+  .marketing-site .capture-link:hover { filter: brightness(1.05); }
 
   .marketing-site .site-button { transition: opacity 180ms ease, transform 380ms var(--ease-editorial); }
   .marketing-site .site-button:hover { transform: translateY(-2px); }
