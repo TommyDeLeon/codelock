@@ -139,10 +139,15 @@ export function GateMeter() {
               before a word of the readout is read. It was plain ink, which on
               the dark theme is near-white and read as a neutral block. */}
           <div
-            className={`gate-runtime absolute inset-y-2 left-0 rounded-r-xs ${
+            /* Full width, scaled — not a width of N%. This is the one bar on
+               the page that animates, and transitioning width makes the browser
+               lay out and paint every frame, where a transform goes straight to
+               the compositor. pct() is untouched and the gate marker is
+               positioned independently, so the arithmetic is exactly as before. */
+            className={`gate-runtime absolute inset-y-2 left-0 w-full origin-left rounded-r-xs ${
               passed ? 'bg-success' : 'bg-danger'
             }`}
-            style={{ width: `${pct(measured)}%` }}
+            style={{ transform: `scaleX(${pct(measured) / 100})` }}
             aria-hidden
           />
 

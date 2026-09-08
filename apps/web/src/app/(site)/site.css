@@ -406,8 +406,8 @@
 
   /* The gate's attempt buttons, the one control on the landing page a reader
      actually operates. */
-  .marketing-site .gate-meter button { transition: color 220ms var(--ease-editorial), border-color 220ms var(--ease-editorial), background-color 220ms var(--ease-editorial), transform 320ms var(--ease-editorial); }
-  .marketing-site .gate-meter button:hover { transform: translateY(-1px); }
+  .marketing-site .gate-instrument button { transition: color 220ms var(--ease-editorial), border-color 220ms var(--ease-editorial), background-color 220ms var(--ease-editorial), transform 320ms var(--ease-editorial); }
+  .marketing-site .gate-instrument button:hover { transform: translateY(-1px); }
 
   /* The dialog does not appear; it comes forward. */
   @keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
@@ -428,7 +428,7 @@
   /* The bar already has its correct length on arrival. Only a reader's
      selection changes it; the numbers and verdict update immediately. */
   .marketing-site .gate-runtime {
-    transition: width 850ms var(--ease-editorial);
+    transition: transform 850ms var(--ease-editorial);
   }
 }
 
