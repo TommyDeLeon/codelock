@@ -229,8 +229,34 @@
 .marketing-site .legal section { margin-bottom: 36px; }
 .marketing-site .legal h2 { font-family: var(--font-display); font-size: 28px; font-weight: 500; }
 .marketing-site .legal section > div { font-size: 15px; line-height: 1.8; color: var(--color-prose); }
-.marketing-site footer { margin-top: auto; padding-block: 24px; border-color: var(--color-rule); }
-.marketing-site footer > div { max-width: 1680px; padding-inline: var(--site-gutter); font-size: 11px; }
+/* ── The colophon ───────────────────────────────────────────────────────────
+   The back page. Who made this, and how to reach him, set as a ledger so the
+   addresses are readable on the page instead of hidden behind the word
+   "Contact". Mono for the field names because they are labels; the reading
+   face for the values because they are meant to be read and copied. */
+.marketing-site footer { margin-top: auto; padding-block: 0; border-color: var(--color-rule); }
+.marketing-site footer > div { max-width: 1680px; padding-inline: var(--site-gutter); }
+
+.marketing-site .colophon-row { display: flex; flex-wrap: wrap; gap: 32px 64px; padding-block: 44px 36px; }
+.marketing-site .colophon-who { min-width: 0; }
+.marketing-site .colophon-name { font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 46px); line-height: 1.05; letter-spacing: -.02em; margin-top: 10px; color: var(--color-fg); }
+
+.marketing-site .colophon-channels { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); gap: 18px 56px; margin-left: auto; align-content: start; }
+.marketing-site .colophon-channels dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-muted); }
+.marketing-site .colophon-channels dd { margin: 0; }
+.marketing-site .colophon-channels a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; color: var(--color-fg); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--color-rule); overflow-wrap: anywhere; }
+.marketing-site .colophon-channels a:hover { text-decoration-color: currentColor; }
+
+.marketing-site .colophon-legal { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; padding-block: 6px 10px; border-top: 1px solid var(--color-rule); font-size: 11px; color: var(--color-muted); }
+.marketing-site .colophon-legal nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; margin-left: auto; }
+.marketing-site .colophon-legal a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; color: inherit; }
+.marketing-site .colophon-legal a:hover { color: var(--color-fg); }
+
+@media (max-width: 760px) {
+  .marketing-site .colophon-row { gap: 26px; padding-block: 34px 26px; }
+  .marketing-site .colophon-channels { margin-left: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .marketing-site .colophon-legal nav { margin-left: 0; }
+}
 @media (min-width: 1680px) { .marketing-site .lock-spread .reportage { max-width: 1680px; margin-inline: auto; } }
 @media (max-width: 1000px) {
   .marketing-site .desktop-links { gap: 18px; }
