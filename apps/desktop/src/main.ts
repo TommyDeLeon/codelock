@@ -811,6 +811,28 @@ ipcMain.handle('codelock:state', () => ({
   holdToReleaseMs: HOLD_TO_RELEASE_MS,
 }));
 
+/**
+ * Put the window back on the dashboard, if it is allowed to go there.
+ *
+ * The lock screen is served from the web origin and the dashboard is not, so a
+ * page that wants to leave cannot get there by routing — `router.replace('/')`
+ * lands on the *marketing* site, which is how an installed application ended up
+ * showing its own landing page. Navigation across that boundary belongs to this
+ * process, so the page asks instead of going.
+ *
+ * Refused outright while the screen is held, and that refusal is the whole
+ * security of this channel. The lock screen is a remote page; if it could send
+ * the window to the dashboard on demand, the lock would be one IPC call from
+ * being over and the speed gate would be decorative. `locked` is main-process
+ * state that no renderer can write, so a compromised lock screen calling this
+ * in a loop achieves nothing.
+ */
+ipcMain.handle('codelock:home', () => {
+  if (locked) return { ok: false, reason: 'locked' };
+  showRenderer();
+  return { ok: true };
+});
+
 ipcMain.handle('codelock:open-external', (_event, url: unknown) => {
   if (typeof url !== 'string') return false;
   let parsed: URL;

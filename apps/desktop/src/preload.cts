@@ -62,6 +62,16 @@ const codelock = {
   config: (): Promise<{ apiUrl: string; webUrl: string }> =>
     ipcRenderer.invoke('codelock:config'),
 
+  /**
+   * Ask the shell to show the dashboard.
+   *
+   * The lock screen cannot route there itself: the dashboard is a different
+   * origin, and '/' on this one is the marketing site. Refused by the main
+   * process while the screen is held, so this is a way out of a *finished*
+   * session and never out of a live lock.
+   */
+  home: (): Promise<{ ok: boolean; reason?: string }> => ipcRenderer.invoke('codelock:home'),
+
   /** Open a URL in the user's real browser (needed for the OAuth flow). */
   openExternal: (url: string): Promise<boolean> =>
     ipcRenderer.invoke('codelock:open-external', url),

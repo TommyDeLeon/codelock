@@ -32,6 +32,8 @@ export interface CodeLockBridge {
   schedule(session: { sessionId: string; fireAt: string } | null): Promise<{ scheduled: boolean }>;
   session?(): Promise<{ accessToken: string; refreshToken: string } | null>;
   openExternal(url: string): Promise<boolean>;
+  /** Optional: older shells have no such channel, so callers must tolerate its absence. */
+  home?(): Promise<{ ok: boolean; reason?: string }>;
   onHoldProgress(handler: (progress: HoldProgress) => void): () => void;
   onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void;
 }
@@ -99,6 +101,28 @@ export async function scheduleDesktopLock(
  *
  * Returns an unsubscribe function, or a no-op outside the desktop app.
  */
+/**
+ * Ask the shell to show the dashboard, and report whether it did.
+ *
+ * Returns false in a browser, where there is no shell to ask and the caller
+ * should route itself. Also false when the shell refuses — it will not leave a
+ * live lock — so a caller can tell "nothing happened" from "handled".
+ *
+ * Optional-chained on `home` as well as on the bridge: a renderer served to an
+ * older installed shell would otherwise throw on a channel that build never
+ * exposed, and the lock screen is the worst place to discover a version skew.
+ */
+export async function goDesktopHome(): Promise<boolean> {
+  const bridge = getBridge();
+  if (!bridge?.home) return false;
+  try {
+    const result = await bridge.home();
+    return result.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function onKillSwitch(handler: (info: { sessionId: string | null }) => void): () => void {
   return getBridge()?.onKillSwitch(handler) ?? (() => {});
 }

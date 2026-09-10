@@ -17,6 +17,7 @@ import {
   isDesktop,
   notifyNativeUnlocked,
   onKillSwitch,
+  goDesktopHome,
 } from '@/lib/desktop-bridge';
 
 export default function LockPage() {
@@ -26,21 +27,28 @@ export default function LockPage() {
   /**
    * Leave the lock screen.
    *
-   * In a browser this page owns the window, so it navigates. In the shell it
-   * does not. The main process sends the window to the bundled dashboard the
-   * moment it drops the overlay, and a client-side replace to '/' here races
-   * that load with the web origin's *marketing* page — which is how an
-   * installed application ended up showing its own landing page after an
-   * abandon.
+   * Two different moves behind one name, because the destination is the same
+   * and the way to reach it is not. In a browser this page owns the window and
+   * routes itself. In the shell it does not: the dashboard is a different
+   * origin, and '/' *on this one* is the marketing site — routing there is how
+   * an installed application ended up showing its own landing page.
    *
-   * The shell has a guard that bounces stray web pages, but leaning on it
-   * makes the destination depend on which of two processes wins a race. So
-   * the page simply does not navigate: the same rule the skip path already
-   * follows in lock-workspace.tsx.
+   * So the shell is asked rather than driven, and it may say no: it refuses
+   * while the screen is held, which is what keeps this from being a one-click
+   * unlock. A refusal is a no-op here on purpose. The page does not fall back
+   * to routing, because the only destination it can reach on its own is the
+   * one that caused the bug.
+   *
+   * Not a silent no-op in the shell, though, which is what the first version of
+   * this fix shipped: hiding the button left a re-armed session parked on the
+   * countdown for an hour with no way back to the dashboard.
    */
   const goHome = useCallback(() => {
-    if (isDesktop()) return;
-    router.replace('/');
+    if (!isDesktop()) {
+      router.replace('/');
+      return;
+    }
+    void goDesktopHome();
   }, [router]);
   const { session, secondsRemaining, expired, isLoading, unreachable, failure, refetch } =
     useLockSession({ pollMs: 5_000 });
@@ -128,7 +136,7 @@ export default function LockPage() {
     return (
       <main id="main" className="flex h-dvh flex-col items-center justify-center gap-4 p-4">
         <p className="text-sm text-muted">Nothing is locked right now.</p>
-        {!isDesktop() && <Button onClick={goHome}>Back to CodeLock</Button>}
+        <Button onClick={goHome}>Back to CodeLock</Button>
       </main>
     );
   }
@@ -143,11 +151,9 @@ export default function LockPage() {
         <p className="max-w-xs text-center text-sm text-muted">
           You can keep working. This screen takes over when the timer reaches zero.
         </p>
-        {!isDesktop() && (
-          <Button variant="outline" onClick={goHome}>
-            Back to CodeLock
-          </Button>
-        )}
+        <Button variant="outline" onClick={goHome}>
+          Back to CodeLock
+        </Button>
       </main>
     );
   }
