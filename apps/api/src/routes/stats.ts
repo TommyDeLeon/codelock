@@ -5,6 +5,7 @@ import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { PROMOTE_AFTER_FAST_SOLVES, DEMOTE_AFTER_FAILURES } from '../services/difficulty.js';
+import { NOT_A_RUN } from '../lib/session-filters.js';
 
 export const statsRouter = Router();
 statsRouter.use(withLocalUser);
@@ -28,7 +29,10 @@ statsRouter.get(
         _count: { _all: true },
       }),
       prisma.lockSession.findMany({
-        where: { userId: user.id, resolvedAt: { not: null } },
+        // NOT_A_RUN keeps a countdown the user merely reset out of the run log;
+        // it never reached a problem, so there is nothing to review and nothing
+        // to have failed at.
+        where: { userId: user.id, resolvedAt: { not: null }, ...NOT_A_RUN },
         orderBy: { resolvedAt: 'desc' },
         take: 30,
         select: {

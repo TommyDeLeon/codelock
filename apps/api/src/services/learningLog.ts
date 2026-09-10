@@ -1,6 +1,6 @@
-import { LockState } from '@prisma/client';
 import type { LearningEventKind, Prisma, Problem } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import { NOT_A_RUN } from '../lib/session-filters.js';
 import { logger } from '../lib/logger.js';
 
 /**
@@ -282,10 +282,7 @@ export function renderReviewPacket(packet: NonNullable<Awaited<ReturnType<typeof
  */
 export async function sessionsIndex(userId: string, limit = 30) {
   const sessions = await prisma.lockSession.findMany({
-    where: {
-      userId,
-      NOT: { state: LockState.ABANDONED, problemId: null },
-    },
+    where: { userId, ...NOT_A_RUN },
     orderBy: { armedAt: 'desc' },
     take: Math.min(Math.max(limit, 1), 200),
     select: {
