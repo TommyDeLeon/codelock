@@ -1,3 +1,4 @@
+import { LockState } from '@prisma/client';
 import type { LearningEventKind, Prisma, Problem } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
@@ -263,13 +264,28 @@ export function renderReviewPacket(packet: NonNullable<Awaited<ReturnType<typeof
  * The list of sessions worth opening.
  *
  * Built from `lock_sessions` rather than from the log, because a session that
- * produced no steps at all — armed, then abandoned — is still a night that
- * happened, and a list assembled from events would silently drop exactly the
- * evenings the user is most likely to be looking for.
+ * produced no steps at all — armed, then locked, then walked away from — is
+ * still a night that happened, and a list assembled from events would silently
+ * drop exactly the evenings the user is most likely to be looking for.
+ *
+ * The one thing it does drop is a countdown stopped before the lock ever
+ * landed. `/cancel` has no state of its own and resolves to ABANDONED, the same
+ * value a real surrender gets, so a timer the user simply reset was listed
+ * beside genuine give-ups as 'Session — 0 attempts — abandoned'. Nothing was
+ * ever assigned and nothing was ever at stake; it is not an evening, it is a
+ * button press.
+ *
+ * Keyed on the missing problem rather than on the state, because that is what
+ * actually separates the two: the reaper only ever resolves sessions that were
+ * LOCKED, and a LOCKED session always has a problem. So `ABANDONED` with no
+ * problem is reachable from `/cancel` and nowhere else.
  */
 export async function sessionsIndex(userId: string, limit = 30) {
   const sessions = await prisma.lockSession.findMany({
-    where: { userId },
+    where: {
+      userId,
+      NOT: { state: LockState.ABANDONED, problemId: null },
+    },
     orderBy: { armedAt: 'desc' },
     take: Math.min(Math.max(limit, 1), 200),
     select: {

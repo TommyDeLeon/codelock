@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CircleCheck } from 'lucide-react';
@@ -22,6 +22,26 @@ import {
 export default function LockPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  /**
+   * Leave the lock screen.
+   *
+   * In a browser this page owns the window, so it navigates. In the shell it
+   * does not. The main process sends the window to the bundled dashboard the
+   * moment it drops the overlay, and a client-side replace to '/' here races
+   * that load with the web origin's *marketing* page — which is how an
+   * installed application ended up showing its own landing page after an
+   * abandon.
+   *
+   * The shell has a guard that bounces stray web pages, but leaning on it
+   * makes the destination depend on which of two processes wins a race. So
+   * the page simply does not navigate: the same rule the skip path already
+   * follows in lock-workspace.tsx.
+   */
+  const goHome = useCallback(() => {
+    if (isDesktop()) return;
+    router.replace('/');
+  }, [router]);
   const { session, secondsRemaining, expired, isLoading, unreachable, failure, refetch } =
     useLockSession({ pollMs: 5_000 });
   const [unlocked, setUnlocked] = useState(false);
@@ -63,7 +83,7 @@ export default function LockPage() {
       // Recorded distinctly in the audit trail: a kill switch is a different
       // event from a user pressing 'give up' in the UI.
       if (sessionId) abandon.mutate({ id: sessionId, reason: 'kill_switch' });
-      router.replace('/');
+      goHome();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -102,13 +122,13 @@ export default function LockPage() {
     );
   }
 
-  if (unlocked) return <UnlockedScreen onContinue={() => router.replace('/')} />;
+  if (unlocked) return <UnlockedScreen onContinue={goHome} />;
 
   if (!session) {
     return (
       <main id="main" className="flex h-dvh flex-col items-center justify-center gap-4 p-4">
         <p className="text-sm text-muted">Nothing is locked right now.</p>
-        <Button onClick={() => router.replace('/')}>Back to CodeLock</Button>
+        {!isDesktop() && <Button onClick={goHome}>Back to CodeLock</Button>}
       </main>
     );
   }
@@ -123,9 +143,11 @@ export default function LockPage() {
         <p className="max-w-xs text-center text-sm text-muted">
           You can keep working. This screen takes over when the timer reaches zero.
         </p>
-        <Button variant="outline" onClick={() => router.replace('/')}>
-          Back to CodeLock
-        </Button>
+        {!isDesktop() && (
+          <Button variant="outline" onClick={goHome}>
+            Back to CodeLock
+          </Button>
+        )}
       </main>
     );
   }
@@ -160,7 +182,7 @@ export default function LockPage() {
     );
   }
 
-  return <UnlockedScreen onContinue={() => router.replace('/')} />;
+  return <UnlockedScreen onContinue={goHome} />;
 }
 
 function UnlockedScreen({ onContinue }: { onContinue: () => void }) {

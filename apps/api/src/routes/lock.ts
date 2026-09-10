@@ -7,6 +7,7 @@ import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { lockActionLimiter } from '../middleware/rateLimit.js';
 import {
   abandonSchema,
+  shortenSchema,
   armSessionSchema,
   hintRequestSchema,
   idParamSchema,
@@ -183,6 +184,59 @@ lockRouter.post(
       where: { id: session.id, state: LockState.ARMED, pausedAt: session.pausedAt },
       data: { fireAt: new Date(session.fireAt.getTime() + pausedMs), pausedAt: null },
     });
+    res.json({ session: await getActiveSession(user.id) });
+  }),
+);
+
+/**
+ * POST /lock/:id/shorten — bring the lock forward.
+ *
+ * ARMED only, like pause and cancel, but for the opposite reason to the others:
+ * this one is refused on a LOCKED session because there is nothing left to
+ * shorten, not because allowing it would be a bypass. Shortening only ever
+ * moves the deadline *towards* now, so the worst a caller can do with it is
+ * lock themselves sooner than they meant to.
+ *
+ * Clamped at the current moment rather than rejected when it overshoots: asking
+ * to take twenty minutes off a five-minute countdown means "lock me now", and
+ * answering that with a 400 would be pedantry. The session goes due and the
+ * ordinary engage path picks it up — this endpoint never assigns a problem
+ * itself, because a problem chosen anywhere but at fire time is a problem a
+ * client could have prefetched.
+ */
+lockRouter.post(
+  '/:id/shorten',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const { minutes } = shortenSchema.parse(req.body ?? {});
+    const session = await requireArmed(user.id, id, 'shortened');
+
+    // While paused `fireAt` is a stale deadline that resume will move forward
+    // by however long the pause lasted, so subtracting from it here would be
+    // arithmetic against a number that is about to change. Refused with the
+    // move that makes it work rather than silently doing the wrong sum.
+    if (session.pausedAt) {
+      throw ApiError.conflict('Resume the timer before shortening it.');
+    }
+
+    const next = new Date(Math.max(Date.now(), session.fireAt.getTime() - minutes * 60_000));
+
+    // Matched on the exact `fireAt` this request read, the same guard resume
+    // uses. Two clicks that both read the same deadline would otherwise each
+    // subtract from it, taking off twice what the user asked for. Stricter than
+    // intended is still not what they asked for.
+    await prisma.lockSession.updateMany({
+      where: {
+        id: session.id,
+        state: LockState.ARMED,
+        pausedAt: null,
+        fireAt: session.fireAt,
+      },
+      data: { fireAt: next },
+    });
+
     res.json({ session: await getActiveSession(user.id) });
   }),
 );

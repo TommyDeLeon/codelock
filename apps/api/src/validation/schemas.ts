@@ -49,6 +49,21 @@ export const hintRequestSchema = z.object({
   index: z.number().int().min(0).max(2),
 });
 
+/**
+ * Take time *off* a running countdown.
+ *
+ * Reduce-only, and the direction is the whole point. Shortening brings the lock
+ * forward, which can only make the commitment stricter — there is nothing to
+ * defend against. Extending pushes it away, and a timer that can be pushed away
+ * indefinitely is not a commitment device at all, so this schema has no way to
+ * express it. Someone who genuinely wants longer resets and arms again, which
+ * costs them the interval already served.
+ */
+export const shortenSchema = z.object({
+  /// Minutes to remove. Clamped at the deadline, never past it into the past.
+  minutes: z.number().int().min(1).max(600),
+});
+
 export const abandonSchema = z.object({
   /// Why the lock ended without a solve. Recorded in the audit trail, so it is
   /// a closed set rather than free text a client can write anything into.

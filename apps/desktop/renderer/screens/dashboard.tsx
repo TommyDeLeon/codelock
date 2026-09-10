@@ -9,6 +9,17 @@ import { PersonalBests, RankReadout, StreakPips, TierLadder } from '../game';
 const PRESETS = [15, 30, 60, 90] as const;
 
 /**
+ * How much a single press takes off a running countdown.
+ *
+ * A chip is only offered while the countdown is longer than the step it would
+ * remove. The server clamps an overshoot to the present rather than erroring,
+ * so without that rule '-30m' on a four-minute timer would silently be a Lock
+ * now button wearing someone else's label — and taking the screen is not
+ * something to do by implication.
+ */
+const SHORTEN_STEPS = [5, 15, 30] as const;
+
+/**
  * The desktop dashboard.
  *
  * The timer leads, because arming one is what most visits are for. The game
@@ -28,6 +39,9 @@ export function DashboardScreen() {
   const [busy, setBusy] = useState(false);
   // Reset is two-step. It ends the block outright and sits next to Pause.
   const [confirmReset, setConfirmReset] = useState(false);
+  // So is locking now, and for the stronger reason: it takes the screen this
+  // second, and the way back out is a problem the user has not seen yet.
+  const [confirmLockNow, setConfirmLockNow] = useState(false);
   // Which past session is open for review, if any. Null is the dashboard.
   const [reviewing, setReviewing] = useState<string | null>(null);
 
@@ -199,6 +213,84 @@ export function DashboardScreen() {
                   ? 'Paused. The clock is holding and gives the time back when you resume.'
                   : `locks at ${session ? new Date(session.fireAt).toLocaleTimeString() : '—'}`}
               </p>
+
+              {/* Take time off, or take the screen now.
+                  Both directions of "change the deadline" are not offered here:
+                  there is no way to add time, because a countdown that can be
+                  pushed away on demand is not a commitment. Shortening only
+                  ever makes the deal stricter, so it needs no confirmation —
+                  except at the end of the range, where it stops being a nudge
+                  and becomes the lock itself.
+
+                  Hidden while paused: the server refuses to shorten a held
+                  clock, because resume moves `fireAt` forward by the paused
+                  interval and the subtraction would be against a number that is
+                  about to change. */}
+              {session?.state === 'ARMED' && !paused && remaining !== null && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginTop: 14,
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span className="mono" style={{ fontSize: 12, color: 'var(--faint)' }}>
+                    Lock sooner
+                  </span>
+                  {SHORTEN_STEPS.filter((m) => remaining > m * 60).map((minutes) => (
+                    <button
+                      key={minutes}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void shorten(minutes)}
+                      aria-label={`Lock ${minutes} minutes sooner`}
+                      className="btn btn-chip"
+                    >
+                      −{minutes}m
+                    </button>
+                  ))}
+
+                  {confirmLockNow ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void lockNow()}
+                        className="btn btn-chip"
+                        style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                      >
+                        Lock now — sure?
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setConfirmLockNow(false)}
+                        className="btn btn-chip"
+                      >
+                        Not yet
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmLockNow(true)}
+                      className="btn btn-chip"
+                    >
+                      Lock now
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {confirmLockNow && (
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--faint)' }}>
+                  This takes the screen immediately. The way back is the problem you
+                  are given — there is no reset once it lands.
+                </p>
+              )}
 
               {/* Only before the lock lands. Afterwards the server refuses all
                   three, and offering buttons that can only fail would read as
@@ -496,6 +588,55 @@ export function DashboardScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Bring the lock forward.
+   *
+   * The whole session is replaced from the response for the same reason pause
+   * and resume do it: the server owns the arithmetic, including the clamp at
+   * the present moment, and recomputing the new deadline here would be a second
+   * copy of it that drifts the first time either side changes.
+   *
+   * Re-scheduling is not done here either. The effect that hands the shell its
+   * wake-up time already watches `session.fireAt`, so setting the session is
+   * what moves the native schedule — doing it again by hand would be two
+   * schedules for one deadline.
+   */
+  async function shorten(minutes: number) {
+    if (!session) return;
+    setBusy(true);
+    try {
+      const { session: updated } = await api.shorten(session.id, minutes);
+      if (updated) {
+        setSession(updated);
+        setRemaining(updated.secondsRemaining);
+      }
+      setOutage(null);
+    } catch (err) {
+      setOutage(err instanceof ApiError ? err.message : 'Could not shorten the timer.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Take the screen now.
+   *
+   * Expressed as a shortening rather than as its own endpoint, so there is
+   * exactly one path that moves a deadline and exactly one place the clamp
+   * lives. The minutes sent are whatever is left, rounded up: the server floors
+   * the result at the present moment, so overshooting by a fraction is the
+   * intended way to hit zero rather than an off-by-one to be avoided.
+   *
+   * The lock itself still lands through the ordinary engage path once the
+   * session is due. Nothing here assigns a problem, because a problem chosen
+   * anywhere but at fire time is a problem that could have been prefetched.
+   */
+  async function lockNow() {
+    if (remaining === null) return;
+    setConfirmLockNow(false);
+    await shorten(Math.max(1, Math.ceil(remaining / 60)));
   }
 
   /**

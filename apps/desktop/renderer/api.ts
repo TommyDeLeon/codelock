@@ -81,6 +81,19 @@ export const api = {
   resume: (id: string) =>
     request<{ session: LockSessionView | null }>(`/v1/lock/${id}/resume`, { method: 'POST' }),
 
+  /**
+   * Take minutes off a running countdown.
+   *
+   * Reduce-only by construction — there is no `lengthen`, and the server has no
+   * schema that would accept one. Overshooting is fine and means "lock me now":
+   * the deadline clamps to the present rather than erroring.
+   */
+  shorten: (id: string, minutes: number) =>
+    request<{ session: LockSessionView | null }>(`/v1/lock/${id}/shorten`, {
+      method: 'POST',
+      body: JSON.stringify({ minutes }),
+    }),
+
   /** Stop the timer outright. Records no failure: no problem was ever assigned. */
   cancel: (id: string) =>
     request<{ session: { id: string; state: string } }>(`/v1/lock/${id}/cancel`, {
