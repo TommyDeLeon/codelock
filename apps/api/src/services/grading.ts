@@ -8,6 +8,7 @@ import { applyOutcome, type ProgressUpdate } from './difficulty.js';
 import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessions.js';
 import { recordCapability } from './capabilities.js';
 import { recordStep } from './learningLog.js';
+import { recordSolve } from './retrieval.js';
 import {
   bestOfRuns,
   evaluatePerformance,
@@ -434,6 +435,16 @@ export async function gradeSubmission(params: {
     submissionId: submission.id,
     solvedAt: submission.createdAt,
   });
+
+  // Solving proves the idea worked once, with the problem in front of you.
+  // This puts the pattern on a recall schedule so it comes back before it has
+  // faded, rather than only if a later problem happens to reuse it.
+  //
+  // First solve of a family only: `recordSolve` returns early when a schedule
+  // already exists, so re-solving cannot reset an interval that is part-way
+  // through expanding. Not awaited, for the same reason as everything else on
+  // this path.
+  void recordSolve(userId, problem.patternFamily);
 
   return { ...base, unlockToken, progress };
 }
