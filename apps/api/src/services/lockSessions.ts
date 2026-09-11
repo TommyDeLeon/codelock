@@ -607,7 +607,9 @@ export async function getDebrief(userId: string, sessionId: string): Promise<Deb
     referenceSolution: (problem.referenceSolution ?? {}) as Record<string, string>,
     outcome: session.state,
     cases,
-    hints: hintsFor(problem),
+    // The cases are already in hand, so the hints can name a boundary that is
+    // genuinely in this problem's test data rather than a generic one.
+    hints: hintsFor(problem, cases),
   };
 }
 

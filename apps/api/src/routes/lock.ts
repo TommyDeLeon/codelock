@@ -300,7 +300,16 @@ lockRouter.post(
     const problem = await prisma.problem.findUnique({ where: { id: session.problemId } });
     if (!problem) throw ApiError.notFound('No problem was assigned to this session');
 
-    const text = hintAt(problem, index);
+    // The third hint names a boundary from this problem's own checks, so the
+    // cases have to be in hand. Samples only: the learner can already see
+    // those in the prompt, so reading them here reveals nothing new.
+    const cases = await prisma.testCase.findMany({
+      where: { problemId: problem.id, isSample: true },
+      orderBy: { ordinal: 'asc' },
+      select: { stdin: true, expectedStdout: true },
+    });
+
+    const text = hintAt(problem, index, cases);
     if (text === null) throw ApiError.badRequest('No hint at that index');
 
     void recordStep(user.id, {

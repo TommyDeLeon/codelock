@@ -19,7 +19,8 @@
     "popularity": "tsx --env-file-if-exists=.env scripts/fetch-popularity.ts",
     "verify:drivers": "tsx --env-file-if-exists=.env scripts/verify-drivers.ts",
     "import:corpus": "tsx --env-file-if-exists=.env scripts/import-corpus.ts",
-    "verify:reachability": "tsx --env-file-if-exists=.env scripts/verify-reachability.ts"
+    "verify:reachability": "tsx --env-file-if-exists=.env scripts/verify-reachability.ts",
+    "verify:hints": "tsx --env-file-if-exists=.env scripts/verify-hints.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
