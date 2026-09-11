@@ -254,7 +254,28 @@ const SKILL_BY_TAG: Record<string, Skill> = {
   'seen-before': 'loops',
   'hash-map': 'combining',
   'hash-set': 'combining',
+  sets: 'combining',
   'two-pointers': 'combining',
+  'prefix-sum': 'combining',
+
+  // The remainder of the Tier 0 tag vocabulary, surveyed from the corpus after
+  // the gate went live and served "count the distinct values" as using only
+  // what the learner had already practised. Its tags were `arrays`, `sets` and
+  // `deduplication`; the last two meant nothing to this map, so a problem that
+  // needs a set or a second pass looked like plain list work.
+  //
+  // Every tag on a Tier 0 problem now maps to something. A tag that genuinely
+  // implies no new skill is not listed, and that is a decision rather than an
+  // omission.
+  deduplication: 'loops',
+  'distinct-values': 'loops',
+  'linear-search': 'loops',
+  'early-exit': 'loops',
+  'adjacent-pairs': 'loops',
+  ascending: 'comparisons',
+  descending: 'comparisons',
+  clamping: 'comparisons',
+  concatenation: 'strings',
 };
 
 /** The subset of a problem this module reads. Nothing else is touched. */
