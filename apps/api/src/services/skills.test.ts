@@ -287,6 +287,60 @@ describe('what to work on next', () => {
   });
 });
 
+describe('meeting a skill once is not practising it', () => {
+  /**
+   * The state observed in the running app: every skill introduced by a single
+   * assisted solve, nothing demonstrated. Eligibility keyed on
+   * `not_introduced` alone judged all 695 problems fair, Tier 2 included, and
+   * described them as using only what the learner had already practised.
+   */
+  const helpedOnce = (): SkillSnapshot => {
+    const snap = emptySkillSnapshot();
+    for (const skill of SKILLS) {
+      snap[skill] = { state: 'practised_with_help', unaidedSolves: 0, assistedSolves: 1 };
+    }
+    return snap;
+  };
+
+  it('refuses a problem leaning on three barely-met skills', () => {
+    const deep = problem({
+      signatureId: 'cls:hash-map',
+      patternTags: ['hash-map', 'loops'],
+      tier: 'TIER_2',
+    });
+    const fit = fitForLearner(deep, helpedOnce());
+    assert.equal(fit.eligible, false);
+    assert.ok(fit.reason.includes('new ideas at once'), fit.reason);
+    assert.ok(fit.reason.length < 90, `reason too long to read: ${fit.reason}`);
+  });
+
+  it('never says "already practised" about a skill with no unaided solve', () => {
+    // The honesty rule: the sentence shown to the learner has to be true.
+    const snap = helpedOnce();
+    const loopy = problem({ signatureId: 'fn:ints->int', patternTags: ['loops'] });
+    const fit = fitForLearner(loopy, snap);
+    assert.ok(!fit.reason.includes('already practised'), fit.reason);
+  });
+
+  it('counts one unaided solve as enough to lean on', () => {
+    const snap = helpedOnce();
+    for (const skill of SKILLS) snap[skill] = advanceSkillState(snap[skill], false);
+    const loopy = problem({ signatureId: 'fn:ints->int', patternTags: ['loops'] });
+    assert.equal(fitForLearner(loopy, snap).eligible, true);
+  });
+
+  it('counts a second assisted solve as enough to lean on', () => {
+    // Not mastery — the state stays practised_with_help — but real work with
+    // the idea, and the alternative is serving one problem forever to someone
+    // who needs help every time.
+    const snap = helpedOnce();
+    for (const skill of SKILLS) snap[skill] = advanceSkillState(snap[skill], true);
+    for (const skill of SKILLS) assert.equal(isSatisfied(snap[skill]), false);
+    const loopy = problem({ signatureId: 'fn:ints->int', patternTags: ['loops'] });
+    assert.equal(fitForLearner(loopy, snap).eligible, true);
+  });
+});
+
 describe('every skill is reachable', () => {
   /**
    * Problem shapes taken from the real corpus signature vocabulary, with the

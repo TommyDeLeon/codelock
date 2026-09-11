@@ -187,6 +187,25 @@ export function isIntroduced(record: SkillRecord): boolean {
   return record.state !== 'not_introduced';
 }
 
+/**
+ * Practised enough that a problem may lean on it without that being the whole
+ * of the problem.
+ *
+ * One unaided solve, or two solves with help. Neither is mastery and neither
+ * changes the state — that bar stays at two unaided solves — but both are real
+ * work with the idea, which is the question being asked here.
+ *
+ * This exists because `isIntroduced` turned out to be far too low a bar for
+ * eligibility, as opposed to for ordering. Observed in the running app: a
+ * learner with every skill at one assisted solve and nothing demonstrated had
+ * the entire 695-problem corpus judged eligible, Tier 2 included, described as
+ * using only what they had already practised. Three of those skills had never
+ * been used unaided at all.
+ */
+export function isPractised(record: SkillRecord): boolean {
+  return isSatisfied(record) || record.unaidedSolves >= 1 || record.assistedSolves >= 2;
+}
+
 // ---------------------------------------------------------------------------
 // What a problem actually needs
 // ---------------------------------------------------------------------------
@@ -379,6 +398,8 @@ export function fitForLearner(problem: SkillProblem, snapshot: SkillSnapshot): F
 
   const introducible = missing.filter((skill) => isSkillReady(skill, snapshot));
   const blocked = missing.filter((skill) => !isSkillReady(skill, snapshot));
+  // Introduced, but not yet practised enough for a problem to lean on it.
+  const weak = shaky.filter((skill) => !isPractised(snapshot[skill]));
 
   if (blocked.length > 0) {
     // Name the earliest missing skill and count the rest. Listing all seven
@@ -399,24 +420,29 @@ export function fitForLearner(problem: SkillProblem, snapshot: SkillSnapshot): F
       reason: `starts with ${first.toLowerCase()}${tail}`,
     };
   }
-  if (introducible.length > MAX_NEW_SKILLS_PER_PROBLEM) {
+  if (introducible.length + weak.length > MAX_NEW_SKILLS_PER_PROBLEM) {
+    // One unfamiliar idea at a time, counting both the genuinely new and the
+    // barely-met. Without the second half of that count, a learner who had
+    // met every skill once with help would find the whole corpus open.
+    const ideas = [...introducible, ...weak];
+    const first = SKILL_LABELS[SKILLS.find((skill) => ideas.includes(skill))!];
     return {
       eligible: false,
       missing,
       shaky,
       newSkills: missing.length,
-      reason: `would introduce ${introducible.length} new ideas at once`,
+      reason: `${ideas.length} new ideas at once, starting with ${first.toLowerCase()}`,
     };
   }
+  const frontier = introducible[0] ?? weak[0];
   return {
     eligible: true,
     missing,
     shaky,
     newSkills: missing.length,
-    reason:
-      introducible.length === 1
-        ? `introduces ${SKILL_LABELS[introducible[0]!].toLowerCase()}, and you have the groundwork`
-        : 'uses only what you have already practised',
+    reason: frontier
+      ? `one new idea here: ${SKILL_LABELS[frontier].toLowerCase()}`
+      : 'uses only what you have already practised',
   };
 }
 
