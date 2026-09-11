@@ -262,7 +262,14 @@ export function LockWorkspace({
               the console says what your code did, the results say whether it
               was good enough. Stacking both would halve the space each gets on
               the screen where space is already scarce. */}
-          <div className="flex max-h-[45%] shrink-0 flex-col overflow-hidden border-t border-border bg-surface">
+          {/* A floor as well as a cap. The cap alone left this pane about 105px
+              tall on a 700px-high window, which is under three of five test
+              rows, so inspecting why case 5 failed meant scrolling a
+              two-row-high box. min-height beats max-height in CSS, so a short
+              window now gives the results the room they need and takes it from
+              the editor, which is the right trade when you are reading a
+              failure rather than typing. Tall windows are unchanged. */}
+          <div className="flex max-h-[45%] min-h-[13rem] shrink-0 flex-col overflow-hidden border-t border-border bg-surface">
             <div role="tablist" aria-label="Output" className="flex shrink-0 border-b border-border">
               <PaneTab
                 id="console"

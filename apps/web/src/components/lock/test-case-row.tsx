@@ -71,6 +71,36 @@ export function describeMismatch(expected: string, actual: string | null): strin
 
   const e = expected.trim();
   const a = actual.trim();
+
+  // The language's word for "no value", checked first because it is the most
+  // diagnostic thing that can be said. The printed text is the fact; the cause
+  // is an inference and is worded as one, because there are two ordinary ways
+  // to arrive here and this cannot tell them apart: a function with no return
+  // on this path, or a position that does not exist.
+  const ABSENT = ['undefined', 'none', 'null', 'nil', 'nan'];
+  if (ABSENT.includes(a.toLowerCase())) {
+    const wanted = e === '' ? 'nothing should have been printed here' : `${e} was expected`;
+    return `Your program printed ${a}, which is what this language shows when there is no value, and ${wanted}. Usually that means either the function returned nothing for this input, or it asked for a position that does not exist.`;
+  }
+
+  // Expected nothing, printed something. This used to fall through to null,
+  // which left the commonest empty-input failure with no explanation at all.
+  if (e === '') {
+    return `Nothing should have been printed for this input, and your program printed ${a}.`;
+  }
+
+  // Different kinds of thing, worth naming before any character comparison:
+  // "expected 3, printed three" is a different bug from a typo.
+  const numeric = (s: string) => s !== '' && Number.isFinite(Number(s));
+  if (numeric(e) !== numeric(a)) {
+    return numeric(e)
+      ? `Expected a number, ${e}, and your program printed text, ${a}.`
+      : `Expected text, ${e}, and your program printed a number, ${a}.`;
+  }
+  if (numeric(e) && numeric(a)) {
+    return `Both are numbers and they differ: expected ${e}, printed ${a}.`;
+  }
+
   if (e === a) {
     return 'The answer is right, but the spacing around it differs — usually a stray blank line or a trailing space.';
   }
