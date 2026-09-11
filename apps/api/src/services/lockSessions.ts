@@ -358,14 +358,24 @@ async function claimDueSession(
   sessionId: string,
   userId: string,
   difficulty: Difficulty,
-): Promise<{ session: LockSession; problem: Problem } | null> {
+): Promise<{
+  session: LockSession;
+  problem: Problem;
+  skillEligible: boolean;
+  skillNote: string;
+} | null> {
   // Difficulty says how hard; the progression gate says what this user is ready
   // for. Both narrow the pool, and they are not the same question — a fast
   // beginner is HARD at Tier 0 and still has no business being shown DP.
   const snapshot = await loadProgressSnapshot(userId);
   const tiers = availableTiers(snapshot);
   const families = availableFamiliesForTiers(snapshot, tiers);
-  const problem = await pickProblem(userId, difficulty, tiers, families);
+  const { problem, skillEligible, skillNote } = await pickProblem(
+    userId,
+    difficulty,
+    tiers,
+    families,
+  );
   const lockedAt = new Date();
 
   const claimed = await prisma.lockSession.updateMany({
@@ -390,9 +400,17 @@ async function claimDueSession(
   // different facts, and reading the history later you want to see a lock that
   // engaged even on a night that never produced an attempt.
   void recordStep(userId, { kind: 'LOCK_ENGAGED', sessionId, detail: { difficulty } });
-  void recordStep(userId, { kind: 'PROBLEM_SERVED', sessionId, problem });
+  // The fit goes in the log beside the problem. A night that served something
+  // out of depth is exactly the night worth finding again later, and it cannot
+  // be reconstructed afterwards: the learner's skills will have moved on.
+  void recordStep(userId, {
+    kind: 'PROBLEM_SERVED',
+    sessionId,
+    problem,
+    detail: { skillEligible, skillNote },
+  });
 
-  return { session, problem };
+  return { session, problem, skillEligible, skillNote };
 }
 
 /**

@@ -3,6 +3,8 @@ import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { bucketedPick } from './valueSelection.js';
+import { fitForLearner } from './skills.js';
+import { loadSkillSnapshot } from './skillState.js';
 
 /** Do not serve a problem the user has already seen within this window. */
 const REPEAT_COOLDOWN_DAYS = 21;
@@ -10,8 +12,30 @@ const REPEAT_COOLDOWN_DAYS = 21;
 /** How many candidates the weighted pick chooses between. */
 const CANDIDATE_POOL = 25;
 
+/** The columns the skill gate reads, plus the id. Cheap enough to select in bulk. */
+const SKILL_COLUMNS = {
+  id: true,
+  signatureId: true,
+  patternTags: true,
+  tier: true,
+  patternFamily: true,
+} as const;
+
 /**
- * Take a random sample of the rows matching `where`, not the first page of them.
+ * Every problem matching `where`, reduced to the columns the gate needs.
+ *
+ * The whole matching set, not a sample, and deliberately so: the skill gate
+ * has to be applied to the full pool before sampling. Filtering a 25-problem
+ * sample instead would report "nothing fair here" whenever the sample happened
+ * to miss the eligible problems, and the ladder would relax a rung it did not
+ * need to. At a few hundred rows of five small columns this costs nothing.
+ */
+async function candidateRows(where: Prisma.ProblemWhereInput) {
+  return prisma.problem.findMany({ where, select: SKILL_COLUMNS });
+}
+
+/**
+ * Take a random sample of the given ids, not the first page of them.
  *
  * `findMany({ take: 25 })` with no `orderBy` is not a sample — Prisma orders by
  * id, so it returns the same 25 lowest-id rows on every call. Measured against
@@ -20,22 +44,23 @@ const CANDIDATE_POOL = 25;
  * undercut the value ranker, which was weighting a fixed subset rather than the
  * eligible pool.
  *
- * Two queries instead of one, on purpose. The first selects ids only, so even
- * the whole corpus is a few hundred integers rather than a few hundred rows of
- * markdown and six reference solutions each. The second fetches only the sample.
- * `ORDER BY random()` in raw SQL would be one query, but it would have to be
- * repeated at each fallback rung and would lose the type safety of the query
+ * Separate from `candidateRows` on purpose: that one reads a few small columns
+ * for every match, this one fetches whole rows — markdown and six reference
+ * solutions each — for at most `CANDIDATE_POOL` of them.
+ *
+ * `ORDER BY random()` in raw SQL would avoid the shuffle, but it would have to
+ * be repeated at each fallback rung and would lose the type safety of the query
  * builder for no measurable gain at this table size.
  */
-async function sampleCandidates(
+async function sampleFrom(
   where: Prisma.ProblemWhereInput,
+  ids: readonly string[],
   random: () => number = Math.random,
 ): Promise<Problem[]> {
-  const ids = await prisma.problem.findMany({ where, select: { id: true } });
   if (ids.length === 0) return [];
 
   // Partial Fisher-Yates: shuffle only as far as the pool needs.
-  const pool = ids.map((row) => row.id);
+  const pool = [...ids];
   const wanted = Math.min(CANDIDATE_POOL, pool.length);
   for (let i = 0; i < wanted; i++) {
     const j = i + Math.floor(random() * (pool.length - i));
@@ -51,6 +76,19 @@ async function sampleCandidates(
   return prisma.problem.findMany({ where: { ...where, id: { in: pool.slice(0, wanted) } } });
 }
 
+/** A chosen problem, and the truth about how well it fits the learner. */
+export interface ProblemSelection {
+  problem: Problem;
+  /**
+   * Whether every skill this problem needs is one the learner has met or is
+   * ready to meet. False means the ladder ran out of fair problems and served
+   * this one anyway, which the caller must be able to say out loud.
+   */
+  skillEligible: boolean;
+  /** Plain-words account of the fit, from `fitForLearner`. Always present. */
+  skillNote: string;
+}
+
 /**
  * Pick the problem for a lock session.
  *
@@ -58,13 +96,26 @@ async function sampleCandidates(
  * In `hybrid` mode an LLM ranks the shortlist by topic variety — a cheap,
  * strictly optional layer that falls back to random on any failure, because a
  * user staring at a lock screen must never wait on OpenAI.
+ *
+ * ## The skill gate, and why it is a preference rather than a wall
+ *
+ * Every rung of the ladder below prefers problems whose prerequisites the
+ * learner has actually met. That is the fix for problems arriving beyond the
+ * learner's understanding: tier and family were the only filters, and tier is
+ * a property of the corpus, not of the person.
+ *
+ * The gate is not absolute, because the invariant the rungs were written for
+ * still holds — a user who cannot unlock is a worse outcome than a user served
+ * something off-curriculum. So when no rung offers a single eligible problem,
+ * one is served regardless and `skillEligible` comes back false. The lock
+ * always opens; it just stops presenting the problem as a fair ask.
  */
 export async function pickProblem(
   userId: string,
   difficulty: Difficulty,
   tiers?: Tier[],
   families?: PatternFamily[],
-): Promise<Problem> {
+): Promise<ProblemSelection> {
   const since = new Date(Date.now() - REPEAT_COOLDOWN_DAYS * 86_400_000);
 
   const recent = await prisma.submission.findMany({
@@ -109,35 +160,69 @@ export async function pickProblem(
     );
   }
 
-  let candidates = await sampleCandidates({
-    difficulty,
-    isActive: true,
-    ...curriculum,
-    id: { notIn: seen },
-  });
+  const snapshot = await loadSkillSnapshot(userId);
 
-  // Everything at this tier is on cooldown — better to repeat than to fail open
-  // and leave the device unlockable.
-  if (candidates.length === 0) {
+  // Problems whose prerequisites this learner has met, from the first rung that
+  // offered any. Empty means every rung was exhausted without a fair problem.
+  let eligible: Problem[] = [];
+  // The first rung that matched anything at all, fair or not. This is what keeps
+  // the lock openable when the gate can be satisfied by nothing in the corpus.
+  // A holder rather than a plain variable: the assignment happens inside the
+  // `rung` closure below, and narrowing a local across that boundary would
+  // leave the compiler certain it is still null.
+  const fallback: { pool: { where: Prisma.ProblemWhereInput; ids: string[] } | null } = {
+    pool: null,
+  };
+
+  /**
+   * Try one rung. Returns true when it produced a problem the learner is ready
+   * for, which stops the ladder.
+   *
+   * The skill filter is applied inside each rung, and to the rung's whole pool
+   * rather than to a sample of it, so relaxation still happens in the authors'
+   * order: a fair problem at the right tier beats a fair problem six families
+   * ahead, and a rung is never relaxed merely because the sample missed the
+   * fair problems in it.
+   */
+  const rung = async (where: Prisma.ProblemWhereInput): Promise<boolean> => {
+    const rows = await candidateRows(where);
+    if (rows.length === 0) return false;
+    if (fallback.pool === null) fallback.pool = { where, ids: rows.map((row) => row.id) };
+
+    const fair = rows.filter((row) => fitForLearner(row, snapshot).eligible);
+    if (fair.length === 0) return false;
+
+    eligible = await sampleFrom(
+      where,
+      fair.map((row) => row.id),
+    );
+    return eligible.length > 0;
+  };
+
+  let served = await rung({ difficulty, isActive: true, ...curriculum, id: { notIn: seen } });
+
+  // Everything at this tier is on cooldown, or nothing uncooled is a fair ask —
+  // better to repeat than to fail open and leave the device unlockable.
+  if (!served) {
     logger.info({ userId, difficulty }, 'selection relaxed: cooldown dropped');
-    candidates = await sampleCandidates({ difficulty, isActive: true, ...curriculum });
+    served = await rung({ difficulty, isActive: true, ...curriculum });
   }
 
   // The family gate and this difficulty do not intersect: the user has reached
   // Two Pointers but every Two Pointers problem is MEDIUM and they are on EASY.
   // Widen to the tier before widening to the corpus — an off-pattern problem at
   // the right tier is a smaller wrong than one from six families ahead.
-  if (candidates.length === 0 && families && families.length > 0 && tiers && tiers.length > 0) {
+  if (!served && families && families.length > 0 && tiers && tiers.length > 0) {
     logger.info({ userId, difficulty, families }, 'selection relaxed: pattern family dropped');
-    candidates = await sampleCandidates({ difficulty, isActive: true, ...tierFilter });
+    served = await rung({ difficulty, isActive: true, ...tierFilter });
   }
 
   // Still nothing: the tier gate and this difficulty do not intersect yet. Drop
   // the tier filter rather than the lock — a user who cannot unlock is a worse
   // outcome than a user served something slightly off-curriculum.
-  if (candidates.length === 0 && tiers && tiers.length > 0) {
+  if (!served && tiers && tiers.length > 0) {
     logger.warn({ userId, difficulty, tiers }, 'selection relaxed: tier gate dropped');
-    candidates = await sampleCandidates({ difficulty, isActive: true });
+    served = await rung({ difficulty, isActive: true });
   }
 
   // Last resort: relax difficulty as well.
@@ -148,9 +233,9 @@ export async function pickProblem(
   // easier problem is a far smaller wrong than a lock that cannot open.
   //
   // Same principle as the cooldown fallback above: repeat rather than fail.
-  if (candidates.length === 0) {
-    candidates = await sampleCandidates({ isActive: true });
-    if (candidates.length > 0) {
+  if (!served) {
+    served = await rung({ isActive: true });
+    if (served) {
       logger.warn(
         { difficulty, tiers },
         'no problems at this difficulty; serving from the whole active pool',
@@ -158,11 +243,28 @@ export async function pickProblem(
     }
   }
 
-  if (candidates.length === 0) {
-    throw ApiError.notFound('No active problems at any difficulty');
+  // Nothing fair anywhere in the corpus. The gate does not get to win here: an
+  // unopenable lock is the one outcome this function must never produce, so a
+  // problem is served and the return value says plainly that it is out of
+  // depth. Callers show that; they do not hide it.
+  if (!served) {
+    const last = fallback.pool;
+    if (last === null) throw ApiError.notFound('No active problems at any difficulty');
+
+    const pool = await sampleFrom(last.where, last.ids);
+    if (pool.length === 0) throw ApiError.notFound('No active problems at any difficulty');
+
+    const problem = bucketedPick(pool);
+    const fit = fitForLearner(problem, snapshot);
+    logger.warn(
+      { userId, difficulty, slug: problem.slug, reason: fit.reason },
+      'no problem matches this learner yet; serving an out-of-depth problem',
+    );
+    return { problem, skillEligible: false, skillNote: fit.reason };
   }
 
-  return bucketedPick(candidates);
+  const problem = bucketedPick(eligible);
+  return { problem, skillEligible: true, skillNote: fitForLearner(problem, snapshot).reason };
 }
 
 /**

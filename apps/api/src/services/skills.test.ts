@@ -271,3 +271,82 @@ describe('what to work on next', () => {
     }
   });
 });
+
+describe('every skill is reachable', () => {
+  /**
+   * Problem shapes taken from the real corpus signature vocabulary, with the
+   * tags such problems actually carry. Not exhaustive — enough to answer one
+   * question: can a learner starting from nothing reach every skill by solving
+   * only problems the gate calls eligible?
+   *
+   * This is the test that catches an unreachable skill. `functions` had no tag
+   * in the corpus vocabulary and no signature rule, so it could only arrive as
+   * a prerequisite of `combining` — which requires it, making every combining
+   * problem two new skills at once and therefore permanently ineligible. The
+   * walk below failed on exactly that.
+   */
+  const CORPUS: SkillProblem[] = [
+    problem({ signatureId: 'fn:int->int', patternTags: ['arithmetic'] }),
+    problem({ signatureId: 'fn:int->bool', patternTags: ['booleans'] }),
+    problem({ signatureId: 'fn:string->int', patternTags: ['strings'] }),
+    problem({ signatureId: 'fn:string->string', patternTags: ['case-conversion'] }),
+    problem({ signatureId: 'fn:string->bool', patternTags: ['characters', 'indexing'] }),
+    problem({ signatureId: 'fn:string->int', patternTags: ['indexing', 'bounds'] }),
+    problem({ signatureId: 'fn:ints->int', patternTags: ['arrays'] }),
+    problem({ signatureId: 'fn:ints->ints', patternTags: ['arrays', 'filtering'] }),
+    problem({ signatureId: 'fn:ints->int', patternTags: ['loops', 'accumulator'] }),
+    problem({ signatureId: 'fn:int,int->int', patternTags: ['arithmetic'] }),
+    problem({ signatureId: 'fn:ints,int->int', patternTags: ['arrays', 'search'] }),
+    problem({ signatureId: 'fn:matrix->int', patternTags: ['loops'], tier: 'TIER_1' }),
+    problem({ signatureId: 'cls:stack', patternTags: ['hash-map'], tier: 'TIER_1' }),
+  ];
+
+  it('can be walked from nothing to every skill demonstrated', () => {
+    const snapshot = emptySkillSnapshot();
+    const served: string[] = [];
+
+    // Generous bound: every skill needs two unaided solves, so the walk has
+    // room to spare and still terminates if it stalls.
+    for (let step = 0; step < SKILLS.length * 4; step++) {
+      const target = nextSkillToLearn(snapshot);
+      if (target === null) break;
+
+      const best = CORPUS.filter((p) => fitForLearner(p, snapshot).eligible).sort(
+        (a, b) =>
+          (scoreProblemForLearner(b, snapshot, target) ?? 0) -
+          (scoreProblemForLearner(a, snapshot, target) ?? 0),
+      )[0];
+      if (!best) break;
+
+      served.push(best.signatureId);
+      for (const skill of skillsRequiredBy(best)) {
+        snapshot[skill] = advanceSkillState(snapshot[skill], false);
+      }
+    }
+
+    const unreached = SKILLS.filter((skill) => snapshot[skill].state === 'not_introduced');
+    assert.deepEqual(unreached, [], `never reachable: ${unreached.join(', ')}`);
+
+    const undemonstrated = SKILLS.filter((skill) => !isSatisfied(snapshot[skill]));
+    assert.deepEqual(
+      undemonstrated,
+      [],
+      `reached but never demonstrable: ${undemonstrated.join(', ')}`,
+    );
+    assert.ok(served.length > 0);
+  });
+
+  it('requires text handling for a string problem carrying no useful tags', () => {
+    // An untagged problem must not look easier than it is. Classifying by
+    // shape is what keeps an unsafe gate from presenting text handling as a
+    // first problem.
+    const untagged = problem({ signatureId: 'fn:string->string', patternTags: [] });
+    assert.ok(skillsRequiredBy(untagged).includes('strings'));
+    assert.equal(fitForLearner(untagged, emptySkillSnapshot()).eligible, false);
+  });
+
+  it('requires functions for a two-argument problem', () => {
+    const twoArgs = problem({ signatureId: 'fn:int,int->int', patternTags: ['arithmetic'] });
+    assert.ok(skillsRequiredBy(twoArgs).includes('functions'));
+  });
+});

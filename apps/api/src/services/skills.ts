@@ -196,9 +196,12 @@ export function isIntroduced(record: SkillRecord): boolean {
  *
  * Derived from the real tag vocabulary on the 60 TIER_0 problems rather than
  * invented, so no problem needs re-tagging and no migration touches the
- * corpus. A tag absent from this map contributes no skill, which is the safe
- * direction: it can make a problem look easier than it is, and the signature
- * rules below are what catch that.
+ * corpus. A tag absent from this map contributes no skill on its own, which
+ * understates what a problem needs — the unsafe direction for a gate, since it
+ * can present an out-of-depth problem as fair. The signature rules in
+ * `skillsRequiredBy` are the backstop: every argument and return type is
+ * covered there, so an untagged problem is still classified by its shape. What
+ * remains uncaught is a problem whose difficulty lives only in its wording.
  */
 const SKILL_BY_TAG: Record<string, Skill> = {
   arithmetic: 'values',
@@ -280,6 +283,8 @@ export function skillsRequiredBy(problem: SkillProblem): Skill[] {
   }
 
   const sig = problem.signatureId;
+  const args = sig.slice(sig.indexOf(':') + 1).split('->')[0] ?? '';
+
   if (sig.startsWith('fn:ints') || sig.startsWith('fn:strings') || sig.startsWith('fn:matrix')) {
     found.add('lists');
   }
@@ -287,6 +292,21 @@ export function skillsRequiredBy(problem: SkillProblem): Skill[] {
     found.add('combining');
   }
   if (problem.tier !== 'TIER_0') found.add('combining');
+
+  // Text anywhere in the signature needs `strings`, whatever the tags say. The
+  // tag map is the wrong place to catch this: `fn:string->string` with no tags
+  // at all otherwise reports `values` only, and a learner who has never
+  // touched text would be handed it as a fair first problem.
+  if (sig.includes('string')) found.add('strings');
+
+  // Two arguments is where `functions` actually lives. Nothing in the corpus
+  // tag vocabulary names it, so without this rule the skill had no source and
+  // could only ever arrive as a prerequisite of `combining` — which requires
+  // it, making every `combining` problem two new skills at once and therefore
+  // permanently ineligible. `fn:ints,int->int` is the largest group in the
+  // corpus, and coordinating a collection with a separate argument is exactly
+  // the skill being named.
+  if (args.includes(',')) found.add('functions');
 
   // A skill implies its prerequisites. Without this, a problem tagged only
   // `loops` would look like it needs one skill, and selection would hand it to

@@ -36,10 +36,15 @@ problemsRouter.get(
     const snapshot = await loadProgressSnapshot(user.id);
     const tiers = availableTiers(snapshot);
     const families = availableFamiliesForTiers(snapshot, tiers);
-    const problem = await pickProblem(user.id, progress.currentDifficulty, tiers, families);
+    const selection = await pickProblem(user.id, progress.currentDifficulty, tiers, families);
     res.json({
-      problem: await toPublicProblem(problem),
+      problem: await toPublicProblem(selection.problem),
       difficulty: progress.currentDifficulty,
+      // Reported, not hidden. Practice is where an out-of-depth problem is
+      // cheapest to admit to, and a learner who can see *why* something looks
+      // unfamiliar is in a different position from one who just feels stupid.
+      skillEligible: selection.skillEligible,
+      skillNote: selection.skillNote,
     });
   }),
 );
