@@ -326,7 +326,13 @@ export const api = {
   },
 
   problems: {
-    next: () => request<{ problem: PublicProblem; difficulty: string }>('/v1/problems/next'),
+    next: () =>
+      request<{
+        problem: PublicProblem;
+        difficulty: string;
+        skillEligible: boolean;
+        skillNote: string;
+      }>('/v1/problems/next'),
     byId: (id: string) => request<{ problem: PublicProblem }>(`/v1/problems/${id}`),
   },
 

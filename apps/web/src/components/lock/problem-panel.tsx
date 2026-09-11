@@ -5,7 +5,42 @@ import type { PublicProblem } from '@codelock/shared';
 import { DifficultyBadge } from '@/components/ui/primitives';
 import { formatCompact } from '@/lib/utils';
 
-export function ProblemPanel({ problem }: { problem: PublicProblem }) {
+/**
+ * Why this problem was chosen, in the learner's words.
+ *
+ * Shown rather than kept in a log, because the complaint this whole layer
+ * answers was problems arriving with no account of why. `skillEligible: false`
+ * is the case that matters most: the selector found nothing the learner was
+ * ready for and served this anyway so the lock could still open. Saying that
+ * plainly is the difference between a hard problem and a mystery.
+ *
+ * No warning colour, no apology. It is information, not a telling-off.
+ */
+function FitNote({ eligible, note }: { eligible: boolean | null; note: string | null }) {
+  if (!note) return null;
+
+  if (eligible === false) {
+    return (
+      <p className="mt-3 rounded-sm border border-border bg-surface-2 p-3 text-[13px] text-muted">
+        This one goes further than what you have practised, because nothing
+        closer was ready and the lock still needs a way to open. It {note}.
+        Hints are here from the start and cost nothing.
+      </p>
+    );
+  }
+
+  return <p className="mt-1 text-[13px] text-muted">Chosen for you because it {note}.</p>;
+}
+
+export function ProblemPanel({
+  problem,
+  skillEligible = null,
+  skillNote = null,
+}: {
+  problem: PublicProblem;
+  skillEligible?: boolean | null;
+  skillNote?: string | null;
+}) {
   return (
     <div className="h-full overflow-y-auto px-5 py-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -16,6 +51,7 @@ export function ProblemPanel({ problem }: { problem: PublicProblem }) {
       <p className="mt-1 text-[13px] text-muted">
         Most people finish this in about {formatCompact(problem.avgSolveSeconds)}.
       </p>
+      <FitNote eligible={skillEligible} note={skillNote} />
 
       <div className="prose-problem mt-5 text-sm">
         {/* Markdown only — no rehype-raw. The statement is trusted content, but

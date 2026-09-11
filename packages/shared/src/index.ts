@@ -91,6 +91,18 @@ export interface LockSessionView {
   pausedAt: string | null;
   attempts: number;
   problem: PublicProblem | null;
+  /**
+   * Why this problem was chosen, in plain words, and whether its prerequisites
+   * were actually met.
+   *
+   * `skillEligible: false` means the selector found nothing the learner was
+   * ready for and served this anyway rather than leave the lock unopenable.
+   * Both are recorded when the lock engages and read back unchanged, so the
+   * screen says what was true at the time rather than recomputing a kinder
+   * answer later. Null on a session served before this was recorded.
+   */
+  skillEligible: boolean | null;
+  skillNote: string | null;
 }
 
 export interface UserProgress {

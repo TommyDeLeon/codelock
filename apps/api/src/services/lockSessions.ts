@@ -327,6 +327,9 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
 
   return {
     ...(await toView(session, null)),
+    ...(session.problem
+      ? await readServedFit(session.id)
+      : { skillEligible: null, skillNote: null }),
     problem: session.problem
       ? {
           id: session.problem.id,
@@ -647,5 +650,40 @@ async function toView(session: LockSession, problem: Problem | null): Promise<Lo
     secondsRemaining: Math.max(0, Math.round((session.fireAt.getTime() - reference) / 1000)),
     attempts: session.attempts,
     problem: problem ? await toPublicProblem(problem) : null,
+    skillEligible: null,
+    skillNote: null,
+  };
+}
+
+/**
+ * Read back the fit recorded when the lock engaged.
+ *
+ * Read, not recomputed. The sentence explains why *this* problem was chosen,
+ * and recomputing it as the learner's skills move would quietly rewrite that
+ * account — including turning an out-of-depth problem into a fair one after
+ * the fact. The `PROBLEM_SERVED` row is where it was written down.
+ *
+ * One extra indexed query on the most-polled endpoint in the product, which is
+ * a cost worth naming: it selects one small JSON column via the existing
+ * `[sessionId, at]` index. Sessions served before this was recorded carry no
+ * detail, and get nulls rather than an invented sentence.
+ */
+async function readServedFit(
+  sessionId: string,
+): Promise<{ skillEligible: boolean | null; skillNote: string | null }> {
+  const row = await prisma.learningEvent.findFirst({
+    where: { sessionId, kind: 'PROBLEM_SERVED' },
+    orderBy: { at: 'desc' },
+    select: { detail: true },
+  });
+
+  const detail = row?.detail;
+  if (!detail || typeof detail !== 'object' || Array.isArray(detail)) {
+    return { skillEligible: null, skillNote: null };
+  }
+  const fit = detail as { skillEligible?: unknown; skillNote?: unknown };
+  return {
+    skillEligible: typeof fit.skillEligible === 'boolean' ? fit.skillEligible : null,
+    skillNote: typeof fit.skillNote === 'string' ? fit.skillNote : null,
   };
 }

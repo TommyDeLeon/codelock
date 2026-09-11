@@ -241,7 +241,11 @@ export function LockWorkspace({
           aria-label="Problem statement"
           className="min-h-0 overflow-y-auto border-b border-border lg:border-b-0 lg:border-r"
         >
-          <ProblemPanel problem={problem} />
+          <ProblemPanel
+            problem={problem}
+            skillEligible={session.skillEligible}
+            skillNote={session.skillNote}
+          />
           <HintsPanel sessionId={session.id} />
         </section>
 

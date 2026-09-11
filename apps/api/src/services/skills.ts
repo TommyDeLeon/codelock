@@ -452,7 +452,7 @@ export function fitForLearner(problem: SkillProblem, snapshot: SkillSnapshot): F
       missing,
       shaky,
       newSkills: missing.length,
-      reason: `${ideas.length} new ideas at once, starting with ${first.toLowerCase()}`,
+      reason: `brings in ${ideas.length} new ideas at once, starting with ${first.toLowerCase()}`,
     };
   }
   const frontier = introducible[0] ?? weak[0];
@@ -461,8 +461,10 @@ export function fitForLearner(problem: SkillProblem, snapshot: SkillSnapshot): F
     missing,
     shaky,
     newSkills: missing.length,
+    // Every reason completes the same carrier sentence, "It ...", so a caller
+    // can show any of them without stitching grammar together per case.
     reason: frontier
-      ? `one new idea here: ${SKILL_LABELS[frontier].toLowerCase()}`
+      ? `builds on one new idea: ${SKILL_LABELS[frontier].toLowerCase()}`
       : 'uses only what you have already practised',
   };
 }

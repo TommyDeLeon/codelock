@@ -106,12 +106,17 @@ describe('one correct answer is not mastery', () => {
   });
 
   it('demonstrates it on the second', () => {
-    let record = emptySkillRecord();
-    for (let i = 0; i < UNAIDED_SOLVES_TO_DEMONSTRATE; i++) {
-      record = advanceSkillState(record, false);
-    }
-    assert.equal(record.state, 'demonstrated');
-    assert.equal(isSatisfied(record), true);
+    // The number is asserted, not looped over. Reading the constant and then
+    // applying it that many times would pass whatever the constant said, so
+    // the test would keep its name while the behaviour changed underneath it.
+    assert.equal(UNAIDED_SOLVES_TO_DEMONSTRATE, 2, 'the name of this test says two');
+
+    const once = advanceSkillState(emptySkillRecord(), false);
+    const twice = advanceSkillState(once, false);
+
+    assert.equal(once.state, 'practised_with_help');
+    assert.equal(twice.state, 'demonstrated');
+    assert.equal(isSatisfied(twice), true);
   });
 
   it('never demonstrates a skill from assisted solves, however many', () => {
@@ -148,6 +153,19 @@ describe('review is not a demotion', () => {
     const due = markDueForReview(withDemonstrated('values').values);
     assert.equal(due.state, 'due_for_review');
     assert.equal(isSatisfied(due), true, 'a due review must not re-lock later skills');
+
+    // Checked downstream, not only on the record itself. The claim in the name
+    // is about what a due review does to the rest of the path, and asserting
+    // `isSatisfied` alone never visits the rest of the path.
+    const snapshot = withDemonstrated('values', 'strings');
+    snapshot.values = due;
+    assert.equal(isSkillReady('comparisons', snapshot), true, 'comparisons re-locked');
+    assert.equal(isSkillReady('indexing', snapshot), true, 'indexing re-locked');
+    assert.equal(
+      fitForLearner(problem({ patternTags: ['comparison'] }), snapshot).eligible,
+      true,
+      'a problem built on the due skill became ineligible',
+    );
   });
 
   it('does not lose the solve count when a review comes due', () => {
@@ -190,7 +208,12 @@ describe('what a problem requires', () => {
   });
 });
 
-describe('selection respects prerequisites', () => {
+/**
+ * The eligibility rules themselves. Named for what it tests: `pickProblem`,
+ * which applies these rules to real queries, is not covered here and has no
+ * test yet — it needs a disposable Postgres database.
+ */
+describe('the eligibility rules', () => {
   const loopProblem = problem({ signatureId: 'fn:ints->int', patternTags: ['loops', 'arrays'] });
 
   it('refuses a loop problem to someone who has met nothing', () => {
@@ -225,15 +248,23 @@ describe('selection respects prerequisites', () => {
   });
 
   it('introduces at most one new skill at a time', () => {
-    const snap = emptySkillSnapshot();
-    const oneNew = fitForLearner(problem({ patternTags: ['arithmetic'] }), snap);
-    const twoNew = fitForLearner(problem({ patternTags: ['arithmetic', 'booleans'] }), snap);
+    // Both new skills have to be independently ready, or the refusal proves
+    // nothing about the limit — an unready skill is refused by the
+    // prerequisite rule regardless of how many there are. From an empty
+    // snapshot only `values` is ready, so the groundwork is laid first.
+    const snap = withIntroduced('values', 'strings');
+    assert.equal(isSkillReady('comparisons', snap), true);
+    assert.equal(isSkillReady('indexing', snap), true);
+
+    const oneNew = fitForLearner(problem({ patternTags: ['comparison'] }), snap);
+    const twoNew = fitForLearner(problem({ patternTags: ['comparison', 'bounds'] }), snap);
 
     assert.equal(oneNew.eligible, true, 'one new skill is allowed');
-    assert.equal(
-      twoNew.eligible,
-      MAX_NEW_SKILLS_PER_PROBLEM >= 2,
-      'two new skills at once should be refused while the limit is one',
+    assert.equal(MAX_NEW_SKILLS_PER_PROBLEM, 1, 'the rest of this test assumes the limit is one');
+    assert.equal(twoNew.eligible, false, 'two independently ready new skills must be refused');
+    assert.ok(
+      twoNew.reason.includes('new ideas at once'),
+      `refused for the wrong reason: ${twoNew.reason}`,
     );
   });
 
@@ -339,6 +370,35 @@ describe('meeting a skill once is not practising it', () => {
     const loopy = problem({ signatureId: 'fn:ints->int', patternTags: ['loops'] });
     assert.equal(fitForLearner(loopy, snap).eligible, true);
   });
+});
+
+describe('every reason completes the sentence it is shown in', () => {
+  // The UI renders each of these as "It <reason>." A reason that does not fit
+  // that carrier reads as broken English to the person it is written for.
+  const CASES: Array<[string, SkillSnapshot, SkillProblem]> = [
+    ['blocked', emptySkillSnapshot(), problem({ patternTags: ['loops'] })],
+    [
+      'too many new ideas',
+      withIntroduced('values', 'strings'),
+      problem({ patternTags: ['comparison', 'bounds'] }),
+    ],
+    ['one new idea', emptySkillSnapshot(), problem({ patternTags: ['arithmetic'] })],
+    ['nothing new', withDemonstrated('values'), problem({ patternTags: ['arithmetic'] })],
+  ];
+
+  for (const [name, snapshot, candidate] of CASES) {
+    it(`reads as a sentence for the ${name} case`, () => {
+      const { reason } = fitForLearner(candidate, snapshot);
+      assert.ok(reason.length > 0, 'a reason is always given');
+      assert.ok(/^[a-z]/.test(reason), `should start lower case to follow "It": ${reason}`);
+      assert.ok(
+        /^(starts|brings|builds|uses) /.test(reason),
+        `should start with a verb so "It ${reason}" parses: ${reason}`,
+      );
+      assert.ok(!reason.endsWith('.'), `the caller adds the full stop: ${reason}`);
+      assert.ok(reason.length < 90, `too long to read: ${reason}`);
+    });
+  }
 });
 
 describe('every skill is reachable', () => {
