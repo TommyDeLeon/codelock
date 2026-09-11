@@ -145,6 +145,7 @@ model User {
   devices       Device[]
   unlockAudits  UnlockAudit[]
   learningEvents LearningEvent[]
+  retrievalSchedules RetrievalSchedule[]
 
   @@map("users")
 }
@@ -618,4 +619,55 @@ model LearningEvent {
   @@index([userId, kind, at])
   @@index([sessionId, at])
   @@map("learning_events")
+}
+
+// ---------------------------------------------------------------------------
+// Spaced retrieval
+// ---------------------------------------------------------------------------
+
+/// One pattern family's recall schedule for one user.
+///
+/// A solve proves you could do it once, with the problem in front of you and
+/// the pattern freshly primed. It says nothing about next month. This is the
+/// other half: after a solve, the family becomes due for a short recall
+/// question on an expanding interval — 1, 3, 7, 16, 35, then 60 days, capped
+/// there — so the idea gets revisited before it has faded rather than only
+/// when a new problem happens to reuse it.
+///
+/// A correct recall advances one step. A wrong one moves the family back to
+/// tomorrow and ends the current run of correct recalls, because a run that
+/// survived a miss would be a false number. It costs nothing: no points, no
+/// difficulty change, no effect on the lock. Keeping the two consequences apart is
+/// deliberate: this beginner already struggles to persist, and a recall
+/// question that could also cost them a streak or a difficulty demotion would
+/// make the safest move avoiding it altogether.
+///
+/// Keyed on the user-family pair because the recall question is about the
+/// family, not about any one problem — the whole point is to ask for the idea
+/// away from the exact case it was learned on.
+model RetrievalSchedule {
+  id            String        @id @default(uuid()) @db.Uuid
+  userId        String        @db.Uuid
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patternFamily PatternFamily
+
+  /// When this family is next due for a recall question.
+  nextDueAt     DateTime
+  /// Current step of the expanding schedule, in days. One of 1, 3, 7, 16, 35, 60.
+  intervalDays  Int           @default(1)
+  /// Consecutive correct recalls at the current interval or better.
+  streak        Int           @default(0)
+  /// Total wrong recalls, ever. A count, not a penalty — nothing reads this to
+  /// take anything away; it exists so the learner can see how often an idea
+  /// slipped without that fact costing them anything.
+  lapseCount    Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([userId, patternFamily])
+  /// The due-query scans "what's due for this user right now", so the index
+  /// leads with userId and orders by nextDueAt rather than the other way
+  /// round — there is never a query for "everyone due at time T".
+  @@index([userId, nextDueAt])
+  @@map("retrieval_schedules")
 }
