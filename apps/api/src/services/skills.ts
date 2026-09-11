@@ -381,11 +381,14 @@ export function fitForLearner(problem: SkillProblem, snapshot: SkillSnapshot): F
   const blocked = missing.filter((skill) => !isSkillReady(skill, snapshot));
 
   if (blocked.length > 0) {
-    // Name the earliest blocker and count the rest. Listing all seven reads as
-    // a wall of text and tells the learner nothing they can act on, whereas
-    // the first missing skill in teaching order is exactly where they should
-    // go next.
-    const first = SKILL_LABELS[blocked[0]!];
+    // Name the earliest missing skill and count the rest. Listing all seven
+    // reads as a wall of text and tells the learner nothing they can act on.
+    //
+    // `missing[0]`, not `blocked[0]`: `required` is in teaching order, so the
+    // first missing skill is the one they can actually start on today. A
+    // blocked skill is by definition the one they cannot — naming it would
+    // point them at the destination and call it the starting line.
+    const first = SKILL_LABELS[missing[0] ?? blocked[0]!];
     const rest = blocked.length - 1;
     const tail = rest > 0 ? `, and ${rest} more after that` : '';
     return {

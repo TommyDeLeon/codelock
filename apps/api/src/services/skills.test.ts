@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   MAX_NEW_SKILLS_PER_PROBLEM,
   SKILLS,
+  SKILL_LABELS,
   SKILL_PREREQUISITES,
   UNAIDED_SOLVES_TO_DEMONSTRATE,
   advanceSkillState,
@@ -203,6 +204,20 @@ describe('selection respects prerequisites', () => {
     // Readability matters: this string is shown to a stuck beginner.
     assert.ok(fit.reason.startsWith('starts with'), fit.reason);
     assert.ok(fit.reason.length < 90, `reason too long to read: ${fit.reason}`);
+  });
+
+  it('points at the skill they can start on, not the one they cannot', () => {
+    // The named skill must be actionable today. Naming a blocked skill would
+    // hand a stuck beginner the destination and call it the starting line.
+    const fit = fitForLearner(loopProblem, emptySkillSnapshot());
+    const earliest = skillsRequiredBy(loopProblem)[0]!;
+
+    assert.equal(earliest, 'values', 'teaching order should put the root first');
+    assert.ok(
+      fit.reason.includes(SKILL_LABELS[fit.missing[0]!].toLowerCase()),
+      `named something other than the earliest missing skill: ${fit.reason}`,
+    );
+    assert.ok(!fit.reason.includes('loops'), `named a blocked skill: ${fit.reason}`);
   });
 
   it('scores an ineligible problem as null, so ranking cannot bypass a gate', () => {
