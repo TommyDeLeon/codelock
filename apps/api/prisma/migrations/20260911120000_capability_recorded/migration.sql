@@ -1,0 +1,21 @@
+-- What the learner can now do, written at the moment of a solve.
+--
+-- The lock already records that a problem was passed. That is a fact about an
+-- evening, not about a person: "you solved Two Sum in 14 minutes" says nothing
+-- back to someone who cannot yet tell you what a hash map buys them. This kind
+-- carries the sentence that names the capability, and the level of help it
+-- took to get there, so a history can be read back as a list of things you can
+-- do rather than a list of nights you got through.
+--
+-- The detail payload carries `demonstratesMastery`. It is false when the
+-- editorial was opened before the passing submission, and that is the one rule
+-- this whole addition exists to enforce: reading the worked solution is a real
+-- event worth keeping, and it is never evidence of a capability. Recording it
+-- as one would put a false entry in the only record the learner has of their
+-- own progress.
+--
+-- Additive and idempotent. Adding an enum value cannot rewrite or drop an
+-- existing row, and `IF NOT EXISTS` makes a re-run a no-op rather than an
+-- error, which matters because this will meet databases already migrated by a
+-- `prisma migrate dev` during development.
+ALTER TYPE "LearningEventKind" ADD VALUE IF NOT EXISTS 'CAPABILITY_RECORDED';

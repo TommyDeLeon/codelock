@@ -6,6 +6,7 @@ import { logger } from '../lib/logger.js';
 import { runBatch, JUDGE0_STATUS, type CaseResult } from './judge0.js';
 import { applyOutcome, type ProgressUpdate } from './difficulty.js';
 import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessions.js';
+import { recordCapability } from './capabilities.js';
 import { recordStep } from './learningLog.js';
 import {
   bestOfRuns,
@@ -409,6 +410,29 @@ export async function gradeSubmission(params: {
     sourceCode,
     submissionId: submission.id,
     detail: { runtimeMs, gateMs: performance.gateMs, standing: standing ? { ratio: standing.ratio, bestKnownMs: standing.bestKnownMs } : null },
+  });
+
+  // What this solve means the learner can now do, with the help it took
+  // recorded alongside it. Deliberately after the unlock and never awaited,
+  // for the same reason the log write is: a sentence about competence must not
+  // be able to keep anyone behind a lock screen. `recordCapability` swallows
+  // its own failures and returns null, so there is nothing here to catch.
+  //
+  // It reads the session's hint and debrief events up to this moment, which is
+  // why it is called here rather than earlier: `solvedAt` has to be the time
+  // the passing submission landed, or opening the editorial afterwards would
+  // retroactively demote a solve that owed it nothing.
+  // Bounded by the submission's own timestamp rather than the clock now. Those
+  // differ by however long judging took, and a hint revealed while waiting for
+  // a verdict did not help the submission already in flight. Using the wall
+  // clock would also let a debrief opened in that window demote a solve it had
+  // no part in, and the grade queue does not promise to finish in order.
+  void recordCapability({
+    userId,
+    sessionId: session.id,
+    problem,
+    submissionId: submission.id,
+    solvedAt: submission.createdAt,
   });
 
   return { ...base, unlockToken, progress };

@@ -553,6 +553,12 @@ enum LearningEventKind {
   HINT_REVEALED
   LOCK_BYPASSED
   DIFFICULTY_CHANGED
+  /// What the learner can now do, written at the moment of a solve, with the
+  /// level of help it took recorded alongside it. The detail payload carries
+  /// `demonstratesMastery`, which is false when the editorial was opened
+  /// before the solve: reading the answer is a real event worth keeping and is
+  /// never evidence of a capability.
+  CAPABILITY_RECORDED
 }
 
 /// One step the learner actually took.
