@@ -120,15 +120,21 @@ Delivered and verified:
   the return value says so.
 - Skill state survives restarts, because it is derived rather than stored.
 
+- **The learner is told why they got this problem.** The lock screen shows the
+  sentence under the problem title, read back from the `PROBLEM_SERVED` log row
+  rather than recomputed, so it says what was true when the lock engaged
+  instead of a kinder answer derived later. An out-of-depth problem gets a
+  longer note saying so, with no warning colour and no apology.
+
 Not delivered:
 
-- No web presentation. The selector returns `skillEligible` and `skillNote`,
-  the practice route reports both, and the lock path writes them into the
-  `PROBLEM_SERVED` log row. Nothing shows them to the learner yet.
 - No calibration, no skill map, no collection of completed programs.
 - No integration test of `pickProblem` itself. The gate's rules are unit
   tested; the query ladder around them is not, and that needs a disposable
   Postgres database.
+- The out-of-depth branch of the lock screen has been unit tested but never
+  seen in the running app, because arranging a learner with no eligible
+  problem takes a corpus this one does not have.
 
 ## Storage: derived, not stored
 
@@ -156,9 +162,15 @@ Run from the repository root unless stated.
 | Check | Command | Result |
 |---|---|---|
 | Types, all workspaces | `npm run typecheck` | clean |
-| Unit tests | `npm test` | 52 pass, 0 fail, 12 suites |
+| Unit tests | `npm test` | 56 pass, 0 fail, 13 suites |
 | Live gate, real corpus | `npx tsx apps/api/scripts/probe-gate.ts` | 43 of 695 problems eligible, every one TIER_0 |
-| Live API reports the fit | `curl localhost:4000/v1/problems/next` | `skillEligible: true`, `"one new idea here: loops, and when you actually need one"` |
+| Live API reports the fit | `curl localhost:4000/v1/problems/next` | `skillEligible: true`, `"builds on one new idea: loops, and when you actually need one"` |
+| Lock screen shows it | armed a 5-minute lock, shortened it to now, engaged, read the rendered page | "Chosen for you because it builds on one new idea: loops, and when you actually need one." |
+
+That last check abandoned the lock afterwards to leave nothing blocking, which
+recorded one failure against the owner's progress. Disclosed rather than
+edited: correcting it would mean rewriting the history this product is built to
+keep honestly.
 | The reachability test earns its place | remove the two-argument rule from `skillsRequiredBy`, re-run | fails: `never reachable: functions, combining` |
 | Corpus tag survey | inspection script in apps/api | of 60 TIER_0 problems, 33 need loops, 30 need arrays, 1 is tagged conditionals |
 | Ten-session walk | inspection script in apps/api | one new skill per session, order below |
@@ -230,21 +242,22 @@ Codex's findings that are not fixed, recorded rather than quietly dropped.
    cascades its submissions and erases that credit entirely. A stored snapshot
    would have frozen the old reading instead; neither behaviour is obviously
    right, and this one is at least recomputable.
-3. **Several of the original 29 tests assert less than their names suggest.**
-   Codex named four: a threshold loop that would pass if the constant changed,
-   a two-new-skills fixture that does not test two independently ready skills,
-   a "nothing downstream re-locks" test that never checks a downstream skill,
-   and tests described as covering selection that only exercise the pure
-   predicate. Not yet revised.
-4. **`pickProblem` itself is untested.** The one check Codex called cheapest is
+3. **`pickProblem` itself is untested.** The one check Codex called cheapest is
    still not written: a fixture with one eligible easy problem and one
    ineligible hard one, exhaust the cooldown, remove the eligible one, then
    assert the result is an eligible fallback or an explicitly out-of-depth
    problem, never the hard one presented as fair. This needs a disposable
    Postgres database, never the owner's `DATABASE_URL`.
 
+All four of the weak tests Codex named are now fixed: the threshold is
+asserted rather than looped over, the two-new-skills fixture uses two
+independently ready skills, the re-lock test checks a downstream skill and a
+downstream problem, and the suite describing selection is renamed for what it
+actually covers. A fifth suite was added to keep every reason readable as the
+sentence the screen puts it in.
+
 ## Next action
 
-Show the learner what the selector now knows: surface `skillNote` and the
-stored capability sentence in the app, and the skill map behind them. Then the
-session-flow controls - too hard, too easy, explain differently, low energy.
+The session-flow controls: too hard, too easy, explain differently, low
+energy. Then the capability sentence, which is still stored and shown nowhere,
+and the skill map behind it.
