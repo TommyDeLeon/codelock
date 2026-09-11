@@ -72,7 +72,29 @@ now fixed:
 
 A fifth defect, low severity: the refusal sentence named the blocked
 destination skill rather than the earliest one the learner could act on. Fixed,
-with a test. One further finding was a design question rather than a defect,
+with a test.
+
+**Two further defects found by running the gate against the real database,
+after Codex's review and after the unit tests were green.** Both were invisible
+to pure tests because both depended on the shape of the actual corpus and an
+actual solve history:
+
+6. **Meeting a skill once counted as practising it.** Eligibility refused only
+   skills in `not_introduced`, so a learner with all eight skills at one
+   assisted solve had the whole 695-problem corpus judged fair — Tier 2
+   included — and described as using only what they had already practised.
+   Three of those skills had never been used unaided at all. A problem may now
+   lean on a skill only once it has one unaided solve or two assisted ones, and
+   still introduces at most one unfamiliar idea. The eligible pool went from
+   695 to 43, all Tier 0.
+7. **Ten Tier 0 tags mapped to nothing**, including `sets` and
+   `deduplication`, so "count the distinct values" read as plain list work.
+   Every tag on a Tier 0 problem now maps to a skill or is deliberately
+   unmapped.
+
+This is the argument for the diagnostic script: `apps/api/scripts/probe-gate.ts`
+answers what the rules do against the real corpus, which is the question the
+unit tests cannot ask. One further finding was a design question rather than a defect,
 and its answer changed the storage plan - see the storage section below.
 
 ## Acceptance status
@@ -134,7 +156,9 @@ Run from the repository root unless stated.
 | Check | Command | Result |
 |---|---|---|
 | Types, all workspaces | `npm run typecheck` | clean |
-| Unit tests | `npm test` | 48 pass, 0 fail, 11 suites |
+| Unit tests | `npm test` | 52 pass, 0 fail, 12 suites |
+| Live gate, real corpus | `npx tsx apps/api/scripts/probe-gate.ts` | 43 of 695 problems eligible, every one TIER_0 |
+| Live API reports the fit | `curl localhost:4000/v1/problems/next` | `skillEligible: true`, `"one new idea here: loops, and when you actually need one"` |
 | The reachability test earns its place | remove the two-argument rule from `skillsRequiredBy`, re-run | fails: `never reachable: functions, combining` |
 | Corpus tag survey | inspection script in apps/api | of 60 TIER_0 problems, 33 need loops, 30 need arrays, 1 is tagged conditionals |
 | Ten-session walk | inspection script in apps/api | one new skill per session, order below |
