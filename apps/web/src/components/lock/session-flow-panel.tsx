@@ -29,6 +29,7 @@ export function SessionFlowPanel({ sessionId }: { sessionId: string }) {
     question: string;
     stdin: string;
     expectedStdout: string;
+    revision: number;
   } | null>(null);
   const [response, setResponse] = useState('');
   const responseId = useId();
@@ -73,7 +74,8 @@ export function SessionFlowPanel({ sessionId }: { sessionId: string }) {
   });
 
   const complete = useMutation({
-    mutationFn: () => api.lock.flow.completeActivity(sessionId, response),
+    mutationFn: () =>
+      api.lock.flow.completeActivity(sessionId, response, activity?.revision ?? -1),
     onSuccess: (data) => {
       toast.success(data.message, { duration: 8000 });
       // The same rule as skip: in the desktop shell this page must not decide

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { Difficulty, type UserProgress } from '@prisma/client';
 import { DEMOTE_AFTER_FAILURES, PROMOTE_AFTER_FAST_SOLVES, applyOutcome } from './difficulty.js';
-import { ACTIVITY_RESPONSE_LIMIT, bandFor, scoreForRequest } from './sessionFlow.js';
+import { ACTIVITY_RESPONSE_LIMIT, bandFor, rungsFor, scoreForRequest } from './sessionFlow.js';
 import { restate } from './restate.js';
 import {
   advanceSkillState,
@@ -143,6 +143,22 @@ describe('which band a request looks in', () => {
   it('stays inside the ladder at both ends', () => {
     assert.equal(bandFor(Difficulty.EASY, 'too_hard'), Difficulty.EASY);
     assert.equal(bandFor(Difficulty.HARD, 'too_easy'), Difficulty.HARD);
+  });
+
+  it('looks only in the band asked for, never falling back to the current one', () => {
+    // The defect review found: "too hard" on MEDIUM with no suitable EASY
+    // problem quietly served another MEDIUM. It must refuse instead.
+    // Exactly one rung, in the band asked for. The deep equality is the whole
+    // claim: a second rung in the current band is precisely the defect.
+    const rungs = rungsFor(bandFor(Difficulty.MEDIUM, 'too_hard'), Difficulty.MEDIUM);
+    assert.deepEqual(rungs, [{ band: Difficulty.EASY, sameBand: false }]);
+  });
+
+  it('offers the same band only at the end of the ladder, and says so', () => {
+    const floor = rungsFor(bandFor(Difficulty.EASY, 'too_hard'), Difficulty.EASY);
+    const ceiling = rungsFor(bandFor(Difficulty.HARD, 'too_easy'), Difficulty.HARD);
+    assert.deepEqual(floor, [{ band: Difficulty.EASY, sameBand: true }]);
+    assert.deepEqual(ceiling, [{ band: Difficulty.HARD, sameBand: true }]);
   });
 });
 

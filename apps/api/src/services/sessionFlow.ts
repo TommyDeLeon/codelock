@@ -2,10 +2,9 @@ import { Difficulty, LockState, UnlockOutcome, type Problem } from '@prisma/clie
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { recordStep, recordStepConfirmed } from './learningLog.js';
+import { recordStep } from './learningLog.js';
 import { loadSkillSnapshot } from './skillState.js';
-import { claimResolution } from './lockSessions.js';
-import { recordUnlock, secondsLocked } from './audit.js';
+import { secondsLocked } from './audit.js';
 import {
   fitForLearner,
   nextSkillToLearn,
@@ -56,7 +55,20 @@ import {
  *
  * What protects the learner instead is that an adjusted session is counted but
  * not measured. The ladder records the solve or the failure and moves nothing
- * else. See `adjusted` in `difficulty.ts` and `wasSessionAdjusted` below.
+ * else. See `adjusted` in `difficulty.ts`, and the `adjusted` column on the
+ * session, which the swap sets in the same conditional update that changes the
+ * problem.
+ *
+ * ## Why the session carries a revision
+ *
+ * An earlier version inferred "this session was adjusted" by counting served
+ * log rows. Those rows are written fire-and-forget, so a lost one silently
+ * removed the ladder protection. It also guarded the release on the problem id
+ * alone, which cannot tell "A now" from "A before the learner swapped to B and
+ * back" — so a judge result for the first A could release the lock on the
+ * second. Both were found in review. The revision increments on every swap,
+ * every submission records the revision it was graded against, and every
+ * release is conditional on it.
  */
 export type FlowRequest = 'too_hard' | 'too_easy';
 
@@ -69,37 +81,14 @@ export interface ActivityOffer {
   stdin: string;
   /** Kept visible on purpose: this is not a test, so the answer is not hidden. */
   expectedStdout: string;
+  /** The assignment this example belongs to. Required to complete it. */
+  revision: number;
 }
 
 /** What completing the warm-up did, in the words the screen should use. */
 export interface ActivityResult {
   released: true;
   message: string;
-}
-
-/**
- * Whether the learner changed the problem during this session.
- *
- * Derived from the log rather than stored on the session, for the same reason
- * the skill snapshot is derived: the fact is already written down. Every served
- * problem appends a `PROBLEM_SERVED` row, so more than one of them for a
- * session *is* the record of a swap, and a column would be a second copy of a
- * conclusion the first already implies.
- *
- * Read by the difficulty ladder, which counts an adjusted session but does not
- * read it. Returns false if the query fails: holding the ladder on a lost row
- * would be inventing a protection, and the normal path is the honest default.
- */
-export async function wasSessionAdjusted(sessionId: string): Promise<boolean> {
-  try {
-    const served = await prisma.learningEvent.count({
-      where: { sessionId, kind: 'PROBLEM_SERVED' },
-    });
-    return served > 1;
-  } catch (err) {
-    logger.warn({ err, sessionId }, 'could not tell whether the session was adjusted');
-    return false;
-  }
 }
 
 /** What a swap produced, for the caller to show. */
@@ -161,12 +150,25 @@ export async function swapProblem(params: {
 
   const fit = fitForLearner(chosen.problem, snapshot);
 
-  // Conditional on the session still being on the problem it was on when this
+  // Conditional on the session still holding the assignment it held when this
   // started. Two swap requests racing, or a swap racing a solve, must not both
   // win: the loser sees a conflict rather than quietly overwriting.
+  //
+  // The revision and the adjusted flag change in this same statement, so a
+  // swap that happened can never be missing its protection, and a submission
+  // graded against the previous assignment can never release this one.
   const claimed = await prisma.lockSession.updateMany({
-    where: { id: session.id, state: LockState.LOCKED, problemId: session.problem.id },
-    data: { problemId: chosen.problem.id },
+    where: {
+      id: session.id,
+      state: LockState.LOCKED,
+      problemId: session.problem.id,
+      problemRevision: session.problemRevision,
+    },
+    data: {
+      problemId: chosen.problem.id,
+      problemRevision: { increment: 1 },
+      adjusted: true,
+    },
   });
   if (claimed.count !== 1) {
     throw ApiError.conflict('This lock has already moved on');
@@ -203,6 +205,7 @@ export async function swapProblem(params: {
     detail: {
       request: params.request,
       replacedProblemId: session.problem.id,
+      problemRevision: session.problemRevision + 1,
       skillEligible: fit.eligible,
       skillNote: fit.reason,
     },
@@ -282,12 +285,30 @@ export function scoreForRequest(
 export const SHORTLIST = 8;
 
 /**
+ * Which bands a swap may look in. Pure, so the rule is testable.
+ *
+ * Only the band asked for. The single exception is the end of the ladder,
+ * where the band asked for *is* the current one — "too hard" on an EASY
+ * problem — and another problem at that level is the only honest offer, which
+ * the caller labels as such.
+ *
+ * An earlier version fell back to the current band whenever the requested one
+ * was empty, so "too hard" on a MEDIUM problem could quietly serve another
+ * MEDIUM. Found in review, and it broke the requirement that the control
+ * refuses rather than offer something that is not what was asked for.
+ */
+export function rungsFor(
+  wanted: Difficulty,
+  current: Difficulty,
+): Array<{ band: Difficulty; sameBand: boolean }> {
+  return [{ band: wanted, sameBand: wanted === current }];
+}
+
+/**
  * Find the problem to swap in.
  *
- * Prefers what the learner is ready for and serves something anyway rather
- * than refuse — the same rule as `pickProblem`, for the same reason: a control
- * that can fail leaves the learner stuck with the problem they just said was
- * wrong, which is worse than an imperfect swap.
+ * Refuses when nothing suitable exists, unlike `pickProblem`. See `swapProblem`
+ * for why refusing is the right answer here.
  */
 async function chooseReplacement(params: {
   request: FlowRequest;
@@ -296,19 +317,10 @@ async function chooseReplacement(params: {
   wanted: Difficulty;
   currentBand: Difficulty;
 }): Promise<{ problem: Problem; sameBand: boolean }> {
-  // The band asked for first, then the current band. Both are filtered to what
-  // the learner is ready for, and there is no third rung: an ineligible
-  // problem is not a smaller ask dressed up, it is a different problem they
-  // are not ready for, and serving it would make the control a lie.
-  const rungs: Array<{ band: Difficulty; sameBand: boolean }> =
-    params.wanted === params.currentBand
-      ? [{ band: params.currentBand, sameBand: true }]
-      : [
-          { band: params.wanted, sameBand: false },
-          { band: params.currentBand, sameBand: true },
-        ];
-
-  for (const rung of rungs) {
+  // Filtered to what the learner is ready for, with no fallback to anything
+  // they are not: an ineligible problem is not a smaller ask dressed up, and
+  // serving it would make the control a lie.
+  for (const rung of rungsFor(params.wanted, params.currentBand)) {
     const rows = await prisma.problem.findMany({
       where: { isActive: true, difficulty: rung.band, id: { not: params.excludeId } },
       select: CHOICE_COLUMNS,
@@ -400,13 +412,16 @@ export async function offerActivity(params: {
     kind: 'SESSION_FLOW',
     sessionId: session.id,
     problem: session.problem,
-    detail: { action: 'low_energy', result: 'offered' },
+    detail: { action: 'low_energy', result: 'offered', problemRevision: session.problemRevision },
   });
 
   return {
     question: 'In your own words, what should this input produce, and why?',
     stdin: sample.stdin,
     expectedStdout: sample.expectedStdout,
+    // Carried back on completion. The example was about this assignment, so
+    // the release is only allowed while the session still holds it.
+    revision: session.problemRevision,
   };
 }
 
@@ -425,6 +440,8 @@ export async function completeActivity(params: {
   userId: string;
   sessionId: string;
   response: string;
+  /** The `revision` the offer returned. Must still be the session's. */
+  revision: number;
 }): Promise<ActivityResult> {
   const response = params.response.trim();
   if (response === '') {
@@ -442,43 +459,74 @@ export async function completeActivity(params: {
   if (session.state !== LockState.LOCKED) {
     throw ApiError.conflict('This lock has already ended');
   }
-
-  // Written before the release, and written confirmed. If the record of what
-  // the learner did cannot be stored, the honest move is to fail and let them
-  // retry — not to open the lock and lose the only evidence that anything
-  // happened.
-  await recordStepConfirmed(params.userId, {
-    kind: 'SESSION_FLOW',
-    sessionId: session.id,
-    ...(session.problem ? { problem: session.problem } : {}),
-    sourceCode: response,
-    detail: {
-      action: 'low_energy',
-      result: 'completed',
-      // Read by anything that might later be tempted to count this. It is the
-      // whole claim: they took part, and nothing about their ability follows.
-      participationOnly: true,
-    },
-  });
+  if (session.problemRevision !== params.revision) {
+    throw ApiError.conflict('The problem changed since that example was shown. Open it again.');
+  }
 
   const resolvedAt = new Date();
-  const won = await claimResolution(session.id, [LockState.LOCKED], {
-    state: LockState.BYPASSED,
-    resolvedAt,
-    escapeReason: 'low_energy_activity',
-  });
-  if (!won) throw ApiError.conflict('This lock has already ended');
+  const seconds = secondsLocked(session.lockedAt, resolvedAt);
 
-  await recordUnlock({
-    userId: params.userId,
-    lockSessionId: session.id,
-    problemId: session.problemId,
-    outcome: UnlockOutcome.PARTICIPATED,
-    secondsLocked: secondsLocked(session.lockedAt, resolvedAt),
-    reason: 'low_energy_activity',
+  // One transaction for the three facts that make up this ending: the lock
+  // released, what the learner did, and the audit of why it released. Written
+  // separately they could disagree — a released lock with no record of the
+  // participation, or a participation record for a lock that never released —
+  // and the ordinary audit writer swallows its failures, which is right for a
+  // solve and wrong for an ending whose only evidence is these rows.
+  //
+  // The release is conditional on the session still being locked and still
+  // holding the assignment the example was about, so it cannot race a solve, a
+  // skip or a swap into two endings for one evening. Losing that condition
+  // throws inside the transaction, which rolls back the other two writes.
+  await prisma.$transaction(async (tx) => {
+    const released = await tx.lockSession.updateMany({
+      where: {
+        id: session.id,
+        state: LockState.LOCKED,
+        problemRevision: params.revision,
+      },
+      data: { state: LockState.BYPASSED, resolvedAt, escapeReason: 'low_energy_activity' },
+    });
+    if (released.count !== 1) throw ApiError.conflict('This lock has already ended');
+
+    await tx.learningEvent.create({
+      data: {
+        userId: params.userId,
+        kind: 'SESSION_FLOW',
+        sessionId: session.id,
+        problemSlug: session.problem?.slug ?? null,
+        problemTitle: session.problem?.title ?? null,
+        difficulty: session.problem?.difficulty ?? null,
+        tier: session.problem?.tier ?? null,
+        patternFamily: session.problem?.patternFamily ?? null,
+        sourceCode: response,
+        detail: {
+          action: 'low_energy',
+          result: 'completed',
+          problemRevision: params.revision,
+          // Read by anything that might later be tempted to count this. It is
+          // the whole claim: they took part, and nothing about their ability
+          // follows.
+          participationOnly: true,
+        },
+      },
+    });
+
+    await tx.unlockAudit.create({
+      data: {
+        userId: params.userId,
+        lockSessionId: session.id,
+        problemId: session.problemId,
+        outcome: UnlockOutcome.PARTICIPATED,
+        secondsLocked: seconds,
+        reason: 'low_energy_activity',
+      },
+    });
   });
 
-  logger.info({ userId: params.userId, sessionId: session.id }, 'lock released as participation');
+  logger.info(
+    { audit: 'unlock', userId: params.userId, sessionId: session.id, outcome: 'PARTICIPATED' },
+    'lock released as participation',
+  );
 
   return {
     released: true,

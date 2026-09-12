@@ -331,15 +331,20 @@ export const api = {
         post<{ text: string }>(`/v1/lock/${id}/flow`, { action: 'explain_differently' }),
       /** One worked example to look at on a night with no energy for more. */
       offerActivity: (id: string) =>
-        post<{ question: string; stdin: string; expectedStdout: string }>(
+        post<{ question: string; stdin: string; expectedStdout: string; revision: number }>(
           `/v1/lock/${id}/flow`,
           { action: 'low_energy' },
         ),
-      /** Finish the example. Releases the lock as participation, not a solve. */
-      completeActivity: (id: string, response: string) =>
+      /**
+       * Finish the example. Releases the lock as participation, not a solve.
+       * `revision` comes from the offer; if the problem changed since, the
+       * server refuses rather than end the lock on a different problem.
+       */
+      completeActivity: (id: string, response: string, revision: number) =>
         post<{ released: true; message: string }>(`/v1/lock/${id}/flow`, {
           action: 'low_energy_done',
           response,
+          revision,
         }),
     },
   },

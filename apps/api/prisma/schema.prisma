@@ -417,7 +417,18 @@ model LockSession {
   /// exactly. Never set on a LOCKED session: a live lock cannot be paused.
   pausedAt        DateTime?
   attempts        Int        @default(0)
-  /// Set when state = BYPASSED: "skip_allowance" | "admin" | "emergency".
+  /// Which assignment of a problem this is. Increments on every swap.
+  ///
+  /// The problem id alone cannot tell "A now" from "A before the learner
+  /// swapped to B and back". A submission records the revision it was graded
+  /// against, and the release only happens if the session still holds it.
+  problemRevision Int        @default(0)
+  /// True once the learner has swapped problems in this session. Set in the
+  /// same conditional update as the swap, so it cannot be lost the way a log
+  /// row can. The difficulty ladder counts an adjusted session but does not
+  /// read it, so saying a problem was too hard can never cost a demotion.
+  adjusted        Boolean    @default(false)
+  /// Set when state = BYPASSED: "skip_allowance" | "low_energy_activity" | "admin" | "emergency".
   escapeReason    String?
   /// SHA-256 of the issued unlock token. The raw JWT is returned exactly once.
   unlockTokenHash String?
@@ -463,6 +474,9 @@ model Submission {
   judgeTokens    String[]         @default([])
   /// Seconds from lock start to this submission. Feeds the difficulty engine.
   elapsedSeconds Int?
+  /// The session's `problemRevision` when this was submitted. Null outside a
+  /// lock. A passing result only releases the lock if it still matches.
+  problemRevision Int?
   createdAt      DateTime         @default(now())
 
 

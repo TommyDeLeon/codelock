@@ -398,7 +398,7 @@ lockRouter.post(
     // the audit row would claim a lock held for no time over no problem.
     const resolved = await prisma.lockSession.findUnique({
       where: { id: session.id },
-      select: { lockedAt: true, problemId: true },
+      select: { lockedAt: true, problemId: true, adjusted: true },
     });
     const problemId = resolved?.problemId ?? session.problemId;
 
@@ -417,7 +417,13 @@ lockRouter.post(
     // that never engaged assigned no problem, so there is nothing to have
     // failed at — the same reasoning /cancel already applies.
     const progress = wasLocked
-      ? await recordFailure(user.id, problem?.avgSolveSeconds ?? 600, session.id)
+      ? await recordFailure(
+          user.id,
+          problem?.avgSolveSeconds ?? 600,
+          // From the row read after the resolution, so a swap that landed
+          // between the first read and the abandon still counts.
+          resolved?.adjusted ?? session.adjusted,
+        )
       : null;
     res.json({ progress });
   }),
@@ -465,6 +471,9 @@ lockRouter.post(
           userId: user.id,
           sessionId: id,
           response: body.response ?? '',
+          // Absent means the client never saw an offer, so no assignment can
+          // match and the service refuses rather than guess.
+          revision: body.revision ?? -1,
         }),
       );
       return;

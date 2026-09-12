@@ -165,13 +165,18 @@ export async function claimResolution(
    * result for the problem the learner set aside would release a lock that is
    * now showing a different one.
    */
-  requireProblemId?: string | null,
+  requireAssignment?: { problemId: string; revision: number } | null,
 ): Promise<boolean> {
   const { count } = await prisma.lockSession.updateMany({
     where: {
       id: sessionId,
       state: { in: from },
-      ...(requireProblemId ? { problemId: requireProblemId } : {}),
+      // The problem id alone is not enough: after a swap to B and back to A,
+      // the session is on A again but on a different assignment of it. The
+      // revision is what tells those apart.
+      ...(requireAssignment
+        ? { problemId: requireAssignment.problemId, problemRevision: requireAssignment.revision }
+        : {}),
     },
     data,
   });
@@ -195,6 +200,12 @@ export async function releaseLock(params: {
    * that both sides can win.
    */
   problemId?: string | null;
+  /**
+   * The assignment revision the submission was graded against. Required with
+   * `problemId` for the guard to be complete: the id alone cannot tell a fresh
+   * assignment of A from the one the learner swapped away from earlier.
+   */
+  problemRevision?: number | null;
   /** Carried through purely so the audit row can explain the verdict. */
   submissionId?: string | null;
   runtimeMs?: number | null;
@@ -204,7 +215,11 @@ export async function releaseLock(params: {
   if (session.state !== LockState.LOCKED) {
     throw ApiError.conflict('Session is not locked');
   }
-  if (params.problemId && session.problemId !== params.problemId) {
+  if (
+    params.problemId &&
+    (session.problemId !== params.problemId ||
+      (params.problemRevision != null && session.problemRevision !== params.problemRevision))
+  ) {
     throw ApiError.conflict('That problem is no longer the one this lock is showing');
   }
 
@@ -218,7 +233,9 @@ export async function releaseLock(params: {
       resolvedAt,
       unlockTokenHash: sha256(unlockToken),
     },
-    params.problemId ?? null,
+    params.problemId && params.problemRevision != null
+      ? { problemId: params.problemId, revision: params.problemRevision }
+      : null,
   );
   // Lost the race: another passing submission already released this lock. The
   // screen is open either way, so this is not an error the user should see —
@@ -360,7 +377,7 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
   return {
     ...(await toView(session, null)),
     ...(session.problem
-      ? await readServedFit(session.id)
+      ? await readServedFit(session.id, session.problem.slug)
       : { skillEligible: null, skillNote: null }),
     problem: session.problem
       ? {
@@ -702,9 +719,14 @@ async function toView(session: LockSession, problem: Problem | null): Promise<Lo
  */
 async function readServedFit(
   sessionId: string,
+  problemSlug: string,
 ): Promise<{ skillEligible: boolean | null; skillNote: string | null }> {
   const row = await prisma.learningEvent.findFirst({
-    where: { sessionId, kind: 'PROBLEM_SERVED' },
+    // Matched to the problem on screen, not just the latest row. After a swap,
+    // a lost or delayed write would otherwise surface the note for the problem
+    // the learner set aside; with the match it surfaces nothing, which is the
+    // honest answer when the account of this problem was not written down.
+    where: { sessionId, kind: 'PROBLEM_SERVED', problemSlug },
     orderBy: { at: 'desc' },
     select: { detail: true },
   });

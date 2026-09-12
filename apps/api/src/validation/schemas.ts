@@ -56,6 +56,8 @@ export const sessionFlowSchema = z.object({
   action: z.enum(['too_hard', 'too_easy', 'explain_differently', 'low_energy', 'low_energy_done']),
   /// The learner's own words about the example. Only read by `low_energy_done`.
   response: z.string().max(400).optional(),
+  /// The assignment revision the offer returned. Only read by `low_energy_done`.
+  revision: z.number().int().min(0).optional(),
 });
 
 export const hintRequestSchema = z.object({
