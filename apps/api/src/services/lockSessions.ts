@@ -382,7 +382,12 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
   return {
     ...(await toView(session, null)),
     ...(session.problem
-      ? await readServedFit(session.id, session.problem.slug, session.problemRevision)
+      ? await readServedFit(
+          session.id,
+          session.problem.slug,
+          session.problemRevision,
+          session.adjusted,
+        )
       : { skillEligible: null, skillNote: null }),
     problem: session.problem
       ? {
@@ -728,6 +733,8 @@ async function readServedFit(
   sessionId: string,
   problemSlug: string,
   problemRevision: number,
+  /** Whether the session has ever swapped. Decides if a legacy row is trustworthy. */
+  adjusted: boolean,
 ): Promise<{ skillEligible: boolean | null; skillNote: string | null }> {
   // Matched to the exact assignment on screen: the problem and its revision.
   // Matching the problem alone was not enough, found in review — after A, B,
@@ -736,8 +743,13 @@ async function readServedFit(
   // honest answer when the account of this assignment was not written down.
   //
   // One legacy allowance: rows written before revisions were recorded carry no
-  // revision at all, and they can only ever describe the first assignment, so
-  // revision 0 falls back to matching on the problem alone.
+  // revision at all. Such a row can be trusted only for a session that never
+  // swapped, because then there was only ever one assignment for it to
+  // describe. An earlier version assumed every legacy row described the first
+  // assignment, which review showed was false — swaps existed before
+  // revisions, so after A, B, A the first A's row would have been shown for the
+  // second. For a session that has swapped, an unmatched legacy row is
+  // ambiguous, and the honest answer is no note at all.
   const exact = await prisma.learningEvent.findFirst({
     where: {
       sessionId,
@@ -750,7 +762,7 @@ async function readServedFit(
   });
   const row =
     exact ??
-    (problemRevision === 0
+    (problemRevision === 0 && !adjusted
       ? await prisma.learningEvent.findFirst({
           where: { sessionId, kind: 'PROBLEM_SERVED', problemSlug },
           orderBy: { at: 'desc' },

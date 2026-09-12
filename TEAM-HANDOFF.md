@@ -314,7 +314,19 @@ an applied migration must not be edited. Two smaller points also fixed:
 `releaseLock` now refuses a problem id without a revision, and the fit note is
 matched to the revision as well as the problem.
 
-**Codex — final review: PENDING.**
+**Codex — third review: NOT APPROVE.** Backfill and database tests partially
+fixed, the missing-revision guard fixed, the fit note partially fixed. Every
+remaining point was confirmed against the code and addressed:
+
+| Severity | Finding | Fix |
+|---|---|---|
+| High | The A-to-B-to-A test would still pass with only the database-side revision condition removed, because the read-time check caught it first. Claude's earlier mutation removed both, so it proved neither on its own | The test now also calls `claimResolution` directly with the stale assignment, bypassing the read-time check |
+| High | The concurrent-completion test forced no interleaving, and its loser threw before writing anything, so it never exercised a rollback | Replaced by two deterministic tests: a transaction that fails after all three writes, and a loser driven straight into the transactional writer. The writes moved into an exported `commitParticipation(tx, …)` so this is testable |
+| Medium | The backfill missed a swap whose only surviving trace was its own `PROBLEM_SERVED` row | A further migration also matches served rows carrying `replacedProblemId` or `request`, keys only a swap ever wrote |
+| Medium | The revision-zero fallback assumed legacy rows described the first assignment, which is false once swaps predate revisions | The fallback now applies only to sessions that never swapped; otherwise no note is shown |
+| Lower | The abandon test called `recordFailure` directly; the progress comparison excluded `updatedAt`; a failed restore could leave the test database depleted | The abandon test now goes through the real HTTP route; the whole progress row is compared; the suite reactivates the disposable pool before it starts |
+
+**Codex — fourth review: PENDING.**
 
 ## Acceptance status
 
@@ -344,8 +356,11 @@ Not verified:
   been running, and a test lock would have blocked the screen. The controls have
   therefore not been seen rendered in the running app, and the desktop shell's
   handling of a participation release is unverified.
-- The route-level flow is exercised by the database tests through the services,
-  not through HTTP.
+- Only the abandon path is tested through HTTP. The swap, restatement and
+  participation paths are exercised by the database tests through their
+  services, not through the flow route.
+- The desktop app was rebuilt and reinstalled machine-wide, and its installed
+  binary was confirmed replaced and running, but no lock has been armed in it.
 
 ## Evidence, with commands
 
@@ -355,9 +370,10 @@ Run from `apps/api` unless stated.
 |---|---|---|
 | Types, all workspaces | `npm run typecheck` from the root | clean |
 | Pure tests | `npm test` | 77 pass, 0 fail |
-| Database tests | `DATABASE_URL=…/codelock_test JWT_UNLOCK_SECRET=… npm run test:db` | 7 pass, 0 fail |
-| The race test is not vacuous | remove the revision condition from `claimResolution` and `releaseLock`, re-run | exactly the A-to-B-to-A test fails; file restored with a zero-line diff |
-| Migrations applied | `prisma migrate deploy` on the owner's database and on `codelock_test` | both current, 25 of 25 |
+| Database tests | `DATABASE_URL=…/codelock_test JWT_UNLOCK_SECRET=… npm run test:db` | 8 pass, 0 fail |
+| The database guard is tested on its own | remove only the revision condition from `claimResolution`, leaving the read-time check in place, re-run | exactly the A-to-B-to-A test fails; file restored with a zero-line diff |
+| The rollback is tested | change the audit write in `commitParticipation` from `tx` to the global client, re-run | exactly the post-write-failure test fails; file restored with a zero-line diff |
+| Migrations applied | `prisma migrate deploy` on the owner's database and on `codelock_test` | both current, 26 of 26 |
 | No live session lost protection | query after the backfill | 0 adjusted sessions, 0 locked sessions |
 | Live API validates the route | `POST /v1/lock/<id>/flow` with a bad action, a negative revision, an unknown session | validation error, validation error, not found |
 

@@ -1,4 +1,4 @@
-import { Difficulty, LockState, UnlockOutcome, type Problem } from '@prisma/client';
+import { Difficulty, LockState, UnlockOutcome, type Prisma, type Problem } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -426,6 +426,76 @@ export async function offerActivity(params: {
 }
 
 /**
+ * The three writes that make up a participation ending, against one
+ * transaction client.
+ *
+ * Exported, and taking the client as an argument, so the transactional
+ * guarantee is testable directly: a test can run this inside its own
+ * transaction and then fail, and prove that nothing it wrote survives. That is
+ * only true if every write here goes through `tx` — one stray use of the global
+ * client would commit on its own and escape the rollback.
+ *
+ * Throws a conflict, before writing anything else, if the session is no longer
+ * locked on this assignment. That covers the caller who passed the pre-check
+ * and then lost to a solve, a skip, a swap, or a second completion.
+ */
+export async function commitParticipation(
+  tx: Prisma.TransactionClient,
+  input: {
+    userId: string;
+    sessionId: string;
+    revision: number;
+    response: string;
+    resolvedAt: Date;
+    secondsLocked: number | null;
+    problem: Pick<Problem, 'id' | 'slug' | 'title' | 'difficulty' | 'tier' | 'patternFamily'> | null;
+  },
+): Promise<void> {
+  const released = await tx.lockSession.updateMany({
+    where: { id: input.sessionId, state: LockState.LOCKED, problemRevision: input.revision },
+    data: {
+      state: LockState.BYPASSED,
+      resolvedAt: input.resolvedAt,
+      escapeReason: 'low_energy_activity',
+    },
+  });
+  if (released.count !== 1) throw ApiError.conflict('This lock has already ended');
+
+  await tx.learningEvent.create({
+    data: {
+      userId: input.userId,
+      kind: 'SESSION_FLOW',
+      sessionId: input.sessionId,
+      problemSlug: input.problem?.slug ?? null,
+      problemTitle: input.problem?.title ?? null,
+      difficulty: input.problem?.difficulty ?? null,
+      tier: input.problem?.tier ?? null,
+      patternFamily: input.problem?.patternFamily ?? null,
+      sourceCode: input.response,
+      detail: {
+        action: 'low_energy',
+        result: 'completed',
+        problemRevision: input.revision,
+        // Read by anything that might later be tempted to count this. It is the
+        // whole claim: they took part, and nothing about their ability follows.
+        participationOnly: true,
+      },
+    },
+  });
+
+  await tx.unlockAudit.create({
+    data: {
+      userId: input.userId,
+      lockSessionId: input.sessionId,
+      problemId: input.problem?.id ?? null,
+      outcome: UnlockOutcome.PARTICIPATED,
+      secondsLocked: input.secondsLocked,
+      reason: 'low_energy_activity',
+    },
+  });
+}
+
+/**
  * Finish the warm-up and release the lock as participation.
  *
  * The release is conditional on the session still being locked, so this cannot
@@ -477,51 +547,17 @@ export async function completeActivity(params: {
   // holding the assignment the example was about, so it cannot race a solve, a
   // skip or a swap into two endings for one evening. Losing that condition
   // throws inside the transaction, which rolls back the other two writes.
-  await prisma.$transaction(async (tx) => {
-    const released = await tx.lockSession.updateMany({
-      where: {
-        id: session.id,
-        state: LockState.LOCKED,
-        problemRevision: params.revision,
-      },
-      data: { state: LockState.BYPASSED, resolvedAt, escapeReason: 'low_energy_activity' },
-    });
-    if (released.count !== 1) throw ApiError.conflict('This lock has already ended');
-
-    await tx.learningEvent.create({
-      data: {
-        userId: params.userId,
-        kind: 'SESSION_FLOW',
-        sessionId: session.id,
-        problemSlug: session.problem?.slug ?? null,
-        problemTitle: session.problem?.title ?? null,
-        difficulty: session.problem?.difficulty ?? null,
-        tier: session.problem?.tier ?? null,
-        patternFamily: session.problem?.patternFamily ?? null,
-        sourceCode: response,
-        detail: {
-          action: 'low_energy',
-          result: 'completed',
-          problemRevision: params.revision,
-          // Read by anything that might later be tempted to count this. It is
-          // the whole claim: they took part, and nothing about their ability
-          // follows.
-          participationOnly: true,
-        },
-      },
-    });
-
-    await tx.unlockAudit.create({
-      data: {
-        userId: params.userId,
-        lockSessionId: session.id,
-        problemId: session.problemId,
-        outcome: UnlockOutcome.PARTICIPATED,
-        secondsLocked: seconds,
-        reason: 'low_energy_activity',
-      },
-    });
-  });
+  await prisma.$transaction((tx) =>
+    commitParticipation(tx, {
+      userId: params.userId,
+      sessionId: session.id,
+      revision: params.revision,
+      response,
+      resolvedAt,
+      secondsLocked: seconds,
+      problem: session.problem,
+    }),
+  );
 
   logger.info(
     { audit: 'unlock', userId: params.userId, sessionId: session.id, outcome: 'PARTICIPATED' },
