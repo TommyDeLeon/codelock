@@ -37,18 +37,18 @@
 /*
  * Dark is selected two ways, and the order matters.
  *
- * `prefers-color-scheme` stays the default: with no stored choice the app
- * follows the operating system, which is what it always did. `[data-theme]` is
+ * `prefers-color-scheme` applies only to a stored `system` choice: with no
+ * choice at all the app stays light, for readability. `[data-theme]` is
  * the override, written by the header control, and it has to come *after* the
  * media query so an explicit choice wins — otherwise picking Light on a
  * dark-mode machine appears to do nothing at all.
  *
- * The media query is also guarded with :not([data-theme]) rather than relying
- * on source order alone, so a stored choice leaves it genuinely unmatched
- * instead of merely out-specified.
+ * The media query matches [data-theme='system'] alone, so following the OS is
+ * something the reader opts into rather than the state they land in with no
+ * preference recorded.
  */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  :root[data-theme='system'] {
     --bg: #22231f;
     --surface: #292a25;
     --surface-2: #30312b;

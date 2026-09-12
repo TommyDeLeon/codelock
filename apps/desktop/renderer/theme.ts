@@ -18,20 +18,21 @@ const KEY = 'codelock.theme';
 export const THEME_ORDER: ThemePreference[] = ['light', 'dark', 'system'];
 
 /**
- * The `data-theme` value for a preference, or null to defer to the OS.
+ * The `data-theme` value for a preference.
  *
- * Pure, so the mapping can be tested without a DOM. Returning null rather than
- * the string 'system' matters: the attribute has to be *absent* for the media
- * query to take over, and writing `data-theme="system"` would match neither
- * override block and strand the app on the light defaults.
+ * Pure, so the mapping can be tested without a DOM. All three preferences are
+ * written to the attribute, 'system' included: the stylesheet keys its
+ * prefers-color-scheme block on `data-theme='system'`, so following the OS is
+ * a state the reader opts into. An absent attribute means light, the default a
+ * fresh install lands on.
  */
-export function themeAttribute(preference: ThemePreference): 'light' | 'dark' | null {
-  return preference === 'system' ? null : preference;
+export function themeAttribute(preference: ThemePreference): ThemePreference {
+  return preference;
 }
 
-/** Anything unrecognised means "no choice recorded", not a broken app. */
+/** Anything unrecognised means "no choice recorded", which is Light. */
 export function parsePreference(raw: string | null): ThemePreference {
-  return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system';
+  return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'light';
 }
 
 /**
@@ -53,7 +54,7 @@ export function readPreference(): ThemePreference {
   try {
     return parsePreference(storage()?.getItem(KEY) ?? null);
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
@@ -67,8 +68,5 @@ export function writePreference(preference: ThemePreference): void {
 
 /** Put the choice on the document root, where the stylesheet can see it. */
 export function applyTheme(preference: ThemePreference): void {
-  const attribute = themeAttribute(preference);
-  const root = document.documentElement;
-  if (attribute === null) root.removeAttribute('data-theme');
-  else root.setAttribute('data-theme', attribute);
+  document.documentElement.setAttribute('data-theme', themeAttribute(preference));
 }

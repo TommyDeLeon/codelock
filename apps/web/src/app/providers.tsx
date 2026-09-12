@@ -74,7 +74,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      {/*
+        Light is the default rather than the operating system's choice, because
+        this app is read: long code listings and a verdict pane, where dark is a
+        preference rather than the better default. enableSystem stays on, so the
+        System segment still resolves against the OS for anyone who picks it.
+      */}
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         {children}
         <Toaster position="top-center" richColors closeButton />
       </ThemeProvider>
