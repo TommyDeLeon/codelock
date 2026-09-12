@@ -166,14 +166,14 @@ Run from the repository root unless stated.
 | Live gate, real corpus | `npx tsx apps/api/scripts/probe-gate.ts` | 43 of 695 problems eligible, every one TIER_0 |
 | Live API reports the fit | `curl localhost:4000/v1/problems/next` | `skillEligible: true`, `"builds on one new idea: loops, and when you actually need one"` |
 | Lock screen shows it | armed a 5-minute lock, shortened it to now, engaged, read the rendered page | "Chosen for you because it builds on one new idea: loops, and when you actually need one." |
-
-That last check abandoned the lock afterwards to leave nothing blocking, which
-recorded one failure against the owner's progress. Disclosed rather than
-edited: correcting it would mean rewriting the history this product is built to
-keep honestly.
 | The reachability test earns its place | remove the two-argument rule from `skillsRequiredBy`, re-run | fails: `never reachable: functions, combining` |
 | Corpus tag survey | inspection script in apps/api | of 60 TIER_0 problems, 33 need loops, 30 need arrays, 1 is tagged conditionals |
 | Ten-session walk | inspection script in apps/api | one new skill per session, order below |
+
+The lock-screen check abandoned the lock afterwards to leave nothing blocking,
+which recorded one failure against the owner's progress. Disclosed rather than
+edited: correcting it would mean rewriting the history this product is built to
+keep honestly.
 
 The ten-session walk is the substantive evidence. Serving order for a learner
 starting from nothing, each problem solved unaided:

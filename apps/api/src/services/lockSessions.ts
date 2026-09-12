@@ -215,10 +215,15 @@ export async function releaseLock(params: {
   if (session.state !== LockState.LOCKED) {
     throw ApiError.conflict('Session is not locked');
   }
+  // A problem id without its revision is a caller bug, not a request for a
+  // weaker guard. Accepting it would silently skip the only check that tells
+  // one assignment of a problem from another, so it is refused outright.
+  if (params.problemId && params.problemRevision == null) {
+    throw new Error('releaseLock requires problemRevision whenever problemId is given');
+  }
   if (
     params.problemId &&
-    (session.problemId !== params.problemId ||
-      (params.problemRevision != null && session.problemRevision !== params.problemRevision))
+    (session.problemId !== params.problemId || session.problemRevision !== params.problemRevision)
   ) {
     throw ApiError.conflict('That problem is no longer the one this lock is showing');
   }
@@ -377,7 +382,7 @@ export async function getActiveSession(userId: string): Promise<LockSessionView 
   return {
     ...(await toView(session, null)),
     ...(session.problem
-      ? await readServedFit(session.id, session.problem.slug)
+      ? await readServedFit(session.id, session.problem.slug, session.problemRevision)
       : { skillEligible: null, skillNote: null }),
     problem: session.problem
       ? {
@@ -459,7 +464,9 @@ async function claimDueSession(
     kind: 'PROBLEM_SERVED',
     sessionId,
     problem,
-    detail: { skillEligible, skillNote },
+    // The revision is recorded so the fit note can be matched to this exact
+    // assignment later, not merely to the problem.
+    detail: { skillEligible, skillNote, problemRevision: 0 },
   });
 
   return { session, problem, skillEligible, skillNote };
@@ -720,18 +727,43 @@ async function toView(session: LockSession, problem: Problem | null): Promise<Lo
 async function readServedFit(
   sessionId: string,
   problemSlug: string,
+  problemRevision: number,
 ): Promise<{ skillEligible: boolean | null; skillNote: string | null }> {
-  const row = await prisma.learningEvent.findFirst({
-    // Matched to the problem on screen, not just the latest row. After a swap,
-    // a lost or delayed write would otherwise surface the note for the problem
-    // the learner set aside; with the match it surfaces nothing, which is the
-    // honest answer when the account of this problem was not written down.
-    where: { sessionId, kind: 'PROBLEM_SERVED', problemSlug },
+  // Matched to the exact assignment on screen: the problem and its revision.
+  // Matching the problem alone was not enough, found in review — after A, B,
+  // then A again, a lost write for the second A would surface the note written
+  // for the first. With the match, a missing row surfaces nothing, which is the
+  // honest answer when the account of this assignment was not written down.
+  //
+  // One legacy allowance: rows written before revisions were recorded carry no
+  // revision at all, and they can only ever describe the first assignment, so
+  // revision 0 falls back to matching on the problem alone.
+  const exact = await prisma.learningEvent.findFirst({
+    where: {
+      sessionId,
+      kind: 'PROBLEM_SERVED',
+      problemSlug,
+      detail: { path: ['problemRevision'], equals: problemRevision },
+    },
     orderBy: { at: 'desc' },
     select: { detail: true },
   });
+  const row =
+    exact ??
+    (problemRevision === 0
+      ? await prisma.learningEvent.findFirst({
+          where: { sessionId, kind: 'PROBLEM_SERVED', problemSlug },
+          orderBy: { at: 'desc' },
+          select: { detail: true },
+        })
+      : null);
+  return parseServedFit(row?.detail);
+}
 
-  const detail = row?.detail;
+/** Pull the fit fields out of a served row's detail, trusting nothing. */
+function parseServedFit(
+  detail: unknown,
+): { skillEligible: boolean | null; skillNote: string | null } {
   if (!detail || typeof detail !== 'object' || Array.isArray(detail)) {
     return { skillEligible: null, skillNote: null };
   }

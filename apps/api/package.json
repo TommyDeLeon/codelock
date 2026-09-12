@@ -21,7 +21,8 @@
     "import:corpus": "tsx --env-file-if-exists=.env scripts/import-corpus.ts",
     "verify:reachability": "tsx --env-file-if-exists=.env scripts/verify-reachability.ts",
     "verify:hints": "tsx --env-file-if-exists=.env scripts/verify-hints.ts",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts",
+    "test:db": "tsx --test --test-concurrency=1 src/**/*.dbtest.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
