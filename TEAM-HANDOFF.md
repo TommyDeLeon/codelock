@@ -326,7 +326,22 @@ remaining point was confirmed against the code and addressed:
 | Medium | The revision-zero fallback assumed legacy rows described the first assignment, which is false once swaps predate revisions | The fallback now applies only to sessions that never swapped; otherwise no note is shown |
 | Lower | The abandon test called `recordFailure` directly; the progress comparison excluded `updatedAt`; a failed restore could leave the test database depleted | The abandon test now goes through the real HTTP route; the whole progress row is compared; the suite reactivates the disposable pool before it starts |
 
-**Codex — fourth review: PENDING.**
+**Codex — fourth review: APPROVE.** The backfill, the database tests, the
+fit-note fallback and the test isolation all marked fixed, with citations. Codex
+confirmed by reading the code that every participation write goes through the
+transaction client, so the test-owned-transaction proof holds for the
+production path, and that `?` is valid because `detail` is `jsonb`. It stated
+plainly that it ran nothing, so every pass count above remains Claude's
+measurement.
+
+It recorded one accepted limitation and one low-severity note:
+
+- **A historical swap that left no trace at all cannot be recovered.** Such a
+  session reads as revision 0 and unadjusted. `adjusted = false` therefore means
+  "no swap on record", not "no swap ever happened". Nothing can fix this,
+  because the evidence does not exist.
+- **The HTTP abandon test had no request deadline**, so a stalled handler could
+  hold cleanup open. Fixed with a ten-second abort signal.
 
 ## Acceptance status
 

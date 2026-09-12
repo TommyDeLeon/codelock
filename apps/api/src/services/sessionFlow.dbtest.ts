@@ -318,6 +318,9 @@ describe('saying a problem was too hard never costs a level', { concurrency: fal
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: '{}',
+        // A deadline, so a stalled handler fails this test instead of holding
+        // the server, the connection pool and the cleanup open indefinitely.
+        signal: AbortSignal.timeout(10_000),
       });
       assert.equal(response.status, 200, await response.text());
     } finally {
