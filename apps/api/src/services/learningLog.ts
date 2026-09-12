@@ -79,6 +79,40 @@ export async function recordStep(userId: string, step: StepInput): Promise<void>
   }
 }
 
+/**
+ * Write one step and fail loudly if it does not land.
+ *
+ * The ordinary `recordStep` swallows insert failures on purpose: a lost row is
+ * not worth failing the action it describes, and most rows describe something
+ * already done. This variant is for the rows that *are* the action's
+ * consequence — help given, participation taken — where a silently lost write
+ * turns into a false record later. Assistance that was not written down reads
+ * as an unaided solve.
+ *
+ * Use it only where the caller can honestly refuse: showing an explanation can
+ * be retried, whereas a lock that has already opened cannot be un-opened.
+ */
+export async function recordStepConfirmed(userId: string, step: StepInput): Promise<void> {
+  await prisma.learningEvent.create({
+    data: {
+      userId,
+      kind: step.kind,
+      problemSlug: step.problem?.slug ?? null,
+      problemTitle: step.problem?.title ?? null,
+      difficulty: step.problem?.difficulty ?? null,
+      tier: step.problem?.tier ?? null,
+      patternFamily: step.problem?.patternFamily ?? null,
+      language: step.language ?? null,
+      attempt: step.attempt ?? null,
+      elapsedSeconds: step.elapsedSeconds ?? null,
+      sourceCode: step.sourceCode ?? null,
+      submissionId: step.submissionId ?? null,
+      sessionId: step.sessionId ?? null,
+      ...(step.detail === undefined ? {} : { detail: step.detail }),
+    },
+  });
+}
+
 export interface TimelineOptions {
   limit?: number;
   before?: Date;

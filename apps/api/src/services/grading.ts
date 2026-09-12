@@ -6,6 +6,7 @@ import { logger } from '../lib/logger.js';
 import { runBatch, JUDGE0_STATUS, type CaseResult } from './judge0.js';
 import { applyOutcome, type ProgressUpdate } from './difficulty.js';
 import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessions.js';
+import { wasSessionAdjusted } from './sessionFlow.js';
 import { recordCapability } from './capabilities.js';
 import { recordStep } from './learningLog.js';
 import { recordSolve } from './retrieval.js';
@@ -381,6 +382,9 @@ export async function gradeSubmission(params: {
   const { unlockToken } = await releaseLock({
     userId,
     sessionId: session.id,
+    // The problem this submission was graded against. If the learner asked for
+    // a different problem while the judge was running, this release loses.
+    problemId,
     // Passed through so the audit row can explain *why* this unlocked, not
     // merely that it did.
     submissionId: submission.id,
@@ -393,6 +397,11 @@ export async function gradeSubmission(params: {
     elapsedSeconds: elapsedSeconds ?? undefined,
     problemAvgSeconds: problem.avgSolveSeconds,
     firstTry: priorAttempts === 0,
+    // A session where the learner asked for a different problem is counted but
+    // not measured: the clock still runs from the original lock and the problem
+    // at the end is one they chose, so neither the speed nor the streak means
+    // what the ladder would read into it.
+    adjusted: await wasSessionAdjusted(session.id),
   });
 
   // Now, and not inside releaseLock: the recurring timer arms the next block at
@@ -453,8 +462,20 @@ export async function gradeSubmission(params: {
 export async function recordFailure(
   userId: string,
   problemAvgSeconds: number,
+  /**
+   * The session being given up on, when there is one. Only used to ask whether
+   * the learner changed problems during it: a failure on a problem they chose
+   * is counted but must not demote, or "this is too hard" would cost a
+   * demotion for having said so.
+   */
+  sessionId?: string,
 ): Promise<ProgressUpdate> {
-  return advanceProgress(userId, { solved: false, problemAvgSeconds, firstTry: false });
+  return advanceProgress(userId, {
+    solved: false,
+    problemAvgSeconds,
+    firstTry: false,
+    adjusted: sessionId ? await wasSessionAdjusted(sessionId) : false,
+  });
 }
 
 async function advanceProgress(

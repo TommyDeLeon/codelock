@@ -159,9 +159,20 @@ export async function claimResolution(
   sessionId: string,
   from: LockState[],
   data: Prisma.LockSessionUpdateManyMutationInput,
+  /**
+   * When given, the transition also requires the session to still be on this
+   * problem. Needed once a live lock can change problems: without it, a judge
+   * result for the problem the learner set aside would release a lock that is
+   * now showing a different one.
+   */
+  requireProblemId?: string | null,
 ): Promise<boolean> {
   const { count } = await prisma.lockSession.updateMany({
-    where: { id: sessionId, state: { in: from } },
+    where: {
+      id: sessionId,
+      state: { in: from },
+      ...(requireProblemId ? { problemId: requireProblemId } : {}),
+    },
     data,
   });
   return count === 1;
@@ -171,6 +182,19 @@ export async function claimResolution(
 export async function releaseLock(params: {
   userId: string;
   sessionId: string;
+  /**
+   * The problem that was actually graded. The release only happens if the
+   * session is still on it.
+   *
+   * Judging takes seconds, and a learner can now ask for a different problem
+   * mid-lock. Without this guard the sequence submit A, swap to B, A's result
+   * arrives would open the lock on the strength of a problem no longer in
+   * front of them — and the state check alone cannot see that, because the
+   * session is still LOCKED throughout. The conditional update is what makes
+   * grading and swapping mutually exclusive, rather than a read-then-write
+   * that both sides can win.
+   */
+  problemId?: string | null;
   /** Carried through purely so the audit row can explain the verdict. */
   submissionId?: string | null;
   runtimeMs?: number | null;
@@ -180,14 +204,22 @@ export async function releaseLock(params: {
   if (session.state !== LockState.LOCKED) {
     throw ApiError.conflict('Session is not locked');
   }
+  if (params.problemId && session.problemId !== params.problemId) {
+    throw ApiError.conflict('That problem is no longer the one this lock is showing');
+  }
 
   const unlockToken = signUnlockToken(params.userId, session.id);
   const resolvedAt = new Date();
-  const won = await claimResolution(session.id, [LockState.LOCKED], {
-    state: LockState.UNLOCKED,
-    resolvedAt,
-    unlockTokenHash: sha256(unlockToken),
-  });
+  const won = await claimResolution(
+    session.id,
+    [LockState.LOCKED],
+    {
+      state: LockState.UNLOCKED,
+      resolvedAt,
+      unlockTokenHash: sha256(unlockToken),
+    },
+    params.problemId ?? null,
+  );
   // Lost the race: another passing submission already released this lock. The
   // screen is open either way, so this is not an error the user should see —
   // but a second audit row, a second re-arm and a second token would all be

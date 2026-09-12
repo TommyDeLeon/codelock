@@ -45,6 +45,19 @@ export const armSessionSchema = z.object({
 
 /// Which of the three hints to reveal. Bounded here rather than in the route so
 /// an out-of-range index is a 400 with a field name, not a null deep inside.
+/**
+ * One of the session-flow controls.
+ *
+ * `low_energy` offers the warm-up and `low_energy_done` finishes it: two
+ * actions rather than one, because opening the activity and completing it are
+ * different facts and only the second ends the lock.
+ */
+export const sessionFlowSchema = z.object({
+  action: z.enum(['too_hard', 'too_easy', 'explain_differently', 'low_energy', 'low_energy_done']),
+  /// The learner's own words about the example. Only read by `low_energy_done`.
+  response: z.string().max(400).optional(),
+});
+
 export const hintRequestSchema = z.object({
   index: z.number().int().min(0).max(2),
 });

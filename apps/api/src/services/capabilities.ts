@@ -259,12 +259,20 @@ export async function readCapabilityEvidence(
   userId: string,
   sessionId: string,
   before: Date,
+  problemSlug?: string,
 ): Promise<CapabilityEvidence> {
   const rows = await prisma.learningEvent.groupBy({
     by: ['kind'],
     where: {
       userId,
       sessionId,
+      // Scoped to the problem, not just the session. A session can now serve
+      // more than one problem: asking for a different one keeps the lock up
+      // and swaps the problem under it. Without this, hints spent on the
+      // problem they set aside would be counted against the one they went on
+      // to solve unaided, and the sentence written down would understate what
+      // they did. The slug is denormalised onto every event for this reason.
+      ...(problemSlug ? { problemSlug } : {}),
       kind: { in: ['HINT_REVEALED', 'DEBRIEF_OPENED'] },
       at: { lt: before },
     },
@@ -303,6 +311,7 @@ export async function recordCapability(params: {
       params.userId,
       params.sessionId,
       params.solvedAt ?? new Date(),
+      params.problem.slug,
     );
     const record = deriveCapability(params.problem, evidence);
 

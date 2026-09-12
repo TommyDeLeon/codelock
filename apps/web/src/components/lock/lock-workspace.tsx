@@ -20,6 +20,7 @@ import { CodeEditor } from './code-editor';
 import { ConsolePanel } from './console-panel';
 import { HintsPanel } from './hints-panel';
 import { ProblemPanel } from './problem-panel';
+import { SessionFlowPanel } from './session-flow-panel';
 import { TestResults } from './test-results';
 
 /**
@@ -31,6 +32,20 @@ import { TestResults } from './test-results';
  * honest in both places.
  */
 export function LockWorkspace({
+  session,
+  onUnlocked,
+}: {
+  session: LockSessionView;
+  onUnlocked: (token: string) => void | Promise<void>;
+}) {
+  // Keyed on the problem, so asking for a different one remounts everything
+  // under it: the editor, the console input, the test results and the hints.
+  // Carrying any of those across would show the learner output from a problem
+  // that is no longer on screen.
+  return <Workspace key={session.problem?.id} session={session} onUnlocked={onUnlocked} />;
+}
+
+function Workspace({
   session,
   onUnlocked,
 }: {
@@ -77,7 +92,10 @@ export function LockWorkspace({
 
   // Draft survives a reload: losing 20 minutes of work to a stray refresh
   // would make the lock feel punitive rather than motivating.
-  const draftKey = `codelock.draft.${session.id}.${language}`;
+  // Scoped to the problem as well as the session, because a session can now
+  // serve more than one. A draft for the problem they set aside must neither
+  // appear in the next one nor be overwritten by it, in case they come back.
+  const draftKey = `codelock.draft.${session.id}.${problem.id}.${language}`;
   useEffect(() => {
     const saved = window.localStorage.getItem(draftKey);
     setCode(saved ?? problem.starterCode[language] ?? '');
@@ -247,6 +265,7 @@ export function LockWorkspace({
             skillNote={session.skillNote}
           />
           <HintsPanel sessionId={session.id} />
+          <SessionFlowPanel sessionId={session.id} />
         </section>
 
         <section aria-label="Your solution" className="flex min-h-0 flex-col">

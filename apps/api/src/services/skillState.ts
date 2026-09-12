@@ -150,7 +150,13 @@ export async function loadSkillSnapshot(userId: string, now = new Date()): Promi
         problemId: true,
         lockSessionId: true,
         problem: {
-          select: { signatureId: true, patternTags: true, tier: true, patternFamily: true },
+          select: {
+            slug: true,
+            signatureId: true,
+            patternTags: true,
+            tier: true,
+            patternFamily: true,
+          },
         },
       },
     });
@@ -169,7 +175,7 @@ interface SolvedRow {
   createdAt: Date;
   problemId: string;
   lockSessionId: string | null;
-  problem: SkillProblem;
+  problem: SkillProblem & { slug: string };
 }
 
 /**
@@ -186,6 +192,9 @@ interface SolvedRow {
  *
  * `DEBRIEF_OPENED` counts as help because the debrief carries the worked
  * solution.
+ *
+ * Scoped to the problem as well as the session, because one session can serve
+ * several problems once the learner can ask for a different one.
  *
  * A solve with no session came from practice rather than a lock, and nothing
  * recorded help for it. Treated as unaided, which is what the evidence says;
@@ -204,20 +213,24 @@ async function attributeHelp(userId: string, solved: readonly SolvedRow[]): Prom
         sessionId: { in: sessionIds },
         kind: { in: ['HINT_REVEALED', 'DEBRIEF_OPENED'] },
       },
-      select: { sessionId: true, at: true },
+      select: { sessionId: true, problemSlug: true, at: true },
     });
-    // Earliest help per session is all that is needed: any solve after it was
-    // assisted, and any solve before it was not.
+    // Earliest help per session *and problem*. Per session alone would charge
+    // a hint spent on a problem the learner set aside to the different problem
+    // they went on to solve, because one session can now serve several.
     for (const event of events) {
-      if (!event.sessionId) continue;
-      const seen = helpAt.get(event.sessionId);
+      if (!event.sessionId || !event.problemSlug) continue;
+      const key = `${event.sessionId}::${event.problemSlug}`;
+      const seen = helpAt.get(key);
       const at = event.at.getTime();
-      if (seen === undefined || at < seen) helpAt.set(event.sessionId, at);
+      if (seen === undefined || at < seen) helpAt.set(key, at);
     }
   }
 
   return solved.map((row) => {
-    const firstHelp = row.lockSessionId ? helpAt.get(row.lockSessionId) : undefined;
+    const firstHelp = row.lockSessionId
+      ? helpAt.get(`${row.lockSessionId}::${row.problem.slug}`)
+      : undefined;
     return {
       problemId: row.problemId,
       sessionId: row.lockSessionId,

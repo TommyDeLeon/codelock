@@ -11,6 +11,7 @@ import {
   armSessionSchema,
   hintRequestSchema,
   idParamSchema,
+  sessionFlowSchema,
 } from '../validation/schemas.js';
 import {
   armSession,
@@ -20,11 +21,14 @@ import {
   getActiveSession,
   requireOwnedSession,
   getDebrief,
+  toPublicProblem,
 } from '../services/lockSessions.js';
+import { completeActivity, offerActivity, swapProblem } from '../services/sessionFlow.js';
+import { restate } from '../services/restate.js';
 import { recordFailure } from '../services/grading.js';
 import { HINT_COUNT, hintAt } from '../services/hints.js';
 import { recordUnlock, secondsLocked } from '../services/audit.js';
-import { recordStep } from '../services/learningLog.js';
+import { recordStep, recordStepConfirmed } from '../services/learningLog.js';
 
 export const lockRouter = Router();
 lockRouter.use(withLocalUser);
@@ -413,8 +417,90 @@ lockRouter.post(
     // that never engaged assigned no problem, so there is nothing to have
     // failed at — the same reasoning /cancel already applies.
     const progress = wasLocked
-      ? await recordFailure(user.id, problem?.avgSolveSeconds ?? 600)
+      ? await recordFailure(user.id, problem?.avgSolveSeconds ?? 600, session.id)
       : null;
     res.json({ progress });
+  }),
+);
+
+/**
+ * POST /lock/:id/flow — the learner says something about the problem itself.
+ *
+ * Four requests, none of which ends a session by failing it and none of which
+ * touches the difficulty ladder. `too_hard` and `too_easy` swap the problem
+ * under a live lock; `explain_differently` restates it; `low_energy` offers one
+ * example to work through and can release the lock as participation.
+ *
+ * Separate from skip on purpose. Skip spends a bounded daily allowance and
+ * ends the evening, so routing "this is too hard" through it would ration
+ * help and charge for saying something true.
+ */
+lockRouter.post(
+  '/:id/flow',
+  lockActionLimiter,
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const body = sessionFlowSchema.parse(req.body ?? {});
+
+    if (body.action === 'too_hard' || body.action === 'too_easy') {
+      const result = await swapProblem({ userId: user.id, sessionId: id, request: body.action });
+      res.json({
+        problem: await toPublicProblem(result.problem),
+        skillEligible: result.skillEligible,
+        skillNote: result.skillNote,
+        sameBand: result.sameBand,
+      });
+      return;
+    }
+
+    if (body.action === 'low_energy') {
+      res.json(await offerActivity({ userId: user.id, sessionId: id }));
+      return;
+    }
+
+    if (body.action === 'low_energy_done') {
+      res.json(
+        await completeActivity({
+          userId: user.id,
+          sessionId: id,
+          response: body.response ?? '',
+        }),
+      );
+      return;
+    }
+
+    // explain_differently.
+    const session = await requireOwnedSession(user.id, id);
+    if (session.state !== LockState.LOCKED || !session.problemId) {
+      throw ApiError.conflict('A restatement is only available while a lock is live');
+    }
+    const problem = await prisma.problem.findUnique({ where: { id: session.problemId } });
+    if (!problem) throw ApiError.notFound('Problem not found');
+
+    const cases = await prisma.testCase.findMany({
+      where: { problemId: problem.id, isSample: true },
+      orderBy: { ordinal: 'asc' },
+      select: { stdin: true, expectedStdout: true },
+    });
+    const text = restate(problem, cases);
+
+    // Recorded as assistance, confirmed, *before* the text is returned.
+    //
+    // It is help: it names the input and output shapes and walks a real
+    // example, which is exactly what a stuck beginner cannot extract from the
+    // prose. Recording it as a hint reveal means both the capability sentence
+    // and the skill snapshot treat a later solve as assisted, which is the
+    // truth. Written with the confirming variant because the ordinary one
+    // swallows failures, and help that was not written down reads afterwards
+    // as an unaided solve — a false claim of mastery arrived at by accident.
+    await recordStepConfirmed(user.id, {
+      kind: 'HINT_REVEALED',
+      problem,
+      sessionId: session.id,
+      detail: { source: 'explain_differently', attempts: session.attempts },
+    });
+
+    res.json({ text });
   }),
 );

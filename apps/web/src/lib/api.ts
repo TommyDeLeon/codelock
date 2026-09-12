@@ -312,6 +312,36 @@ export const api = {
       post<{ index: number; total: number; text: string }>(`/v1/lock/${id}/hint`, { index }),
     abandon: (id: string, reason?: 'user_gave_up' | 'kill_switch') =>
       post<{ progress: unknown }>(`/v1/lock/${id}/abandon`, reason ? { reason } : undefined),
+    /**
+     * The session-flow controls. None of them fails the session or moves the
+     * difficulty ladder, and none spends a skip.
+     */
+    flow: {
+      /** Swap the problem under a live lock for a smaller or a larger one. */
+      swap: (id: string, action: 'too_hard' | 'too_easy') =>
+        post<{
+          problem: PublicProblem;
+          skillEligible: boolean;
+          skillNote: string;
+          /** True when the band asked for had nothing suitable. */
+          sameBand: boolean;
+        }>(`/v1/lock/${id}/flow`, { action }),
+      /** The same problem, said another way. Recorded as help. */
+      restate: (id: string) =>
+        post<{ text: string }>(`/v1/lock/${id}/flow`, { action: 'explain_differently' }),
+      /** One worked example to look at on a night with no energy for more. */
+      offerActivity: (id: string) =>
+        post<{ question: string; stdin: string; expectedStdout: string }>(
+          `/v1/lock/${id}/flow`,
+          { action: 'low_energy' },
+        ),
+      /** Finish the example. Releases the lock as participation, not a solve. */
+      completeActivity: (id: string, response: string) =>
+        post<{ released: true; message: string }>(`/v1/lock/${id}/flow`, {
+          action: 'low_energy_done',
+          response,
+        }),
+    },
   },
 
   /**

@@ -492,6 +492,13 @@ enum UnlockOutcome {
   ABANDONED
   /// Never resolved by anyone; closed out by the reaper.
   REAPED
+  /// Ended by taking part rather than by solving.
+  ///
+  /// The learner said they had no energy for the problem, worked through one
+  /// example of it, and the lock released on that. Its own outcome, not a
+  /// variant of SKIPPED: no allowance was spent, and calling it a skip would
+  /// record something that did not happen. Never evidence of a solve.
+  PARTICIPATED
 }
 
 /// Every lock that ended, and why.
@@ -560,6 +567,14 @@ enum LearningEventKind {
   /// before the solve: reading the answer is a real event worth keeping and is
   /// never evidence of a capability.
   CAPABILITY_RECORDED
+  /// The learner used one of the session-flow controls: too hard, too easy,
+  /// explain differently, or no energy tonight.
+  ///
+  /// Coarse on purpose, with `detail.action` naming which one and
+  /// `detail.result` saying what came of it. One kind rather than four,
+  /// because enum values cannot be removed once added and four shades of the
+  /// same fact is a poor use of a permanent commitment.
+  SESSION_FLOW
 }
 
 /// One step the learner actually took.

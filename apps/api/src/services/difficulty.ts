@@ -35,6 +35,26 @@ export interface SessionOutcome {
   problemAvgSeconds: number;
   /** True when the very first submission of the session was accepted. */
   firstTry: boolean;
+  /**
+   * True when the learner changed the problem during this session.
+   *
+   * The ladder is a measurement engine: consecutive fast solves promote,
+   * consecutive failures demote, and both readings assume the session measured
+   * one problem chosen for the learner. Once they can ask for a smaller or a
+   * larger one mid-lock, that assumption is gone — the clock still runs from
+   * the original lock, and the problem at the end is one they picked.
+   *
+   * So an adjusted session is counted but not read. The solve or the failure
+   * goes into the totals, because it happened, and nothing else moves: no
+   * promotion, no demotion, no streak change, and no contribution to the
+   * solve-time or first-try averages.
+   *
+   * The alternative is worse in both directions. Counted normally, "this is
+   * too easy" becomes a way to farm promotions, and "this is too hard" becomes
+   * a demotion for saying so — a punishment for telling the truth, which is
+   * the mechanism this product rules out.
+   */
+  adjusted?: boolean;
 }
 
 export interface ProgressUpdate {
@@ -59,6 +79,23 @@ export interface ProgressUpdate {
  */
 export function applyOutcome(progress: UserProgress, outcome: SessionOutcome): ProgressUpdate {
   const now = new Date();
+
+  if (outcome.adjusted) {
+    return {
+      currentDifficulty: progress.currentDifficulty,
+      consecutiveFastSolves: progress.consecutiveFastSolves,
+      consecutiveFailures: progress.consecutiveFailures,
+      totalSolved: progress.totalSolved + (outcome.solved ? 1 : 0),
+      totalFailed: progress.totalFailed + (outcome.solved ? 0 : 1),
+      emaSolveSeconds: progress.emaSolveSeconds,
+      firstTryRate: progress.firstTryRate,
+      transition: 'held',
+      reason: outcome.solved
+        ? 'Solved a problem you chose yourself, so it counts but does not move the level.'
+        : 'You changed problems this session, so this does not count against your level.',
+    };
+  }
+
 
   if (!outcome.solved) {
     const failures = progress.consecutiveFailures + 1;
