@@ -241,7 +241,7 @@ export default function LimitsPage() {
     <>
       <section className="rule-b hero-stage">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <p className="eyebrow hero-rise hero-rise-1">Limits / The escape ledger</p>
+          <p className="eyebrow hero-rise hero-rise-1">Before you rely on it</p>
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
             The way out,
             <em>in full.</em>
@@ -261,7 +261,7 @@ export default function LimitsPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-        <p className="eyebrow">Desktop · Windows, macOS, Linux</p>
+        <p className="eyebrow">On Windows, macOS and Linux</p>
         <h2 className="display display-md mt-3">Electron kiosk shell</h2>
         <Matrix rows={DESKTOP} />
         <p className="mt-4 text-[13px] text-faint">
@@ -273,7 +273,7 @@ export default function LimitsPage() {
 
       <section className="rule-t bg-surface-2/50 section-arrive">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="eyebrow">Android</p>
+          <p className="eyebrow">On Android</p>
           <h2 className="display display-md mt-3">Overlay above other apps</h2>
           <Matrix rows={ANDROID} />
           <p className="mt-4 text-[13px] text-faint">
@@ -287,7 +287,7 @@ export default function LimitsPage() {
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <p className="eyebrow">iOS</p>
+              <p className="eyebrow">On iPhone and iPad</p>
               <h2 className="display display-md mt-3">
                 It cannot block <em>anything.</em>
               </h2>
@@ -302,7 +302,7 @@ export default function LimitsPage() {
             </div>
 
             <div>
-              <p className="eyebrow">Browser</p>
+              <p className="eyebrow">In a web browser</p>
               <h2 className="display display-md mt-3">
                 A tab can <em>always</em> be closed.
               </h2>

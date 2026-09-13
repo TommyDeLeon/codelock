@@ -169,9 +169,38 @@ console.log(found ? 'YES' : 'NO');
  * absent, which surfaces as a runtime error on that case rather than as a
  * silent wrong answer.
  */
-const WORKER_SOURCE = `
+/*
+ * WHY THE SUBMISSION IS PART OF THE SCRIPT, NOT EVALUATED BY IT.
+ *
+ * This used to compile the submission inside the worker with `new Function`.
+ * That is dynamic code evaluation, and the production Content-Security-Policy
+ * is `script-src 'self' 'unsafe-inline'` with no 'unsafe-eval' — which is
+ * correct for this site and not something to loosen for a demo. So on the live
+ * site every case threw an EvalError before the visitor's code ran at all, and
+ * because some browsers put no message in `error.stack`, the screen showed a
+ * bare `self.onmessage@blob:…` frame and nothing a visitor could act on.
+ *
+ * Development never saw it: the middleware adds 'unsafe-eval' there for the
+ * dev server's own tooling.
+ *
+ * A worker's own script is loaded, not evaluated, and `worker-src blob:` is
+ * already allowed for the Monaco editor. So the submission is placed inside a
+ * function in the script text itself. It is still parsed before the message
+ * arrives, so the timed region is still the algorithm rather than the parser,
+ * and a syntax error now surfaces through `worker.onerror` with its real
+ * message.
+ */
+function workerSourceFor(source: string): string {
+  return `
+function __codelockSubmission(require, console, process) {
+${source}
+}
+${WORKER_HARNESS}`;
+}
+
+const WORKER_HARNESS = `
 self.onmessage = (event) => {
-  const { source, stdin } = event.data;
+  const { stdin } = event.data;
   const out = [];
 
   const fakeRequire = (name) => {
@@ -193,25 +222,27 @@ self.onmessage = (event) => {
 
   let started = 0;
   try {
-    // Compiled once, outside the timed region, so the measurement is the
-    // algorithm rather than the parser.
-    const run = new Function('require', 'console', 'process', source);
     const proc = {
       stdout: { write: (s) => out.push(String(s).replace(/\\n$/, '')) },
       argv: [],
       env: {},
     };
     started = performance.now();
-    run(fakeRequire, console_, proc);
+    __codelockSubmission(fakeRequire, console_, proc);
     const elapsed = performance.now() - started;
     self.postMessage({ ok: true, stdout: out.join('\\n'), timeMs: elapsed });
   } catch (error) {
     const elapsed = started ? performance.now() - started : 0;
+    // Name and message first, always. Firefox and Safari leave both out of
+    // error.stack, so showing the stack alone put a meaningless frame on screen.
+    const headline =
+      error && error.name ? error.name + ': ' + error.message : String(error);
+    const stack = error && error.stack ? String(error.stack) : '';
     self.postMessage({
       ok: false,
       stdout: out.join('\\n'),
       timeMs: elapsed,
-      stderr: (error && error.stack) || String(error),
+      stderr: stack.startsWith(headline) ? stack : headline + (stack ? '\\n' + stack : ''),
     });
   }
 };
@@ -239,7 +270,7 @@ type RunOutcome = {
 function runCase(source: string, stdin: string): Promise<RunOutcome> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(
-      new Blob([WORKER_SOURCE], { type: 'application/javascript' }),
+      new Blob([workerSourceFor(source)], { type: 'application/javascript' }),
     );
     const worker = new Worker(url);
 
@@ -272,7 +303,7 @@ function runCase(source: string, stdin: string): Promise<RunOutcome> {
         stderr: event.message || 'The worker failed to start.',
       });
 
-    worker.postMessage({ source, stdin });
+    worker.postMessage({ stdin });
   });
 }
 

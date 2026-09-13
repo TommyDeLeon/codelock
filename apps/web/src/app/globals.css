@@ -274,18 +274,18 @@
   color: var(--color-accent);
 }
 
-/* Section eyebrow: small, wide, mono. Numbers the argument so the page reads
-   as a document with structure rather than a scroll of unrelated bands. */
-/* Set in the display face rather than the mono, and given enough weight and
-   colour to read as a deliberate label. At 11px, faint, in a mono at 0.14em it
-   was washing out into the background — the numbering it carries is structure,
-   not a caption. The mono is reserved for figures, which are evidence. */
+/* Section kicker: a short phrase that introduces the heading under it.
+   Sentence case, normal spacing, the reading face in italic. Small tracked
+   capitals in a mono read as a template rather than as writing, so the kicker
+   is set the way an editor would set it: as a quieter line of prose. */
 .eyebrow {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--color-muted);
 }
 

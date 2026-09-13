@@ -10,9 +10,9 @@ const bare = (url: string) =>
  *
  * This was a single word — "Contact" — in a row of legal links, which is where
  * you put an address you would rather nobody used. A publication names who made
- * it on the way out, so the channels are set as a ledger: the label in mono
- * because it is a field name, the value in the reading face because it is the
- * thing you actually want to read and copy. The address is legible on the page
+ * it on the way out, so the channels are set as a short list: a quiet label,
+ * then the value in the reading face because it is the thing you actually want
+ * to read and copy. The address is legible on the page
  * rather than buried in an href.
  *
  * Every link here is its own tap target, sized to 44px.
@@ -38,7 +38,7 @@ export function SiteFooter() {
       <div>
         <div className="colophon-row">
           <div className="colophon-who">
-            <p className="eyebrow">Built and maintained by</p>
+            <p className="eyebrow">Made by</p>
             <p className="colophon-name">{MAINTAINER.name}</p>
           </div>
 
