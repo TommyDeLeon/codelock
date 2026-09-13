@@ -64,7 +64,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
-              <p className="eyebrow">01 / The lock</p>
+              <p className="eyebrow">The lock</p>
               <h2 className="display display-md mt-3">The API decides.</h2>
             </div>
             <div className="prose-site text-[14.5px] lg:col-span-8">
@@ -93,7 +93,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
-              <p className="eyebrow">02 / The speed gate</p>
+              <p className="eyebrow">The speed gate</p>
               <h2 className="display display-md mt-3">
                 Correct, <em>and</em> fast.
               </h2>
@@ -166,7 +166,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
-              <p className="eyebrow">03 / Difficulty</p>
+              <p className="eyebrow">Difficulty</p>
               <h2 className="display display-md mt-3">Two rules, both visible.</h2>
             </div>
 
@@ -217,7 +217,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">
-              <p className="eyebrow">04 / Data</p>
+              <p className="eyebrow">Data</p>
               <h2 className="display display-md mt-3">Where your data lives.</h2>
               <p className="prose-site mt-4 text-[14.5px]">
                 A tool that interrupts your work has to be specific about this. CodeLock can only

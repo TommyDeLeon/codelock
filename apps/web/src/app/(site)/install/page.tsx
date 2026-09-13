@@ -27,7 +27,7 @@ export default function InstallPage() {
     </div></section>
     <div className="site-frame route-capture"><Reportage capture="codelock-app-dashboard" className="dashboard-crop" number="04" alt="CodeLock desktop dashboard with focus timer controls" caption="The desktop dashboard is where a focus block begins. The API, database and judge must be running before the shell can enforce the timer." /></div>
     <section className="rule-b"><div className="site-frame section-space mechanism-layout">
-      <div><p className="eyebrow">01 / Prepare</p><h2 className="display display-md mt-4">A local stack,<br />then the shell.</h2></div>
+      <div><p className="eyebrow">Prepare</p><h2 className="display display-md mt-4">A local stack,<br />then the shell.</h2></div>
       <div className="prose-site editorial-body">
         <p>You need <strong>Node.js 24, Docker Desktop and Git</strong>. The API, Postgres database and bundled judge run alongside the web app. Only the desktop shell enforces the desktop lock.</p>
         <ol className="setup-steps">
@@ -41,7 +41,7 @@ export default function InstallPage() {
       </div>
     </div></section>
     <section className="rule-b bg-surface-2/50"><div className="site-frame section-space">
-      <p className="eyebrow">02 / Platform availability</p>
+      <p className="eyebrow">Platform availability</p>
       <h2 className="display display-md mt-4">{hasRelease() ? 'Configured release downloads.' : 'Build from source for now.'}</h2>
       <p className="prose-site mt-5">{hasRelease() ? <>Review the <a href={releasePageUrl()!}>release notes and available assets</a> before installing.</> : <>No release is configured for this site. Follow the <a href={`${readme}#desktop-packaging-and-trusted-install`}>desktop packaging guide</a> to build the installer from source.</>}</p>
       <dl className="platform-ledger">{PLATFORMS.map(platform => <div key={platform.name}>
