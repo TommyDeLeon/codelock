@@ -29,28 +29,35 @@ declare global {
  * this resolves that row and creates it once on first use.
  */
 
-/** The row is a singleton; the id never changes, so read it once. */
-let cachedUserId: string | null = null;
-
 /** Stable marker for the local row. Not an address, and never emailed. */
 const LOCAL_USER_EMAIL = 'local@codelock.invalid';
 
+/**
+ * Resolved on every request, deliberately not cached.
+ *
+ * A process-lifetime cache survived a database reset: the API kept handing out
+ * a user id that no longer existed, and the dashboard showed "User progress
+ * missing" until the server was restarted. One indexed upsert per request is
+ * cheap for a single local learner, and it also repairs a user row whose
+ * progress or timer settings are missing.
+ */
 export async function resolveLocalUser(): Promise<string> {
-  if (cachedUserId) return cachedUserId;
-
   // upsert, not findFirst-then-create: two requests can arrive together on a
   // cold start, and the unique constraint is what makes the race harmless.
   const user = await prisma.user.upsert({
     where: { email: LOCAL_USER_EMAIL },
-    update: {},
+    update: {
+      progress: { upsert: { create: {}, update: {} } },
+      timerConfig: { upsert: { create: {}, update: {} } },
+    },
     create: {
       email: LOCAL_USER_EMAIL,
       displayName: 'You',
       progress: { create: {} },
       timerConfig: { create: {} },
     },
+    select: { id: true },
   });
-  cachedUserId = user.id;
   return user.id;
 }
 
@@ -76,5 +83,6 @@ export function currentUser(req: Request): { id: string } {
 
 /** Tests create their own users; let them reset the memoised id. */
 export function resetLocalUserCache(): void {
-  cachedUserId = null;
+  // Nothing to reset: the user is resolved on every request. Kept so existing
+  // database tests that call it keep compiling.
 }

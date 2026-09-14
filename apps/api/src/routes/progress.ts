@@ -41,11 +41,19 @@ progressRouter.get(
       }),
     ]);
 
-    const counts = Object.fromEntries(KINDS.map((k) => [k, 0])) as Record<AccomplishmentKind, number>;
-    for (const event of events) {
-      const kind = (event.detail as { kind?: AccomplishmentKind } | null)?.kind;
-      if (kind && kind in counts) counts[kind]++;
-    }
+    // Counted across the whole history, not the recent window above: a total
+    // taken from the last 200 rows would silently drop older solves.
+    const kindCounts = await Promise.all(
+      KINDS.map((kind) =>
+        prisma.learningEvent.count({
+          where: { userId: user.id, kind: 'ACCOMPLISHMENT', detail: { path: ['kind'], equals: kind } },
+        }),
+      ),
+    );
+    const counts = Object.fromEntries(KINDS.map((k, i) => [k, kindCounts[i] ?? 0])) as Record<
+      AccomplishmentKind,
+      number
+    >;
 
     const lastActiveAt = lastEvent?.at ?? null;
     const awayDays = lastActiveAt ? (Date.now() - lastActiveAt.getTime()) / 86_400_000 : 0;

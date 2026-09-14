@@ -80,9 +80,9 @@ function chime() {
 const KIND_LABELS: Record<Accomplishment['kind'], string> = {
   independent: 'Solved on your own',
   assisted: 'Solved with help',
-  worked_solution: 'Rebuilt from a worked solution',
+  worked_solution: 'Learned from a solution',
   recall: 'Remembered after a gap',
-  transfer: 'Used an idea on a new problem',
+  transfer: 'Applied to a new problem',
 };
 
 export function SuccessMoment({

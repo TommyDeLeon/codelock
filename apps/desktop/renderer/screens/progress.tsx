@@ -13,9 +13,9 @@ import { api, ApiError } from '../api';
 const KIND_LABELS: Record<AccomplishmentKind, string> = {
   independent: 'On your own',
   assisted: 'With help',
-  worked_solution: 'From a worked solution',
+  worked_solution: 'Learned from a solution',
   recall: 'Remembered after a gap',
-  transfer: 'Used on a new problem',
+  transfer: 'Applied to a new problem',
 };
 
 export function ProgressScreen() {
@@ -79,8 +79,8 @@ export function ProgressScreen() {
       <section>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Skill map</h2>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 12px', maxWidth: 640 }}>
-          “Shown independently” means two separate solves with no help. Solves with help are counted too, just
-          separately.
+          “Solved on your own twice” means two separate solves with no help. Solves with help are counted
+          too, separately, so you can see how your learning is going.
         </p>
         <ul
           style={{
@@ -107,7 +107,7 @@ export function ProgressScreen() {
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Recent solves</h2>
         {total === 0 ? (
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
-            Nothing here yet. Your first solve will show up here.
+            A fresh start. When you solve your next lock, it will show up here.
           </p>
         ) : (
           <>

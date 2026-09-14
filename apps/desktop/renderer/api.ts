@@ -36,11 +36,16 @@ export const webAppUrl = (): string => webUrl;
 
 export class ApiError extends Error {}
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${apiUrl}${path}`, {
       ...init,
+      // A server that accepts the connection and never answers must not leave
+      // a screen on "Loading…" forever; this turns it into a retryable error.
+      signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
     });
   } catch {

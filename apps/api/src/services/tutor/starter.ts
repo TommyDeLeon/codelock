@@ -3,10 +3,10 @@ import { argLines, numbersOn } from './diagnose.js';
 /**
  * Reviewed help for the starter problems, usable with no AI connection.
  *
- * These are the problems a beginner meets first and the ones the project arc is
- * built from, so each gets hand-written content for the levels that cannot be
- * derived safely from rules: the plain-language idea, an outline with exactly
- * one gap, and the reasoning behind the worked solution.
+ * These are the problems a beginner meets first, so each gets hand-written
+ * content for the levels that cannot be derived safely from rules: the
+ * plain-language idea, an outline with exactly one gap, and the reasoning
+ * behind the worked solution.
  *
  * Each also carries a reference tracer. A trace is only shown when its values
  * are real, and `starter.test.ts` runs every tracer against every one of the

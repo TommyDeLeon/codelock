@@ -63,7 +63,7 @@ const GENERIC_TAGS = new Set([
 export const STATE_LABELS: Record<string, string> = {
   not_introduced: 'Not started',
   practised_with_help: 'Practised',
-  demonstrated: 'Shown independently',
+  demonstrated: 'Solved on your own twice',
   due_for_review: 'Ready for a review',
 };
 
@@ -176,7 +176,7 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
     const before = input.skillsBefore[skill];
     const after = input.skillsAfter[skill];
     if (after.state === 'demonstrated' && before.state !== 'demonstrated') {
-      skillLines.push(`“${SKILL_LABELS[skill]}” is now shown independently: two separate solves without help.`);
+      skillLines.push(`“${SKILL_LABELS[skill]}”: you have now solved two separate problems without help.`);
     }
   }
   if (assisted && skillLines.length === 0) {
@@ -210,11 +210,11 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
       ? `Help used: ${help.hints === 1 ? 'one hint' : `${help.hints} hints`}, up to level ${help.maxLevel} of 5. Saved as assisted.`
       : 'No help used. Saved as an independent solve.';
 
-  // What to offer next, sized by how it went: after help, a same-size problem
-  // on the same idea; after an unaided solve, a related problem.
+  // A related problem for later, offered the same way whether or not help was
+  // used: the reviewed one for starter problems, otherwise a similar problem.
   const pack = starterPack(problem.slug);
   let variation: Accomplishment['variation'] = null;
-  if (assisted && pack) {
+  if (pack) {
     variation = pack.checkUnderstanding;
   } else if (input.fallbackVariation) {
     variation = {

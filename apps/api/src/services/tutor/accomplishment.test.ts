@@ -112,11 +112,12 @@ describe('success moment', () => {
     before.loops = { state: 'practised_with_help', unaidedSolves: 1, assistedSolves: 1 };
     after.loops = { state: 'demonstrated', unaidedSolves: 2, assistedSolves: 1 };
     const a = deriveAccomplishment(input('sum-of-array', { skillsBefore: before, skillsAfter: after }));
-    assert.ok(a.details.some((d) => /is now shown independently: two separate solves without help/.test(d)));
-    assert.equal(a.skills.find((s) => s.skill === 'loops')?.stateLabel, 'Shown independently');
+    assert.ok(a.details.some((d) => /you have now solved two separate problems without help/.test(d)));
+    assert.equal(a.skills.find((s) => s.skill === 'loops')?.stateLabel, 'Solved on your own twice');
   });
 
-  it('offers a same-idea problem after help', () => {
+  it('offers the same related problem with or without help', () => {
+    assert.equal(deriveAccomplishment(input('sum-of-array')).variation?.slug, 'product-of-list');
     const assisted = deriveAccomplishment(
       input('sum-of-array', { help: { hints: 1, maxLevel: 2, workedSolution: false } }),
     );

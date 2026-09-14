@@ -96,7 +96,7 @@ npm run hints:samples -w @codelock/api -- samples.md
 
 - **Desktop shell:** it drops the overlay straight to its bundled dashboard, so
   the success screen only appears in the browser flow. Progress is still saved
-  and shown at `/progress`.
+  and shown on the desktop app's Progress tab.
 - **Understanding:** nobody has measured whether beginners actually understand
   the hints.
 - **Coverage:** reviewed starter content exists for 6 problems only. The rest
