@@ -3,6 +3,7 @@ import type { OAuthProviderName } from '@codelock/shared';
 import { openExternal } from './bridge';
 import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
+import { ProgressScreen } from './screens/progress';
 import { LockMark } from './lock-mark';
 import { ProviderMark } from './provider-mark';
 import {
@@ -13,7 +14,7 @@ import {
   type ThemePreference,
 } from './theme';
 
-type Tab = 'dashboard' | 'settings';
+type Tab = 'dashboard' | 'progress' | 'settings';
 
 /**
  * Light, dark, or whatever the machine is doing.
@@ -119,7 +120,7 @@ export function App() {
             gap: 28,
           }}
         >
-          {(['dashboard', 'settings'] as const).map((name) => (
+          {(['dashboard', 'progress', 'settings'] as const).map((name) => (
             <button
               key={name}
               type="button"
@@ -140,6 +141,8 @@ export function App() {
       <div style={{ padding: '28px 32px 40px' }}>
         {tab === 'dashboard' ? (
           <DashboardScreen />
+        ) : tab === 'progress' ? (
+          <ProgressScreen />
         ) : (
           <SettingsScreen />
         )}

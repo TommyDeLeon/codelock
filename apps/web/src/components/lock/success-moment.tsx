@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Check } from 'lucide-react';
-import type { Accomplishment, FeedbackFeeling, ProjectRunView } from '@codelock/shared';
+import type { Accomplishment, FeedbackFeeling } from '@codelock/shared';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -129,8 +128,6 @@ export function SuccessMoment({
 
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [animate, setAnimate] = useState(false);
-  const [board, setBoard] = useState<ProjectRunView | null>(null);
-  const [running, setRunning] = useState(false);
   const [feeling, setFeeling] = useState<FeedbackFeeling | 'dismissed' | null>(null);
   const played = useRef(false);
 
@@ -148,25 +145,6 @@ export function SuccessMoment({
     setPrefs(next);
     writePrefs(next);
     setAnimate(motionAllowed(next));
-  }
-
-  async function runBoard() {
-    setRunning(true);
-    try {
-      setBoard(await api.progress.runProject());
-    } catch (err) {
-      setBoard({
-        ran: false,
-        message:
-          err instanceof Error
-            ? `The scoreboard could not run: ${err.message}. Your progress is saved.`
-            : 'The scoreboard could not run. Your progress is saved.',
-        players: [],
-        winner: null,
-      });
-    } finally {
-      setRunning(false);
-    }
   }
 
   function sendFeeling(value: FeedbackFeeling) {
@@ -204,28 +182,6 @@ export function SuccessMoment({
 
         {a && <p className="mt-3 text-[13px] text-muted">{a.helpSummary}</p>}
 
-        {/* The consequence: your code, doing something. */}
-        {a?.project && (
-          <section aria-label="Your project" className="mt-6 rounded-sm border border-border bg-surface p-4">
-            <p className="text-[11px] font-mono uppercase tracking-wide text-faint">
-              {a.project.arcTitle} · feature {a.project.stepNumber} of {a.project.totalSteps}
-            </p>
-            <p className="mt-1 text-[15px]">
-              Your {a.project.stepTitle} solution now powers: <strong>{a.project.adds}</strong>.
-            </p>
-            <p className="mt-1 text-[13px] text-muted">
-              {a.project.completedSteps} of {a.project.totalSteps} features built so far. The rest will be here
-              whenever you want them; nothing is waiting on you.
-            </p>
-            {!board && (
-              <Button className="mt-3" variant="outline" size="sm" onClick={() => void runBoard()} loading={running}>
-                Run the scoreboard with your code
-              </Button>
-            )}
-            {board && <Scoreboard board={board} animate={animate} />}
-          </section>
-        )}
-
         {a && a.skills.length > 0 && (
           <section aria-label="Skills" className="mt-6">
             <h2 className="text-[13px] font-semibold">Saved to your skill map</h2>
@@ -242,21 +198,14 @@ export function SuccessMoment({
           </section>
         )}
 
-        {/* Two equally clear ways forward. */}
-        <div className="mt-8 grid gap-2 sm:grid-cols-2">
+        <div className="mt-8">
           <Button size="lg" variant="outline" onClick={onFinish} autoFocus>
             {finishLabel}
           </Button>
-          <Link
-            href={a?.variation ? `/practice/${a.variation.slug}` : '/progress'}
-            className="inline-flex min-h-11 items-center justify-center rounded-sm border border-border px-4 text-center text-[14px] font-semibold hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            {a?.variation ? 'Try an optional variation' : 'See your progress'}
-          </Link>
         </div>
         {a?.variation && (
           <p className="mt-2 text-[13px] text-muted">
-            Optional: {a.variation.title}. {a.variation.why}
+            If you want more later: {a.variation.title}. {a.variation.why}
           </p>
         )}
 
@@ -309,60 +258,3 @@ export function SuccessMoment({
   );
 }
 
-export function Scoreboard({ board, animate }: { board: ProjectRunView; animate: boolean }) {
-  if (board.players.length === 0) {
-    return <p className="mt-3 text-[13px] text-muted">{board.message}</p>;
-  }
-  const labels = board.players[0]?.cells.map((c) => c.label) ?? [];
-  return (
-    <div className="mt-3">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px]">
-          <thead>
-            <tr>
-              <th scope="col" className="border-b border-border px-2 py-1 text-left font-medium text-faint">
-                Player
-              </th>
-              <th scope="col" className="border-b border-border px-2 py-1 text-left font-medium text-faint">
-                Rounds
-              </th>
-              {labels.map((label) => (
-                <th key={label} scope="col" className="border-b border-border px-2 py-1 text-left font-medium text-faint">
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {board.players.map((player) => (
-              <tr key={player.name}>
-                <th scope="row" className="border-b border-border px-2 py-1 text-left font-medium">
-                  {player.name}
-                </th>
-                <td className="tabular border-b border-border px-2 py-1 font-mono text-[12px]">
-                  {player.rounds.join(' ')}
-                </td>
-                {player.cells.map((cell, i) => (
-                  <td
-                    key={cell.slug}
-                    className={cn('border-b border-border px-2 py-1', animate && cell.value !== null && 'success-cell')}
-                    style={animate ? { animationDelay: `${i * 90}ms` } : undefined}
-                    title={cell.note ?? undefined}
-                  >
-                    {cell.value ?? <span className="text-faint">{cell.note?.startsWith('Your code') ? 'error' : 'not built yet'}</span>}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {board.winner && (
-        <p className="mt-2 text-[14px]">
-          {board.winner === 'Tie' ? 'It is a tie on total score.' : `${board.winner} wins on total score.`}
-        </p>
-      )}
-      <p className="mt-1 text-[12px] text-muted">{board.message}</p>
-    </div>
-  );
-}

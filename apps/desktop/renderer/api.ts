@@ -1,4 +1,5 @@
 import type {
+  ProgressView,
   LockSessionView,
   SessionReviewView,
   StatsSummary,
@@ -124,6 +125,9 @@ export const api = {
    */
   sessionReview: (id: string) =>
     request<{ review: SessionReviewView }>(`/v1/log/session/${id}`),
+
+  /** Skills and recent solves, with help and independent work kept apart. */
+  progress: () => request<ProgressView>('/v1/progress'),
 
   logSummary: (sinceDays?: number) =>
     request<{ sinceDays: number | null; summary: LogSummary }>(

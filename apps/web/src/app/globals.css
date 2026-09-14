@@ -852,8 +852,7 @@
 }
 
 /*
- * The success moment's only motion: the content settles in, and a scoreboard
- * cell fades up when the learner's code fills it. Short, once, and skipped
+ * The success moment's only motion: the content settles in. Short, once, and skipped
  * entirely when reduced motion is requested — the component also checks the
  * learner's own setting before applying these classes.
  */

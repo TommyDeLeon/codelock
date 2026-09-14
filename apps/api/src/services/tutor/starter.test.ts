@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ALL_PROBLEMS } from '../../corpus/problems/index.js';
 import { STARTER_PACKS } from './starter.js';
-import { SCOREBOARD_ARC } from './projects.js';
 
 /**
  * The reference tracers are shown to learners as "values from a checked
@@ -55,10 +54,4 @@ describe('starter packs', () => {
     });
   }
 
-  it('every project step is a corpus problem with a starter pack', () => {
-    for (const step of SCOREBOARD_ARC.steps) {
-      assert.ok(ALL_PROBLEMS.some((p) => p.slug === step.slug), step.slug);
-      assert.ok(STARTER_PACKS[step.slug], `no starter pack for ${step.slug}`);
-    }
-  });
 });

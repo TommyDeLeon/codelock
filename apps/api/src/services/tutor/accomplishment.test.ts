@@ -3,7 +3,6 @@ import { describe, it } from 'node:test';
 import { ALL_PROBLEMS } from '../../corpus/problems/index.js';
 import { emptySkillSnapshot, skillsRequiredBy, type SkillSnapshot } from '../skills.js';
 import { deriveAccomplishment, type AccomplishmentInput, type PriorSolve } from './accomplishment.js';
-import { composeScoreboard, SCOREBOARD_ARC } from './projects.js';
 
 const NOW = new Date('2026-09-15T12:00:00Z');
 const DAY = 86_400_000;
@@ -117,11 +116,7 @@ describe('success moment', () => {
     assert.equal(a.skills.find((s) => s.skill === 'loops')?.stateLabel, 'Shown independently');
   });
 
-  it('connects a solve to the project and sizes the next offer by how it went', () => {
-    const independent = deriveAccomplishment(input('sum-of-array'));
-    assert.equal(independent.project?.stepNumber, 1);
-    assert.equal(independent.project?.totalSteps, SCOREBOARD_ARC.steps.length);
-    assert.equal(independent.variation?.slug, 'largest-number');
+  it('offers a same-idea problem after help', () => {
     const assisted = deriveAccomplishment(
       input('sum-of-array', { help: { hints: 1, maxLevel: 2, workedSolution: false } }),
     );
@@ -129,29 +124,3 @@ describe('success moment', () => {
   });
 });
 
-describe('scoreboard', () => {
-  it('builds features from real outputs and names a winner only from totals', () => {
-    const view = composeScoreboard(
-      [
-        { slug: 'sum-of-array', outputs: [{ stdout: '32\n', error: null }, { stdout: '22\n', error: null }] },
-        { slug: 'index-of-target', outputs: [{ stdout: '4', error: null }, { stdout: '-1', error: null }] },
-      ],
-      'ok',
-    );
-    assert.equal(view.winner, 'Ada');
-    const ada = view.players[0]!;
-    assert.equal(ada.cells.find((c) => c.slug === 'sum-of-array')?.value, '32');
-    assert.equal(ada.cells.find((c) => c.slug === 'index-of-target')?.value, 'round 5');
-    assert.equal(view.players[1]!.cells.find((c) => c.slug === 'index-of-target')?.value, 'never');
-    assert.match(ada.cells.find((c) => c.slug === 'largest-number')?.note ?? '', /Solve Largest Number/);
-  });
-
-  it('shows an error instead of a guess, and no winner without totals', () => {
-    const view = composeScoreboard(
-      [{ slug: 'sum-of-array', outputs: [{ stdout: null, error: 'IndexError' }, { stdout: '22', error: null }] }],
-      'ok',
-    );
-    assert.equal(view.winner, null);
-    assert.match(view.players[0]!.cells[0]!.note ?? '', /IndexError/);
-  });
-});

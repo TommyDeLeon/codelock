@@ -119,17 +119,12 @@ the Public Interest*, 14, 4–58.**
      controlling feedback.
    - *Design consequence:* no performance-contingent tangible rewards, given
      the undermining evidence.
-5. **A small runnable project connected to each solve makes solving feel
-   consequential.**
-   - *Status:* plausible, untested.
-   - *Caution:* Sailer & Homner's unstable motivational effects suggest not
-     expecting much from decoration.
-6. **Recording assisted, independent, recall and transfer separately gives
+5. **Recording assisted, independent, recall and transfer separately gives
    honest progress, and later review helps retention.**
    - *Grounded in:* spacing and retrieval practice.
    - *Unknown:* whether learners actually return for reviews.
-7. **Equal "Finish" and "Try a variation" options, no streaks, and gentle
-   restarts support voluntary return without pressure.**
+6. **A clear "Finish" after every solve, no streaks, and gentle restarts
+   support voluntary return without pressure.**
    - *Grounded in:* self-determination theory on choice versus pressure.
    - *Unknown:* the effect on return rates.
 

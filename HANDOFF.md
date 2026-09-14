@@ -26,17 +26,15 @@ needs no AI connection.
 - The result is saved as an `ACCOMPLISHMENT` event and read from
   `GET /v1/progress/accomplishment/:id`.
 
-### Project
+### Desktop
 
-- **`projects.ts`** defines the Game Night Scoreboard. It is built from four
-  problems: sum-of-array, largest-number, count-greater-than and
-  index-of-target.
-- **`POST /v1/progress/project/run`** runs the learner's own accepted code.
+- A **Progress** tab shows the skill map and recent solves, with help and
+  independent work counted separately.
 
 ### Web
 
-- `hints-panel.tsx` rewritten; `success-moment.tsx` added.
-- New pages: `/progress` and `/practice/[slug]`.
+- The lock screen's `hints-panel.tsx` is rewritten and `success-moment.tsx` is added.
+  The desktop app loads this lock screen. No other web pages were added.
 
 ### Recording fixes
 

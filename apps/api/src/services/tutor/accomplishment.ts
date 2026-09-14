@@ -1,6 +1,5 @@
 import type { Accomplishment, AccomplishmentKind, SkillProgressView } from '@codelock/shared';
 import { SKILLS, SKILL_LABELS, type Skill, type SkillSnapshot } from '../skills.js';
-import { arcStepFor, SCOREBOARD_ARC } from './projects.js';
 import { starterPack } from './starter.js';
 
 /**
@@ -211,35 +210,11 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
       ? `Help used: ${help.hints === 1 ? 'one hint' : `${help.hints} hints`}, up to level ${help.maxLevel} of 5. Saved as assisted.`
       : 'No help used. Saved as an independent solve.';
 
-  // The project this solve belongs to.
-  const step = arcStepFor(problem.slug);
-  const solvedSlugs = new Set([problem.slug, ...input.priorSolves.map((p) => p.slug)]);
-  const project = step
-    ? {
-        arcId: SCOREBOARD_ARC.id,
-        arcTitle: SCOREBOARD_ARC.title,
-        stepTitle: step.step.title,
-        adds: step.step.adds,
-        stepNumber: step.index + 1,
-        totalSteps: SCOREBOARD_ARC.steps.length,
-        completedSteps: SCOREBOARD_ARC.steps.filter((s) => solvedSlugs.has(s.slug)).length,
-      }
-    : null;
-
   // What to offer next, sized by how it went: after help, a same-size problem
-  // on the same idea; after an unaided solve, the next project step.
+  // on the same idea; after an unaided solve, a related problem.
   const pack = starterPack(problem.slug);
-  const nextStep = SCOREBOARD_ARC.steps.find((s) => !solvedSlugs.has(s.slug));
   let variation: Accomplishment['variation'] = null;
   if (assisted && pack) {
-    variation = pack.checkUnderstanding;
-  } else if (!assisted && step && nextStep) {
-    variation = {
-      slug: nextStep.slug,
-      title: nextStep.title,
-      why: `Builds on this, if you want to: ${nextStep.adds.charAt(0).toLowerCase()}${nextStep.adds.slice(1)} for the scoreboard.`,
-    };
-  } else if (pack) {
     variation = pack.checkUnderstanding;
   } else if (input.fallbackVariation) {
     variation = {
@@ -254,7 +229,6 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
     details: [...new Set(details)].slice(0, 5),
     helpSummary,
     skills,
-    project,
     variation,
     askFeedback: input.feedbackDue,
   };

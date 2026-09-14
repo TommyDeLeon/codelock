@@ -4,8 +4,6 @@ import type {
   FeedbackInput,
   HintRequestInput,
   HintView,
-  ProgressView,
-  ProjectRunView,
   ApiErrorBody,
   DemoGradeResult,
   Integration,
@@ -387,16 +385,7 @@ export const api = {
     feedback: (input: FeedbackInput) => post<{ ok: true }>('/v1/tutor/feedback', input),
   },
 
-  /** Skills, the project, and small next steps. No streaks, nothing that resets. */
   progress: {
-    view: () => request<ProgressView>('/v1/progress'),
-    problem: (slug: string) =>
-      request<{ problem: PublicProblem }>(`/v1/progress/problem/${encodeURIComponent(slug)}`),
-    lowEnergy: () =>
-      request<{ task: { slug: string; title: string; why: string }; finish: string }>(
-        '/v1/progress/low-energy',
-      ),
-    runProject: () => post<ProjectRunView>('/v1/progress/project/run'),
     /** The success moment for a solve. `pending` until it has been written. */
     accomplishment: (submissionId: string) =>
       request<{ accomplishment: Accomplishment | null; pending: boolean }>(

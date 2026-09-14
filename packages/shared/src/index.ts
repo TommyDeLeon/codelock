@@ -751,57 +751,19 @@ export interface SkillProgressView {
   assisted: number;
 }
 
-export interface ProjectStepView {
-  slug: string;
-  title: string;
-  concept: string;
-  adds: string;
-  status: 'not_started' | 'assisted' | 'independent';
-  problemId: string | null;
-}
-
-export interface ProjectArcView {
-  id: string;
-  title: string;
-  blurb: string;
-  steps: ProjectStepView[];
-  completed: number;
-}
-
 export interface Accomplishment {
   kind: AccomplishmentKind;
   headline: string;
   details: string[];
   helpSummary: string;
   skills: SkillProgressView[];
-  project: {
-    arcId: string;
-    arcTitle: string;
-    stepTitle: string;
-    adds: string;
-    stepNumber: number;
-    totalSteps: number;
-    completedSteps: number;
-  } | null;
   variation: { slug: string; title: string; why: string } | null;
   /** Occasional and dismissible. */
   askFeedback: boolean;
 }
 
-export interface ProjectRunView {
-  ran: boolean;
-  message: string;
-  players: Array<{
-    name: string;
-    rounds: number[];
-    cells: Array<{ slug: string; label: string; value: string | null; note: string | null }>;
-  }>;
-  winner: string | null;
-}
-
 export interface ProgressView {
   skills: SkillProgressView[];
-  arc: ProjectArcView;
   recent: Array<{ at: string; title: string; kind: AccomplishmentKind; headline: string }>;
   counts: Record<AccomplishmentKind, number>;
   welcomeBack: string | null;
