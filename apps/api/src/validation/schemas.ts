@@ -114,3 +114,35 @@ export const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   cursor: z.string().uuid().optional(),
 });
+
+/** POST /tutor/hint. The source is the learner's current code, run on samples only. */
+export const tutorHintSchema = z.object({
+  problemId: z.string().uuid(),
+  lockSessionId: z.string().uuid().optional(),
+  language: submitSchema.shape.language,
+  sourceCode: z.string().max(64 * 1024),
+  request: z.enum(['next', 'level', 'didnt_help', 'explain_word', 'step_by_step', 'smaller_example', 'different_explanation']),
+  level: z.number().int().min(1).max(5).optional(),
+  term: z.string().trim().min(1).max(60).optional(),
+  // Only the ordinal is used. The server re-runs that hidden case against the
+  // current code and uses it only if it still fails, so a stale or guessed
+  // ordinal can reveal nothing grading would not.
+  hiddenFailure: z
+    .object({
+      ordinal: z.number().int().min(0),
+      actualStdout: z.string().max(2000).nullable().optional(),
+      stderr: z.string().max(4000).nullable().optional(),
+    })
+    .optional(),
+});
+
+/** POST /tutor/feedback. Everything optional beyond what it is about. */
+export const feedbackSchema = z.object({
+  kind: z.enum(['hint', 'success']),
+  problemSlug: z.string().max(120).optional(),
+  helpful: z.boolean().optional(),
+  feeling: z.enum(['satisfying', 'fine', 'flat', 'frustrating']).optional(),
+  hintLevel: z.number().int().min(1).max(5).optional(),
+  strategy: z.string().max(40).optional(),
+  note: z.string().trim().max(500).optional(),
+});

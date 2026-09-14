@@ -9,6 +9,8 @@ import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessi
 import { recordCapability } from './capabilities.js';
 import { recordStep } from './learningLog.js';
 import { recordSolve } from './retrieval.js';
+import { recordSuccess } from './tutor/successMoment.js';
+import type { Accomplishment } from '@codelock/shared';
 import {
   bestOfRuns,
   evaluatePerformance,
@@ -50,6 +52,8 @@ export interface GradeResult {
   standing: SolveStanding | null;
   unlockToken: string | null;
   progress: ProgressUpdate | null;
+  /** What an accepted solve achieved. Null when it could not be worked out in time. */
+  accomplishment?: Accomplishment | null;
 }
 
 /**
@@ -364,7 +368,12 @@ export async function gradeSubmission(params: {
     },
   });
 
-  if (!session) return base;
+  // A practice solve: no lock to release, but the success moment still
+  // applies, with any practice hints counted as help.
+  if (!session) {
+    recordSuccess({ userId, problem, sessionId: null, submission });
+    return base;
+  }
 
   const priorAttempts = await prisma.submission.count({
     where: { lockSessionId: session.id, id: { not: submission.id } },
@@ -462,6 +471,11 @@ export async function gradeSubmission(params: {
   // through expanding. Not awaited, for the same reason as everything else on
   // this path.
   void recordSolve(userId, problem.patternFamily);
+
+  // Recorded after the response, never awaited: the unlock token must not wait
+  // on a sentence about the solve. The success screen fetches it by
+  // submission id.
+  recordSuccess({ userId, problem, sessionId: session.id, submission });
 
   return { ...base, unlockToken, progress };
 }

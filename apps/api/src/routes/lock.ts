@@ -316,7 +316,10 @@ lockRouter.post(
     const text = hintAt(problem, index, cases);
     if (text === null) throw ApiError.badRequest('No hint at that index');
 
-    void recordStep(user.id, {
+    // Confirmed before the hint is returned. A fire-and-forget write here could
+    // land after a quick submission, or not at all, and a solve that had help
+    // would then be recorded as unaided.
+    await recordStepConfirmed(user.id, {
       kind: 'HINT_REVEALED',
       problem,
       sessionId: session.id,

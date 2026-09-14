@@ -195,6 +195,12 @@ export interface GradeResult {
   /** Present only when this submission resolved a lock session. */
   unlockToken: string | null;
   progress: ProgressUpdate | null;
+  /**
+   * Not sent with the grade: the unlock must never wait on it. An accepted
+   * solve's success moment is recorded just afterwards and read from
+   * `GET /v1/progress/accomplishment/:submissionId`.
+   */
+  accomplishment?: Accomplishment | null;
 }
 
 export interface ProgressUpdate extends Omit<UserProgress, 'promoteAfterFastSolves' | 'demoteAfterFailures'> {
@@ -633,4 +639,183 @@ export interface SessionReviewStep {
   skipsRemaining?: number | null;
   transition?: string | null;
   reason?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Tutor: graduated hints
+// ---------------------------------------------------------------------------
+
+/**
+ * Five levels of help, weakest to strongest. Any level can be asked for
+ * directly: nobody has to fail repeatedly to unlock an explanation.
+ */
+export const HINT_LEVELS = [1, 2, 3, 4, 5] as const;
+export type HintLevel = (typeof HINT_LEVELS)[number];
+
+export const HINT_LEVEL_LABELS: Record<HintLevel, string> = {
+  1: 'A question to focus on',
+  2: 'Step through an example',
+  3: 'Explain the idea',
+  4: 'Outline with one gap',
+  5: 'Full worked solution',
+};
+
+export type HintRequestKind =
+  | 'next'
+  | 'level'
+  | 'didnt_help'
+  | 'explain_word'
+  | 'step_by_step'
+  | 'smaller_example'
+  | 'different_explanation';
+
+/**
+ * Where the values in a trace came from. `executed` is your code on the judge;
+ * `reference` is a checked reference solution; `illustrative` is an example
+ * that nobody ran.
+ */
+export type HintGrounding = 'executed' | 'reference' | 'illustrative';
+
+export interface HintTrace {
+  title: string;
+  grounding: HintGrounding;
+  groundingNote: string;
+  columns: string[];
+  rows: string[][];
+  divergence: string | null;
+}
+
+export interface HintEvidence {
+  /** True only when the current code was actually executed for this hint. */
+  ran: boolean;
+  summary: string;
+  /** Things known from execution or from the tests themselves. */
+  facts: string[];
+  /** A likely cause. Never stated as fact unless execution confirms it. */
+  suspicion: { text: string; confidence: 'confirmed' | 'likely' | 'possible' } | null;
+}
+
+export interface HintView {
+  level: HintLevel;
+  levelLabel: string;
+  strategy: string;
+  request: HintRequestKind;
+  diagnosis: string;
+  notice: string | null;
+  explain: string | null;
+  tryThis: string | null;
+  body: string | null;
+  code: { label: string; text: string; language: string } | null;
+  trace: HintTrace | null;
+  evidence: HintEvidence;
+  terms: Array<{ term: string; definition: string }>;
+  /** Honest statement of what produced this hint. */
+  analysisNote: string;
+  /** Set when the code changed and the issue discussed last time is gone. */
+  resolvedNote: string | null;
+  /** Set when "that didn't help" moved to a different or stronger approach. */
+  escalationNote: string | null;
+  checkUnderstanding: { slug: string; title: string; why: string } | null;
+  nextLevel: HintLevel | null;
+}
+
+export interface HintRequestInput {
+  problemId: string;
+  lockSessionId?: string;
+  language: Language;
+  sourceCode: string;
+  request: HintRequestKind;
+  level?: HintLevel;
+  term?: string;
+  /** A hidden case the last submission failed, as that response showed it. */
+  hiddenFailure?: { ordinal: number; actualStdout?: string | null; stderr?: string | null };
+}
+
+// ---------------------------------------------------------------------------
+// Success, progress and projects
+// ---------------------------------------------------------------------------
+
+/**
+ * How a solve was reached. Kept distinct on purpose: assisted work and a
+ * reproduced worked solution are real progress, and neither is evidence of
+ * independent mastery.
+ */
+export type AccomplishmentKind = 'independent' | 'assisted' | 'worked_solution' | 'recall' | 'transfer';
+
+export interface SkillProgressView {
+  skill: string;
+  label: string;
+  state: string;
+  stateLabel: string;
+  independent: number;
+  assisted: number;
+}
+
+export interface ProjectStepView {
+  slug: string;
+  title: string;
+  concept: string;
+  adds: string;
+  status: 'not_started' | 'assisted' | 'independent';
+  problemId: string | null;
+}
+
+export interface ProjectArcView {
+  id: string;
+  title: string;
+  blurb: string;
+  steps: ProjectStepView[];
+  completed: number;
+}
+
+export interface Accomplishment {
+  kind: AccomplishmentKind;
+  headline: string;
+  details: string[];
+  helpSummary: string;
+  skills: SkillProgressView[];
+  project: {
+    arcId: string;
+    arcTitle: string;
+    stepTitle: string;
+    adds: string;
+    stepNumber: number;
+    totalSteps: number;
+    completedSteps: number;
+  } | null;
+  variation: { slug: string; title: string; why: string } | null;
+  /** Occasional and dismissible. */
+  askFeedback: boolean;
+}
+
+export interface ProjectRunView {
+  ran: boolean;
+  message: string;
+  players: Array<{
+    name: string;
+    rounds: number[];
+    cells: Array<{ slug: string; label: string; value: string | null; note: string | null }>;
+  }>;
+  winner: string | null;
+}
+
+export interface ProgressView {
+  skills: SkillProgressView[];
+  arc: ProjectArcView;
+  recent: Array<{ at: string; title: string; kind: AccomplishmentKind; headline: string }>;
+  counts: Record<AccomplishmentKind, number>;
+  welcomeBack: string | null;
+  lastActiveAt: string | null;
+}
+
+export type FeedbackFeeling = 'satisfying' | 'fine' | 'flat' | 'frustrating';
+
+export interface FeedbackInput {
+  kind: 'hint' | 'success';
+  problemSlug?: string;
+  helpful?: boolean;
+  feeling?: FeedbackFeeling;
+  hintLevel?: HintLevel;
+  strategy?: string;
+  note?: string;
 }

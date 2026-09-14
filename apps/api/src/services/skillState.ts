@@ -205,7 +205,13 @@ async function attributeHelp(userId: string, solved: readonly SolvedRow[]): Prom
     ...new Set(solved.map((row) => row.lockSessionId).filter((id): id is string => Boolean(id))),
   ];
 
-  const helpAt = new Map<string, number>();
+  const helpAt = new Map<string, number[]>();
+  const remember = (key: string, at: number) => {
+    const list = helpAt.get(key);
+    if (list) list.push(at);
+    else helpAt.set(key, [at]);
+  };
+
   if (sessionIds.length > 0) {
     const events = await prisma.learningEvent.findMany({
       where: {
@@ -215,28 +221,102 @@ async function attributeHelp(userId: string, solved: readonly SolvedRow[]): Prom
       },
       select: { sessionId: true, problemSlug: true, at: true },
     });
-    // Earliest help per session *and problem*. Per session alone would charge
-    // a hint spent on a problem the learner set aside to the different problem
-    // they went on to solve, because one session can now serve several.
+    // Per session *and problem*. Per session alone would charge a hint spent on
+    // a problem the learner set aside to the different problem they went on to
+    // solve, because one session can serve several.
     for (const event of events) {
       if (!event.sessionId || !event.problemSlug) continue;
-      const key = `${event.sessionId}::${event.problemSlug}`;
-      const seen = helpAt.get(key);
-      const at = event.at.getTime();
-      if (seen === undefined || at < seen) helpAt.set(key, at);
+      remember(event.sessionId + '::' + event.problemSlug, event.at.getTime());
+    }
+  }
+
+  // Practice solves have no session, but they can have help: the tutor serves
+  // hints outside a lock too, and those carry no session id. They are matched
+  // by problem and by time instead — help within the practice window before
+  // the solve. Treating every practice solve as unaided would record assisted
+  // work as independent, which is the one mistake this layer must not make.
+  const practiceSlugs = [
+    ...new Set(solved.filter((row) => !row.lockSessionId).map((row) => row.problem.slug)),
+  ];
+  if (practiceSlugs.length > 0) {
+    const events = await prisma.learningEvent.findMany({
+      where: {
+        userId,
+        problemSlug: { in: practiceSlugs },
+        kind: { in: ['HINT_REVEALED', 'DEBRIEF_OPENED'] },
+        // Practice hints carry no session. A debrief opened after a lock
+        // carries that lock's session, but it is still the answer on screen,
+        // so it counts as help for a practice solve soon afterwards.
+        OR: [{ sessionId: null }, { kind: 'DEBRIEF_OPENED' }],
+      },
+      select: { problemSlug: true, at: true },
+    });
+    for (const event of events) {
+      if (event.problemSlug) remember('practice::' + event.problemSlug, event.at.getTime());
     }
   }
 
   return solved.map((row) => {
-    const firstHelp = row.lockSessionId
-      ? helpAt.get(`${row.lockSessionId}::${row.problem.slug}`)
-      : undefined;
+    const solvedAt = row.createdAt.getTime();
+    const key = row.lockSessionId
+      ? row.lockSessionId + '::' + row.problem.slug
+      : 'practice::' + row.problem.slug;
+    const windowStart = row.lockSessionId ? -Infinity : solvedAt - PRACTICE_HELP_WINDOW_MS;
+    const assisted = (helpAt.get(key) ?? []).some((at) => at < solvedAt && at >= windowStart);
     return {
       problemId: row.problemId,
       sessionId: row.lockSessionId,
       problem: row.problem,
-      assisted: firstHelp !== undefined && firstHelp < row.createdAt.getTime(),
+      assisted,
       solvedAt: row.createdAt,
     };
   });
+}
+
+/** Hints on a practice problem within this long before a solve count as help for it. */
+export const PRACTICE_HELP_WINDOW_MS = 12 * 60 * 60 * 1000;
+
+/** A solve with its help attributed, plus what the progress page shows. */
+export interface SolveHistoryRecord extends SolveRecord {
+  slug: string;
+  title: string;
+  patternTags: string[];
+}
+
+/**
+ * Accepted solves, newest first, with help attributed exactly as the skill
+ * snapshot attributes it: one source of truth for "was this assisted".
+ */
+export async function loadSolveRecords(userId: string, before?: Date): Promise<SolveHistoryRecord[]> {
+  const rows = await prisma.submission.findMany({
+    where: {
+      userId,
+      status: { in: [SubmissionStatus.ACCEPTED, SubmissionStatus.ACCEPTED_TOO_SLOW] },
+      ...(before ? { createdAt: { lt: before } } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: REPLAY_LIMIT,
+    select: {
+      createdAt: true,
+      problemId: true,
+      lockSessionId: true,
+      problem: {
+        select: {
+          slug: true,
+          title: true,
+          signatureId: true,
+          patternTags: true,
+          tier: true,
+          patternFamily: true,
+        },
+      },
+    },
+  });
+  const attributed = await attributeHelp(userId, rows);
+  return attributed.map((record, i) => ({
+    ...record,
+    slug: rows[i]!.problem.slug,
+    title: rows[i]!.problem.title,
+    patternTags: rows[i]!.problem.patternTags,
+  }));
 }

@@ -589,6 +589,11 @@ enum LearningEventKind {
   /// because enum values cannot be removed once added and four shades of the
   /// same fact is a poor use of a permanent commitment.
   SESSION_FLOW
+  /// How a solve was reached: independent, assisted, reproduced from a worked
+  /// solution, a later recall, or a transfer to a new problem.
+  ACCOMPLISHMENT
+  /// Optional, dismissible answers: whether a hint helped, how a solve felt.
+  FEEDBACK
 }
 
 /// One step the learner actually took.

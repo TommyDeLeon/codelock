@@ -22,7 +22,9 @@
     "verify:reachability": "tsx --env-file-if-exists=.env scripts/verify-reachability.ts",
     "verify:hints": "tsx --env-file-if-exists=.env scripts/verify-hints.ts",
     "test": "tsx --test src/**/*.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 src/**/*.dbtest.ts"
+    "test:db": "tsx --test --test-concurrency=1 src/**/*.dbtest.ts",
+    "record:hint-fixtures": "tsx --env-file-if-exists=.env scripts/record-hint-fixtures.ts",
+    "hints:samples": "tsx scripts/print-hint-samples.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

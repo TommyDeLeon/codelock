@@ -238,7 +238,9 @@ export function deriveCapability(
     sentence: capabilitySentence(problem, level),
     evidence,
     // The single rule this module exists to enforce.
-    demonstratesMastery: level !== 'after_editorial',
+    // Only unaided work demonstrates. Reaching the idea with hints is progress,
+    // and it is not yet evidence the learner can find it alone.
+    demonstratesMastery: level === 'unaided',
   };
 }
 
@@ -281,9 +283,22 @@ export async function readCapabilityEvidence(
   const count = (kind: 'HINT_REVEALED' | 'DEBRIEF_OPENED') =>
     rows.find((row) => row.kind === kind)?._count._all ?? 0;
 
+  // A worked solution shown by the tutor (level 5) is the answer on screen,
+  // the same as the editorial, so it counts as one.
+  const workedSolutions = await prisma.learningEvent.count({
+    where: {
+      userId,
+      sessionId,
+      ...(problemSlug ? { problemSlug } : {}),
+      kind: 'HINT_REVEALED',
+      detail: { path: ['level'], equals: 5 },
+      at: { lt: before },
+    },
+  });
+
   return {
     hintsRevealed: count('HINT_REVEALED'),
-    debriefsOpened: count('DEBRIEF_OPENED'),
+    debriefsOpened: count('DEBRIEF_OPENED') + workedSolutions,
   };
 }
 

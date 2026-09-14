@@ -1,0 +1,734 @@
+{
+  "recordedAt": "2026-09-14T18:01:28.676Z",
+  "source": "http://127.0.0.1:4000/v1/run",
+  "runs": {
+    "nth-unguarded-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello\n1",
+          "stdout": "e\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 109,
+          "expectedStdout": "e",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "hello\n9",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 68, in <module>\n    print(__fStr(solve(__a0, __a1)))\n                 ~~~~~^^^^^^^^^^^^\n  File \"/work/main.py\", line 65, in solve\n    return a[b]\n           ~^^^\nIndexError: string index out of range",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 359,
+          "expectedStdout": "",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-range-plus-one-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 70, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 67, in solve\n    total += a[i]\n             ~^^^\nIndexError: list index out of range",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 320,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 70, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 67, in solve\n    total += a[i]\n             ~^^^\nIndexError: list index out of range",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 319,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "nth-unguarded-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello\n1",
+          "stdout": "e\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 179,
+          "expectedStdout": "e",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "hello\n9",
+          "stdout": "undefined\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 179,
+          "expectedStdout": "",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "largest-le-length-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "3 9 2 7",
+          "stdout": "9\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 60,
+          "expectedStdout": "9",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "-5 -2 -9",
+          "stdout": "-2\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 69,
+          "expectedStdout": "-2",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "first-char-index-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello",
+          "stdout": "h\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 101,
+          "expectedStdout": "h",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 67, in <module>\n    print(__fStr(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 65, in solve\n    return a[0]\n           ~^^^\nIndexError: string index out of range",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 290,
+          "expectedStdout": "",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-start-first-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "10\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 101,
+          "expectedStdout": "10",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 70, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 65, in solve\n    total = a[0]\n            ~^^^\nIndexError: list index out of range",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 359,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "count-even-fallback-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "2\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 80,
+          "expectedStdout": "2",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "undefined\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 69,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "count-gt-inclusive-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 5 3 9\n3",
+          "stdout": "3\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 101,
+          "expectedStdout": "2",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "3 3 3\n3",
+          "stdout": "3\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 101,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "index-assign-in-if-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "5 3 7\n7",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 49,
+          "expectedStdout": "2",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "1 2\n9",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 60,
+          "expectedStdout": "-1",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "largest-best-zero-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "3 9 2 7",
+          "stdout": "9\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 121,
+          "expectedStdout": "9",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "-5 -2 -9",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 111,
+          "expectedStdout": "-2",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "first-char-loop-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello",
+          "stdout": "h\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 60,
+          "expectedStdout": "h",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 70,
+          "expectedStdout": "",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "nth-loop-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello\n1",
+          "stdout": "e\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 120,
+          "expectedStdout": "e",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "hello\n9",
+          "stdout": "\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 120,
+          "expectedStdout": "",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "index-else-return-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "5 3 7\n7",
+          "stdout": "-1\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 120,
+          "expectedStdout": "2",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "1 2\n9",
+          "stdout": "-1\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 109,
+          "expectedStdout": "-1",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "sum-return-in-loop-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "1\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 60,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 60,
+          "expectedStdout": "0",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "sum-reset-in-loop-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "4\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 111,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 70, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 68, in solve\n    return total\n           ^^^^^\nUnboundLocalError: cannot access local variable 'total' where it is not associated with a value",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 310,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-print-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "10\nNone\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 120,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\nNone\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 120,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "count-even-print-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "2\nundefined\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 90,
+          "expectedStdout": "2",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\nundefined\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 79,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-stray-print-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "1\n3\n6\n10\n10\n",
+          "stderr": null,
+          "status": "Wrong Answer",
+          "timeMs": 110,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 100,
+          "expectedStdout": "0",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "sum-missing-colon-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": null,
+          "stderr": "  File \"/work/main.py\", line 66\n    for n in a\n              ^\nSyntaxError: expected ':'",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 220,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "  File \"/work/main.py\", line 66\n    for n in a\n              ^\nSyntaxError: expected ':'",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 250,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-missing-brace-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": null,
+          "stderr": "/work/main.js:63\nconsole.log(__fInt(solve(__a0)));\n                                 \n\nSyntaxError: Unexpected end of input\n    at wrapSafe (node:internal/modules/cjs/loader:1861:18)\n    at Module._compile (node:internal/modules/cjs/loader:1903:20)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n\nNode.js v24.20.0",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 71,
+          "expectedStdout": "10",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": null,
+          "stderr": "/work/main.js:63\nconsole.log(__fInt(solve(__a0)));\n                                 \n\nSyntaxError: Unexpected end of input\n    at wrapSafe (node:internal/modules/cjs/loader:1861:18)\n    at Module._compile (node:internal/modules/cjs/loader:1903:20)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n\nNode.js v24.20.0",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 70,
+          "expectedStdout": "0",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "largest-typo-name-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "3 9 2 7",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 71, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 69, in solve\n    return bets\n           ^^^^\nNameError: name 'bets' is not defined. Did you mean: 'bytes'?",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 260,
+          "expectedStdout": "9",
+          "matched": false
+        },
+        {
+          "ordinal": 1,
+          "stdin": "-5 -2 -9",
+          "stdout": null,
+          "stderr": "Traceback (most recent call last):\n  File \"/work/main.py\", line 71, in <module>\n    print(__fInt(solve(__a0)))\n                 ~~~~~^^^^^^\n  File \"/work/main.py\", line 69, in solve\n    return bets\n           ^^^^\nNameError: name 'bets' is not defined. Did you mean: 'bytes'?",
+          "status": "Runtime Error (NZEC)",
+          "timeMs": 260,
+          "expectedStdout": "-2",
+          "matched": false
+        }
+      ],
+      "compileError": null
+    },
+    "sum-builtin-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "10\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 109,
+          "expectedStdout": "10",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 120,
+          "expectedStdout": "0",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "sum-reduce-js": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 2 3 4",
+          "stdout": "10\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 59,
+          "expectedStdout": "10",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 59,
+          "expectedStdout": "0",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "index-builtin-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "5 3 7\n7",
+          "stdout": "2\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 109,
+          "expectedStdout": "2",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "1 2\n9",
+          "stdout": "-1\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 109,
+          "expectedStdout": "-1",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "largest-max-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "3 9 2 7",
+          "stdout": "9\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 111,
+          "expectedStdout": "9",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "-5 -2 -9",
+          "stdout": "-2\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 100,
+          "expectedStdout": "-2",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "nth-guard-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello\n1",
+          "stdout": "e\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 101,
+          "expectedStdout": "e",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "hello\n9",
+          "stdout": "\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 101,
+          "expectedStdout": "",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "first-slice-py": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "hello",
+          "stdout": "h\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 100,
+          "expectedStdout": "h",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "",
+          "stdout": "\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 100,
+          "expectedStdout": "",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    },
+    "count-gt-while-java": {
+      "ran": true,
+      "cases": [
+        {
+          "ordinal": 0,
+          "stdin": "1 5 3 9\n3",
+          "stdout": "2\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 1680,
+          "expectedStdout": "2",
+          "matched": true
+        },
+        {
+          "ordinal": 1,
+          "stdin": "3 3 3\n3",
+          "stdout": "0\n",
+          "stderr": null,
+          "status": "Accepted",
+          "timeMs": 1687,
+          "expectedStdout": "0",
+          "matched": true
+        }
+      ],
+      "compileError": null
+    }
+  }
+}

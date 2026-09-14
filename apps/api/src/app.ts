@@ -13,6 +13,8 @@ import { lockRouter } from './routes/lock.js';
 import { problemsRouter } from './routes/problems.js';
 import { logRouter } from './routes/log.js';
 import { submissionsRouter } from './routes/submissions.js';
+import { tutorRouter } from './routes/tutor.js';
+import { progressRouter } from './routes/progress.js';
 import { runRouter } from './routes/run.js';
 import { settingsRouter } from './routes/settings.js';
 import { statsRouter } from './routes/stats.js';
@@ -120,6 +122,8 @@ export function createApp(): Express {
   app.use('/v1/settings', settingsRouter);
   app.use('/v1/stats', statsRouter);
   app.use('/v1/log', logRouter);
+  app.use('/v1/tutor', tutorRouter);
+  app.use('/v1/progress', progressRouter);
   // Unauthenticated on purpose, and the only such route that runs code. Its own
   // limits live in the router; see the note there for why that is safe.
   app.use('/v1/demo', demoRouter);
