@@ -6,7 +6,7 @@ import { after, before, describe, it } from 'node:test';
 import { Difficulty, LockState, UnlockOutcome } from '@prisma/client';
 import { createApp } from '../app.js';
 import { prisma } from '../lib/prisma.js';
-import { resetLocalUserCache, resolveLocalUser } from '../middleware/localUser.js';
+import { resolveLocalUser } from '../middleware/localUser.js';
 import { claimResolution, releaseLock } from './lockSessions.js';
 import {
   commitParticipation,
@@ -290,7 +290,6 @@ describe('saying a problem was too hard never costs a level', { concurrency: fal
     // The route acts as the single local learner, so the fixture has to be that
     // user. It is created here in the disposable database and deleted by the
     // cleanup like every other fixture.
-    resetLocalUserCache();
     const userId = await resolveLocalUser();
     const fixture: Fixture = { userId, problemIds: [] };
     created.push(fixture);

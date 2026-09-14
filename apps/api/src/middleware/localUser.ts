@@ -80,9 +80,3 @@ export function currentUser(req: Request): { id: string } {
   if (!req.user) throw new Error('withLocalUser did not run before this handler');
   return req.user;
 }
-
-/** Tests create their own users; let them reset the memoised id. */
-export function resetLocalUserCache(): void {
-  // Nothing to reset: the user is resolved on every request. Kept so existing
-  // database tests that call it keep compiling.
-}
