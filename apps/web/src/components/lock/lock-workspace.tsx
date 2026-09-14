@@ -36,7 +36,7 @@ export function LockWorkspace({
   onUnlocked,
 }: {
   session: LockSessionView;
-  onUnlocked: (token: string) => void | Promise<void>;
+  onUnlocked: (token: string, grade: GradeResult) => void | Promise<void>;
 }) {
   // Keyed on the problem, so asking for a different one remounts everything
   // under it: the editor, the console input, the test results and the hints.
@@ -50,7 +50,7 @@ function Workspace({
   onUnlocked,
 }: {
   session: LockSessionView;
-  onUnlocked: (token: string) => void | Promise<void>;
+  onUnlocked: (token: string, grade: GradeResult) => void | Promise<void>;
 }) {
   const problem = session.problem!;
   const preferred = useProfile((s) => s.profile?.preferredLanguage);
@@ -80,6 +80,9 @@ function Workspace({
   );
   const [code, setCode] = useState(() => problem.starterCode[language] ?? '');
   const [result, setResult] = useState<GradeResult | null>(null);
+  // The code that produced `result`, so a hidden failure is only handed to the
+  // hints while it still describes the code on screen.
+  const [submittedCode, setSubmittedCode] = useState<string | null>(null);
 
   // The console. Its input defaults to the first sample, because the first
   // thing anyone wants to try is the example they were just shown.
@@ -143,7 +146,7 @@ function Workspace({
         }
         // Clear the draft only once it can no longer be needed.
         window.localStorage.removeItem(draftKey);
-        void onUnlocked(grade.unlockToken);
+        void onUnlocked(grade.unlockToken, grade);
       }
     },
     onError: (err: Error) => toast.error(err.message),
@@ -168,8 +171,17 @@ function Workspace({
   const busy = submit.isPending || run.isPending;
 
   const runSubmit = useCallback(() => {
-    if (!busy && code.trim()) submit.mutate();
+    if (!busy && code.trim()) {
+      setSubmittedCode(code);
+      submit.mutate();
+    }
   }, [busy, submit, code]);
+
+  const failedHidden =
+    result && submittedCode === code ? result.cases.find((c) => !c.passed && !c.isSample) : undefined;
+  const hiddenFailure = failedHidden
+    ? { ordinal: failedHidden.ordinal, actualStdout: failedHidden.actualStdout ?? null, stderr: failedHidden.stderr ?? null }
+    : null;
 
   const runCode = useCallback(() => {
     if (!busy && code.trim()) run.mutate();
@@ -264,7 +276,14 @@ function Workspace({
             skillEligible={session.skillEligible}
             skillNote={session.skillNote}
           />
-          <HintsPanel sessionId={session.id} />
+          <HintsPanel
+            problemId={problem.id}
+            problemSlug={problem.slug}
+            lockSessionId={session.id}
+            language={language}
+            code={code}
+            hiddenFailure={hiddenFailure}
+          />
           <SessionFlowPanel sessionId={session.id} />
         </section>
 

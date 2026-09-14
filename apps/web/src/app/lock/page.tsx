@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CircleCheck } from 'lucide-react';
+import { SuccessMoment } from '@/components/lock/success-moment';
 import { api } from '@/lib/api';
 import { useLockSession } from '@/hooks/use-lock-session';
 import { LockWorkspace } from '@/components/lock/lock-workspace';
@@ -53,6 +53,7 @@ export default function LockPage() {
   const { session, secondsRemaining, expired, isLoading, unreachable, failure, refetch } =
     useLockSession({ pollMs: 5_000 });
   const [unlocked, setUnlocked] = useState(false);
+  const [solvedSubmissionId, setSolvedSubmissionId] = useState<string | null>(null);
 
   /**
    * Ask the server to move ARMED -> LOCKED once the deadline passes. The server
@@ -130,7 +131,7 @@ export default function LockPage() {
     );
   }
 
-  if (unlocked) return <UnlockedScreen onContinue={goHome} />;
+  if (unlocked) return <UnlockedScreen onContinue={goHome} submissionId={solvedSubmissionId} />;
 
   if (!session) {
     return (
@@ -163,7 +164,7 @@ export default function LockPage() {
       <>
         <LockWorkspace
           session={session}
-          onUnlocked={async (token) => {
+          onUnlocked={async (token, grade) => {
             // On desktop the shell must verify the token before the overlay
             // drops. A successful reply is terminal for this remote page: the
             // main process has already started loading the bundled dashboard,
@@ -180,6 +181,7 @@ export default function LockPage() {
               return;
             }
             notifyNativeUnlocked();
+            setSolvedSubmissionId(grade.submissionId);
             setUnlocked(true);
           }}
         />
@@ -188,24 +190,19 @@ export default function LockPage() {
     );
   }
 
-  return <UnlockedScreen onContinue={goHome} />;
+  return <UnlockedScreen onContinue={goHome} submissionId={solvedSubmissionId} />;
 }
 
-function UnlockedScreen({ onContinue }: { onContinue: () => void }) {
-  return (
-    <main id="main" className="flex h-dvh flex-col items-center justify-center gap-4 p-4">
-      <span className="flex size-12 items-center justify-center rounded-full bg-success-soft text-success">
-        <CircleCheck className="size-6" aria-hidden />
-      </span>
-      <h1 className="text-xl font-semibold tracking-tight" role="status">
-        Unlocked
-      </h1>
-      <p className="max-w-xs text-center text-sm text-muted">
-        All test cases passed. Your device is yours again.
-      </p>
-      <Button size="lg" onClick={onContinue} autoFocus>
-        Continue
-      </Button>
-    </main>
-  );
+/**
+ * After an unlock in the browser. The lock is already released; this only says
+ * what was achieved and offers equally easy ways to finish or continue.
+ */
+function UnlockedScreen({
+  onContinue,
+  submissionId,
+}: {
+  onContinue: () => void;
+  submissionId: string | null;
+}) {
+  return <SuccessMoment submissionId={submissionId} onFinish={onContinue} />;
 }

@@ -850,3 +850,23 @@
     animation: none !important;
   }
 }
+
+/*
+ * The success moment's only motion: the content settles in, and a scoreboard
+ * cell fades up when the learner's code fills it. Short, once, and skipped
+ * entirely when reduced motion is requested — the component also checks the
+ * learner's own setting before applying these classes.
+ */
+@keyframes success-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes success-cell {
+  from { opacity: 0; background-color: var(--color-success-soft, transparent); }
+  to { opacity: 1; background-color: transparent; }
+}
+.success-rise { animation: success-rise 320ms ease-out both; }
+.success-cell { animation: success-cell 600ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .success-rise, .success-cell { animation: none; }
+}
