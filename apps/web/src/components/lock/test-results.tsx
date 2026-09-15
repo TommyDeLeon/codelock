@@ -95,7 +95,7 @@ export function TestResults({
           open at a time: this panel shares a column with the editor, and an
           accordion that allows several keeps pushing the thing you were reading
           off the bottom. */}
-      <ul role="list" className="max-h-80 overflow-y-auto overscroll-contain">
+      <ul role="list">
         {result.cases.map((testCase) => (
           <TestCaseRow
             key={testCase.ordinal}

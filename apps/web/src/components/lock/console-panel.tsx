@@ -100,7 +100,7 @@ export function ConsolePanel({
 
           <ul
             role="list"
-            className="max-h-80 divide-y divide-border overflow-y-auto overscroll-contain"
+            className="divide-y divide-border"
           >
             {result.cases.map((runCase, index) => (
               <li key={runCase.ordinal ?? `custom-${index}`} className="px-4 py-3">
@@ -134,11 +134,14 @@ export function ConsolePanel({
                   </span>
                 </div>
 
-                <Block label="Input" value={runCase.stdin} />
-                <Block label="Your output" value={runCase.stdout} empty="(printed nothing)" />
-                {runCase.expectedStdout !== null && (
-                  <Block label="Expected" value={runCase.expectedStdout} />
-                )}
+                {/* Side by side when there is room, so one case is one row. */}
+                <div className="grid gap-2 md:grid-cols-3">
+                  <Block label="Input" value={runCase.stdin} />
+                  <Block label="Your output" value={runCase.stdout} empty="(printed nothing)" />
+                  {runCase.expectedStdout !== null && (
+                    <Block label="Expected" value={runCase.expectedStdout} />
+                  )}
+                </div>
                 {runCase.stderr && <Block label="Error" value={runCase.stderr} tone="danger" />}
               </li>
             ))}
@@ -161,7 +164,7 @@ function Block({
   tone?: 'danger';
 }) {
   return (
-    <div className="mb-2 last:mb-0">
+    <div className="mb-2 min-w-0 last:mb-0">
       <p className="mb-1 text-[12px] font-mono font-medium uppercase tracking-wide text-faint">{label}</p>
       <pre
         className={cn(

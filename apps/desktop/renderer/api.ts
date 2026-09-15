@@ -1,4 +1,5 @@
 import type {
+  Accomplishment,
   ProgressView,
   LockSessionView,
   SessionReviewView,
@@ -133,6 +134,18 @@ export const api = {
 
   /** Skills and recent solves, with help and independent work kept apart. */
   progress: () => request<ProgressView>('/v1/progress'),
+
+  /** The newest solve's success moment, so the dashboard can show it once. */
+  latestAccomplishment: () =>
+    request<{
+      submissionId: string | null;
+      sessionId: string | null;
+      /** When the solve happened. */
+      at: string | null;
+      accomplishment: Accomplishment | null;
+    }>(
+      '/v1/progress/latest-accomplishment',
+    ),
 
   logSummary: (sinceDays?: number) =>
     request<{ sinceDays: number | null; summary: LogSummary }>(

@@ -211,7 +211,7 @@
 .marketing-site .hero-stage > div { padding-block: 66px 76px; }
 .marketing-site .hero-stage h1 { font-size: clamp(62px, 8.8vw, 136px); max-width: 19ch; }
 .marketing-site .hero-stage .prose-site { max-width: 58ch; margin-left: auto; }
-.marketing-site .code-field { display: none; }
+/* .code-field is shown: How it works renders the animated field in its hero and closing band. */
 .marketing-site .editorial-body { max-width: 60ch; }
 .marketing-site .grid > *, .marketing-site .mechanism-layout > * { min-width: 0; }
 .marketing-site pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }

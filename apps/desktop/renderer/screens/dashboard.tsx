@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { SessionReviewPanel } from './session-review';
+import { Celebration } from '../celebration';
 import { bridge } from '../bridge';
 import { PersonalBests, RankReadout, StreakPips, TierLadder } from '../game';
 
@@ -150,6 +151,8 @@ export function DashboardScreen() {
       }}
     >
       <div style={{ display: 'grid', gap: 28, minWidth: 0 }}>
+        {/* The moment after a solve: shown once, then out of the way. */}
+        <Celebration />
         {/* --- timer ----------------------------------------------------- */}
         <section>
           <p className="eyebrow">Session</p>

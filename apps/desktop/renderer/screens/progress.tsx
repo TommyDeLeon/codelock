@@ -13,7 +13,7 @@ import { api, ApiError } from '../api';
 const KIND_LABELS: Record<AccomplishmentKind, string> = {
   independent: 'On your own',
   assisted: 'With help',
-  worked_solution: 'Learned from a solution',
+  worked_solution: 'Studied a solution',
   recall: 'Remembered after a gap',
   transfer: 'Applied to a new problem',
 };

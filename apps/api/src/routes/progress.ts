@@ -59,7 +59,9 @@ progressRouter.get(
     const awayDays = lastActiveAt ? (Date.now() - lastActiveAt.getTime()) / 86_400_000 : 0;
 
     const view: ProgressView = {
-      skills: SKILLS.filter((s) => s !== 'values').map((skill) => ({
+      // Values included: the earliest problems use nothing else, and hiding it
+      // made a real solve look like no progress at all.
+      skills: SKILLS.map((skill) => ({
         skill,
         label: SKILL_LABELS[skill],
         state: snapshot[skill].state,
@@ -84,6 +86,42 @@ progressRouter.get(
       lastActiveAt: lastActiveAt?.toISOString() ?? null,
     };
     res.json(view);
+  }),
+);
+
+/**
+ * GET /progress/latest-accomplishment — the most recent solve's success moment.
+ *
+ * The desktop shell drops the lock straight back to its own dashboard, so the
+ * dashboard asks for the newest accomplishment and shows it once. Nulls when
+ * there has never been one.
+ */
+progressRouter.get(
+  '/latest-accomplishment',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    // Only solves that opened a lock: a practice or browser solve must not be
+    // celebrated as though it had just released the desktop.
+    const event = await prisma.learningEvent.findFirst({
+      where: { userId: user.id, kind: 'ACCOMPLISHMENT', sessionId: { not: null }, submissionId: { not: null } },
+      orderBy: { at: 'desc' },
+      select: { submissionId: true, sessionId: true, detail: true },
+    });
+    // Freshness is judged by when the solve happened, not by when this event
+    // was written, which can lag behind a slow database.
+    const submission = event?.submissionId
+      ? await prisma.submission.findFirst({
+          where: { id: event.submissionId, userId: user.id },
+          select: { createdAt: true },
+        })
+      : null;
+    const accomplishment = (event?.detail as { accomplishment?: unknown } | null)?.accomplishment ?? null;
+    res.json({
+      submissionId: submission ? event!.submissionId : null,
+      sessionId: submission ? event!.sessionId : null,
+      at: submission?.createdAt.toISOString() ?? null,
+      accomplishment: submission ? accomplishment : null,
+    });
   }),
 );
 

@@ -92,6 +92,9 @@ function Workspace({
   // Which half of the bottom pane is showing. Whichever one just produced
   // output wins, so pressing a button always shows you its answer.
   const [pane, setPane] = useState<'console' | 'results'>('console');
+  // The left column is tabbed so help is one click away, never below a long
+  // problem statement. Panels stay mounted, so switching keeps their state.
+  const [side, setSide] = useState<'problem' | 'help' | 'adjust'>('problem');
 
   // Draft survives a reload: losing 20 minutes of work to a stray refresh
   // would make the lock feel punitive rather than motivating.
@@ -268,14 +271,79 @@ function Workspace({
             in a corner of the editor: someone reaching for a hint is reading,
             not typing, and the nudge belongs next to the thing it is about. */}
         <section
-          aria-label="Problem statement"
-          className="min-h-0 overflow-y-auto border-b border-border lg:border-b-0 lg:border-r"
+          aria-label="Problem and help"
+          className="flex min-h-0 flex-col border-b border-border lg:border-b-0 lg:border-r"
         >
-          <ProblemPanel
-            problem={problem}
-            skillEligible={session.skillEligible}
-            skillNote={session.skillNote}
-          />
+          <div
+            role="tablist"
+            aria-label="Problem and help"
+            className="flex shrink-0 border-b border-border"
+            onKeyDown={(event) => {
+              // A tab widget moves with the arrow keys, Home and End.
+              const order = SIDE_TABS.map(([id]) => id);
+              const at = order.indexOf(side);
+              const next =
+                event.key === 'ArrowRight'
+                  ? order[(at + 1) % order.length]
+                  : event.key === 'ArrowLeft'
+                    ? order[(at - 1 + order.length) % order.length]
+                    : event.key === 'Home'
+                      ? order[0]
+                      : event.key === 'End'
+                        ? order[order.length - 1]
+                        : undefined;
+              if (!next) return;
+              event.preventDefault();
+              setSide(next);
+              document.getElementById(`side-tab-${next}`)?.focus();
+            }}
+          >
+            {SIDE_TABS.map(([id, label]) => (
+              <button
+                key={id}
+                id={`side-tab-${id}`}
+                type="button"
+                role="tab"
+                aria-selected={side === id}
+                aria-controls={`side-panel-${id}`}
+                tabIndex={side === id ? 0 : -1}
+                onClick={() => setSide(id)}
+                className={cn(
+                  'px-4 py-2 text-[13px] font-semibold outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
+                  side === id
+                    ? 'border-b-2 border-fg text-fg'
+                    : 'border-b-2 border-transparent text-muted hover:text-fg',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div
+            role="tabpanel"
+            id="side-panel-problem"
+            aria-labelledby="side-tab-problem"
+            hidden={side !== 'problem'}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            <ProblemPanel
+              problem={problem}
+              skillEligible={session.skillEligible}
+              skillNote={session.skillNote}
+            />
+            <div className="px-5 pb-5">
+              <button type="button" onClick={() => setSide('help')} className="text-[13px] font-semibold underline">
+                Stuck? Open Help
+              </button>
+            </div>
+          </div>
+          <div
+            role="tabpanel"
+            id="side-panel-help"
+            aria-labelledby="side-tab-help"
+            hidden={side !== 'help'}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
           <HintsPanel
             problemId={problem.id}
             problemSlug={problem.slug}
@@ -284,11 +352,21 @@ function Workspace({
             code={code}
             hiddenFailure={hiddenFailure}
           />
-          <SessionFlowPanel sessionId={session.id} />
+          </div>
+          <div
+            role="tabpanel"
+            id="side-panel-adjust"
+            aria-labelledby="side-tab-adjust"
+            hidden={side !== 'adjust'}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            <SessionFlowPanel sessionId={session.id} />
+          </div>
         </section>
 
         <section aria-label="Your solution" className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1">
+          {/* The editor keeps a floor, so the output pane can never squeeze it out. */}
+          <div className="min-h-[12rem] flex-1">
             <CodeEditor
               language={language}
               value={code}
@@ -311,7 +389,10 @@ function Workspace({
               window now gives the results the room they need and takes it from
               the editor, which is the right trade when you are reading a
               failure rather than typing. Tall windows are unchanged. */}
-          <div className="flex max-h-[45%] min-h-[13rem] shrink-0 flex-col overflow-hidden border-t border-border bg-surface">
+          {/* Sized as a share of the column, between a floor and a ceiling: tall
+              enough to read input and output side by side without scrolling on
+              a normal window, never so tall that it takes the editor's floor. */}
+          <div className="flex h-[40%] max-h-[55%] min-h-[10rem] flex-col overflow-hidden border-t border-border bg-surface">
             <div role="tablist" aria-label="Output" className="flex shrink-0 border-b border-border">
               <PaneTab
                 id="console"
@@ -360,6 +441,13 @@ function Workspace({
     </div>
   );
 }
+
+/** The left column's tabs, in order. */
+const SIDE_TABS = [
+  ['problem', 'Problem'],
+  ['help', 'Help'],
+  ['adjust', 'Not the right problem?'],
+] as const;
 
 /** One tab. Roving state lives in the parent; this only reports a click. */
 function PaneTab({

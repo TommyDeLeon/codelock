@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Reportage } from '@/components/site/reportage';
 import Link from 'next/link';
+import { CodeField } from '@/components/site/code-field';
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -43,6 +44,7 @@ export default function HowItWorksPage() {
       {/* Above the fold, so a load reveal — a scroll-linked entry would
           already be finished before the first paint. */}
       <section className="rule-b hero-stage">
+        <CodeField />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           {/* No kicker. The heading names the page; the nav already said where you are. */}
           <h1 className="display display-hero hero-rise-headline hero-rise-2 measure-wide mt-6">
@@ -249,6 +251,7 @@ export default function HowItWorksPage() {
       </section>
 
       <section className="relative isolate">
+        <CodeField variant="close" />
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="display display-md measure-wide">
             Now go and see it{' '}

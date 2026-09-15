@@ -172,7 +172,7 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
   // Skill changes, stated as the rule that produced them.
   const skillLines: string[] = [];
   for (const skill of input.requiredSkills) {
-    if (skill === 'values') continue;
+    if (skill === 'values' && input.requiredSkills.length > 1) continue;
     const before = input.skillsBefore[skill];
     const after = input.skillsAfter[skill];
     if (after.state === 'demonstrated' && before.state !== 'demonstrated') {
@@ -183,7 +183,7 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
     // The most advanced skill the problem needs, not the first one listed:
     // "Sum of an Array" is about loops, not about comparisons.
     const first = [...input.requiredSkills]
-      .filter((s) => s !== 'values')
+      .filter((s, _i, all) => s !== 'values' || all.length === 1)
       .sort((a, b) => SKILLS.indexOf(b) - SKILLS.indexOf(a))[0];
     if (first) {
       skillLines.push(
@@ -194,7 +194,9 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
   details.push(...skillLines.slice(0, 2));
 
   const skills: SkillProgressView[] = input.requiredSkills
-    .filter((s) => s !== 'values')
+    // Values stays in when it is the only skill a problem uses, so the solve
+    // still shows up on the skill map.
+    .filter((s, _i, all) => s !== 'values' || all.length === 1)
     .map((skill) => ({
       skill,
       label: SKILL_LABELS[skill],
