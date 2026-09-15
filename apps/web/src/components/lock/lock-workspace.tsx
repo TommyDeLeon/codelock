@@ -366,7 +366,7 @@ function Workspace({
 
         <section aria-label="Your solution" className="flex min-h-0 flex-col">
           {/* The editor keeps a floor, so the output pane can never squeeze it out. */}
-          <div className="min-h-[8rem] flex-1">
+          <div className="min-h-[5rem] flex-1 lg:min-h-[8rem]">
             <CodeEditor
               language={language}
               value={code}
@@ -392,7 +392,7 @@ function Workspace({
           {/* Sized as a share of the column, between a floor and a ceiling: tall
               enough to read input and output side by side without scrolling on
               a normal window, never so tall that it takes the editor's floor. */}
-          <div className="flex h-[40%] max-h-[55%] min-h-[7rem] flex-col overflow-hidden border-t border-border bg-surface">
+          <div className="flex h-[40%] max-h-[55%] min-h-[5rem] flex-col lg:min-h-[7rem] overflow-hidden border-t border-border bg-surface">
             <div role="tablist" aria-label="Output" className="flex shrink-0 border-b border-border">
               <PaneTab
                 id="console"

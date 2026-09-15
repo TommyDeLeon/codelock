@@ -102,19 +102,26 @@ progressRouter.get(
     const user = currentUser(req);
     // Only solves that opened a lock: a practice or browser solve must not be
     // celebrated as though it had just released the desktop.
-    const event = await prisma.learningEvent.findFirst({
+    // Events are written after the fact and can land out of order, so the
+    // latest is chosen by when each solve actually happened, among the few
+    // most recently written.
+    const events = await prisma.learningEvent.findMany({
       where: { userId: user.id, kind: 'ACCOMPLISHMENT', sessionId: { not: null }, submissionId: { not: null } },
       orderBy: { at: 'desc' },
+      take: 10,
       select: { submissionId: true, sessionId: true, detail: true },
     });
-    // Freshness is judged by when the solve happened, not by when this event
-    // was written, which can lag behind a slow database.
-    const submission = event?.submissionId
-      ? await prisma.submission.findFirst({
-          where: { id: event.submissionId, userId: user.id },
-          select: { createdAt: true },
-        })
-      : null;
+    const submissions = await prisma.submission.findMany({
+      where: { userId: user.id, id: { in: events.map((e) => e.submissionId!) } },
+      select: { id: true, createdAt: true },
+    });
+    const solvedAt = new Map(submissions.map((s) => [s.id, s.createdAt]));
+    const event =
+      [...events]
+        .filter((e) => solvedAt.has(e.submissionId!))
+        .sort((a, b) => solvedAt.get(b.submissionId!)!.getTime() - solvedAt.get(a.submissionId!)!.getTime())[0] ??
+      null;
+    const submission = event ? { createdAt: solvedAt.get(event.submissionId!)! } : null;
     const accomplishment = (event?.detail as { accomplishment?: unknown } | null)?.accomplishment ?? null;
     res.json({
       submissionId: submission ? event!.submissionId : null,

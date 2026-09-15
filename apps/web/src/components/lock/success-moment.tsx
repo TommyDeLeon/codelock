@@ -117,12 +117,21 @@ export function SuccessMoment({
           typeof a.headline === 'string' &&
           typeof a.helpSummary === 'string' &&
           typeof a.kind === 'string' &&
-          a.kind in KIND_LABELS &&
+          Object.prototype.hasOwnProperty.call(KIND_LABELS, a.kind) &&
           Array.isArray(a.details) &&
           a.details.every((d) => typeof d === 'string') &&
           Array.isArray(a.skills) &&
-          a.skills.every((s) => !!s && typeof s.label === 'string' && typeof s.stateLabel === 'string') &&
-          (a.variation == null || typeof a.variation.title === 'string');
+          a.skills.every(
+            (s) =>
+              !!s &&
+              typeof s.skill === 'string' &&
+              typeof s.label === 'string' &&
+              typeof s.stateLabel === 'string' &&
+              typeof s.independent === 'number' &&
+              typeof s.assisted === 'number',
+          ) &&
+          (a.variation == null ||
+            (typeof a.variation.title === 'string' && typeof a.variation.why === 'string'));
         if (valid) {
           setAccomplishment(a as Accomplishment);
           setLoading(false);

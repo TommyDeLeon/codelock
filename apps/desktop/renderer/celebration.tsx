@@ -112,7 +112,7 @@ function isAccomplishment(value: unknown): value is Accomplishment {
   const a = value as Partial<Accomplishment> | null;
   if (!a || typeof a !== 'object') return false;
   if (typeof a.headline !== 'string' || typeof a.helpSummary !== 'string') return false;
-  if (typeof a.kind !== 'string' || !(a.kind in KIND_LABELS)) return false;
+  if (typeof a.kind !== 'string' || !Object.prototype.hasOwnProperty.call(KIND_LABELS, a.kind)) return false;
   if (!Array.isArray(a.details) || !a.details.every((d) => typeof d === 'string')) return false;
   if (
     !Array.isArray(a.skills) ||
@@ -144,20 +144,21 @@ export function Celebration() {
     try {
       const latest = await api.latestAccomplishment();
       // Only a solve that opened a lock, judged by when it was solved.
-      if (!latest.submissionId || !latest.sessionId || !latest.at) return Boolean(current);
-      if (!isAccomplishment(latest.accomplishment)) return Boolean(current);
+      // Every "nothing new" answer keeps the retries going: a newer solve may
+      // still be being written while an older one is on screen.
+      if (!latest.submissionId || !latest.sessionId || !latest.at) return false;
+      if (!isAccomplishment(latest.accomplishment)) return false;
       const solvedAt = new Date(latest.at).getTime();
-      if (Date.now() - solvedAt > FRESH_MS) return Boolean(current);
-      if (seen() === latest.submissionId) return Boolean(current);
-      // Already showing this one: nothing to change.
-      if (current?.submissionId === latest.submissionId) return true;
+      if (Date.now() - solvedAt > FRESH_MS) return false;
+      if (seen() === latest.submissionId) return false;
+      if (current?.submissionId === latest.submissionId) return false;
       // A newer solve replaces whatever was kept.
       current = { submissionId: latest.submissionId, accomplishment: latest.accomplishment };
       currentSolvedAt = solvedAt;
       setItem(current);
       return true;
     } catch {
-      return Boolean(current);
+      return false;
     }
   }, []);
 
