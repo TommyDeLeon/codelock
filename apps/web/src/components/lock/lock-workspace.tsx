@@ -207,7 +207,7 @@ function Workspace({
   }, [runSubmit, runCode]);
 
   return (
-    <div className="flex h-dvh flex-col bg-bg">
+    <div className="flex h-full flex-col bg-bg">
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
         {/* Ink, not the accent. The accent is now the brand green, and a green
             padlock would say the opposite of what this badge means. Locked is

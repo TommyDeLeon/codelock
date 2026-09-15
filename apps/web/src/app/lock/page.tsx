@@ -161,7 +161,8 @@ export default function LockPage() {
 
   if (session.state === 'LOCKED' && session.problem) {
     return (
-      <>
+      <div className="flex h-full flex-col">
+        <div className="min-h-0 flex-1">
         <LockWorkspace
           session={session}
           onUnlocked={async (token, grade) => {
@@ -185,8 +186,9 @@ export default function LockPage() {
             setUnlocked(true);
           }}
         />
+        </div>
         <KillSwitchHint />
-      </>
+      </div>
     );
   }
 

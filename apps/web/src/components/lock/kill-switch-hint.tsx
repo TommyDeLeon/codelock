@@ -30,7 +30,9 @@ export function KillSwitchHint() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center p-3"
+      // A bar under the workspace rather than a pill floating over it, so it
+      // can never cover the output or an error someone is trying to read.
+      className="flex shrink-0 justify-center border-t border-border bg-bg px-3 py-1.5"
       // Announced only while actually counting down; a permanent live region
       // would have a screen reader repeat the hint on every render.
       aria-live={holding ? 'assertive' : 'off'}

@@ -37,9 +37,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
    * still show through around it.
    */
   return (
-    <div className="lock-surface dark min-h-screen bg-bg text-fg">
+    // One viewport-high column: when the outage banner appears it takes its
+    // height from the page below instead of pushing the escape hint off-screen.
+    <div className="lock-surface dark flex h-dvh flex-col bg-bg text-fg">
       <ConnectionBanner />
-      {children}
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </div>
   );
 }
