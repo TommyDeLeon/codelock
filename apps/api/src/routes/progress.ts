@@ -102,32 +102,29 @@ progressRouter.get(
     const user = currentUser(req);
     // Only solves that opened a lock: a practice or browser solve must not be
     // celebrated as though it had just released the desktop.
-    // Events are written after the fact and can land out of order, so the
-    // latest is chosen by when each solve actually happened, among the few
-    // most recently written.
-    const events = await prisma.learningEvent.findMany({
-      where: { userId: user.id, kind: 'ACCOMPLISHMENT', sessionId: { not: null }, submissionId: { not: null } },
-      orderBy: { at: 'desc' },
-      take: 10,
-      select: { submissionId: true, sessionId: true, detail: true },
-    });
-    const submissions = await prisma.submission.findMany({
-      where: { userId: user.id, id: { in: events.map((e) => e.submissionId!) } },
+    // Start from the solve itself: the most recent accepted submission that
+    // belonged to a lock. Events are written after the fact and can land out
+    // of order, so they are never what decides "latest".
+    const submission = await prisma.submission.findFirst({
+      where: { userId: user.id, lockSessionId: { not: null }, status: 'ACCEPTED' },
+      orderBy: { createdAt: 'desc' },
       select: { id: true, createdAt: true },
     });
-    const solvedAt = new Map(submissions.map((s) => [s.id, s.createdAt]));
-    const event =
-      [...events]
-        .filter((e) => solvedAt.has(e.submissionId!))
-        .sort((a, b) => solvedAt.get(b.submissionId!)!.getTime() - solvedAt.get(a.submissionId!)!.getTime())[0] ??
-      null;
-    const submission = event ? { createdAt: solvedAt.get(event.submissionId!)! } : null;
+    const event = submission
+      ? await prisma.learningEvent.findFirst({
+          where: { userId: user.id, kind: 'ACCOMPLISHMENT', submissionId: submission.id },
+          select: { submissionId: true, sessionId: true, detail: true },
+        })
+      : null;
     const accomplishment = (event?.detail as { accomplishment?: unknown } | null)?.accomplishment ?? null;
+    // Right after an unlock the event may not be written yet. Report nothing
+    // rather than half an answer; the desktop simply asks again.
+    const ready = submission !== null && event !== null;
     res.json({
-      submissionId: submission ? event!.submissionId : null,
-      sessionId: submission ? event!.sessionId : null,
-      at: submission?.createdAt.toISOString() ?? null,
-      accomplishment: submission ? accomplishment : null,
+      submissionId: ready ? event.submissionId : null,
+      sessionId: ready ? event.sessionId : null,
+      at: ready ? submission.createdAt.toISOString() : null,
+      accomplishment: ready ? accomplishment : null,
     });
   }),
 );
