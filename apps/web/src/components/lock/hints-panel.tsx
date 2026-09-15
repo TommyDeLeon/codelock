@@ -56,6 +56,7 @@ export function HintsPanel({
   const [earlier, setEarlier] = useState<HintView[]>([]);
   const [pending, setPending] = useState<HintRequestKind | null>(null);
   const [confirmSolution, setConfirmSolution] = useState(false);
+  const [showLevels, setShowLevels] = useState(false);
   const [rated, setRated] = useState<boolean | null>(null);
   const [term, setTerm] = useState('');
   const termId = useId();
@@ -114,13 +115,25 @@ export function HintsPanel({
         </Button>
       </div>
 
-      <p className="mt-1 text-[12px] leading-relaxed text-muted">
-        Hints look at your current code and cost nothing. A solve after help is saved as solved with
-        help, so your progress shows what you did on your own.
-      </p>
-
-      {/* Any level, directly. */}
-      <div role="group" aria-label="Choose how much help" className="mt-2 flex flex-wrap gap-1.5">
+      {/* Any level, directly — but folded away until the first hint, so the
+          pinned help area stays one slim row under the problem. */}
+      {!hint && (
+        <button
+          type="button"
+          onClick={() => setShowLevels((v) => !v)}
+          aria-expanded={showLevels}
+          className="mt-1 text-[12px] text-muted underline hover:text-fg"
+          title="Hints look at your current code and cost nothing. A solve after help is saved as solved with help."
+        >
+          {showLevels ? 'Hide levels' : 'Choose a level'}
+        </button>
+      )}
+      <div
+        role="group"
+        aria-label="Choose how much help"
+        hidden={!hint && !showLevels}
+        className="mt-2 flex flex-wrap gap-1.5"
+      >
         {HINT_LEVELS.map((level) => (
           <button
             key={level}

@@ -92,9 +92,6 @@ function Workspace({
   // Which half of the bottom pane is showing. Whichever one just produced
   // output wins, so pressing a button always shows you its answer.
   const [pane, setPane] = useState<'console' | 'results'>('console');
-  // The left column is tabbed so help is one click away, never below a long
-  // problem statement. Panels stay mounted, so switching keeps their state.
-  const [side, setSide] = useState<'problem' | 'help' | 'adjust'>('problem');
 
   // Draft survives a reload: losing 20 minutes of work to a stray refresh
   // would make the lock feel punitive rather than motivating.
@@ -272,94 +269,28 @@ function Workspace({
             not typing, and the nudge belongs next to the thing it is about. */}
         <section
           aria-label="Problem and help"
-          className="flex min-h-0 flex-col border-b border-border lg:border-b-0 lg:border-r"
+          className="flex min-h-0 flex-col overflow-hidden border-b border-border lg:border-b-0 lg:border-r"
         >
-          <div
-            role="tablist"
-            aria-label="Problem and help"
-            className="flex shrink-0 border-b border-border"
-            onKeyDown={(event) => {
-              // A tab widget moves with the arrow keys, Home and End.
-              const order = SIDE_TABS.map(([id]) => id);
-              const at = order.indexOf(side);
-              const next =
-                event.key === 'ArrowRight'
-                  ? order[(at + 1) % order.length]
-                  : event.key === 'ArrowLeft'
-                    ? order[(at - 1 + order.length) % order.length]
-                    : event.key === 'Home'
-                      ? order[0]
-                      : event.key === 'End'
-                        ? order[order.length - 1]
-                        : undefined;
-              if (!next) return;
-              event.preventDefault();
-              setSide(next);
-              document.getElementById(`side-tab-${next}`)?.focus();
-            }}
-          >
-            {SIDE_TABS.map(([id, label]) => (
-              <button
-                key={id}
-                id={`side-tab-${id}`}
-                type="button"
-                role="tab"
-                aria-selected={side === id}
-                aria-controls={`side-panel-${id}`}
-                tabIndex={side === id ? 0 : -1}
-                onClick={() => setSide(id)}
-                className={cn(
-                  'px-4 py-2 text-[13px] font-semibold outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
-                  side === id
-                    ? 'border-b-2 border-fg text-fg'
-                    : 'border-b-2 border-transparent text-muted hover:text-fg',
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div
-            role="tabpanel"
-            id="side-panel-problem"
-            aria-labelledby="side-tab-problem"
-            hidden={side !== 'problem'}
-            className="min-h-0 flex-1 overflow-y-auto"
-          >
+          {/* The statement scrolls on its own, so it never pushes help away. */}
+          <div className="min-h-[3rem] flex-1 overflow-y-auto lg:min-h-[6rem]">
             <ProblemPanel
               problem={problem}
               skillEligible={session.skillEligible}
               skillNote={session.skillNote}
             />
-            <div className="px-5 pb-5">
-              <button type="button" onClick={() => setSide('help')} className="text-[13px] font-semibold underline">
-                Stuck? Open Help
-              </button>
-            </div>
           </div>
-          <div
-            role="tabpanel"
-            id="side-panel-help"
-            aria-labelledby="side-tab-help"
-            hidden={side !== 'help'}
-            className="min-h-0 flex-1 overflow-y-auto"
-          >
-          <HintsPanel
-            problemId={problem.id}
-            problemSlug={problem.slug}
-            lockSessionId={session.id}
-            language={language}
-            code={code}
-            hiddenFailure={hiddenFailure}
-          />
-          </div>
-          <div
-            role="tabpanel"
-            id="side-panel-adjust"
-            aria-labelledby="side-tab-adjust"
-            hidden={side !== 'adjust'}
-            className="min-h-0 flex-1 overflow-y-auto"
-          >
+          {/* Help and "not the right problem" are pinned under the statement:
+              always on screen, no tab to find and nothing to scroll to. When a
+              hint opens, only this area grows, and it scrolls within itself. */}
+          <div className="max-h-[65%] shrink-0 overflow-y-auto border-t border-border bg-surface">
+            <HintsPanel
+              problemId={problem.id}
+              problemSlug={problem.slug}
+              lockSessionId={session.id}
+              language={language}
+              code={code}
+              hiddenFailure={hiddenFailure}
+            />
             <SessionFlowPanel sessionId={session.id} />
           </div>
         </section>
@@ -441,13 +372,6 @@ function Workspace({
     </div>
   );
 }
-
-/** The left column's tabs, in order. */
-const SIDE_TABS = [
-  ['problem', 'Problem'],
-  ['help', 'Help'],
-  ['adjust', 'Not the right problem?'],
-] as const;
 
 /** One tab. Roving state lives in the parent; this only reports a click. */
 function PaneTab({

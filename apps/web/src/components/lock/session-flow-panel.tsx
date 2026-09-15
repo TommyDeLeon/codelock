@@ -93,13 +93,14 @@ export function SessionFlowPanel({ sessionId }: { sessionId: string }) {
   const busy = swap.isPending || restate.isPending || offer.isPending || complete.isPending;
 
   return (
-    <section aria-label="Adjust this problem" className="border-t border-border px-5 py-4">
-      <h2 className="text-[13px] font-semibold">Not the right problem right now?</h2>
-      <p className="mt-1 text-[13px] text-muted">
-        None of these count against you or change your level.
-      </p>
+    <section
+      aria-label="Adjust this problem"
+      className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2.5"
+      title="None of these count against you or change your level."
+    >
+      <h2 className="text-[13px] font-semibold">Not the right problem?</h2>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -140,14 +141,14 @@ export function SessionFlowPanel({ sessionId }: { sessionId: string }) {
       </div>
 
       {restatement && (
-        <p role="status" className="mt-3 rounded-sm border border-border bg-surface-2 p-3 text-[13px]">
+        <p role="status" className="mt-1 w-full rounded-sm border border-border bg-surface-2 p-3 text-[13px]">
           {restatement}
         </p>
       )}
 
       {activity && (
         <form
-          className="mt-3 rounded-sm border border-border bg-surface-2 p-3"
+          className="mt-1 w-full rounded-sm border border-border bg-surface-2 p-3"
           onSubmit={(event) => {
             event.preventDefault();
             if (response.trim() && !complete.isPending) complete.mutate();
