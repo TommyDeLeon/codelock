@@ -102,39 +102,62 @@ const SPARKS = [
 let current: { submissionId: string; accomplishment: Accomplishment } | null = null;
 let chimed: string | null = null;
 
-/** Saved data is only trusted when it has the shape this screen renders. */
+/** When the kept celebration was found, so a stale one is dropped on return. */
+let currentSolvedAt = 0;
+/** The animation plays once per solve, not on every return to this tab. */
+let animated: string | null = null;
+
+/** Saved data is only trusted when every part this screen renders has the right shape. */
 function isAccomplishment(value: unknown): value is Accomplishment {
   const a = value as Partial<Accomplishment> | null;
-  return (
-    !!a &&
-    typeof a.headline === 'string' &&
-    typeof a.kind === 'string' &&
-    a.kind in KIND_LABELS &&
-    typeof a.helpSummary === 'string' &&
-    Array.isArray(a.details) &&
-    Array.isArray(a.skills)
-  );
+  if (!a || typeof a !== 'object') return false;
+  if (typeof a.headline !== 'string' || typeof a.helpSummary !== 'string') return false;
+  if (typeof a.kind !== 'string' || !(a.kind in KIND_LABELS)) return false;
+  if (!Array.isArray(a.details) || !a.details.every((d) => typeof d === 'string')) return false;
+  if (
+    !Array.isArray(a.skills) ||
+    !a.skills.every(
+      (s) =>
+        !!s &&
+        typeof s === 'object' &&
+        typeof s.skill === 'string' &&
+        typeof s.label === 'string' &&
+        typeof s.stateLabel === 'string',
+    )
+  ) {
+    return false;
+  }
+  if (a.variation != null && (typeof a.variation !== 'object' || typeof a.variation.title !== 'string')) {
+    return false;
+  }
+  return true;
 }
 
 export function Celebration() {
+  // A kept celebration that has gone stale is dropped rather than shown again.
+  if (current && Date.now() - currentSolvedAt > FRESH_MS) current = null;
   const [item, setItem] = useState(current);
   const [prefs, setPrefs] = useState<Prefs>(readPrefs);
   const played = useRef<string | null>(chimed);
 
   const check = useCallback(async () => {
-    if (current) return true;
     try {
       const latest = await api.latestAccomplishment();
       // Only a solve that opened a lock, judged by when it was solved.
-      if (!latest.submissionId || !latest.sessionId || !latest.at) return false;
-      if (!isAccomplishment(latest.accomplishment)) return false;
-      if (Date.now() - new Date(latest.at).getTime() > FRESH_MS) return false;
-      if (seen() === latest.submissionId) return false;
+      if (!latest.submissionId || !latest.sessionId || !latest.at) return Boolean(current);
+      if (!isAccomplishment(latest.accomplishment)) return Boolean(current);
+      const solvedAt = new Date(latest.at).getTime();
+      if (Date.now() - solvedAt > FRESH_MS) return Boolean(current);
+      if (seen() === latest.submissionId) return Boolean(current);
+      // Already showing this one: nothing to change.
+      if (current?.submissionId === latest.submissionId) return true;
+      // A newer solve replaces whatever was kept.
       current = { submissionId: latest.submissionId, accomplishment: latest.accomplishment };
+      currentSolvedAt = solvedAt;
       setItem(current);
       return true;
     } catch {
-      return false;
+      return Boolean(current);
     }
   }, []);
 
@@ -160,7 +183,12 @@ export function Celebration() {
   }, [check]);
 
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  const animate = prefs.motion && !reduced;
+  const firstShowing = item !== null && animated !== item.submissionId;
+  const animate = prefs.motion && !reduced && firstShowing;
+
+  useEffect(() => {
+    if (item) animated = item.submissionId;
+  }, [item]);
 
   useEffect(() => {
     if (item && prefs.sound && played.current !== item.submissionId) {

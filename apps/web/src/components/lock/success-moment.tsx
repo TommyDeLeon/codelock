@@ -109,8 +109,22 @@ export function SuccessMoment({
       try {
         const result = await api.progress.accomplishment(submissionId);
         if (cancelled) return;
-        if (result.accomplishment) {
-          setAccomplishment(result.accomplishment);
+        // Trusted only when every part this screen renders has the right shape,
+        // so malformed saved data falls back to the plain message, not a crash.
+        const a = result.accomplishment as Partial<Accomplishment> | null;
+        const valid =
+          !!a &&
+          typeof a.headline === 'string' &&
+          typeof a.helpSummary === 'string' &&
+          typeof a.kind === 'string' &&
+          a.kind in KIND_LABELS &&
+          Array.isArray(a.details) &&
+          a.details.every((d) => typeof d === 'string') &&
+          Array.isArray(a.skills) &&
+          a.skills.every((s) => !!s && typeof s.label === 'string' && typeof s.stateLabel === 'string') &&
+          (a.variation == null || typeof a.variation.title === 'string');
+        if (valid) {
+          setAccomplishment(a as Accomplishment);
           setLoading(false);
           return;
         }
