@@ -459,6 +459,13 @@ function createWindow(): BrowserWindow {
   // Navigation away from our origins is how a compromised page would escape.
   // Exactly two are allowed: the bundled renderer, and the web app that serves
   // the lock screen. Anything else is handed to the real browser.
+  // The lock page guards itself with beforeunload, which in Electron silently
+  // cancels loadURL. Once the shell has released the lock, that guard must not
+  // keep a solved learner on the lock page instead of the dashboard.
+  window.webContents.on('will-prevent-unload', (event) => {
+    if (!locked) event.preventDefault();
+  });
+
   window.webContents.on('will-navigate', (event, url) => {
     if (!isOwnOrigin(url)) {
       event.preventDefault();

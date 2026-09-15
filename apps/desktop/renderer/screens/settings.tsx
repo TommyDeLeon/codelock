@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import type { TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { openExternal } from '../bridge';
+import {
+  chime,
+  readCelebrationPrefs,
+  writeCelebrationPrefs,
+  type CelebrationPrefs,
+} from '../celebration';
 
 /** Sunday first, matching the bitmask where Sunday is bit 0. */
 const DAYS = [
@@ -255,8 +261,53 @@ export function SettingsScreen() {
         )}
       </section>
 
+      {/* --- after a solve ----------------------------------------------- */}
+      <CelebrationSettings />
+
       {status && <p style={{ fontSize: 12.5, color: 'var(--faint)' }}>{status}</p>}
     </div>
+  );
+}
+
+/** Motion and the soft chime for the moment after a solve. Both on by default. */
+function CelebrationSettings() {
+  const [prefs, setPrefs] = useState<CelebrationPrefs>(readCelebrationPrefs);
+  const update = (next: CelebrationPrefs) => {
+    setPrefs(next);
+    writeCelebrationPrefs(next);
+  };
+  return (
+    <section className="rule" style={{ paddingTop: 20 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 6px' }}>After you solve</h2>
+      <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--muted)', maxWidth: 560 }}>
+        A short celebration shows what the solve achieved. Your system&apos;s reduced-motion
+        setting always turns the animation off.
+      </p>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={prefs.motion}
+          onClick={() => update({ ...prefs, motion: !prefs.motion })}
+          className={prefs.motion ? 'btn btn-chip' : 'btn btn-quiet'}
+        >
+          Motion: {prefs.motion ? 'On' : 'Off'}
+        </button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={prefs.sound}
+          onClick={() => {
+            const next = { ...prefs, sound: !prefs.sound };
+            update(next);
+            if (next.sound) chime();
+          }}
+          className={prefs.sound ? 'btn btn-chip' : 'btn btn-quiet'}
+        >
+          Soft chime: {prefs.sound ? 'On' : 'Off'}
+        </button>
+      </div>
+    </section>
   );
 }
 

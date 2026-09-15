@@ -1,18 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Accomplishment } from '@codelock/shared';
 import { api } from './api';
 
 /**
  * The moment after a solve, inside the desktop app.
  *
- * When a lock releases, the shell returns straight to this dashboard, so the
- * lock screen's own success page never gets a chance to appear. This fills
- * that gap: the newest accomplishment, shown once, with a short celebration.
+ * When a lock releases, the shell returns to the dashboard, and the newest
+ * solve takes over the window once: a drawn check, a few sparks, a soft chime,
+ * and what the solve actually showed. "Finish — progress saved" closes it.
  *
- * It celebrates something specific — what the solve actually showed — rather
- * than handing out points. It never blocks: the dashboard is fully usable
- * underneath, and "Finish" closes it. Motion and sound each have a switch, and
- * reduced motion is always respected.
+ * It celebrates something specific rather than handing out points. Motion and
+ * the chime are on by default and switch off in Settings; the system
+ * reduced-motion setting always wins over motion.
  */
 
 const SEEN_KEY = 'codelock.celebrated';
@@ -20,9 +19,33 @@ const PREFS_KEY = 'codelock.celebrationPrefs';
 /** Only solves this recent are celebrated; an old one would feel random. */
 const FRESH_MS = 15 * 60 * 1000;
 
-interface Prefs {
+export interface CelebrationPrefs {
   motion: boolean;
   sound: boolean;
+}
+
+const DEFAULT_PREFS: CelebrationPrefs = { motion: true, sound: true };
+
+export function readCelebrationPrefs(): CelebrationPrefs {
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY);
+    if (raw === null) return DEFAULT_PREFS;
+    const parsed = JSON.parse(raw) as Partial<CelebrationPrefs> | null;
+    return {
+      motion: typeof parsed?.motion === 'boolean' ? parsed.motion : DEFAULT_PREFS.motion,
+      sound: typeof parsed?.sound === 'boolean' ? parsed.sound : DEFAULT_PREFS.sound,
+    };
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
+
+export function writeCelebrationPrefs(prefs: CelebrationPrefs): void {
+  try {
+    window.localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Applies for this session even if it cannot be saved.
+  }
 }
 
 const KIND_LABELS: Record<Accomplishment['kind'], string> = {
@@ -32,18 +55,6 @@ const KIND_LABELS: Record<Accomplishment['kind'], string> = {
   recall: 'Remembered after a gap',
   transfer: 'Applied to a new problem',
 };
-
-function readPrefs(): Prefs {
-  // Motion on, sound off: the animation marks the moment without startling
-  // anyone who unlocks in a quiet room or while listening to something else.
-  const fallback: Prefs = { motion: true, sound: false };
-  try {
-    const raw = window.localStorage.getItem(PREFS_KEY);
-    return raw === null ? fallback : { ...fallback, ...(JSON.parse(raw) as Partial<Prefs>) };
-  } catch {
-    return fallback;
-  }
-}
 
 function seen(): string | null {
   try {
@@ -62,7 +73,7 @@ function markSeen(submissionId: string) {
 }
 
 /** Three soft rising notes. Decoration only; never allowed to throw. */
-function chime() {
+export function chime(): void {
   try {
     const ctx = new AudioContext();
     [523.25, 659.25, 783.99].forEach((frequency, i) => {
@@ -83,29 +94,6 @@ function chime() {
     // No audio device, or blocked. Nothing to do.
   }
 }
-
-const SPARKS = [
-  { dx: '-46px', dy: '-38px', delay: 180 },
-  { dx: '48px', dy: '-34px', delay: 240 },
-  { dx: '-54px', dy: '12px', delay: 300 },
-  { dx: '56px', dy: '16px', delay: 220 },
-  { dx: '-18px', dy: '-58px', delay: 280 },
-  { dx: '20px', dy: '54px', delay: 340 },
-];
-
-/**
- * The celebration currently on screen, kept outside the component.
- *
- * Switching to another tab unmounts the dashboard. Held here, the same moment
- * is still there on return — without a second chime — until Finish is pressed.
- */
-let current: { submissionId: string; accomplishment: Accomplishment } | null = null;
-let chimed: string | null = null;
-
-/** When the kept celebration was found, so a stale one is dropped on return. */
-let currentSolvedAt = 0;
-/** The animation plays once per solve, not on every return to this tab. */
-let animated: string | null = null;
 
 /** Saved data is only trusted when every part this screen renders has the right shape. */
 function isAccomplishment(value: unknown): value is Accomplishment {
@@ -133,26 +121,43 @@ function isAccomplishment(value: unknown): value is Accomplishment {
   return true;
 }
 
+/**
+ * The celebration on screen, kept outside the component, so switching tabs
+ * before pressing Finish neither loses it nor chimes and animates again.
+ */
+let current: { submissionId: string; accomplishment: Accomplishment } | null = null;
+let currentSolvedAt = 0;
+let chimed: string | null = null;
+let animated: string | null = null;
+
+const SPARKS = [
+  { dx: '-120px', dy: '-80px', delay: 160 },
+  { dx: '124px', dy: '-72px', delay: 220 },
+  { dx: '-140px', dy: '24px', delay: 280 },
+  { dx: '142px', dy: '30px', delay: 200 },
+  { dx: '-52px', dy: '-128px', delay: 260 },
+  { dx: '60px', dy: '-124px', delay: 320 },
+  { dx: '-96px', dy: '96px', delay: 340 },
+  { dx: '100px', dy: '92px', delay: 240 },
+];
+
 export function Celebration() {
-  // A kept celebration that has gone stale is dropped rather than shown again.
   if (current && Date.now() - currentSolvedAt > FRESH_MS) current = null;
   const [item, setItem] = useState(current);
-  const [prefs, setPrefs] = useState<Prefs>(readPrefs);
-  const played = useRef<string | null>(chimed);
+  const finishRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const check = useCallback(async () => {
     try {
       const latest = await api.latestAccomplishment();
-      // Only a solve that opened a lock, judged by when it was solved.
       // Every "nothing new" answer keeps the retries going: a newer solve may
-      // still be being written while an older one is on screen.
+      // still be being written.
       if (!latest.submissionId || !latest.sessionId || !latest.at) return false;
       if (!isAccomplishment(latest.accomplishment)) return false;
       const solvedAt = new Date(latest.at).getTime();
-      if (Date.now() - solvedAt > FRESH_MS) return false;
+      if (!Number.isFinite(solvedAt) || Date.now() - solvedAt > FRESH_MS) return false;
       if (seen() === latest.submissionId) return false;
       if (current?.submissionId === latest.submissionId) return false;
-      // A newer solve replaces whatever was kept.
       current = { submissionId: latest.submissionId, accomplishment: latest.accomplishment };
       currentSolvedAt = solvedAt;
       setItem(current);
@@ -183,125 +188,150 @@ export function Celebration() {
     };
   }, [check]);
 
+  const prefs = readCelebrationPrefs();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  const firstShowing = item !== null && animated !== item.submissionId;
-  const animate = prefs.motion && !reduced && firstShowing;
+  const animate = item !== null && prefs.motion && !reduced && animated !== item.submissionId;
 
   useEffect(() => {
-    if (item) animated = item.submissionId;
-  }, [item]);
-
-  useEffect(() => {
-    if (item && prefs.sound && played.current !== item.submissionId) {
-      played.current = item.submissionId;
+    if (!item) return;
+    animated = item.submissionId;
+    if (readCelebrationPrefs().sound && chimed !== item.submissionId) {
       chimed = item.submissionId;
       chime();
     }
-  }, [item, prefs.sound]);
+    finishRef.current?.focus();
+  }, [item]);
+
+  const finish = useCallback(() => {
+    if (!item) return;
+    markSeen(item.submissionId);
+    current = null;
+    setItem(null);
+  }, [item]);
+
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (item && dialog && !dialog.open) dialog.showModal();
+    finishRef.current?.focus();
+  }, [item]);
 
   if (!item) return null;
   const a = item.accomplishment;
 
-  const update = (next: Prefs) => {
-    setPrefs(next);
-    try {
-      window.localStorage.setItem(PREFS_KEY, JSON.stringify(next));
-    } catch {
-      // Applies for now even if it cannot be saved.
-    }
-  };
-
-  const finish = () => {
-    markSeen(item.submissionId);
-    current = null;
-    setItem(null);
-  };
-
   return (
-    <section
-      aria-label="You solved it"
+    // A native modal dialog: the dashboard behind it is inert, focus stays
+    // inside, and Escape arrives as a cancel event.
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="celebration-title"
       className={animate ? 'cl-animate' : undefined}
+      onCancel={(event) => {
+        event.preventDefault();
+        finish();
+      }}
       style={{
-        border: '1px solid var(--accent)',
-        borderRadius: 'var(--radius-md)',
-        background: 'var(--surface)',
-        padding: '22px 24px',
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        maxWidth: 'none',
+        maxHeight: 'none',
+        margin: 0,
+        border: 'none',
         display: 'grid',
-        gridTemplateColumns: 'auto 1fr',
-        gap: 20,
-        alignItems: 'start',
+        placeItems: 'center',
+        padding: 24,
+        color: 'var(--fg)',
+        background: 'color-mix(in srgb, var(--bg) 82%, transparent)',
+        backdropFilter: 'blur(3px)',
       }}
     >
-      <div style={{ position: 'relative', width: 64, height: 64 }}>
-        {animate &&
-          SPARKS.map((spark, i) => (
-            <span
-              key={i}
-              aria-hidden
-              className="cl-spark"
-              style={
-                {
-                  position: 'absolute',
-                  left: 29,
-                  top: 29,
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: 'var(--accent)',
-                  animationDelay: `${spark.delay}ms`,
-                  '--dx': spark.dx,
-                  '--dy': spark.dy,
-                } as React.CSSProperties
-              }
-            />
-          ))}
-        <div
-          className="cl-badge"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 999,
-            background: 'var(--accent)',
-            display: 'grid',
-            placeItems: 'center',
-          }}
-        >
-          <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden>
-            <path
-              className="cl-check"
-              d="M5 12.5l4.5 4.5L19 7.5"
-              fill="none"
-              stroke="var(--accent-fg)"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+      <div
+        className="cl-rise"
+        style={{
+          width: 'min(640px, 100%)',
+          maxHeight: '100%',
+          overflowY: 'auto',
+          textAlign: 'center',
+          border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius-lg)',
+          background: 'var(--surface)',
+          padding: '40px 36px 32px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <div style={{ position: 'relative', width: 104, height: 104, margin: '0 auto' }}>
+          {animate &&
+            SPARKS.map((spark, i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="cl-spark"
+                style={
+                  {
+                    position: 'absolute',
+                    left: 47,
+                    top: 47,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: i % 2 ? 'var(--accent)' : 'var(--warning)',
+                    animationDelay: `${spark.delay}ms`,
+                    '--dx': spark.dx,
+                    '--dy': spark.dy,
+                  } as React.CSSProperties
+                }
+              />
+            ))}
+          <div
+            className="cl-badge"
+            style={{
+              width: 104,
+              height: 104,
+              borderRadius: 999,
+              background: 'var(--accent)',
+              display: 'grid',
+              placeItems: 'center',
+            }}
+          >
+            <svg width="50" height="50" viewBox="0 0 24 24" aria-hidden>
+              <path
+                className="cl-check"
+                d="M5 12.5l4.5 4.5L19 7.5"
+                fill="none"
+                stroke="var(--accent-fg)"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
         </div>
-      </div>
 
-      <div className="cl-rise" style={{ minWidth: 0 }}>
         <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--mono)',
-            fontSize: 11,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--accent)',
-          }}
+          className="eyebrow"
+          style={{ margin: '22px 0 0', color: 'var(--accent)' }}
         >
           {KIND_LABELS[a.kind]}
         </p>
         <h2
-          role="status"
-          style={{ margin: '6px 0 0', fontFamily: 'var(--display)', fontSize: 24, lineHeight: 1.25, fontWeight: 600 }}
+          id="celebration-title"
+          style={{ margin: '8px 0 0', fontSize: 28, lineHeight: 1.2, fontWeight: 600 }}
         >
           {a.headline}
         </h2>
 
         {a.details.length > 0 && (
-          <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14, lineHeight: 1.6 }}>
+          <ul
+            style={{
+              margin: '18px auto 0',
+              padding: 0,
+              listStyle: 'none',
+              fontSize: 15,
+              lineHeight: 1.7,
+              maxWidth: 480,
+            }}
+          >
             {a.details.map((detail) => (
               <li key={detail}>{detail}</li>
             ))}
@@ -309,15 +339,15 @@ export function Celebration() {
         )}
 
         {a.skills.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 18 }}>
             {a.skills.map((skill) => (
               <span
                 key={skill.skill}
                 style={{
-                  fontSize: 12,
+                  fontSize: 12.5,
                   border: '1px solid var(--border)',
                   borderRadius: 999,
-                  padding: '3px 10px',
+                  padding: '4px 12px',
                   color: 'var(--muted)',
                 }}
               >
@@ -327,54 +357,21 @@ export function Celebration() {
           </div>
         )}
 
-        <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--muted)' }}>
-          {a.helpSummary} It is on your Progress tab.
+        <p style={{ margin: '18px 0 0', fontSize: 13, color: 'var(--muted)' }}>
+          {a.helpSummary}
           {a.variation ? ` If you want more later: ${a.variation.title}.` : ''}
         </p>
 
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={finish}
-            autoFocus
-            style={{
-              font: 'inherit',
-              fontSize: 14,
-              fontWeight: 600,
-              padding: '8px 16px',
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: 'var(--accent)',
-              color: 'var(--accent-fg)',
-              cursor: 'pointer',
-            }}
-          >
-            Finish — progress saved
-          </button>
-          {/* Tucked away so the card reads as a moment, not a settings panel. */}
-          <details style={{ fontSize: 12, color: 'var(--muted)' }}>
-            <summary style={{ cursor: 'pointer' }}>Motion and sound</summary>
-            <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  checked={prefs.motion}
-                  onChange={(e) => update({ ...prefs, motion: e.target.checked })}
-                />
-                Motion
-              </label>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  checked={prefs.sound}
-                  onChange={(e) => update({ ...prefs, sound: e.target.checked })}
-                />
-                Soft chime
-              </label>
-            </div>
-          </details>
-        </div>
+        <button
+          ref={finishRef}
+          type="button"
+          onClick={finish}
+          className="btn btn-primary"
+          style={{ marginTop: 26 }}
+        >
+          Finish — progress saved
+        </button>
       </div>
-    </section>
+    </dialog>
   );
 }
