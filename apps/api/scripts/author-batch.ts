@@ -297,6 +297,9 @@ const schema = {
         required: [
           'slug',
           'title',
+          // Required only when there are anchors to carry; one batch came
+          // back without the field and every draft was rejected for it.
+          ...(anchorsPath ? ['anchor'] : []),
           'patternFamily',
           'difficulty',
           'tier',
@@ -323,13 +326,21 @@ type Draft = Omit<ProblemDefinition, 'provenance'> & {
   anchor?: string;
 };
 
-function draftWithGemini(): Draft[] {
+/**
+ * The second model pool `agy` exposes (Claude Sonnet, Claude Opus, GPT-OSS)
+ * has its own quota. It drafts when Gemini's window is exhausted, so the
+ * loop never idles on a quota reset, and it reviews when Codex is capped.
+ */
+const fallbackModel = arg('fallback-model', 'claude-sonnet-4-6');
+const reviewModel = arg('review-model', 'claude-sonnet-4-6');
+
+function draftWith(which: string): Draft[] {
   const dir = mkdtempSync(join(tmpdir(), 'codelock-author-'));
   const schemaPath = join(dir, 'schema.json');
   const briefPath = join(dir, 'brief.md');
   writeFileSync(schemaPath, JSON.stringify(schema));
   writeFileSync(briefPath, prompt);
-  console.log(`  asking ${model} for ${count} problems (${family} / ${tier} / ${difficulty}) ...`);
+  console.log(`  asking ${which} for ${count} problems (${family} / ${tier} / ${difficulty}) ...`);
   // The brief is far past the Windows argv limit, so it goes in a file the
   // model reads. Plan mode forbids edits; the permission skip only lets it
   // read the brief without a prompt nobody is there to answer.
@@ -343,7 +354,7 @@ function draftWithGemini(): Draft[] {
       '--add-dir',
       dir,
       '--model',
-      model,
+      which,
       '--output-format',
       'json',
       '--json-schema',
@@ -354,11 +365,27 @@ function draftWithGemini(): Draft[] {
     ],
     { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true },
   );
-  const parsed = JSON.parse(raw) as { status?: string; structured_output?: { problems?: Draft[] } };
+  const parsed = JSON.parse(raw) as {
+    status?: string;
+    error?: string;
+    structured_output?: { problems?: Draft[] };
+  };
   if (parsed.status !== 'SUCCESS' || !parsed.structured_output?.problems) {
-    throw new Error(`Gemini did not return problems: ${raw.slice(0, 400)}`);
+    const err = new Error(`${which} did not return problems: ${raw.slice(0, 400)}`);
+    (err as Error & { quota?: boolean }).quota = /quota|usage limit|rate limit/i.test(raw);
+    throw err;
   }
   return parsed.structured_output.problems;
+}
+
+function draftWithGemini(): Draft[] {
+  try {
+    return draftWith(model);
+  } catch (err) {
+    if (!(err as { quota?: boolean }).quota || fallbackModel === model) throw err;
+    console.log(`  ${model} is out of quota; drafting with ${fallbackModel} instead`);
+    return draftWith(fallbackModel);
+  }
 }
 
 /**
@@ -661,7 +688,7 @@ function geminiReview(accepted: Draft[]): string {
   const askPath = join(dir, 'ask.md');
   writeFileSync(
     askPath,
-    `You are an adversarial reviewer of programming problem statements. For each problem below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement whose wording closely follows a well-known interview problem (LeetCode, HackerRank, Codeforces) rather than being its own. Output exactly one line per slug and nothing else: "<slug>: OK" when the statement is unambiguous and its wording is its own, otherwise "<slug>: <issue>" where the issue starts with the word "ambiguous" or "closely follows" as appropriate.\n\n${text}`,
+    `You are an adversarial reviewer of programming problem statements. For each problem below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement whose SENTENCES OR PHRASING closely follow a well-known interview problem (LeetCode, HackerRank, Codeforces). Sharing the same underlying technique or task shape with a known problem is expected and is NOT a reason to flag; flag only when the wording itself reads as a paraphrase of the known statement. Output exactly one line per slug and nothing else: "<slug>: OK" when the statement is unambiguous and its wording is its own, otherwise "<slug>: <issue>" where the issue starts with the word "ambiguous" or "closely follows" as appropriate.\n\n${text}`,
   );
   try {
     const raw = execFileSync(
@@ -669,7 +696,7 @@ function geminiReview(accepted: Draft[]): string {
       [
         `--print=Read ${askPath} and do exactly what it says. Output only the slug lines.`,
         '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
-        '--model', model, '--output-format', 'json', '--print-timeout', '10m', '--disable-slash-commands',
+        '--model', reviewModel, '--output-format', 'json', '--print-timeout', '10m', '--disable-slash-commands',
       ],
       { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true },
     );
@@ -782,6 +809,12 @@ async function main() {
   }
 
   const drafts = draftWithGemini();
+  // Belt and braces: if the model still returned one draft per anchor in
+  // order but left the field out, the order is the mapping.
+  if (anchorsPath && drafts.length === anchors.length && drafts.every((d) => !d.anchor)) {
+    drafts.forEach((d, i) => (d.anchor = anchors[i]!.slug));
+    console.log('  anchors missing from drafts; assigned by position');
+  }
   console.log(`  drafted ${drafts.length}`);
 
   const seen = new Set<string>();
@@ -851,7 +884,7 @@ async function main() {
     codex = codexReview(accepted);
     if (codex.startsWith('SKIPPED')) {
       console.log(`    ${codex}`);
-      console.log('  Codex unavailable; asking a fresh Gemini session to review instead ...');
+      console.log(`  Codex unavailable; asking ${reviewModel} to review instead ...`);
       codex = geminiReview(accepted);
       if (!codex.startsWith('SKIPPED')) codex = `(gemini reviewer)\n${codex}`;
     }
