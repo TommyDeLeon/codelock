@@ -495,6 +495,13 @@ function main() {
     }
   }
 
+  // A rewrite nobody read is not admitted. Local checks prove the examples
+  // are real tests; only a reader can catch ambiguity or borrowed wording.
+  if (accepted.length > 0 && reviewer === 'none') {
+    console.log('  no reviewer available (Codex capped and the model reviewer unavailable); nothing written');
+    console.log(JSON.stringify({ mode: 'upgrade', pending: pending.length, accepted: 0, rejected: rejected.length, draftedBy: by, reviewer, unreviewed: accepted.length }));
+    process.exit(3);
+  }
   for (const a of accepted) console.log(`    + ${a.p.slug}`);
   for (const r of rejected) console.log(`    - ${r.slug}: ${r.why}`);
 

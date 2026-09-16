@@ -964,6 +964,14 @@ async function main() {
       .filter(Boolean)
       .join('\n');
     codex = both || `SKIPPED: no reviewer available (${codex.split('\n')[0]}; ${second.split('\n')[0]})`;
+    // The judge proved the solutions; only a reader can catch ambiguity or
+    // borrowed wording. With no reader at all, nothing is written and the
+    // anchors stay uncovered for a later batch.
+    if (!both) {
+      console.log('  no reviewer available (Codex capped and the model reviewer unavailable); nothing written');
+      console.log(JSON.stringify({ mode: anchorsPath ? 'anchored' : 'family', anchors: anchors.map((a) => a.slug), drafted: drafts.length, accepted: 0, rejected: rejected.length, unreviewed: accepted.length, codex }));
+      process.exit(3);
+    }
     console.log(codex.split('\n').map((l) => '    ' + l).join('\n'));
 
     // Codex's notes are acted on, not just logged. A statement it calls
