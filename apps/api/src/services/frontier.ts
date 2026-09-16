@@ -2,7 +2,15 @@ import { LockState } from '@prisma/client';
 import type { FrontierView, NearMiss } from '@codelock/shared';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import { SKILL_LABELS, nextSkillToLearn, skillsRequiredBy, type Skill, type SkillSnapshot } from './skills.js';
+import {
+  SKILL_LABELS,
+  SKILLS,
+  nextSkillToLearn,
+  skillsRequiredBy,
+  type Skill,
+  type SkillProblem,
+  type SkillSnapshot,
+} from './skills.js';
 import { describeNearMiss } from './tutor/reward.js';
 
 /**
@@ -50,6 +58,31 @@ function parseNearMiss(value: unknown): NearMiss | null {
   return ok(v.passed) && ok(v.total) && ok(v.previousPassed)
     ? { passed: v.passed, total: v.total, previousPassed: v.previousPassed }
     : null;
+}
+
+/**
+ * The Tier 1 problem with the fewest skills the learner has not demonstrated,
+ * and which skills those are, in teaching order. This is what turns "lists is
+ * next" into "Election Winner is three skills away", which is the distance
+ * the owner actually cares about.
+ */
+export function nearestInterview(
+  snapshot: SkillSnapshot,
+  problems: readonly (SkillProblem & { title: string })[],
+): { title: string; missing: string[] } | null {
+  let best: { title: string; missing: Skill[] } | null = null;
+  for (const problem of problems) {
+    if (problem.tier !== 'TIER_1') continue;
+    const missing = skillsRequiredBy(problem).filter((s) => {
+      const state = snapshot[s].state;
+      return state !== 'demonstrated' && state !== 'due_for_review';
+    });
+    if (!best || missing.length < best.missing.length) best = { title: problem.title, missing };
+    if (missing.length === 0) break;
+  }
+  if (!best || best.missing.length === 0) return null;
+  const ordered = SKILLS.filter((s) => best!.missing.includes(s));
+  return { title: best.title, missing: ordered.map((s) => SKILL_LABELS[s]) };
 }
 
 export function describeFrontier(snapshot: SkillSnapshot, recent: readonly FrontierLock[]): FrontierView {

@@ -3,9 +3,16 @@ CodeLock problem corpus — attribution notice
 Generated from the provenance columns of the imported rows. Do not edit by
 hand: re-run `npm run import:corpus -w @codelock/api` instead.
 
-Sources: 1. Problems: 696.
+Sources: 2. Problems: 700.
 
 ## codelock-authored (696 problems)
 
 Licence: CC0-1.0
 Source:  https://github.com/TommyDeLeon/codelock
+
+## codelock-generated (4 problems)
+
+Licence: CC0-1.0
+Source:  https://github.com/TommyDeLeon/codelock
+
+Drafted with Gemini for CodeLock; verified against the judge.

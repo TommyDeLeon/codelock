@@ -1,4 +1,5 @@
 import type { ProblemDefinition } from '../problem.js';
+import { GEN_T1_ARRAYS_HASHING_A_PROBLEMS } from './gen-t1-arrays-hashing-a.js';
 import { TIER_0_PROBLEMS } from './tier0.js';
 import { TIER_0B_PROBLEMS } from './tier0b.js';
 import { TIER_0C_PROBLEMS } from './tier0c.js';
@@ -73,6 +74,7 @@ import { TIER_3_STRINGS_BREADTH_PROBLEMS } from './tier3-strings-breadth.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
 export const ALL_PROBLEMS: ProblemDefinition[] = [
+  ...GEN_T1_ARRAYS_HASHING_A_PROBLEMS,
   ...TIER_0_PROBLEMS,
   ...TIER_0B_PROBLEMS,
   ...TIER_0C_PROBLEMS,

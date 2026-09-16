@@ -92,6 +92,16 @@ export function ProgressScreen() {
                 {view.frontier.lastProved && (
                   <p style={{ margin: '4px 0 0', color: 'var(--muted)' }}>{view.frontier.lastProved}</p>
                 )}
+                {view.frontier.nearestInterview && (
+                  <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>
+                    Nearest interview-level problem: <strong style={{ color: 'var(--fg)' }}>{view.frontier.nearestInterview.title}</strong>
+                    {' — '}
+                    {view.frontier.nearestInterview.missing.length === 1
+                      ? 'one skill away: '
+                      : `${view.frontier.nearestInterview.missing.length} skills away: `}
+                    {view.frontier.nearestInterview.missing.join(', ').toLowerCase()}.
+                  </p>
+                )}
               </>
             ) : (
               <p style={{ margin: 0 }}>Everything on the map is solved on your own, and nothing is due.</p>

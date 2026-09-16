@@ -811,6 +811,11 @@ export interface FrontierView {
   distance: string;
   /** One sentence about the most recent attempt on the next skill, or null. */
   lastProved: string | null;
+  /**
+   * The closest interview-level (Tier 1) problem and the skills still between
+   * the learner and it. Null once nothing stands in the way.
+   */
+  nearestInterview?: { title: string; missing: string[] } | null;
   passRate: {
     /** Fraction of recent locks solved on the first submission. Null with no locks. */
     rate: number | null;

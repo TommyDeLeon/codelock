@@ -184,3 +184,66 @@ LOG_LEVEL=silent npx tsx --env-file-if-exists=.env apps/api/scripts/replay-selec
   surface rule.
 - **Not touched:** `tutor/ladder.ts`, `diagnose.ts`, `starter.ts`, the hint
   level scheme, the DB schema, `apps/mobile`.
+
+## Growing the corpus (2026-09-16, later the same day)
+
+The owner wants the library at LeetCode scale (4,055 problems) and level,
+including the patterns behind premium-locked problems. Two things were
+decided and one refused:
+
+- **Refused:** copying LeetCode statements or test data, premium or free.
+  Copyrighted, and the corpus is CC0.
+- **Decided:** use LeetCode's public problem *index* — title, slug,
+  difficulty, `paid_only` — as a coverage map only, and author an original
+  problem per entry on the same technique at the same difficulty. Locked
+  entries are covered the same way: their title and difficulty are public.
+- **Decided:** every generated problem is admitted only after all six
+  reference solutions pass every test on the judge, through the grader's own
+  drivers, and carries `provenance: GENERATED` (never presented as
+  hand-authored).
+
+### `scripts/author-batch.ts` (`npm run author:batch -w @codelock/api`)
+
+Gemini (`gemini-3.1-pro-low` via `agy`, schema-enforced JSON, brief passed
+as a file because of the Windows argv limit) drafts; local checks reject
+unknown signatures/tags/families, missing Constraints/Examples, site
+mentions, and titles that merely rename an anchor; the judge rejects any
+failing solution; Codex (`codex exec --sandbox read-only`) optionally reads
+surviving statements for ambiguity and is recorded as SKIPPED when
+unavailable. Survivors are written to `src/corpus/problems/gen-*.ts` and
+registered in `index.ts`; anchored runs update `src/corpus/coverage.json`.
+
+Two modes: `--family/--tier/--difficulty` or `--anchors <index.json>`. Batch
+size defaults to 6: at 20, drafts lost their examples and slid to Tier 0
+difficulty (0 of 20 accepted); at 5–6, 4 of 5 and 4 of 6 were admitted.
+
+The judge is not published to the host by Compose; `npm run judge:host`
+starts a second instance of the built image on `127.0.0.1:2358` (same
+socket mount as Compose — stop it with `judge:host:stop` when done).
+
+### First batch
+
+`gen-t1-arrays-hashing-a`: 4 problems admitted (`first-solo-guest`,
+`election-winner`, `count-vip-customers`, `inventory-restock-needed`), all
+ARRAYS_HASHING / TIER_1 / EASY, hash-map problems with LeetCode-format
+statements. Imported; the database holds 700 problems, 693 active. Codex
+review was skipped (binary not found under `execFileSync` on Windows; fixed
+to `codex.cmd` for the next run; Codex quota also resets Sep 19).
+
+### Frontier
+
+`GET /v1/progress` → `frontier.nearestInterview`: the Tier 1 problem with the
+fewest undemonstrated skills and which skills they are. For the owner today:
+"First Solo Guest — 4 skills away: lists, loops, functions, combining."
+
+### Outstanding
+
+- **The index file.** Saving `https://leetcode.com/api/problems/all/` from
+  the shell was blocked by the session's sandbox classifier. It needs to be
+  saved by hand (one `curl`/browser save) to e.g. `data/leetcode-index.json`
+  — metadata only — and then `npm run author:batch -w @codelock/api --
+  --anchors data/leetcode-index.json --count 6 --out gen-lc-001 --codex`,
+  repeated. Pace is judge-bound: roughly 4 admitted problems a minute, so
+  4,055 is on the order of 17 judge-hours across sessions.
+- `GENERATED` problems have no reviewed starter hint content; they get the
+  rule-based ladder like the rest of the corpus.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { PASS_RATE_BAND, PASS_RATE_WINDOW, describeFrontier, type FrontierLock } from './frontier.js';
+import { PASS_RATE_BAND, PASS_RATE_WINDOW, describeFrontier, nearestInterview, type FrontierLock } from './frontier.js';
 import { advanceSkillState, emptySkillSnapshot, type SkillSnapshot } from './skills.js';
 
 /**
@@ -77,5 +77,25 @@ describe('first-try pass rate as an observable', () => {
     assert.equal(f.passRate.locks, 4);
     assert.deepEqual(f.passRate.band, PASS_RATE_BAND);
     assert.equal(PASS_RATE_WINDOW, 20);
+  });
+});
+
+describe('the nearest interview-level problem', () => {
+  it('names the Tier 1 problem with the fewest undemonstrated skills, in teaching order', () => {
+    const snap = owner();
+    const t1 = { signatureId: 'fn:strings->string', patternTags: ['hash-map'], tier: 'TIER_1' as const, patternFamily: 'ARRAYS_HASHING' as const, title: 'Election Winner' };
+    const t0 = { signatureId: 'fn:string->string', patternTags: ['strings'], tier: 'TIER_0' as const, patternFamily: 'FOUNDATIONS' as const, title: 'Shout' };
+    const out = nearestInterview(snap, [t0, t1]);
+    assert.equal(out?.title, 'Election Winner');
+    assert.deepEqual(out?.missing, ['Lists', 'Loops, and when you actually need one', 'Functions, parameters and return values', 'Putting several of these together']);
+  });
+
+  it('is null once every skill a Tier 1 problem needs is demonstrated', () => {
+    const snap = emptySkillSnapshot();
+    for (const skill of Object.keys(snap) as (keyof SkillSnapshot)[]) {
+      snap[skill] = advanceSkillState(advanceSkillState(snap[skill], false), false);
+    }
+    const t1 = { signatureId: 'fn:ints->int', patternTags: ['hash-map'], tier: 'TIER_1' as const, patternFamily: 'ARRAYS_HASHING' as const, title: 'X' };
+    assert.equal(nearestInterview(snap, [t1]), null);
   });
 });

@@ -74,3 +74,16 @@ export const AUTHORED: Provenance = {
   attributionText: '',
   sourceRef: 'codelock-authored',
 };
+
+/**
+ * Drafted by a model for CodeLock, then verified: every reference solution
+ * passed every test on the judge before the problem was admitted. Kept apart
+ * from `AUTHORED` so nobody reads a generated statement as hand-written.
+ */
+export const GENERATED: Provenance = {
+  source: 'codelock-generated',
+  sourceUrl: 'https://github.com/TommyDeLeon/codelock',
+  sourceLicense: 'CC0-1.0',
+  attributionText: 'Drafted with Gemini for CodeLock; verified against the judge.',
+  sourceRef: 'codelock-generated',
+};

@@ -7,7 +7,8 @@ import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { SKILLS, SKILL_LABELS } from '../services/skills.js';
 import { loadSkillSnapshot } from '../services/skillState.js';
 import { STATE_LABELS } from '../services/tutor/accomplishment.js';
-import { describeFrontier, loadFrontierLocks } from '../services/frontier.js';
+import { describeFrontier, loadFrontierLocks, nearestInterview } from '../services/frontier.js';
+import { ALL_PROBLEMS } from '../corpus/problems/index.js';
 
 export const progressRouter = Router();
 progressRouter.use(withLocalUser);
@@ -82,7 +83,10 @@ progressRouter.get(
       }),
       // Where the edge is: the next skill, how close in words, what the last
       // attempt on it showed, and the first-try pass rate as an observable.
-      frontier: describeFrontier(snapshot, frontierLocks),
+      frontier: {
+        ...describeFrontier(snapshot, frontierLocks),
+        nearestInterview: nearestInterview(snapshot, ALL_PROBLEMS),
+      },
       counts,
       welcomeBack:
         awayDays >= WELCOME_BACK_DAYS
