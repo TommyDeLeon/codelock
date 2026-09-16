@@ -7,37 +7,51 @@
 # imported into the local database and committed. Failures back off and
 # retry; nothing here needs a person present.
 #
-#   bash scripts/author-loop.sh [start-number] [anchors-path]
+#   bash scripts/author-loop.sh [start-number] [anchors-path] [shard k/N]
 #
-# Stop with: touch scripts/.author-stop
+# Several workers run side by side with different shards (0/3, 1/3, 2/3):
+# each owns a disjoint slice of the index, batch files are named per worker,
+# and the shared corpus files and the git commit are taken under a lock.
+#
+# Stop all workers with: touch scripts/.author-stop
 set -u
 cd "$(dirname "$0")/.."
 
 START=${1:-1}
 ANCHORS=${2:-../../data/leetcode-index.json}
+SHARD=${3:-0/1}
+WORKER=${SHARD%%/*}
 COMMIT_EVERY=5
 LOG=scripts/author-loop.log
 STOP=scripts/.author-stop
+GITLOCK=scripts/.author-gitlock
 
 n=$START
 since_commit=0
 consecutive_failures=0
 
-log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
+log() { printf '%s [w%s] %s\n' "$(date -u +%FT%TZ)" "$WORKER" "$*" | tee -a "$LOG"; }
 
+# mkdir is atomic, so one worker imports and commits at a time.
 commit_progress() {
+  local waited=0
+  until mkdir "$GITLOCK" 2>/dev/null; do
+    sleep 5; waited=$((waited + 5))
+    if [ "$waited" -ge 600 ]; then log "git lock stuck; skipping this commit"; since_commit=0; return; fi
+  done
   LOG_LEVEL=silent npm run -s import:corpus >/dev/null 2>&1 || log "import:corpus failed (will retry next round)"
   ( cd ../.. && git add -A apps/api/src/corpus data/NOTICE >/dev/null 2>&1 && git commit -q -m "corpus" >/dev/null 2>&1 ) && log "committed" || log "nothing to commit"
+  rmdir "$GITLOCK" 2>/dev/null
   since_commit=0
 }
 
 log "loop start at gen-lc-$(printf '%03d' "$n")"
 while true; do
   if [ -f "$STOP" ]; then log "stop file found; finishing"; break; fi
-  out=$(printf 'gen-lc-%03d' "$n")
+  if [ "$SHARD" = "0/1" ]; then out=$(printf 'gen-lc-%03d' "$n"); else out=$(printf 'gen-lc-w%s-%03d' "$WORKER" "$n"); fi
   log "batch $out"
   mkdir -p scripts/author-out
-  result=$(LOG_LEVEL=silent npm run -s author:batch -- --anchors "$ANCHORS" --count 6 --out "$out" --codex 2>&1 \
+  result=$(LOG_LEVEL=silent npm run -s author:batch -- --anchors "$ANCHORS" --count 6 --out "$out" --shard "$SHARD" --codex 2>&1 \
     | grep -v "prisma:query\|DEP0190\|trace-deprecation" | tr '\r' '\n' | grep -v "waiting on\|judged [0-9]")
   # Full per-batch output kept, so a zero-yield batch can be read afterwards.
   printf '%s\n' "$result" > "scripts/author-out/$out.log"

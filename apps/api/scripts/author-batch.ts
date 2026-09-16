@@ -50,7 +50,7 @@
  * Needs the judge reachable at JUDGE0_URL and the `agy` CLI on PATH.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Difficulty, PatternFamily, Tier } from '@prisma/client';
@@ -159,13 +159,74 @@ const LEVEL_TO: Record<1 | 2 | 3, { difficulty: Difficulty; tier: Tier }> = {
 };
 
 /** The next `count` anchors not yet covered, easy first so the ramp fills first. */
+/**
+ * `--shard k/N` gives parallel workers disjoint slices of the index: an
+ * anchor belongs to worker k when a stable hash of its slug mod N is k. The
+ * judge idles while a model drafts, so two or three workers overlap those
+ * phases; the shared files are written under `withLock` below.
+ */
+const shard = (() => {
+  const raw = process.argv.includes('--shard') ? arg('shard') : '0/1';
+  const m = /^(\d+)\/(\d+)$/.exec(raw);
+  if (!m) throw new Error('--shard must look like k/N');
+  const k = Number(m[1]);
+  const n = Number(m[2]);
+  if (!(n >= 1 && k >= 0 && k < n)) throw new Error('--shard k/N needs 0 <= k < N');
+  return { k, n };
+})();
+
+function shardOf(slug: string): number {
+  let h = 2166136261;
+  for (const ch of slug) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return h % shard.n;
+}
+
 function nextAnchors(): Anchor[] {
   if (!anchorsPath) return [];
   const covered = readCoverage();
   return readAnchors(anchorsPath)
-    .filter((a) => !covered[a.slug])
+    .filter((a) => !covered[a.slug] && shardOf(a.slug) === shard.k)
     .sort((a, b) => a.level - b.level || a.slug.localeCompare(b.slug))
     .slice(0, count);
+}
+
+/**
+ * A directory as a mutex: `mkdir` is atomic, so exactly one worker holds it.
+ * Guards the read-modify-write of `index.ts` and `coverage.json`. A stale
+ * lock older than ten minutes is taken over; nothing here holds it for more
+ * than a second.
+ */
+function withLock<T>(fn: () => T): T {
+  const lockDir = join('src', 'corpus', '.author-lock');
+  const started = Date.now();
+  for (;;) {
+    try {
+      mkdirSync(lockDir);
+      break;
+    } catch {
+      let age = 0;
+      try {
+        age = Date.now() - statSync(lockDir).mtimeMs;
+      } catch {
+        continue;
+      }
+      if (age > 10 * 60_000) {
+        try {
+          rmSync(lockDir, { recursive: true, force: true });
+        } catch {
+          /* another worker got there first */
+        }
+        continue;
+      }
+      if (Date.now() - started > 5 * 60_000) throw new Error('could not take the corpus lock');
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    rmSync(lockDir, { recursive: true, force: true });
+  }
 }
 
 const anchors = nextAnchors();
@@ -937,8 +998,10 @@ async function main() {
   if (dryRun) {
     console.log('  dry run: nothing written');
   } else {
-    if (accepted.length > 0) emit(accepted);
-    recordCoverage(accepted);
+    withLock(() => {
+      if (accepted.length > 0) emit(accepted);
+      recordCoverage(accepted);
+    });
   }
 
   console.log(
