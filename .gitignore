@@ -30,3 +30,6 @@ next-env.d.ts
 # Scratch slug list for `import:corpus --only-file=`. Regenerated per run from
 # whichever problems are currently inactive; never the same twice.
 apps/api/.slugs-todo.txt
+
+# Public problem index used as a coverage map; not ours to redistribute.
+data/leetcode-index.json
