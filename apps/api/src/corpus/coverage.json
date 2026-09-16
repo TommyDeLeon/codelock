@@ -938,5 +938,126 @@
     "ours": "cargo-loading-combinations",
     "batch": "gen-lc-034",
     "date": "2026-09-16"
+  },
+  "count-prefixes-of-a-given-string": {
+    "ours": "match-scanned-prefixes",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-square-sum-triples": {
+    "ours": "surveyor-triangle-plots",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-subarrays-of-length-three-with-a-condition": {
+    "ours": "balanced-terrain-segments",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-residue-prefixes": {
+    "ours": "stable-cargo-loads",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-rotations-with-exactly-k-equal-adjacent-pairs": {
+    "ours": "count-suitable-light-rotations",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-special-quadruplets": {
+    "ours": "ancient-pillar-alignments",
+    "batch": "gen-lc-035",
+    "date": "2026-09-16"
+  },
+  "count-substrings-that-satisfy-k-constraint-i": {
+    "ours": "valid-sensor-segments",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "count-substrings-with-only-one-distinct-letter": {
+    "ours": "steady-drone-flight-periods",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "count-symmetric-integers": {
+    "ours": "count-balanced-identification-codes",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "count-tested-devices-after-test-operations": {
+    "ours": "count-successful-balloon-launches",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "count-the-digits-that-divide-a-number": {
+    "ours": "count-harmonic-serial-digits",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "count-the-number-of-consistent-strings": {
+    "ours": "count-valid-pantry-recipes",
+    "batch": "gen-lc-036",
+    "date": "2026-09-16"
+  },
+  "counter-ii": {
+    "ours": "pressure-valve-calibration",
+    "batch": "gen-lc-038",
+    "date": "2026-09-16"
+  },
+  "counting-bits": {
+    "ours": "network-router-bandwidth",
+    "batch": "gen-lc-038",
+    "date": "2026-09-16"
+  },
+  "counting-elements": {
+    "ours": "valid-card-combos",
+    "batch": "gen-lc-038",
+    "date": "2026-09-16"
+  },
+  "counting-words-with-a-given-prefix": {
+    "ours": "product-category-matching",
+    "batch": "gen-lc-038",
+    "date": "2026-09-16"
+  },
+  "count-vowel-substrings-of-a-string": {
+    "ours": "complete-microbiome-sample",
+    "batch": "gen-lc-038",
+    "date": "2026-09-16"
+  },
+  "counter": {
+    "ours": null,
+    "batch": "gen-lc-038",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "count-the-number-of-special-characters-i": {
+    "ours": "count-paired-device-codes",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
+  },
+  "count-valid-prefixes": {
+    "ours": "count-viable-growth-stages",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
+  },
+  "count-values-with-equally-spaced-occurrences-i": {
+    "ours": "count-rhythmic-sensor-signals",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
+  },
+  "count-the-number-of-incremovable-subarrays-i": {
+    "ours": "count-disposable-cargo-bays",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
+  },
+  "count-the-number-of-vowel-strings-in-range": {
+    "ours": "count-endpoint-secured-protocols",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
+  },
+  "count-triplets-with-even-xor-set-bits-i": {
+    "ours": "count-balanced-energy-triads",
+    "batch": "gen-lc-039",
+    "date": "2026-09-16"
   }
 }
