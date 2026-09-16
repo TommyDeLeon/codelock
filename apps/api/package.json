@@ -27,6 +27,7 @@
     "hints:samples": "tsx scripts/print-hint-samples.ts",
     "author:batch": "tsx --env-file-if-exists=.env scripts/author-batch.ts",
     "upgrade:batch": "tsx --env-file-if-exists=.env scripts/upgrade-statements.ts",
+    "refresh:batch": "tsx --env-file-if-exists=.env scripts/refresh-tests.ts",
     "judge:host": "docker run --rm -d --name codelock-judge-host --network codelock_default -p 127.0.0.1:2358:2358 -e HOST=0.0.0.0 -e PORT=2358 -e JUDGE_CONCURRENCY=10 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp codelock-judge:latest",
     "judge:host:stop": "docker stop codelock-judge-host"
   },

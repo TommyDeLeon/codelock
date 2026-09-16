@@ -63,7 +63,13 @@ function shardOf(slug: string): number {
 }
 
 const pending = ALL_PROBLEMS.filter(
-  (p) => p.provenance.source !== 'codelock-generated' && !UPGRADES[p.slug] && shardOf(p.slug) === shard.k,
+  (p) => {
+    if (p.provenance.source === 'codelock-generated' || shardOf(p.slug) !== shard.k) return false;
+    const up = UPGRADES[p.slug];
+    // Not yet rewritten, or refreshed with new tests but still carrying the
+    // original statement (refresh clears `skipped` and keeps the old words).
+    return !up || (!!up.tests && !up.skipped && up.promptMarkdown === p.promptMarkdown);
+  },
 ).sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || a.slug.localeCompare(b.slug));
 const batch = pending.slice(0, count);
 
@@ -410,6 +416,12 @@ export interface StatementUpgrade {
   date: string;
   /** Set when the reviewer would not pass a rewrite; the original statement stays. */
   skipped?: string;
+  /**
+   * Replacement tests, when the originals reused a famous problem's example
+   * data. Every expected output was produced by all six reference solutions
+   * agreeing on the judge.
+   */
+  tests?: Array<{ stdin: string; expectedStdout: string; isSample?: boolean }>;
 }
 
 export const UPGRADES: Record<string, StatementUpgrade> = {
@@ -502,12 +514,14 @@ function main() {
         };
       }
       for (const a of accepted) {
+        const prevTests = all[a.p.slug]?.tests;
         all[a.p.slug] = {
           promptMarkdown: a.r.promptMarkdown,
           editorialMarkdown: a.r.editorialMarkdown,
           promoteSamples: a.used.filter((stdin) => !a.p.tests.find((t) => t.stdin === stdin)?.isSample),
           model: by,
           date,
+          ...(prevTests ? { tests: prevTests } : {}),
         };
       }
       emit(all);

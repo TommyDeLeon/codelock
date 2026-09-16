@@ -22,7 +22,14 @@ import { UPGRADES } from './upgrades.js';
 export function applyUpgrades(problems: ProblemDefinition[]): ProblemDefinition[] {
   for (const problem of problems) {
     const up = UPGRADES[problem.slug];
-    if (!up || up.skipped) continue;
+    if (!up) continue;
+    // Replacement tests (see `scripts/refresh-tests.ts`) apply even when the
+    // statement is still the original: the data was the problem, and the
+    // statement pass rewrites the words around the new data afterwards.
+    if (up.tests && up.tests.length >= 8) {
+      problem.tests = up.tests.map((t) => ({ ...t }));
+    }
+    if (up.skipped) continue;
     problem.promptMarkdown = up.promptMarkdown;
     problem.editorialMarkdown = up.editorialMarkdown;
     if (up.promoteSamples.length > 0) {
