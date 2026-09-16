@@ -1588,5 +1588,96 @@
     "batch": "gen-lc-w1-051",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "find-followers-count": {
+    "ours": "count-incoming-space-ships",
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16"
+  },
+  "find-indices-of-stable-mountains": {
+    "ours": "identify-protected-habitats",
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16"
+  },
+  "find-maximum-number-of-string-pairs": {
+    "ours": "pairing-mirror-runes",
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16"
+  },
+  "find-minimum-log-transportation-cost": {
+    "ours": "minimum-fuel-to-gather-drones",
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16"
+  },
+  "find-indices-with-index-and-value-difference-i": {
+    "ours": "find-distant-twin-stars",
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16"
+  },
+  "find-if-path-exists-in-graph": {
+    "ours": null,
+    "batch": "gen-lc-w1-052",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-all-the-lonely-nodes": {
+    "ours": "isolated-power-relays",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-all-unique-email-domains": {
+    "ours": "count-unique-star-systems",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-center-of-star-graph": {
+    "ours": "locate-central-hub",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-cities-in-each-state": {
+    "ours": "busiest-spaceport",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-greatest-common-divisor-of-array": {
+    "ours": "crystal-resonance-factor",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-if-digit-game-can-be-won": {
+    "ours": "can-win-cargo-bidding",
+    "batch": "gen-lc-w0-051",
+    "date": "2026-09-16"
+  },
+  "find-closest-person": {
+    "ours": "coffee-machine-placement",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
+  },
+  "find-common-characters": {
+    "ours": "common-potion-ingredients",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
+  },
+  "find-customers-with-positive-revenue-this-year": {
+    "ours": "active-energy-stations",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
+  },
+  "find-expensive-cities": {
+    "ours": "high-cost-operations",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
+  },
+  "find-lucky-integer-in-an-array": {
+    "ours": "largest-balanced-artifact",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
+  },
+  "find-common-elements-between-two-arrays": {
+    "ours": "intersecting-fleet-registries",
+    "batch": "gen-lc-w2-052",
+    "date": "2026-09-16"
   }
 }
