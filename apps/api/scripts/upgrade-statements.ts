@@ -223,11 +223,17 @@ function checkExamples(
   // `output:` may carry one value on the same line or several lines below it
   // (operation-log problems print one line per operation).
   const blocks = [...prompt.matchAll(/```\s*\ninput:\n?([\s\S]*?)\noutput:[ \t]*([\s\S]*?)\n?```/g)];
-  if (blocks.length < 2) return { ok: false, why: `only ${blocks.length} parsable example blocks` };
+  if (blocks.length < 2) {
+    // Show what came back, so a format the parser does not know is visible
+    // in the batch log instead of a bare count.
+    const first = prompt.indexOf('**Example');
+    const snippet = first === -1 ? prompt.slice(0, 240) : prompt.slice(first, first + 320);
+    return { ok: false, why: `only ${blocks.length} parsable example blocks; got: ${JSON.stringify(snippet)}` };
+  }
   const used: string[] = [];
   for (const [, stdinRaw, outRaw] of blocks) {
     const stdin = norm(stdinRaw ?? '');
-    const out = norm(outRaw ?? '');
+    const out = norm((outRaw ?? '').replace(/^\n/, ''));
     const hit = p.tests.find((t) => norm(t.stdin) === stdin && norm(t.expectedStdout) === out);
     if (!hit) {
       return {
