@@ -1059,5 +1059,162 @@
     "ours": "count-balanced-energy-triads",
     "batch": "gen-lc-039",
     "date": "2026-09-16"
+  },
+  "coupon-code-validator": {
+    "ours": "validate-promo-format",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "cousins-in-binary-tree": {
+    "ours": "has-plant-cousin",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "crawler-log-folder": {
+    "ours": "spaceship-directory-depth",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "create-a-dataframe-from-list": {
+    "ours": "format-cargo-manifest",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "create-a-new-column": {
+    "ours": "amplify-energy-levels",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "create-a-session-bar-chart": {
+    "ours": "bucket-mission-durations",
+    "batch": "gen-lc-040",
+    "date": "2026-09-16"
+  },
+  "customer-order-frequency": {
+    "ours": "identify-active-trading-partners",
+    "batch": "gen-lc-041",
+    "date": "2026-09-16"
+  },
+  "customer-placing-the-largest-number-of-orders": {
+    "ours": "most-frequent-supply-request",
+    "batch": "gen-lc-041",
+    "date": "2026-09-16"
+  },
+  "create-grid-with-exactly-one-path": {
+    "ours": null,
+    "batch": "gen-lc-041",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "create-hello-world-function": {
+    "ours": null,
+    "batch": "gen-lc-041",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "create-object-from-two-arrays": {
+    "ours": null,
+    "batch": "gen-lc-041",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "create-target-array-in-the-given-order": {
+    "ours": null,
+    "batch": "gen-lc-041",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "customer-who-visited-but-did-not-make-any-transactions": {
+    "ours": "inactive-logged-in-users",
+    "batch": "gen-lc-042",
+    "date": "2026-09-16"
+  },
+  "cyclically-shift-rows-and-columns": {
+    "ours": "rotate-conveyor-belts",
+    "batch": "gen-lc-042",
+    "date": "2026-09-16"
+  },
+  "daily-leads-and-partners": {
+    "ours": "max-unique-guests-per-day",
+    "batch": "gen-lc-042",
+    "date": "2026-09-16"
+  },
+  "day-of-the-week": {
+    "ours": "day-of-the-cycle",
+    "batch": "gen-lc-042",
+    "date": "2026-09-16"
+  },
+  "day-of-the-year": {
+    "ours": "calendar-day-counter",
+    "batch": "gen-lc-042",
+    "date": "2026-09-16"
+  },
+  "customers-who-never-order": {
+    "ours": null,
+    "batch": "gen-lc-042",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "decode-the-message": {
+    "ours": "alien-artifact-translation",
+    "batch": "gen-lc-043",
+    "date": "2026-09-16"
+  },
+  "decode-xored-array": {
+    "ours": "recover-drone-coordinates",
+    "batch": "gen-lc-043",
+    "date": "2026-09-16"
+  },
+  "decompress-run-length-encoded-list": {
+    "ours": "unpack-supply-cargo",
+    "batch": "gen-lc-043",
+    "date": "2026-09-16"
+  },
+  "defuse-the-bomb": {
+    "ours": "stabilize-reactor-core",
+    "batch": "gen-lc-043",
+    "date": "2026-09-16"
+  },
+  "decrypt-string-from-alphabet-to-integer-mapping": {
+    "ours": "decipher-wall-glyphs",
+    "batch": "gen-lc-043",
+    "date": "2026-09-16"
+  },
+  "defanging-an-ip-address": {
+    "ours": null,
+    "batch": "gen-lc-043",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "degree-of-an-array": {
+    "ours": "most-frequent-shipment",
+    "batch": "gen-lc-044",
+    "date": "2026-09-16"
+  },
+  "delete-duplicate-emails": {
+    "ours": "remove-duplicate-logs",
+    "batch": "gen-lc-044",
+    "date": "2026-09-16"
+  },
+  "delete-columns-to-make-sorted": {
+    "ours": "unsorted-sensor-columns",
+    "batch": "gen-lc-044",
+    "date": "2026-09-16"
+  },
+  "delete-greatest-value-in-each-row": {
+    "ours": "process-highest-priority-tasks",
+    "batch": "gen-lc-044",
+    "date": "2026-09-16"
+  },
+  "delete-n-nodes-after-m-nodes-of-a-linked-list": {
+    "ours": "keep-one-skip-k",
+    "batch": "gen-lc-044",
+    "date": "2026-09-16"
+  },
+  "delete-characters-to-make-fancy-string": {
+    "ours": null,
+    "batch": "gen-lc-044",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
