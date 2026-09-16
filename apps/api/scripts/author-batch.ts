@@ -641,6 +641,45 @@ function codexReview(accepted: Draft[]): string {
   }
 }
 
+/**
+ * The same review, by a fresh Gemini session, when Codex is rate-limited.
+ * A separate call rather than the drafting session, so it is not grading
+ * its own work from inside the same context. The output format is the one
+ * `main` parses, so its notes drive rewrites exactly as Codex's do.
+ */
+function geminiReview(accepted: Draft[]): string {
+  const text = accepted
+    .map(
+      (d) =>
+        `### ${d.slug}\n${d.promptMarkdown}\n\nSample tests:\n${d.tests
+          .filter((t) => t.isSample)
+          .map((t) => `stdin: ${JSON.stringify(t.stdin)} -> ${JSON.stringify(t.expectedStdout)}`)
+          .join('\n')}`,
+    )
+    .join('\n\n');
+  const dir = mkdtempSync(join(tmpdir(), 'codelock-review-'));
+  const askPath = join(dir, 'ask.md');
+  writeFileSync(
+    askPath,
+    `You are an adversarial reviewer of programming problem statements. For each problem below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement whose wording closely follows a well-known interview problem (LeetCode, HackerRank, Codeforces) rather than being its own. Output exactly one line per slug and nothing else: "<slug>: OK" when the statement is unambiguous and its wording is its own, otherwise "<slug>: <issue>" where the issue starts with the word "ambiguous" or "closely follows" as appropriate.\n\n${text}`,
+  );
+  try {
+    const raw = execFileSync(
+      'agy',
+      [
+        `--print=Read ${askPath} and do exactly what it says. Output only the slug lines.`,
+        '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
+        '--model', model, '--output-format', 'json', '--print-timeout', '10m', '--disable-slash-commands',
+      ],
+      { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+    );
+    const parsed = JSON.parse(raw) as { status?: string; response?: string };
+    return parsed.status === 'SUCCESS' && parsed.response ? parsed.response : 'SKIPPED: gemini review returned nothing';
+  } catch (err) {
+    return `SKIPPED: gemini review unavailable (${(err as Error).message.split('\n')[0]})`;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Emit
 // ---------------------------------------------------------------------------
@@ -810,6 +849,12 @@ async function main() {
   if (useCodex && accepted.length > 0) {
     console.log('  asking Codex to read the statements ...');
     codex = codexReview(accepted);
+    if (codex.startsWith('SKIPPED')) {
+      console.log(`    ${codex}`);
+      console.log('  Codex unavailable; asking a fresh Gemini session to review instead ...');
+      codex = geminiReview(accepted);
+      if (!codex.startsWith('SKIPPED')) codex = `(gemini reviewer)\n${codex}`;
+    }
     console.log(codex.split('\n').map((l) => '    ' + l).join('\n'));
 
     // Codex's notes are acted on, not just logged. A statement it calls
