@@ -1216,5 +1216,130 @@
     "batch": "gen-lc-044",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "design-an-ordered-stream": {
+    "ours": "continuous-data-stream-length",
+    "batch": "gen-lc-045",
+    "date": "2026-09-16"
+  },
+  "design-compressed-string-iterator": {
+    "ours": "decompress-alien-message",
+    "batch": "gen-lc-045",
+    "date": "2026-09-16"
+  },
+  "design-hashmap": {
+    "ours": "first-repeated-scout-id",
+    "batch": "gen-lc-045",
+    "date": "2026-09-16"
+  },
+  "design-hashset": {
+    "ours": "distinct-alien-species-count",
+    "batch": "gen-lc-045",
+    "date": "2026-09-16"
+  },
+  "design-neighbor-sum-service": {
+    "ours": "terrain-energy-neighbor-sum",
+    "batch": "gen-lc-045",
+    "date": "2026-09-16"
+  },
+  "design-parking-system": {
+    "ours": null,
+    "batch": "gen-lc-045",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "destination-city": {
+    "ours": "terminal-facility",
+    "batch": "gen-lc-046",
+    "date": "2026-09-16"
+  },
+  "detect-capital": {
+    "ours": "standardized-device-name",
+    "batch": "gen-lc-046",
+    "date": "2026-09-16"
+  },
+  "detect-pattern-of-length-m-repeated-k-or-more-times": {
+    "ours": "tripled-data-sequence",
+    "batch": "gen-lc-046",
+    "date": "2026-09-16"
+  },
+  "determine-color-of-a-chessboard-square": {
+    "ours": "grid-sector-type",
+    "batch": "gen-lc-046",
+    "date": "2026-09-16"
+  },
+  "determine-if-string-halves-are-alike": {
+    "ours": "balanced-power-symbols",
+    "batch": "gen-lc-046",
+    "date": "2026-09-16"
+  },
+  "determine-if-two-events-have-conflict": {
+    "ours": null,
+    "batch": "gen-lc-046",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "determine-whether-matrix-can-be-obtained-by-rotation": {
+    "ours": "stellar-grid-symmetry",
+    "batch": "gen-lc-047",
+    "date": "2026-09-16"
+  },
+  "di-string-match": {
+    "ours": "drone-flight-levels",
+    "batch": "gen-lc-047",
+    "date": "2026-09-16"
+  },
+  "determine-the-winner-of-a-bowling-game": {
+    "ours": "crystal-energy-mining",
+    "batch": "gen-lc-047",
+    "date": "2026-09-16"
+  },
+  "difference-between-element-sum-and-digit-sum-of-an-array": {
+    "ours": "data-compression-checksum",
+    "batch": "gen-lc-047",
+    "date": "2026-09-16"
+  },
+  "diameter-of-binary-tree": {
+    "ours": null,
+    "batch": "gen-lc-047",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "diet-plan-performance": {
+    "ours": null,
+    "batch": "gen-lc-047",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "digit-frequency-score": {
+    "ours": "most-frequent-signal-digit",
+    "batch": "gen-lc-048",
+    "date": "2026-09-16"
+  },
+  "display-the-first-three-rows": {
+    "ours": "top-three-data-logs",
+    "batch": "gen-lc-048",
+    "date": "2026-09-16"
+  },
+  "distance-between-bus-stops": {
+    "ours": "shortest-delivery-route",
+    "batch": "gen-lc-048",
+    "date": "2026-09-16"
+  },
+  "distribute-candies-among-children-i": {
+    "ours": "shield-energy-distribution",
+    "batch": "gen-lc-048",
+    "date": "2026-09-16"
+  },
+  "distribute-candies": {
+    "ours": "maximize-nutrient-variety",
+    "batch": "gen-lc-048",
+    "date": "2026-09-16"
+  },
+  "distribute-candies-to-people": {
+    "ours": null,
+    "batch": "gen-lc-048",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
