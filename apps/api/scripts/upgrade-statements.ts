@@ -40,7 +40,7 @@ const flag = (name: string) => process.argv.includes(`--${name}`);
 const count = Number(arg('count', '8'));
 const model = arg('model', 'gemini-3.1-pro-low');
 const fallbackModel = arg('fallback-model', 'claude-sonnet-4-6');
-const reviewModel = arg('review-model', 'claude-sonnet-4-6');
+const reviewModel = arg('review-model', model.startsWith('gemini') ? 'claude-sonnet-4-6' : 'gemini-3.1-pro-low');
 const dryRun = flag('dry-run');
 const upgradesPath = join('src', 'corpus', 'upgrades.ts');
 
@@ -50,8 +50,20 @@ const upgradesPath = join('src', 'corpus', 'upgrades.ts');
 
 /** Hand-authored, not yet rewritten, easiest tier first so the ramp improves first. */
 const TIER_ORDER = ['TIER_0', 'TIER_0_5', 'TIER_1', 'TIER_2', 'TIER_3'];
+/** `--shard k/N`: parallel upgrade workers take disjoint slices by a stable hash of the slug. */
+const shard = (() => {
+  const m = /^(\d+)\/(\d+)$/.exec(arg('shard', '0/1'));
+  if (!m) throw new Error('--shard must look like k/N');
+  return { k: Number(m[1]), n: Number(m[2]) };
+})();
+function shardOf(slug: string): number {
+  let h = 2166136261;
+  for (const ch of slug) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return h % shard.n;
+}
+
 const pending = ALL_PROBLEMS.filter(
-  (p) => p.provenance.source !== 'codelock-generated' && !UPGRADES[p.slug],
+  (p) => p.provenance.source !== 'codelock-generated' && !UPGRADES[p.slug] && shardOf(p.slug) === shard.k,
 ).sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || a.slug.localeCompare(b.slug));
 const batch = pending.slice(0, count);
 
@@ -176,13 +188,16 @@ function draftWithNotes(problems: ProblemDefinition[], notes: Map<string, string
   }
 }
 
+/** Drafting stays with Gemini; a quota error is surfaced so the loop can wait for the reset. `--draft-fallback` opts into the second pool instead. */
+const draftFallback = flag('draft-fallback');
+
 function draft(problems: ProblemDefinition[]): { rewrites: Rewrite[]; by: string } {
   const brief = briefFor(problems);
   console.log(`  asking ${model} to rewrite ${problems.length} statements ...`);
   try {
     return { rewrites: askJson(model, brief, '15m'), by: model };
   } catch (err) {
-    if (!(err as { quota?: boolean }).quota) throw err;
+    if (!draftFallback || !(err as { quota?: boolean }).quota) throw err;
     console.log(`  ${model} is out of quota; using ${fallbackModel}`);
     return { rewrites: askJson(fallbackModel, brief, '15m'), by: fallbackModel };
   }
@@ -321,13 +336,13 @@ function modelReview(text: string): string {
 /** Slugs the reviewer flagged, with its note. Codex on a rate-limit error is recorded as SKIPPED and Claude reviews instead. */
 function review(items: Array<{ p: ProblemDefinition; r: Rewrite }>): { flagged: Map<string, string>; by: string } {
   const text = reviewText(items);
-  let out = codexReview(text);
-  let by = 'codex';
-  if (out.startsWith('SKIPPED') || /usage limit|quota/i.test(out)) {
-    console.log(`  ${out.split('\n')[0]}; asking ${reviewModel} instead`);
-    out = modelReview(text);
-    by = reviewModel;
-  }
+  // Codex and a second model read side by side; a flag from either counts.
+  const first = codexReview(text);
+  const second = modelReview(text);
+  const usable = (s: string) => !s.startsWith('SKIPPED') && !/usage limit|quota/i.test(s);
+  const out = [usable(first) ? first : '', usable(second) ? second : ''].filter(Boolean).join('\n');
+  const by = [usable(first) ? 'codex' : '', usable(second) ? reviewModel : ''].filter(Boolean).join('+') || 'none';
+  if (!usable(first)) console.log(`  codex: ${first.split('\n')[0].slice(0, 120)}`);
   const flagged = new Map<string, string>();
   for (const line of out.split('\n')) {
     const m = /^\s*([a-z0-9-]+):\s*(.+)$/.exec(line);

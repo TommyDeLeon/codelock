@@ -393,7 +393,9 @@ type Draft = Omit<ProblemDefinition, 'provenance'> & {
  * loop never idles on a quota reset, and it reviews when Codex is capped.
  */
 const fallbackModel = arg('fallback-model', 'claude-sonnet-4-6');
-const reviewModel = arg('review-model', 'claude-sonnet-4-6');
+// The second reviewer comes from the other pool than the drafter, so no
+// model reads its own draft.
+const reviewModel = arg('review-model', model.startsWith('gemini') ? 'claude-sonnet-4-6' : 'gemini-3.1-pro-low');
 
 function draftWith(which: string): Draft[] {
   const dir = mkdtempSync(join(tmpdir(), 'codelock-author-'));
@@ -439,11 +441,19 @@ function draftWith(which: string): Draft[] {
   return parsed.structured_output.problems;
 }
 
+/**
+ * Drafting stays with Gemini. On a quota error the batch fails with the
+ * error text intact — the loop reads the "Resets in …" from it and waits —
+ * unless `--draft-fallback` asks for the second pool to draft instead. The
+ * owner's call: wait for the reset rather than switch models.
+ */
+const draftFallback = flag('draft-fallback');
+
 function draftWithGemini(): Draft[] {
   try {
     return draftWith(model);
   } catch (err) {
-    if (!(err as { quota?: boolean }).quota || fallbackModel === model) throw err;
+    if (!draftFallback || !(err as { quota?: boolean }).quota || fallbackModel === model) throw err;
     console.log(`  ${model} is out of quota; drafting with ${fallbackModel} instead`);
     return draftWith(fallbackModel);
   }
@@ -942,13 +952,18 @@ async function main() {
   let codex = 'not requested';
   if (useCodex && accepted.length > 0) {
     console.log('  asking Codex to read the statements ...');
+    // Two readers side by side: Codex and a model from the other pool than
+    // the drafter. Either one flagging a statement is enough to send it for
+    // a rewrite; a Codex quota miss is recorded, and the second reader's
+    // verdict still stands on its own.
     codex = codexReview(accepted);
-    if (codex.startsWith('SKIPPED')) {
-      console.log(`    ${codex}`);
-      console.log(`  Codex unavailable; asking ${reviewModel} to review instead ...`);
-      codex = geminiReview(accepted);
-      if (!codex.startsWith('SKIPPED')) codex = `(gemini reviewer)\n${codex}`;
-    }
+    if (codex.startsWith('SKIPPED')) console.log(`    ${codex}`);
+    console.log(`  asking ${reviewModel} to review alongside Codex ...`);
+    const second = geminiReview(accepted);
+    const both = [codex.startsWith('SKIPPED') ? '' : codex, second.startsWith('SKIPPED') ? '' : `(${reviewModel} reviewer)\n${second}`]
+      .filter(Boolean)
+      .join('\n');
+    codex = both || `SKIPPED: no reviewer available (${codex.split('\n')[0]}; ${second.split('\n')[0]})`;
     console.log(codex.split('\n').map((l) => '    ' + l).join('\n'));
 
     // Codex's notes are acted on, not just logged. A statement it calls

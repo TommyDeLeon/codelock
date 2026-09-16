@@ -20,7 +20,17 @@ cd "$(dirname "$0")/.."
 START=${1:-1}
 ANCHORS=${2:-../../data/leetcode-index.json}
 SHARD=${3:-0/1}
+MODEL=${4:-gemini-3.1-pro-low}
 WORKER=${SHARD%%/*}
+
+# On a quota error, wait for the window to reset rather than switch model:
+# the error names the reset ("Resets in 9m17s"); otherwise wait 15 minutes.
+quota_wait() {
+  local mins
+  mins=$(printf '%s' "$1" | sed -n 's/.*[Rr]esets in \([0-9]*\)m.*/\1/p' | head -1)
+  if [ -n "$mins" ]; then log "quota reached; waiting $((mins + 1)) minutes for the reset"; sleep $(( (mins + 1) * 60 ));
+  else log "quota reached; waiting 15 minutes"; sleep 900; fi
+}
 COMMIT_EVERY=5
 LOG=scripts/author-loop.log
 STOP=scripts/.author-stop
@@ -51,7 +61,7 @@ while true; do
   if [ "$SHARD" = "0/1" ]; then out=$(printf 'gen-lc-%03d' "$n"); else out=$(printf 'gen-lc-w%s-%03d' "$WORKER" "$n"); fi
   log "batch $out"
   mkdir -p scripts/author-out
-  result=$(LOG_LEVEL=silent npm run -s author:batch -- --anchors "$ANCHORS" --count 6 --out "$out" --shard "$SHARD" --codex 2>&1 \
+  result=$(LOG_LEVEL=silent npm run -s author:batch -- --anchors "$ANCHORS" --count 6 --out "$out" --shard "$SHARD" --model "$MODEL" --codex 2>&1 \
     | grep -v "prisma:query\|DEP0190\|trace-deprecation" | tr '\r' '\n' | grep -v "waiting on\|judged [0-9]")
   # Full per-batch output kept, so a zero-yield batch can be read afterwards.
   printf '%s\n' "$result" > "scripts/author-out/$out.log"
@@ -62,7 +72,8 @@ while true; do
   if [ -z "$summary" ]; then
     consecutive_failures=$((consecutive_failures + 1))
     log "batch $out produced no summary (failure $consecutive_failures): $(printf '%s\n' "$result" | grep -iE 'error|limit|quota|judge' | head -2 | cut -c1-200)"
-    if [ "$consecutive_failures" -ge 3 ]; then log "backing off 15 minutes"; sleep 900; else sleep 60; fi
+    if printf '%s\n' "$result" | grep -qiE 'quota|usage limit|rate limit'; then quota_wait "$result"; consecutive_failures=0
+    elif [ "$consecutive_failures" -ge 3 ]; then log "backing off 15 minutes"; sleep 900; else sleep 60; fi
     continue
   fi
   consecutive_failures=0
