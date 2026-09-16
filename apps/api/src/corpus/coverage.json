@@ -1362,18 +1362,6 @@
     "batch": "gen-lc-w1-049",
     "date": "2026-09-16"
   },
-  "earliest-time-to-finish-one-task": {
-    "ours": null,
-    "batch": "gen-lc-w1-049",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "equal-score-substrings": {
-    "ours": null,
-    "batch": "gen-lc-w1-049",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "distribute-money-to-maximum-children": {
     "ours": "allocate-vm-memory",
     "batch": "gen-lc-w2-049",
@@ -1520,12 +1508,6 @@
     "batch": "gen-lc-w2-050",
     "date": "2026-09-16"
   },
-  "extract-kth-character-from-the-rope-tree": {
-    "ours": null,
-    "batch": "gen-lc-w2-050",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "fibonacci-number": {
     "ours": "colony-population-growth",
     "batch": "gen-lc-w2-051",
@@ -1551,12 +1533,6 @@
     "batch": "gen-lc-w2-051",
     "date": "2026-09-16"
   },
-  "find-anagram-mappings": {
-    "ours": null,
-    "batch": "gen-lc-w2-051",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "find-all-numbers-disappeared-in-an-array": {
     "ours": "missing-product-ids",
     "batch": "gen-lc-w1-051",
@@ -1576,18 +1552,6 @@
     "ours": "first-magic-incantation",
     "batch": "gen-lc-w1-051",
     "date": "2026-09-16"
-  },
-  "find-candidates-for-data-scientist-position": {
-    "ours": null,
-    "batch": "gen-lc-w1-051",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "find-closest-number-to-zero": {
-    "ours": null,
-    "batch": "gen-lc-w1-051",
-    "date": "2026-09-16",
-    "reason": "rejected"
   },
   "find-followers-count": {
     "ours": "count-incoming-space-ships",
@@ -1613,12 +1577,6 @@
     "ours": "find-distant-twin-stars",
     "batch": "gen-lc-w1-052",
     "date": "2026-09-16"
-  },
-  "find-if-path-exists-in-graph": {
-    "ours": null,
-    "batch": "gen-lc-w1-052",
-    "date": "2026-09-16",
-    "reason": "rejected"
   },
   "find-all-the-lonely-nodes": {
     "ours": "isolated-power-relays",
@@ -1705,12 +1663,6 @@
     "batch": "gen-lc-w1-053",
     "date": "2026-09-16"
   },
-  "find-nearest-point-that-has-the-same-x-or-y-coordinate": {
-    "ours": null,
-    "batch": "gen-lc-w1-053",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "find-latest-salaries": {
     "ours": "peak-server-loads",
     "batch": "gen-lc-w0-052",
@@ -1740,5 +1692,80 @@
     "ours": "extraterrestrial-signal-frequencies",
     "batch": "gen-lc-w0-052",
     "date": "2026-09-16"
+  },
+  "find-the-difference-of-two-arrays": {
+    "ours": "exclusive-catalog-entries",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-the-number-of-good-pairs-i": {
+    "ours": "compatible-locker-pairs",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-n-unique-integers-sum-up-to-zero": {
+    "ours": "balance-beam-integers",
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16"
+  },
+  "find-the-maximum-achievable-number": {
+    "ours": "boost-to-target",
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16"
+  },
+  "find-the-shortest-superstring-ii": {
+    "ours": "merged-log-prefix",
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16"
+  },
+  "find-the-distinct-difference-array": {
+    "ours": "coverage-gap-scores",
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16"
+  },
+  "find-the-index-of-the-first-occurrence-in-a-string": {
+    "ours": "template-scan-offset",
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16"
+  },
+  "find-the-least-frequent-digit": {
+    "ours": null,
+    "batch": "gen-lc-w3-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-integer-added-to-array-i": {
+    "ours": "adjusted-test-scores",
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16"
+  },
+  "find-the-longest-balanced-substring-of-a-binary-string": {
+    "ours": "balanced-shift-schedule",
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16"
+  },
+  "find-the-highest-altitude": {
+    "ours": null,
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-k-or-of-an-array": {
+    "ours": null,
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-largest-almost-missing-integer": {
+    "ours": null,
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-middle-index-in-array": {
+    "ours": null,
+    "batch": "gen-lc-w4-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
