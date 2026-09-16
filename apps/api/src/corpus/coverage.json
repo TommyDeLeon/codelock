@@ -1434,5 +1434,96 @@
     "batch": "gen-lc-w0-049",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "existence-of-a-substring-in-a-string-and-its-reverse": {
+    "ours": "detect-mirrored-sequence",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "factorial-generator": {
+    "ours": "thrust-multiplier-sequence",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "final-value-of-variable-after-performing-operations": {
+    "ours": "drone-altitude-tracker",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "find-all-k-distant-indices-in-an-array": {
+    "ours": "detect-radiation-leaks",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "fair-candy-swap": {
+    "ours": "balance-cargo-ships",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "filter-characters-by-frequency": {
+    "ours": "filter-stable-signals",
+    "batch": "gen-lc-w1-050",
+    "date": "2026-09-16"
+  },
+  "even-number-of-knight-moves": {
+    "ours": "robotic-frog-jump",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "excel-sheet-column-title": {
+    "ours": "research-sector-labels",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "fill-missing-data": {
+    "ours": "weather-station-data-recovery",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "filter-elements-from-array": {
+    "ours": "cargo-ship-weight-filtering",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "final-prices-with-a-special-discount-in-a-shop": {
+    "ours": "cyber-market-rebates",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "faulty-sensor": {
+    "ours": "drone-altitude-sensors",
+    "batch": "gen-lc-w0-050",
+    "date": "2026-09-16"
+  },
+  "drop-duplicate-rows": {
+    "ours": "unique-alien-artifacts",
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16"
+  },
+  "element-appearing-more-than-25-in-sorted-array": {
+    "ours": "quarterly-sales-leader",
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16"
+  },
+  "employees-earning-more-than-their-managers": {
+    "ours": "high-earning-subordinates",
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16"
+  },
+  "excel-sheet-column-number": {
+    "ours": "star-system-identifier",
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16"
+  },
+  "exactly-one-consecutive-set-bits-pair": {
+    "ours": "single-pair-of-active-relays",
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16"
+  },
+  "extract-kth-character-from-the-rope-tree": {
+    "ours": null,
+    "batch": "gen-lc-w2-050",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
