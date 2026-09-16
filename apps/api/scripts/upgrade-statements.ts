@@ -78,7 +78,7 @@ promptMarkdown format (Markdown, no HTML, no LaTeX):
   <stdin lines exactly as given>
   output: <expected stdout exactly as given>
   \`\`\`
-  followed by a one-line explanation. Use the two sample tests as Examples 1 and 2; you may use the third listed test as Example 3.
+  followed by a one-line explanation. When the expected output has several lines (operation-log problems), write "output:" on its own line and then the output lines exactly as given. Use the two sample tests as Examples 1 and 2; you may use the third listed test as Example 3.
 - A "**Follow-up:**" line about time or space complexity where meaningful.
 
 editorialMarkdown: the intended approach, the pattern's name, time and space complexity written in plain text like O(n log n) (no $ signs), and the one trap most solvers hit. Real paragraphs, not one line.
@@ -220,7 +220,9 @@ function checkExamples(
   p: ProblemDefinition,
   prompt: string,
 ): { ok: true; used: string[] } | { ok: false; why: string } {
-  const blocks = [...prompt.matchAll(/```\s*\ninput:\n?([\s\S]*?)\noutput:[ \t]*([^\n]*)\n```/g)];
+  // `output:` may carry one value on the same line or several lines below it
+  // (operation-log problems print one line per operation).
+  const blocks = [...prompt.matchAll(/```\s*\ninput:\n?([\s\S]*?)\noutput:[ \t]*([\s\S]*?)\n?```/g)];
   if (blocks.length < 2) return { ok: false, why: `only ${blocks.length} parsable example blocks` };
   const used: string[] = [];
   for (const [, stdinRaw, outRaw] of blocks) {
