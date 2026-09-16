@@ -1,7 +1,8 @@
 /**
  * Rewritten statements and editorials for hand-authored problems, keyed by
- * slug. Generated and extended by `scripts/upgrade-statements.ts`; applied
- * by `upgrade.ts`. Do not edit by hand — rerun the script.
+ * slug. Generated and extended by `scripts/upgrade-statements.ts` and
+ * `scripts/refresh-tests.ts`; applied by `upgrade.ts`. Do not edit by
+ * hand — rerun the scripts.
  */
 export interface StatementUpgrade {
   promptMarkdown: string;
@@ -290,7 +291,58 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode Gas Station](https://leetcode.com/problems/gas-station/): the sentences about beginning with zero resource at a checkpoint and returni"
+    "tests": [
+      {
+        "stdin": "3 -2 -2 3",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "4 -5 2 -1 3",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-3",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "10",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2 -1 2 -1",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2 -1 -1",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-1 -1 3 -2",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "5 -2 -3",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 -17 -18 -19 -20",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "-10 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 20",
+        "expectedStdout": "1"
+      }
+    ]
   },
   "circular-next-larger-values": {
     "promptMarkdown": "You are monitoring sensor readings arranged in a ring. For each reading, you want to know the first strictly larger reading encountered when scanning clockwise from that position, wrapping around the end of the ring back to the beginning. If a full lap of the ring finds no strictly larger reading, report `-1` for that position.\n\nGiven a non-empty list of integers, return a list of the same length where each element is the next strictly greater value found going clockwise around the ring, or `-1` if none exists.\n\n**Constraints**\n- 1 <= n <= 10^4 (length of the list)\n- -10^9 <= each value <= 10^9\n- Equal values do not count as \"larger\"\n\n**Example 1**\n```\ninput:\n2 5 1 3\noutput: 5 -1 3 5\n```\nFrom index 0 (value 2), the next larger going right is 5. From index 1 (value 5), a full lap finds no larger value, so -1. From index 2 (value 1), the next larger is 3. From index 3 (value 3), wrapping around reaches 5.\n\n**Example 2**\n```\ninput:\n4 4\noutput: -1 -1\n```\nBoth readings are equal; neither is strictly larger than the other.\n\n**Example 3**\n```\ninput:\n1\noutput: -1\n```\nA single element has no other element to compare with.\n\n**Follow-up:** Can you achieve O(n) time and O(n) space?",
@@ -350,7 +402,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode Best Time to Buy and Sell Stock II](https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/): the consecutive sentences abou"
+    "tests": [
+      {
+        "stdin": "1 5",
+        "expectedStdout": "4",
+        "isSample": true
+      },
+      {
+        "stdin": "4 2 8",
+        "expectedStdout": "6",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "4 4 4 4",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "9 8 7 6",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2",
+        "expectedStdout": "10"
+      },
+      {
+        "stdin": "0 0 0 0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 10 1 10 1 10",
+        "expectedStdout": "27"
+      },
+      {
+        "stdin": "100 500 200 800",
+        "expectedStdout": "1000"
+      },
+      {
+        "stdin": "10 9 8 7 8 9 10",
+        "expectedStdout": "3"
+      }
+    ]
   },
   "collect-only-upward-rises": {
     "promptMarkdown": "A sensor records daily temperature readings for a location. A **rise** is defined as any day whose reading is strictly greater than the previous day's reading; its value is the difference between those two consecutive readings.\n\nGiven a list of daily readings, return the total of all rises. Days where the reading drops or stays the same contribute nothing.\n\n**Constraints**\n\n- 1 ≤ n ≤ 20 (number of readings)\n- 0 ≤ reading ≤ 10^6 (each reading is a non-negative integer)\n- A single reading produces a total of 0 (no pairs exist)\n\n**Example 1**\n\n```\ninput:\n1 4 2 5\noutput: 6\n```\n\nDay 2 rises by 3 (4 − 1), day 3 falls so it contributes 0, day 4 rises by 3 (5 − 2). Total: 3 + 3 = 6.\n\n**Example 2**\n\n```\ninput:\n7 6 5\noutput: 0\n```\n\nReadings are strictly decreasing, so there are no rises. Total: 0.\n\n**Example 3**\n\n```\ninput:\n3\noutput: 0\n```\n\nOnly one reading exists; no consecutive pair can form a rise. Total: 0.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) extra space?",
@@ -774,7 +869,58 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 322, Coin Change](https://leetcode.com/problems/coin-change/): the consecutive minimum-count and impossible-amount sentences closely p"
+    "tests": [
+      {
+        "stdin": "1 4 5\n8",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "3 7\n14",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "10\n10",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "4\n9",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2 2 4\n8",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "1 5\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "5 10 15\n7",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "\n25",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n37",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "1 6 10\n12",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "2 6 8\n15",
+        "expectedStdout": "-1"
+      }
+    ]
   },
   "fewest-hops-to-finish": {
     "promptMarkdown": "You are piloting a spaceship navigating a linear sequence of space stations. Each station provides a hyperdrive booster that can launch your ship up to a certain number of stations forward. The list of numbers represents the maximum forward reach from each station. Assuming you start at the very first station and it is always physically possible to reach the final station, determine the minimum number of hyperdrive activations needed to arrive at the last station.\n\n**Constraints**\n- The list has between 1 and 20 non-negative numbers.\n- The last station is guaranteed to be reachable.\n- A sequence with only 1 station requires 0 activations.\n\n**Example 1**\n```\ninput:\n2 3 1 1 4\noutput: 2\n```\nLaunch 1 station forward to the second station, which then has enough range (3) to reach the end.\n\n**Example 2**\n```\ninput:\n2 3 0 1 4\noutput: 2\n```\nSimilarly, move to the second station, then jump directly to the end.\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\nYou start at the final station, requiring zero activations.\n\n**Follow-up:** Can you achieve a solution that scans the stations exactly once in O(n) time?",
@@ -937,7 +1083,58 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 994, Rotting Oranges](https://leetcode.com/problems/rotting-oranges/): the three cell descriptions, round-by-round adjacency sentence,"
+    "tests": [
+      {
+        "stdin": "2 1;1 1",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "2 1 0;0 1 2",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2 0;0 2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2 0 1;0 0 1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2 1 1 1 1 1",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "1 1;1 1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2 1 1 1 1;1 1 1 1 1;1 1 1 1 1;1 1 1 1 1;1 1 1 1 1",
+        "expectedStdout": "8"
+      },
+      {
+        "stdin": "2 1 1;1 1 1;1 1 0;0 0 0;1 1 1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "0 0 0",
+        "expectedStdout": "0"
+      }
+    ]
   },
   "has-a-cycle": {
     "promptMarkdown": "You are given a list of next-pointers written as indices. Position `i` points at position `a[i]`, and the value `-1` means \"nothing follows\".\n\nStart at position `0` and keep following the pointers. Decide whether you ever arrive at a position you have already stood on. Print `true` if you do and `false` if the trail runs off the end at some `-1`.\n\nA single position pointing at itself (`0`) is a cycle, and a single position holding `-1` is not.\n\n**Constraints**\n- The list has between `1` and `100,000` elements.\n- Every value is either `-1` or a valid index into the list `0 <= a[i] < length`.\n\n**Example 1**\n\n```\ninput:\n1 2 3 1\noutput: true\n```\nThe trail is `0 -> 1 -> 2 -> 3 -> 1`, and position `1` comes round again.\n\n**Example 2**\n\n```\ninput:\n1 2 3 -1\noutput: false\n```\nThe trail ends at the `-1`.\n\n**Example 3**\n\n```\ninput:\n0\noutput: true\n```\nPosition 0 points to itself, forming a cycle.\n\n**Follow-up:** Can you solve it in constant extra space without maintaining a set of visited positions?",
@@ -954,7 +1151,54 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode Contains Duplicate"
+    "tests": [
+      {
+        "stdin": "4 5 6 5",
+        "expectedStdout": "true",
+        "isSample": true
+      },
+      {
+        "stdin": "9 10 11",
+        "expectedStdout": "false",
+        "isSample": true
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "8 8 8 8",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "-5 -2 -1",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "-10 5 -10",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "100 200 300 400",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 1",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "2 4 6 2 4",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "-3 -2 -1 0 1 2 3",
+        "expectedStdout": "false"
+      }
+    ]
   },
   "hash-map-delete-probe-chain": {
     "promptMarkdown": "Design a custom dictionary structure utilizing open addressing. You are not permitted to use any standard library map or dictionary classes.\n\nYour structure, `HashMap`, must map integer keys to integer values. When collisions occur, resolve them by scanning forward one index at a time (linear probing). \n\nYou must implement a `remove(key)` method that carefully removes a key without breaking the contiguous cluster of elements. If another key was displaced during insertion and sits after the removed key, it must still be discoverable by future lookups. You can achieve this by leaving a tombstone marker or by shifting subsequent colliding elements backward. \n\nThe `get(key)` method retrieves the value associated with a key, yielding `-1` only if the key is genuinely absent. You will also provide `put(key, value)`, `containsKey(key)`, and `size()` to report the number of active entries.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\n**Constraints**\n- Keys and values are non-negative integers.\n- The map will not exceed its predefined internal capacity.\n\n**Example 1**\n```\ninput:\n9\nHashMap\nput 1 10\nput 18 20\nput 35 30\nremove 18\nget 35\nget 1\ncontainsKey 18\nsize\noutput:\nnull\nnull\nnull\nnull\nnull\n30\n10\nfalse\n2\n```\nKeys 1, 18, and 35 all hash to the same slot modulo 17, and deleting 18 does not prevent finding 35.\n\n**Example 2**\n```\ninput:\n10\nHashMap\nput 0 1\nput 17 2\nput 34 3\nremove 0\nget 17\nget 34\nput 51 4\nget 51\nsize\noutput:\nnull\nnull\nnull\nnull\nnull\n2\n3\nnull\n4\n3\n```\nAfter removing the head of a collision chain, the remaining elements are still intact and new elements can be appended.\n\n**Follow-up:** How does your deletion strategy affect the average search time as elements are repeatedly added and removed?",
@@ -1021,7 +1265,54 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 35, Search Insert Position](https://leetcode.com/problems/search-insert-position/): the insertion-position and existing-ID sentences p"
+    "tests": [
+      {
+        "stdin": "10 20 30 40\n25",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "10 20 30 40\n30",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "5\n2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "5\n8",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-10 -5 -1\n-3",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "-10 -5 -1\n-10",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "100 200 300\n50",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "10 15 20\n25",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40\n17",
+        "expectedStdout": "8"
+      },
+      {
+        "stdin": "2 4 6\n-5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-50 0 50\n25",
+        "expectedStdout": "2"
+      }
+    ]
   },
   "integer-square-root": {
     "promptMarkdown": "Return the greatest non-negative integer whose square is at most `n`. \n\nDo not use fractional arithmetic or floating point functions. For a perfect square such as 81, return its exact root.\n\n**Constraints**\n- `n` is a non-negative integer between `0` and `1,000,000`.\n\n**Example 1**\n\n```\ninput:\n20\noutput: 4\n```\n`4 × 4` is at most 20, but `5 × 5` is larger.\n\n**Example 2**\n\n```\ninput:\n81\noutput: 9\n```\n`9 × 9` is exactly 81.\n\n**Example 3**\n\n```\ninput:\n0\noutput: 0\n```\n`0 × 0` is exactly 0.\n\n**Follow-up:** Can you compute the root without checking every number?",
@@ -1165,7 +1456,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode's Last Stone Weight"
+    "tests": [
+      {
+        "stdin": "1 5 1",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "6 2 8",
+        "expectedStdout": "0",
+        "isSample": true
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "42"
+      },
+      {
+        "stdin": "2 2 2 2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "10 10 10 10",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "100 1 1 1 1 1",
+        "expectedStdout": "95"
+      },
+      {
+        "stdin": "1 2 3 5 8 13",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "20 20 5",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "3 5 7 9",
+        "expectedStdout": "0"
+      }
+    ]
   },
   "length-of-string": {
     "promptMarkdown": "Given a string, determine the number of characters it contains. Note that spaces are considered valid characters.\n\n**Constraints**\n- The string length is between `0` and `10^5`.\n\n**Example 1**\n```\ninput:\nhello\noutput: 5\n```\nThe word \"hello\" consists of 5 characters.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty string contains 0 characters.\n\n**Example 3**\n```\ninput:\na\noutput: 1\n```\nA single character string has a length of 1.\n\n**Follow-up:** What is the time complexity of finding a string's length in your chosen programming language?",
@@ -1520,7 +1854,54 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode"
+    "tests": [
+      {
+        "stdin": "2 4 6",
+        "expectedStdout": "24 12 8",
+        "isSample": true
+      },
+      {
+        "stdin": "5 0 2",
+        "expectedStdout": "0 10 0",
+        "isSample": true
+      },
+      {
+        "stdin": "10 20",
+        "expectedStdout": "20 10"
+      },
+      {
+        "stdin": "4 4 4 4",
+        "expectedStdout": "64 64 64 64"
+      },
+      {
+        "stdin": "-2 -4 -5",
+        "expectedStdout": "20 10 8"
+      },
+      {
+        "stdin": "-1 3 -2 4",
+        "expectedStdout": "-24 8 -12 6"
+      },
+      {
+        "stdin": "0 7 0",
+        "expectedStdout": "0 0 0"
+      },
+      {
+        "stdin": "0 0 0",
+        "expectedStdout": "0 0 0"
+      },
+      {
+        "stdin": "2 2 2 2 2 2 2 2 2 2 2 2 2 2 2",
+        "expectedStdout": "16384 16384 16384 16384 16384 16384 16384 16384 16384 16384 16384 16384 16384 16384 16384"
+      },
+      {
+        "stdin": "1 -1 2 -2 3 -3 4 -4 5 -5 6 -6 7 -7 0",
+        "expectedStdout": "0 0 0 0 0 0 0 0 0 0 0 0 0 0 -25401600"
+      },
+      {
+        "stdin": "-5 0 8",
+        "expectedStdout": "0 -40 0"
+      }
+    ]
   },
   "product-of-list": {
     "promptMarkdown": "Given a list of integers, compute and return the product of all the numbers in the list. If the list is empty, return `1`.\n\n**Constraints**\n- The list length is between `0` and `100`.\n- The elements are small enough that the final product fits within a standard integer type.\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 24\n```\nThe product is 2 * 3 * 4 = 24.\n\n**Example 2**\n```\ninput:\n\noutput: 1\n```\nThe product of an empty list is 1.\n\n**Follow-up:** Can you compute the product in O(n) time and O(1) extra space?",
@@ -1731,7 +2112,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode Partition Labels"
+    "tests": [
+      {
+        "stdin": "xyx",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "xyz",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "b",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "cccccc",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "qwertyuiop",
+        "expectedStdout": "10"
+      },
+      {
+        "stdin": "abccbadef",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "xxyyxxzzwwzz",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "abacabadabacaba",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "abcdefghijklmnooonmlkjihgfedcba",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "abababcdcdefefef",
+        "expectedStdout": "3"
+      }
+    ]
   },
   "stack-lifo-basics": {
     "promptMarkdown": "Implement a stack data structure. You must build this yourself without using your language's built-in stack type.\n\nCreate a `Stack` class that follows last-in, first-out (LIFO) order with the following methods:\n* `push(x)`: Adds the element `x` to the top of the stack.\n* `pop()`: Removes and returns the element at the top of the stack. If the stack is empty, return `-1`.\n* `peek()`: Returns the element at the top of the stack without removing it. If the stack is empty, return `-1`.\n* `isEmpty()`: Returns `true` if the stack is empty, `false` otherwise.\n* `size()`: Returns the number of elements currently in the stack.\n\nThe first operation in the operation log will be the constructor. The constructor and every void method should output `null`. Every other operation should output its return value. When an operation cannot return an element (an empty removal or an invalid index), return `-1`.\n\n**Constraints**\n- `x` is an integer.\n- The stack should properly handle calls to `pop` and `peek` when it is empty.\n\n**Example 1**\n```\ninput:\n7\nStack\npush 3\npush 8\npeek\npop\npeek\nsize\noutput:\nnull\nnull\nnull\n8\n8\n3\n1\n```\n*Explanation:* Elements are pushed and popped in LIFO order.\n\n**Example 2**\n```\ninput:\n4\nStack\nisEmpty\npush 1\nisEmpty\noutput:\nnull\ntrue\nnull\nfalse\n```\n*Explanation:* The stack correctly reports its empty state before and after a push.\n\n**Follow-up:** Can you implement all methods such that they run in O(1) time complexity?",

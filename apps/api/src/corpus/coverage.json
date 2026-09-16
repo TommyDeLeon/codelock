@@ -1799,5 +1799,130 @@
     "batch": "gen-lc-w4-055",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "find-the-degree-of-each-vertex": {
+    "ours": "network-node-connections",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "find-the-number-of-winning-players": {
+    "ours": "successful-apprentices",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "find-the-array-concatenation-value": {
+    "ours": "cargo-container-compaction",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "find-the-k-beauty-of-a-number": {
+    "ours": "encrypted-signal-strength",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "find-the-key-of-the-numbers": {
+    "ours": "biometric-security-code",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "find-the-maximum-divisibility-score": {
+    "ours": "optimal-power-grid-voltage",
+    "batch": "gen-lc-w2-055",
+    "date": "2026-09-16"
+  },
+  "flood-fill": {
+    "ours": "quarantine-zone-expansion",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "form-smallest-number-from-two-digit-arrays": {
+    "ours": "determine-lowest-alert-code",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "generate-a-string-with-characters-that-have-odd-counts": {
+    "ours": "generate-alien-identifier",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "get-maximum-in-generated-array": {
+    "ours": "maximum-reactor-energy",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "get-the-size-of-a-dataframe": {
+    "ours": "measure-cargo-grid",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "function-composition": {
+    "ours": "signal-transformation-cascade",
+    "batch": "gen-lc-w4-056",
+    "date": "2026-09-16"
+  },
+  "find-candidates-for-data-scientist-position": {
+    "ours": "filter-qualified-applicants",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "find-closest-number-to-zero": {
+    "ours": "nearest-to-baseline",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "find-missing-elements": {
+    "ours": "absent-frequency-codes",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "find-nearest-point-that-has-the-same-x-or-y-coordinate": {
+    "ours": "shared-axis-checkpoint",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "find-the-difference": {
+    "ours": "extra-supply-tag",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "find-the-distance-value-between-two-arrays": {
+    "ours": "count-safely-spaced-readings",
+    "batch": "gen-lc-w1-055",
+    "date": "2026-09-16"
+  },
+  "equal-score-substrings": {
+    "ours": "ballot-score-windows",
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16"
+  },
+  "find-anagram-mappings": {
+    "ours": null,
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-if-path-exists-in-graph": {
+    "ours": null,
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-town-judge": {
+    "ours": null,
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-words-containing-character": {
+    "ours": null,
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "finding-3-digit-even-numbers": {
+    "ours": null,
+    "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
