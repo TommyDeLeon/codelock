@@ -1,4 +1,5 @@
 import type { ProblemDefinition } from '../problem.js';
+import { applyUpgrades } from '../upgrade.js';
 import { GEN_LC_048_PROBLEMS } from './gen-lc-048.js';
 import { GEN_LC_047_PROBLEMS } from './gen-lc-047.js';
 import { GEN_LC_046_PROBLEMS } from './gen-lc-046.js';
@@ -311,3 +312,7 @@ export {
   TIER_3_STRINGS_BREADTH_PROBLEMS,
   TIER_3_STRINGS_SIMULATION_PROBLEMS,
 };
+
+// Rewritten statements for hand-authored problems are laid over the
+// originals here; see `../upgrade.ts`. Mutates in place, once, at load.
+applyUpgrades(ALL_PROBLEMS);
