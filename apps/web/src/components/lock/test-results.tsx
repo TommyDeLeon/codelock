@@ -79,6 +79,23 @@ export function TestResults({
         )}
       </div>
 
+      {/* A failed attempt that got further than the last one. One plain line,
+          no motion: it is still a failure, and dressing it up would be a lie.
+          The server sends it at most once per problem per session. */}
+      {/* The live region is always in the tree so a screen reader announces the
+          line when it arrives; it is empty and takes no space otherwise. */}
+      <p
+        className={cn('text-[13px]', 'nearMiss' in result && result.nearMiss ? 'px-4 py-2' : 'sr-only')}
+        aria-live="polite"
+      >
+        {'nearMiss' in result && result.nearMiss
+          ? `${result.nearMiss.passed} of ${result.nearMiss.total} cases now, up from ${result.nearMiss.previousPassed}. ` +
+            (result.nearMiss.total - result.nearMiss.passed === 1
+              ? 'One left.'
+              : `${result.nearMiss.total - result.nearMiss.passed} left.`)
+          : ''}
+      </p>
+
       {result.performance && <SpeedGate verdict={result.performance} />}
 
       {/* The demo shape carries no standing — it has no user to hold a record. */}

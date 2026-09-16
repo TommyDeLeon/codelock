@@ -4,6 +4,8 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { recordStep } from './learningLog.js';
 import { loadSkillSnapshot } from './skillState.js';
+import { excludedFromLocks, loadServedRecords } from './repetition.js';
+import { poolOf, type Pool } from './stretch.js';
 import { secondsLocked } from './audit.js';
 import {
   fitForLearner,
@@ -140,10 +142,14 @@ export async function swapProblem(params: {
 
   const snapshot = await loadSkillSnapshot(params.userId);
   const wanted = bandFor(session.problem.difficulty, params.request);
+  // The same exclusion the lock itself applies. Without it, seven "too hard"
+  // requests in one day each handed back a problem solved that morning.
+  const excluded = excludedFromLocks(await loadServedRecords(params.userId), snapshot, new Date());
   const chosen = await chooseReplacement({
     snapshot,
     request: params.request,
     excludeId: session.problem.id,
+    excluded,
     wanted,
     currentBand: session.problem.difficulty,
   });
@@ -305,15 +311,52 @@ export function rungsFor(
 }
 
 /**
+ * The candidates for a swap, best first. Pure, so the exclusion is testable.
+ *
+ * Drops the problem on screen and everything the repetition rule excludes
+ * *before* ranking, because "too hard" ranks fully-practised problems highest
+ * and a problem solved this morning is the most practised of all. Ranking
+ * first and excluding after would have been the same bug with extra steps.
+ */
+export function rankReplacements<T extends SkillProblem & { id: string }>(
+  rows: readonly T[],
+  snapshot: SkillSnapshot,
+  request: FlowRequest,
+  exclude: { excludeId: string; excluded: ReadonlySet<string> },
+): T[] {
+  // One pass: `poolOf` already answers eligibility (null when unfair), so the
+  // fit is computed once per row rather than once here and again below.
+  const pooled = rows
+    .filter((row) => row.id !== exclude.excludeId && !exclude.excluded.has(row.id))
+    .map((row) => ({ row, pool: poolOf(row, snapshot) }))
+    .filter((entry): entry is { row: T; pool: Pool } => entry.pool !== null);
+  const score = (row: T) => scoreForRequest(row, snapshot, request);
+  const ranked = pooled.sort((a, b) => score(b.row) - score(a.row));
+
+  // "Too hard" wants smaller, not mastered. A problem with one new idea and
+  // few skills is the honest smaller ask; a fully-practised problem is offered
+  // only when no stretch problem fits. Without this, "too hard" was the one
+  // control that reliably walked the learner off the frontier.
+  if (request === 'too_hard') {
+    const stretch = ranked.filter((entry) => entry.pool === 'stretch');
+    if (stretch.length > 0) return stretch.map((entry) => entry.row);
+  }
+  return ranked.map((entry) => entry.row);
+}
+
+/**
  * Find the problem to swap in.
  *
  * Refuses when nothing suitable exists, unlike `pickProblem`. See `swapProblem`
- * for why refusing is the right answer here.
+ * for why refusing is the right answer here. A pool emptied by the repetition
+ * rule is a refusal too: the problem on screen still opens the lock, and
+ * repeating a solved one under the label "smaller" would teach nothing.
  */
 async function chooseReplacement(params: {
   request: FlowRequest;
   snapshot: SkillSnapshot;
   excludeId: string;
+  excluded: ReadonlySet<string>;
   wanted: Difficulty;
   currentBand: Difficulty;
 }): Promise<{ problem: Problem; sameBand: boolean }> {
@@ -322,17 +365,11 @@ async function chooseReplacement(params: {
   // serving it would make the control a lie.
   for (const rung of rungsFor(params.wanted, params.currentBand)) {
     const rows = await prisma.problem.findMany({
-      where: { isActive: true, difficulty: rung.band, id: { not: params.excludeId } },
+      where: { isActive: true, difficulty: rung.band },
       select: CHOICE_COLUMNS,
     });
-    const eligible = rows.filter((row) => fitForLearner(row, params.snapshot).eligible);
-    if (eligible.length === 0) continue;
-
-    const ranked = [...eligible].sort(
-      (a, b) =>
-        scoreForRequest(b, params.snapshot, params.request) -
-        scoreForRequest(a, params.snapshot, params.request),
-    );
+    const ranked = rankReplacements(rows, params.snapshot, params.request, params);
+    if (ranked.length === 0) continue;
 
     // A little randomness among the best few, so the control cannot become a
     // way to summon one known problem on demand and pre-solve it.

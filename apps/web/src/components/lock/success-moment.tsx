@@ -131,7 +131,14 @@ export function SuccessMoment({
               typeof s.assisted === 'number',
           ) &&
           (a.variation == null ||
-            (typeof a.variation.title === 'string' && typeof a.variation.why === 'string'));
+            (typeof a.variation.title === 'string' && typeof a.variation.why === 'string')) &&
+          // Newer fields, optional on older rows. An unknown surface must not
+          // default to motion and sound; it is dropped and the row treated as
+          // full-by-omission only when the field is genuinely absent.
+          (a.surface === undefined || a.surface === 'full' || a.surface === 'quiet') &&
+          (a.events === undefined ||
+            (Array.isArray(a.events) &&
+              a.events.every((e) => !!e && typeof e.kind === 'string' && typeof e.note === 'string')));
         if (valid) {
           setAccomplishment(a as Accomplishment);
           setLoading(false);
@@ -155,19 +162,35 @@ export function SuccessMoment({
   const played = useRef(false);
 
   useEffect(() => {
-    const loaded = readPrefs();
-    setPrefs(loaded);
-    setAnimate(motionAllowed(loaded));
-    if (loaded.sound && !played.current) {
+    setPrefs(readPrefs());
+  }, []);
+
+  // Which moment this is. Full is the existing motion and chime; quiet is the
+  // headline and one detail, still. Decided by the server from what the solve
+  // showed (see docs/reward-and-stretch.md), never by chance here. Older rows
+  // and a moment that never loads fall back to full, which is what they were.
+  const surface = accomplishment?.surface ?? (loading ? null : 'full');
+  const full = surface === 'full';
+
+  // The chime waits for the surface to be known and plays once, on the
+  // moment becoming full — never on a later preference change, which would
+  // make a settings toggle sound like a solve.
+  useEffect(() => {
+    if (!full || played.current) return;
+    if (readPrefs().sound) {
       played.current = true;
       chime();
     }
-  }, []);
+  }, [full]);
+
+  // Motion follows the prefs live, so turning it off mid-screen stops it.
+  useEffect(() => {
+    setAnimate(full && motionAllowed(prefs));
+  }, [full, prefs]);
 
   function update(next: Prefs) {
     setPrefs(next);
     writePrefs(next);
-    setAnimate(motionAllowed(next));
   }
 
   function sendFeeling(value: FeedbackFeeling) {
@@ -177,9 +200,14 @@ export function SuccessMoment({
 
   const a = accomplishment;
 
+  // On the full surface the rarer events lead: what the learner could not do
+  // before this solve. `solved` is never listed; the headline already says it.
+  const eventNotes = full ? (a?.events ?? []).filter((e) => e.kind !== 'solved').map((e) => e.note) : [];
+  const details = a ? [...new Set([...eventNotes, ...a.details])].slice(0, full ? 5 : 1) : [];
+
   return (
     <main id="main" className="flex min-h-dvh justify-center overflow-y-auto bg-bg px-4 py-10">
-      <div className={cn('w-full max-w-xl', animate && 'success-rise')}>
+      <div className={cn('w-full max-w-xl', animate && 'success-rise')} data-surface={surface ?? 'pending'}>
         <p className="flex items-center gap-2 text-[13px] font-semibold text-success">
           <span className="flex size-6 items-center justify-center rounded-full bg-success-soft">
             <Check className="size-3.5" aria-hidden />
@@ -192,9 +220,9 @@ export function SuccessMoment({
         </h1>
         {!a && loading && <p className="mt-2 text-[13px] text-muted">Working out what this solve showed…</p>}
 
-        {a && a.details.length > 0 && (
-          <ul className="mt-4 space-y-1.5 text-[15px] leading-relaxed">
-            {a.details.map((detail) => (
+        {a && details.length > 0 && (
+          <ul aria-label="What this solve showed" className="mt-4 space-y-1.5 text-[15px] leading-relaxed">
+            {details.map((detail) => (
               <li key={detail} className="flex gap-2">
                 <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-success" />
                 {detail}
@@ -205,7 +233,7 @@ export function SuccessMoment({
 
         {a && <p className="mt-3 text-[13px] text-muted">{a.helpSummary}</p>}
 
-        {a && a.skills.length > 0 && (
+        {a && full && a.skills.length > 0 && (
           <section aria-label="Skills" className="mt-6">
             <h2 className="text-[13px] font-semibold">Saved to your skill map</h2>
             <ul className="mt-2 grid gap-2 sm:grid-cols-2">

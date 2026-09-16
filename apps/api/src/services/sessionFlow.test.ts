@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { Difficulty, type UserProgress } from '@prisma/client';
 import { DEMOTE_AFTER_FAILURES, PROMOTE_AFTER_FAST_SOLVES, applyOutcome } from './difficulty.js';
-import { ACTIVITY_RESPONSE_LIMIT, bandFor, rungsFor, scoreForRequest } from './sessionFlow.js';
+import { ACTIVITY_RESPONSE_LIMIT, bandFor, rankReplacements, rungsFor, scoreForRequest } from './sessionFlow.js';
 import { restate } from './restate.js';
 import {
   advanceSkillState,
@@ -257,5 +257,74 @@ describe('saying the problem a different way', () => {
 describe('the warm-up response bound', () => {
   it('is short enough to be a sentence and long enough to be an answer', () => {
     assert.ok(ACTIVITY_RESPONSE_LIMIT >= 100 && ACTIVITY_RESPONSE_LIMIT <= 1000);
+  });
+});
+
+describe('a swap never walks back to a problem already solved', () => {
+  // The owner's history on 2026-09-15: seven "too hard" swaps, and every one
+  // of them served a problem solved earlier that same day. The replacement
+  // pool excluded only the problem on screen.
+  const ready = (): SkillSnapshot => {
+    const snap = emptySkillSnapshot();
+    for (const skill of ['values', 'comparisons', 'strings', 'indexing'] as const) {
+      snap[skill] = advanceSkillState(advanceSkillState(snap[skill], false), false);
+    }
+    return snap;
+  };
+  const row = (id: string, over: Partial<SkillProblem> = {}) => ({ id, ...problem(over) });
+  const onScreen = row('capitalise-each-word', { signatureId: 'fn:string->string', patternTags: ['strings'] });
+  const solvedSmall = row('shout-the-line', { signatureId: 'fn:string->string', patternTags: ['strings'] });
+  const unseenSmall = row('to-snake-case', { signatureId: 'fn:string->string', patternTags: ['strings'] });
+
+  it('prefers an unseen problem over a solved one, even a smaller solved one', () => {
+    const ranked = rankReplacements(
+      [onScreen, solvedSmall, unseenSmall],
+      ready(),
+      'too_hard',
+      { excludeId: onScreen.id, excluded: new Set([solvedSmall.id]) },
+    );
+    assert.deepEqual(
+      ranked.map((r) => r.id),
+      [unseenSmall.id],
+      'the solved problem must not be in the pool at all',
+    );
+  });
+
+  it('refuses rather than repeat when only solved problems remain', () => {
+    const ranked = rankReplacements([onScreen, solvedSmall], ready(), 'too_hard', {
+      excludeId: onScreen.id,
+      excluded: new Set([solvedSmall.id]),
+    });
+    assert.equal(ranked.length, 0, 'an empty pool is a refusal; the current problem still opens the lock');
+  });
+});
+
+describe('a "too hard" swap still keeps the learner at the frontier', () => {
+  const ready = (): SkillSnapshot => {
+    const snap = emptySkillSnapshot();
+    for (const skill of ['values', 'comparisons', 'strings', 'indexing'] as const) {
+      snap[skill] = advanceSkillState(advanceSkillState(snap[skill], false), false);
+    }
+    return snap;
+  };
+  const row = (id: string, over: Partial<SkillProblem> = {}) => ({ id, ...problem(over) });
+  const onScreen = row('big-stretch', { signatureId: 'fn:ints,int->int', patternTags: ['lists', 'indexing'] });
+  const smallStretch = row('small-stretch', { patternTags: ['strings', 'indexing', 'lists'] });
+  const mastered = row('mastered', { signatureId: 'fn:string->string', patternTags: ['strings'] });
+
+  it('ranks a smaller problem with one new idea above a fully mastered one', () => {
+    const ranked = rankReplacements([onScreen, mastered, smallStretch], ready(), 'too_hard', {
+      excludeId: onScreen.id,
+      excluded: new Set(),
+    });
+    assert.equal(ranked[0]?.id, smallStretch.id, 'a swap must not be a route back to mastered work');
+  });
+
+  it('offers a mastered problem only when no stretch problem fits', () => {
+    const ranked = rankReplacements([onScreen, mastered], ready(), 'too_hard', {
+      excludeId: onScreen.id,
+      excluded: new Set(),
+    });
+    assert.deepEqual(ranked.map((r) => r.id), [mastered.id]);
   });
 });

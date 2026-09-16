@@ -190,17 +190,21 @@ export function Celebration() {
 
   const prefs = readCelebrationPrefs();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  const animate = item !== null && prefs.motion && !reduced && animated !== item.submissionId;
+  // Full is the drawn check, sparks and chime; quiet is the words, still. The
+  // server decides from what the solve showed (docs/reward-and-stretch.md);
+  // older rows carry no surface and are full, which is what they were.
+  const full = item !== null && (item.accomplishment.surface ?? 'full') === 'full';
+  const animate = full && prefs.motion && !reduced && animated !== item?.submissionId;
 
   useEffect(() => {
     if (!item) return;
     animated = item.submissionId;
-    if (readCelebrationPrefs().sound && chimed !== item.submissionId) {
+    if (full && readCelebrationPrefs().sound && chimed !== item.submissionId) {
       chimed = item.submissionId;
       chime();
     }
     finishRef.current?.focus();
-  }, [item]);
+  }, [item, full]);
 
   const finish = useCallback(() => {
     if (!item) return;
@@ -217,6 +221,9 @@ export function Celebration() {
 
   if (!item) return null;
   const a = item.accomplishment;
+  // On the full surface the rarer events lead. Quiet keeps one detail.
+  const eventNotes = full ? (a.events ?? []).filter((e) => e.kind !== 'solved').map((e) => e.note) : [];
+  const details = [...new Set([...eventNotes, ...a.details])].slice(0, full ? 5 : 1);
 
   return (
     // A native modal dialog: the dashboard behind it is inert, focus stays
@@ -321,8 +328,9 @@ export function Celebration() {
           {a.headline}
         </h2>
 
-        {a.details.length > 0 && (
+        {details.length > 0 && (
           <ul
+            aria-label="What this solve showed"
             style={{
               margin: '18px auto 0',
               padding: 0,
@@ -332,13 +340,13 @@ export function Celebration() {
               maxWidth: 480,
             }}
           >
-            {a.details.map((detail) => (
+            {details.map((detail) => (
               <li key={detail}>{detail}</li>
             ))}
           </ul>
         )}
 
-        {a.skills.length > 0 && (
+        {full && a.skills.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 18 }}>
             {a.skills.map((skill) => (
               <span

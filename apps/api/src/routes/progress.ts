@@ -7,6 +7,7 @@ import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { SKILLS, SKILL_LABELS } from '../services/skills.js';
 import { loadSkillSnapshot } from '../services/skillState.js';
 import { STATE_LABELS } from '../services/tutor/accomplishment.js';
+import { describeFrontier, loadFrontierLocks } from '../services/frontier.js';
 
 export const progressRouter = Router();
 progressRouter.use(withLocalUser);
@@ -26,7 +27,7 @@ progressRouter.get(
   '/',
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
-    const [snapshot, events, lastEvent] = await Promise.all([
+    const [snapshot, events, lastEvent, frontierLocks] = await Promise.all([
       loadSkillSnapshot(user.id),
       prisma.learningEvent.findMany({
         where: { userId: user.id, kind: 'ACCOMPLISHMENT' },
@@ -39,6 +40,7 @@ progressRouter.get(
         orderBy: { at: 'desc' },
         select: { at: true },
       }),
+      loadFrontierLocks(user.id),
     ]);
 
     // Counted across the whole history, not the recent window above: a total
@@ -78,6 +80,9 @@ progressRouter.get(
           headline: detail.headline ?? '',
         };
       }),
+      // Where the edge is: the next skill, how close in words, what the last
+      // attempt on it showed, and the first-try pass rate as an observable.
+      frontier: describeFrontier(snapshot, frontierLocks),
       counts,
       welcomeBack:
         awayDays >= WELCOME_BACK_DAYS

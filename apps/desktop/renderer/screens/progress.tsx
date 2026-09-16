@@ -76,6 +76,42 @@ export function ProgressScreen() {
     <div style={{ display: 'grid', gap: 28 }}>
       {view.welcomeBack && <p style={{ ...card, margin: 0, maxWidth: 640 }}>{view.welcomeBack}</p>}
 
+      {/* The edge: which skill is next, how close in words, what the last
+          attempt on it showed, and the first-try pass rate beside the band the
+          app aims for. Information, not a bar; absent on an older server. */}
+      {view.frontier && (
+        <section aria-label="What is next">
+          <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>What is next</h2>
+          <div style={{ ...card, maxWidth: 640 }}>
+            {view.frontier.next ? (
+              <>
+                <p style={{ margin: 0, fontWeight: 500 }}>
+                  {view.frontier.next.label}
+                  <span style={{ color: 'var(--muted)', fontWeight: 400 }}> · {view.frontier.distance}</span>
+                </p>
+                {view.frontier.lastProved && (
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)' }}>{view.frontier.lastProved}</p>
+                )}
+              </>
+            ) : (
+              <p style={{ margin: 0 }}>Everything on the map is solved on your own, and nothing is due.</p>
+            )}
+            {view.frontier.passRate.rate !== null && (
+              <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>
+                First-try passes: {Math.round(view.frontier.passRate.rate * 100)}% of your last{' '}
+                {view.frontier.passRate.locks} {view.frontier.passRate.locks === 1 ? 'lock' : 'locks'}. The app aims
+                for {Math.round(view.frontier.passRate.band[0] * 100)}–{Math.round(view.frontier.passRate.band[1] * 100)}%:
+                {view.frontier.passRate.rate > view.frontier.passRate.band[1]
+                  ? ' higher means the locks have been on the easy side.'
+                  : view.frontier.passRate.rate < view.frontier.passRate.band[0]
+                    ? ' lower means they have been on the hard side; hints are free.'
+                    : ' about right.'}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
       <section>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Skill map</h2>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 12px', maxWidth: 640 }}>

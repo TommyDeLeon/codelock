@@ -1,3 +1,124 @@
+# Handoff — reward and stretch (2026-09-16)
+
+Follows the tutor and success-moment handoff below. Design:
+`docs/reward-and-stretch.md`. Evidence: `RESEARCH.md`, "Reward and
+difficulty (2026-09-16)".
+
+## The bug, reproduced and fixed
+
+On 2026-09-15 the owner's history showed 13 locks, 8 distinct problems, three
+of them served two or three times the same day. Every repeat came through a
+`too_hard` swap: `chooseReplacement` excluded only the problem on screen, and
+its "too hard" score ranked fully-practised problems highest. The 21-day
+cooldown at lock time keyed on submissions, so a mastered problem would have
+returned at full weight on day 22.
+
+- **`apps/api/src/services/repetition.ts`** (new, pure + one loader): a problem
+  stays out of full locks while attempted within 21 days *or* solved with every
+  skill still `demonstrated`. Only a skill falling due lifts it. Used by both
+  `pickProblem` and `swapProblem`. A swap whose pool empties refuses; the
+  problem on screen still opens the lock.
+- Tests: `repetition.test.ts`; `sessionFlow.test.ts` ("a swap never walks back
+  to a problem already solved", written red first).
+
+## What exists now
+
+- **`stretch.ts`** (new, pure): fair rows split into *stretch* (needs a skill
+  not yet demonstrated) and *consolidating*; a lock draws stretch with fixed
+  weight 0.8; one consolidating lock after two stretch locks that ended in a
+  worked solution, bypass or abandon. `pickProblem` returns `pool`, recorded in
+  the `PROBLEM_SERVED` event detail. Every fallback rung is unchanged.
+- **`tutor/reward.ts`** (new, pure): `deriveRewardEvents` →
+  `skill_demonstrated | first_unaided | review_held | near_miss_improved |
+  transfer | recall | solved`; `chooseSurface` is `full` only when something
+  rarer than `solved` fired — no random draw. `Accomplishment` gains `events`
+  and `surface`.
+- **Review is never a lock**: when a skill is due, `deriveAccomplishment`
+  offers the oldest unaided solved problem on it in the existing `variation`
+  slot after the lock opens.
+- **Near miss**: `grading.ts` compares a failed attempt with the previous one
+  in the session on the same problem; once per problem per session; returned
+  as `nearMiss` and stored in the `ATTEMPT_FAILED` detail.
+- **`frontier.ts`** (new, pure + loader): `GET /v1/progress` gains `frontier`
+  — next skill, distance in words, what the last attempt on it proved, and
+  first-try pass rate over the last 20 locks beside the 75–85% band. Shown,
+  never acted on.
+- **Web**: `success-moment.tsx` waits for the surface before motion or chime;
+  quiet shows headline + one detail. `test-results.tsx` shows the near-miss
+  line. The fit line on the problem panel already existed.
+- **Desktop**: `celebration.tsx` gates motion/chime/skill chips on the surface;
+  `screens/progress.tsx` shows the frontier above the skill map.
+- **`apps/api/scripts/replay-selection.ts`**: read-only replay and the
+  measurements in the design doc.
+
+No schema change. No change to `ladder.ts`, `diagnose.ts`, `starter.ts`, the
+hint levels, or `apps/mobile`.
+
+## Replay on the owner's real history
+
+Before: stretch 32%, mastered-only 69%; `too_hard` shortlist 6/8 already
+solved. After: stretch 77–82% across runs, mastered-only 18–23%, repeats of
+solved 0%, out-of-depth 0%; `too_hard` shortlist 0/4 solved. Real locks so far
+carry no recorded pool (the field is new), so per-pool pass rates start
+accumulating from the next lock.
+
+## Providers
+
+- **Claude (Opus 5):** coordinated, researched, designed, implemented.
+- **OpenAI Codex** (`codex-rescue`, read-only): Phase 1 trace of the selector
+  agreed with the DB replay (H2, H3, H4 confirmed; H1 reframed as "the picker
+  never preferred the frontier"). The Phase 5 diff review **did not complete**:
+  Codex hit its usage limit mid-run (resets 2026-09-19). One partial finding —
+  that the near-miss acknowledgment is scoped per problem — matched a fix
+  already applied. Re-run the review after the reset.
+- **Gemini** (`gemini-3.1-pro-low` via `agy`, plan mode): adversarial critique
+  of the design against the research, 12 points; each adopted or rebutted in
+  `docs/reward-and-stretch.md`. Adopted: static weight, relief rule, no random
+  surface draw, review as a real retrieval, distance in words, near-miss once
+  per session, drop `faster_than_own` and `fewer_hints`, three new
+  measurements. Rebutted: a cap on swaps; optimising time on screen.
+- **ECC typescript-reviewer:** 5 findings, all addressed (near-miss scoped per
+  problem, served-records read bounded by distinct problems, type-guard filter
+  in `dueReview`, shadowed `pool` renamed, JSON `pool` guarded).
+- **ECC react-reviewer:** 6 findings; 4 addressed (non-null assertion, list
+  `aria-label`, `aria-live` on the near-miss line, single prefs read). Two left
+  as pre-existing or speculative (text keys on details; frontier copy styling).
+
+## Verify
+
+```bash
+npm run typecheck
+```
+
+```bash
+npm test -w @codelock/api
+```
+
+Replay selection and the measurements against the local database:
+
+```bash
+cd apps/api && LOG_LEVEL=silent npx tsx --env-file-if-exists=.env scripts/replay-selection.ts 300
+```
+
+
+
+## Open limitations
+
+- **Lint:** `npm run lint` fails in `apps/web` before this change — ESLint 10
+  finds no `eslint.config.*`. Not touched here.
+- **Corpus gap at the frontier:** only two EASY problems introduce `lists`
+  alone; the stretch pool at the owner's current edge is those two. The replay
+  shows it. More one-new-idea problems around `lists` and `loops` would widen
+  it.
+- **Pass rate is a bet:** the 75–85% band is an analogy from gradient-descent
+  classifiers; it is displayed and measured, never tuned toward.
+- **No web Progress page:** the frontier is on the desktop Progress tab and in
+  the API; the web app has no progress page to show it on.
+- **Desktop shell** still drops the overlay to its dashboard; the quiet/full
+  surface applies there through `celebration.tsx`.
+
+---
+
 # Handoff — tutor hints and success moment (2026-09-15)
 
 ## What exists

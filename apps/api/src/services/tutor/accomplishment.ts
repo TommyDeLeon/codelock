@@ -1,5 +1,6 @@
 import type { Accomplishment, AccomplishmentKind, SkillProgressView } from '@codelock/shared';
-import { SKILLS, SKILL_LABELS, type Skill, type SkillSnapshot } from '../skills.js';
+import { SKILLS, SKILL_LABELS, skillsRequiredBy, type Skill, type SkillProblem, type SkillSnapshot } from '../skills.js';
+import { chooseSurface, deriveRewardEvents } from './reward.js';
 import { starterPack } from './starter.js';
 
 /**
@@ -23,6 +24,8 @@ export interface PriorSolve {
   solvedAt: Date;
   assisted: boolean;
   patternTags: readonly string[];
+  /** The skill columns, when the caller has them. Needed to find a review. */
+  problem?: SkillProblem;
 }
 
 export interface AccomplishmentInput {
@@ -214,9 +217,17 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
 
   // A related problem for later, offered the same way whether or not help was
   // used: the reviewed one for starter problems, otherwise a similar problem.
+  // Review comes first, and only here. A solved problem whose skills are all
+  // demonstrated never returns as a lock (see `repetition.ts`); when one of
+  // those skills has come due, the problem is offered after the lock opens,
+  // as a real graded retrieval the learner can take or leave. Testing beats
+  // restudy (Roediger & Karpicke), and an optional follow-up is not a wall.
+  const review = dueReview(input.priorSolves, input.skillsAfter, problem.slug);
   const pack = starterPack(problem.slug);
   let variation: Accomplishment['variation'] = null;
-  if (pack) {
+  if (review) {
+    variation = review;
+  } else if (pack) {
     variation = pack.checkUnderstanding;
   } else if (input.fallbackVariation) {
     variation = {
@@ -224,6 +235,14 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
       why: assisted ? 'A similar problem, to check the idea stuck.' : 'A similar problem with a small twist.',
     };
   }
+
+  const events = deriveRewardEvents({
+    requiredSkills: input.requiredSkills,
+    skillsBefore: input.skillsBefore,
+    skillsAfter: input.skillsAfter,
+    assisted,
+    kind,
+  });
 
   return {
     kind,
@@ -233,5 +252,38 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
     skills,
     variation,
     askFeedback: input.feedbackDue,
+    events,
+    surface: chooseSurface(events),
+  };
+}
+
+/**
+ * The oldest solved problem that exercises a skill now due for review, as a
+ * follow-up offer. Null when nothing is due or nothing solved fits. Oldest
+ * first because that is the retrieval with the longest gap, which is the one
+ * worth most.
+ */
+export function dueReview(
+  priorSolves: readonly PriorSolve[],
+  snapshot: SkillSnapshot,
+  excludeSlug: string,
+): Accomplishment['variation'] {
+  const due = SKILLS.filter((skill) => snapshot[skill].state === 'due_for_review');
+  if (due.length === 0) return null;
+  const candidates = priorSolves
+    .filter(
+      (solve): solve is PriorSolve & { problem: SkillProblem } =>
+        solve.problem !== undefined && solve.slug !== excludeSlug && !solve.assisted,
+    )
+    .filter((solve) => skillsRequiredBy(solve.problem).some((skill) => due.includes(skill)))
+    .sort((a, b) => a.solvedAt.getTime() - b.solvedAt.getTime());
+  const pick = candidates[0];
+  if (!pick) return null;
+  const skill = due.find((s) => skillsRequiredBy(pick.problem).includes(s));
+  if (!skill) return null;
+  return {
+    slug: pick.slug,
+    title: pick.title,
+    why: `One from before, if you want it. “${SKILL_LABELS[skill]}” is due for a review.`,
   };
 }

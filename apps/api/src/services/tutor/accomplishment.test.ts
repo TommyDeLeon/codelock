@@ -38,6 +38,7 @@ const prior = (slug: string, daysAgo: number, assisted: boolean): PriorSolve => 
     solvedAt: new Date(NOW.getTime() - daysAgo * DAY),
     assisted,
     patternTags: def.patternTags,
+    problem: def,
   };
 };
 
@@ -125,3 +126,53 @@ describe('success moment', () => {
   });
 });
 
+
+describe('reward events and surface on the accomplishment', () => {
+  const demonstrated = (snap: SkillSnapshot, skills: readonly (keyof SkillSnapshot)[]) => {
+    for (const s of skills) snap[s] = { state: 'demonstrated', unaidedSolves: 2, assistedSolves: 0 };
+    return snap;
+  };
+
+  it('a plain solve of mastered skills carries only solved and a quiet surface', () => {
+    const required = skillsRequiredBy({
+      signatureId: 'fn:string->string', patternTags: ['strings'], tier: 'TIER_0', patternFamily: 'FOUNDATIONS',
+    });
+    const before = demonstrated(emptySkillSnapshot(), required);
+    const after = demonstrated(emptySkillSnapshot(), required);
+    const a = deriveAccomplishment(input('shout-the-line', { skillsBefore: before, skillsAfter: after, requiredSkills: required }));
+    assert.deepEqual(a.events?.map((e) => e.kind), ['solved']);
+    assert.equal(a.surface, 'quiet');
+  });
+
+  it('a solve that demonstrates a skill gets the full surface', () => {
+    const required = skillsRequiredBy({
+      signatureId: 'fn:string->string', patternTags: ['strings'], tier: 'TIER_0', patternFamily: 'FOUNDATIONS',
+    });
+    const before = demonstrated(emptySkillSnapshot(), required);
+    const after = demonstrated(emptySkillSnapshot(), required);
+    before.strings = { state: 'practised_with_help', unaidedSolves: 1, assistedSolves: 0 };
+    const a = deriveAccomplishment(input('shout-the-line', { skillsBefore: before, skillsAfter: after, requiredSkills: required }));
+    assert.ok(a.events?.some((e) => e.kind === 'skill_demonstrated'));
+    assert.equal(a.surface, 'full');
+  });
+
+  it('offers a due solved problem as the follow-up, never as the lock', () => {
+    const required = skillsRequiredBy({
+      signatureId: 'fn:string->string', patternTags: ['strings'], tier: 'TIER_0', patternFamily: 'FOUNDATIONS',
+    });
+    const before = demonstrated(emptySkillSnapshot(), required);
+    const after = demonstrated(emptySkillSnapshot(), required);
+    before.strings = { state: 'due_for_review', unaidedSolves: 2, assistedSolves: 0 };
+    after.strings = { state: 'due_for_review', unaidedSolves: 2, assistedSolves: 0 };
+    const a = deriveAccomplishment(
+      input('sum-of-array', {
+        skillsBefore: before,
+        skillsAfter: after,
+        priorSolves: [prior('shout-the-line', 10, false), prior('shout-the-line', 12, false)],
+        fallbackVariation: null,
+      }),
+    );
+    assert.equal(a.variation?.slug, 'shout-the-line');
+    assert.match(a.variation?.why ?? '', /due/i);
+  });
+});

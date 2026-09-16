@@ -5,9 +5,8 @@ import { logger } from '../lib/logger.js';
 import { bucketedPick } from './valueSelection.js';
 import { fitForLearner } from './skills.js';
 import { loadSkillSnapshot } from './skillState.js';
-
-/** Do not serve a problem the user has already seen within this window. */
-const REPEAT_COOLDOWN_DAYS = 21;
+import { excludedFromLocks, loadServedRecords } from './repetition.js';
+import { choosePool, needsRelief, splitPools, type LockOutcome, type Pool } from './stretch.js';
 
 /** How many candidates the weighted pick chooses between. */
 const CANDIDATE_POOL = 25;
@@ -87,6 +86,70 @@ export interface ProblemSelection {
   skillEligible: boolean;
   /** Plain-words account of the fit, from `fitForLearner`. Always present. */
   skillNote: string;
+  /**
+   * Which pool the problem came from: `stretch` needs a skill not yet
+   * demonstrated, `consolidating` needs only demonstrated ones. Null when the
+   * ladder ran out of fair problems. Recorded with the served problem so the
+   * relief rule and the replay can read it back.
+   */
+  pool: Pool | null;
+}
+
+/** How many recent locks the relief rule reads. It only ever needs two. */
+const RELIEF_WINDOW = 2;
+
+/**
+ * The last two locks, newest first, as the relief rule sees them.
+ *
+ * Pool comes from the `PROBLEM_SERVED` detail written at lock time; an older
+ * row with no pool reads as null, which the rule treats as not stretch. The
+ * ending comes from the session state, or from the worked solution having
+ * been opened (a debrief, or a level-5 hint) before the solve.
+ *
+ * Never throws: with no history readable there is no relief, which is the
+ * pre-existing behaviour.
+ */
+async function loadRecentLockOutcomes(userId: string): Promise<LockOutcome[]> {
+  try {
+    const sessions = await prisma.lockSession.findMany({
+      where: { userId, state: { in: ['UNLOCKED', 'BYPASSED', 'ABANDONED'] }, lockedAt: { not: null } },
+      orderBy: { lockedAt: 'desc' },
+      take: RELIEF_WINDOW,
+      select: { id: true, state: true },
+    });
+    if (sessions.length === 0) return [];
+    const events = await prisma.learningEvent.findMany({
+      where: {
+        userId,
+        sessionId: { in: sessions.map((s) => s.id) },
+        kind: { in: ['PROBLEM_SERVED', 'DEBRIEF_OPENED', 'HINT_REVEALED'] },
+      },
+      select: { sessionId: true, kind: true, detail: true },
+    });
+    return sessions.map((session) => {
+      const mine = events.filter((e) => e.sessionId === session.id);
+      const served = mine.filter((e) => e.kind === 'PROBLEM_SERVED').at(-1);
+      const detail = served?.detail;
+      const pool = typeof detail === 'object' && detail !== null && 'pool' in detail ? detail.pool : null;
+      const worked = mine.some(
+        (e) =>
+          e.kind === 'DEBRIEF_OPENED' ||
+          (e.kind === 'HINT_REVEALED' && (e.detail as { level?: number } | null)?.level === 5),
+      );
+      const ending: LockOutcome['ending'] =
+        session.state === 'BYPASSED'
+          ? 'bypassed'
+          : session.state === 'ABANDONED'
+            ? 'abandoned'
+            : worked
+              ? 'worked_solution'
+              : 'solved';
+      return { pool: pool === 'stretch' || pool === 'consolidating' ? pool : null, ending };
+    });
+  } catch (err) {
+    logger.warn({ err, userId }, 'recent lock outcomes unavailable; no relief applied');
+    return [];
+  }
 }
 
 /**
@@ -116,14 +179,16 @@ export async function pickProblem(
   tiers?: Tier[],
   families?: PatternFamily[],
 ): Promise<ProblemSelection> {
-  const since = new Date(Date.now() - REPEAT_COOLDOWN_DAYS * 86_400_000);
+  const snapshot = await loadSkillSnapshot(userId);
 
-  const recent = await prisma.submission.findMany({
-    where: { userId, createdAt: { gte: since } },
-    select: { problemId: true },
-    distinct: ['problemId'],
-  });
-  const seen = recent.map((r) => r.problemId);
+  // What must not come back as a full lock: anything attempted recently, and
+  // anything solved whose skills are all still demonstrated. See
+  // `repetition.ts` for the rule and the history that motivated it.
+  const seen = [...excludedFromLocks(await loadServedRecords(userId), snapshot, new Date())];
+
+  // One consolidating lock after two hard stretch locks. See `stretch.ts`.
+  const relief = needsRelief(await loadRecentLockOutcomes(userId));
+  if (relief) logger.info({ userId }, 'relief due: next lock draws from consolidating');
 
   // `tiers` comes from the progression gate: what this user is ready for, which
   // is a different question from how hard they find things. Omitted only by
@@ -160,11 +225,11 @@ export async function pickProblem(
     );
   }
 
-  const snapshot = await loadSkillSnapshot(userId);
-
   // Problems whose prerequisites this learner has met, from the first rung that
   // offered any. Empty means every rung was exhausted without a fair problem.
   let eligible: Problem[] = [];
+  // Which pool `eligible` was drawn from. Set beside it.
+  let pool: Pool | null = null;
   // The first rung that matched anything at all, fair or not. This is what keeps
   // the lock openable when the gate can be satisfied by nothing in the corpus.
   // A holder rather than a plain variable: the assignment happens inside the
@@ -183,28 +248,37 @@ export async function pickProblem(
    * order: a fair problem at the right tier beats a fair problem six families
    * ahead, and a rung is never relaxed merely because the sample missed the
    * fair problems in it.
+   *
+   * Within the rung the fair rows are split into stretch and consolidating,
+   * and one pool is chosen before sampling. Choosing after sampling would let
+   * a 25-problem sample of mostly-mastered rows decide the pool by accident.
    */
   const rung = async (where: Prisma.ProblemWhereInput): Promise<boolean> => {
     const rows = await candidateRows(where);
     if (rows.length === 0) return false;
     if (fallback.pool === null) fallback.pool = { where, ids: rows.map((row) => row.id) };
 
-    const fair = rows.filter((row) => fitForLearner(row, snapshot).eligible);
-    if (fair.length === 0) return false;
+    const pools = splitPools(rows, snapshot);
+    const chosen = choosePool(
+      { stretch: pools.stretch.length, consolidating: pools.consolidating.length },
+      relief,
+    );
+    if (chosen === null) return false;
 
     eligible = await sampleFrom(
       where,
-      fair.map((row) => row.id),
+      pools[chosen].map((row) => row.id),
     );
+    pool = eligible.length > 0 ? chosen : null;
     return eligible.length > 0;
   };
 
   let served = await rung({ difficulty, isActive: true, ...curriculum, id: { notIn: seen } });
 
-  // Everything at this tier is on cooldown, or nothing uncooled is a fair ask —
+  // Everything at this tier is excluded, or nothing unexcluded is a fair ask —
   // better to repeat than to fail open and leave the device unlockable.
   if (!served) {
-    logger.info({ userId, difficulty }, 'selection relaxed: cooldown dropped');
+    logger.info({ userId, difficulty }, 'selection relaxed: repetition rule dropped');
     served = await rung({ difficulty, isActive: true, ...curriculum });
   }
 
@@ -251,20 +325,20 @@ export async function pickProblem(
     const last = fallback.pool;
     if (last === null) throw ApiError.notFound('No active problems at any difficulty');
 
-    const pool = await sampleFrom(last.where, last.ids);
-    if (pool.length === 0) throw ApiError.notFound('No active problems at any difficulty');
+    const lastRows = await sampleFrom(last.where, last.ids);
+    if (lastRows.length === 0) throw ApiError.notFound('No active problems at any difficulty');
 
-    const problem = bucketedPick(pool);
+    const problem = bucketedPick(lastRows);
     const fit = fitForLearner(problem, snapshot);
     logger.warn(
       { userId, difficulty, slug: problem.slug, reason: fit.reason },
       'no problem matches this learner yet; serving an out-of-depth problem',
     );
-    return { problem, skillEligible: false, skillNote: fit.reason };
+    return { problem, skillEligible: false, skillNote: fit.reason, pool: null };
   }
 
   const problem = bucketedPick(eligible);
-  return { problem, skillEligible: true, skillNote: fitForLearner(problem, snapshot).reason };
+  return { problem, skillEligible: true, skillNote: fitForLearner(problem, snapshot).reason, pool };
 }
 
 /**

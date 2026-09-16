@@ -432,7 +432,7 @@ async function claimDueSession(
   const snapshot = await loadProgressSnapshot(userId);
   const tiers = availableTiers(snapshot);
   const families = availableFamiliesForTiers(snapshot, tiers);
-  const { problem, skillEligible, skillNote } = await pickProblem(
+  const { problem, skillEligible, skillNote, pool } = await pickProblem(
     userId,
     difficulty,
     tiers,
@@ -471,7 +471,10 @@ async function claimDueSession(
     problem,
     // The revision is recorded so the fit note can be matched to this exact
     // assignment later, not merely to the problem.
-    detail: { skillEligible, skillNote, problemRevision: 0 },
+    // The pool is recorded here because it cannot be recomputed later: the
+    // learner's skills move, and "was this a stretch at the time" is the fact
+    // the relief rule and the replay need.
+    detail: { skillEligible, skillNote, problemRevision: 0, pool },
   });
 
   return { session, problem, skillEligible, skillNote };

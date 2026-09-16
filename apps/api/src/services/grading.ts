@@ -8,9 +8,10 @@ import { applyOutcome, type ProgressUpdate } from './difficulty.js';
 import { rearmAfterSession, releaseLock, requireOwnedSession } from './lockSessions.js';
 import { recordCapability } from './capabilities.js';
 import { recordStep } from './learningLog.js';
+import { nearMissImproved } from './tutor/reward.js';
 import { recordSolve } from './retrieval.js';
 import { recordSuccess } from './tutor/successMoment.js';
-import type { Accomplishment } from '@codelock/shared';
+import type { Accomplishment, NearMiss } from '@codelock/shared';
 import {
   bestOfRuns,
   evaluatePerformance,
@@ -54,6 +55,11 @@ export interface GradeResult {
   progress: ProgressUpdate | null;
   /** What an accepted solve achieved. Null when it could not be worked out in time. */
   accomplishment?: Accomplishment | null;
+  /**
+   * A failed attempt that passed more cases than the previous one in this
+   * session. Present only on failures, at most once per problem per session.
+   */
+  nearMiss?: NearMiss | null;
 }
 
 /**
@@ -210,6 +216,12 @@ export async function gradeSubmission(params: {
       where: { id: submission.id },
       data: { status, passedCount, runtimeMs, memoryKb, message, judgeTokens: tokens },
     });
+    // A failed attempt that got further than the last one is the moment the
+    // learner least expects anything, so it is the one worth a sentence. Once
+    // per problem per session; see `reward.ts`.
+    const nearMiss = session
+      ? await findNearMiss(session.id, problem, submission.id, { passedCount, totalCount: results.length })
+      : null;
     // Failures are the part of the history worth keeping. A log that records
     // only solves flatters the reader and teaches them nothing about where the
     // time actually went.
@@ -240,6 +252,7 @@ export async function gradeSubmission(params: {
           })),
         hiddenFailures: caseViews.filter((c) => !c.passed && !c.isSample).length,
         message,
+        nearMiss: nearMiss ? { ...nearMiss } : null,
       },
     });
 
@@ -258,6 +271,7 @@ export async function gradeSubmission(params: {
       accepted: false,
       unlockToken: null,
       progress: null,
+      nearMiss,
     };
   }
 
@@ -553,4 +567,54 @@ function firstMessage(results: CaseResult[]): string | null {
     results.find((r) => r.stderr)?.stderr ??
     null;
   return raw ? raw.slice(0, MAX_MESSAGE_CHARS) : null;
+}
+
+/**
+ * Whether this failed attempt passed more cases than the previous attempt on
+ * the same problem in the same session, unless one has already been
+ * acknowledged there. Never throws: a failure to read history means no
+ * near-miss line, which is the pre-existing behaviour.
+ */
+async function findNearMiss(
+  sessionId: string,
+  problem: { id: string; slug: string },
+  submissionId: string,
+  current: { passedCount: number; totalCount: number },
+): Promise<NearMiss | null> {
+  try {
+    const [previous, acknowledged] = await Promise.all([
+      prisma.submission.findFirst({
+        where: {
+          lockSessionId: sessionId,
+          problemId: problem.id,
+          id: { not: submissionId },
+          status: { not: 'QUEUED' },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { passedCount: true, totalCount: true },
+      }),
+      // Per problem as well as per session: one session can serve several
+      // problems, and an improvement on the one set aside must not silence
+      // the first improvement on the one being solved.
+      //
+      // Read-then-write, not atomic: the acknowledgement is the `ATTEMPT_FAILED`
+      // row the caller records after this returns. Two submissions racing on
+      // one session, or a log write that fails, can let the line show twice.
+      // Accepted for a single-user local tool; the line is information, not
+      // credit, so a rare repeat costs nothing that matters.
+      prisma.learningEvent.findFirst({
+        where: {
+          sessionId,
+          problemSlug: problem.slug,
+          kind: 'ATTEMPT_FAILED',
+          detail: { path: ['nearMiss', 'passed'], gte: 0 },
+        },
+        select: { id: true },
+      }),
+    ]);
+    return nearMissImproved(previous, current, acknowledged !== null);
+  } catch (err) {
+    logger.warn({ err, sessionId }, 'near-miss check unavailable');
+    return null;
+  }
 }

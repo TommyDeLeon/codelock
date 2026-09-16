@@ -201,6 +201,8 @@ export interface GradeResult {
    * `GET /v1/progress/accomplishment/:submissionId`.
    */
   accomplishment?: Accomplishment | null;
+  /** A failed attempt that passed more cases than the previous one. Failures only. */
+  nearMiss?: NearMiss | null;
 }
 
 export interface ProgressUpdate extends Omit<UserProgress, 'promoteAfterFastSolves' | 'demoteAfterFailures'> {
@@ -742,6 +744,38 @@ export interface HintRequestInput {
  */
 export type AccomplishmentKind = 'independent' | 'assisted' | 'worked_solution' | 'recall' | 'transfer';
 
+/**
+ * What a solve, or a failed attempt, showed that the learner could not do
+ * before. Ordered rarest first; `solved` is always last and always present on
+ * an accepted submission. See docs/reward-and-stretch.md.
+ */
+export type RewardEventKind =
+  | 'skill_demonstrated'
+  | 'first_unaided'
+  | 'review_held'
+  | 'near_miss_improved'
+  | 'transfer'
+  | 'recall'
+  | 'solved';
+
+export interface RewardEvent {
+  kind: RewardEventKind;
+  /** The skill concerned, when the event is about one. */
+  skill?: string;
+  /** One plain sentence. Informational, never praise. */
+  note: string;
+}
+
+/** Full: the existing motion and chime. Quiet: headline and one detail, still. */
+export type RewardSurface = 'full' | 'quiet';
+
+/** A failed attempt that passed more cases than the previous one. */
+export interface NearMiss {
+  passed: number;
+  total: number;
+  previousPassed: number;
+}
+
 export interface SkillProgressView {
   skill: string;
   label: string;
@@ -760,10 +794,37 @@ export interface Accomplishment {
   variation: { slug: string; title: string; why: string } | null;
   /** Occasional and dismissible. */
   askFeedback: boolean;
+  /** Rarest first, `solved` last. Older rows may lack this. */
+  events?: RewardEvent[];
+  /** Which success moment to show. Older rows may lack this; treat as full. */
+  surface?: RewardSurface;
+}
+
+/**
+ * Where the learner's edge is. Informational: it names the next skill and
+ * how close it is in words, and shows the first-try pass rate beside the
+ * band the app aims for. Nothing here is a counter or a bar.
+ */
+export interface FrontierView {
+  next: { skill: string; label: string } | null;
+  /** "not met yet" | "practised with help" | "one unaided solve away" | "". */
+  distance: string;
+  /** One sentence about the most recent attempt on the next skill, or null. */
+  lastProved: string | null;
+  passRate: {
+    /** Fraction of recent locks solved on the first submission. Null with no locks. */
+    rate: number | null;
+    /** How many locks the rate is over. */
+    locks: number;
+    /** The band the app aims for, as fractions. */
+    band: [number, number];
+  };
 }
 
 export interface ProgressView {
   skills: SkillProgressView[];
+  /** Absent on older servers. */
+  frontier?: FrontierView;
   recent: Array<{ at: string; title: string; kind: AccomplishmentKind; headline: string }>;
   counts: Record<AccomplishmentKind, number>;
   welcomeBack: string | null;
