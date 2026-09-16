@@ -1525,5 +1525,68 @@
     "batch": "gen-lc-w2-050",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "fibonacci-number": {
+    "ours": "colony-population-growth",
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16"
+  },
+  "final-array-state-after-k-multiplication-operations-i": {
+    "ours": "enhance-weakest-energy-shields",
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16"
+  },
+  "find-a-corresponding-node-of-a-binary-tree-in-a-clone-of-that-tree": {
+    "ours": "locate-the-infected-sector",
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16"
+  },
+  "find-books-with-no-available-copies": {
+    "ours": "identify-missing-supplies",
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16"
+  },
+  "faulty-keyboard": {
+    "ours": "magic-wand-spelling",
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16"
+  },
+  "find-anagram-mappings": {
+    "ours": null,
+    "batch": "gen-lc-w2-051",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-all-numbers-disappeared-in-an-array": {
+    "ours": "missing-product-ids",
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16"
+  },
+  "find-champion-i": {
+    "ours": "find-apex-predator",
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16"
+  },
+  "find-customer-referee": {
+    "ours": "employees-not-reporting-to-manager",
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16"
+  },
+  "find-first-palindromic-string-in-the-array": {
+    "ours": "first-magic-incantation",
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16"
+  },
+  "find-candidates-for-data-scientist-position": {
+    "ours": null,
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-closest-number-to-zero": {
+    "ours": null,
+    "batch": "gen-lc-w1-051",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
