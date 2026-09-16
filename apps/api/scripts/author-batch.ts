@@ -50,7 +50,7 @@
  * Needs the judge reachable at JUDGE0_URL and the `agy` CLI on PATH.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Difficulty, PatternFamily, Tier } from '@prisma/client';
@@ -782,7 +782,21 @@ function geminiReview(accepted: Draft[]): string {
 // Emit
 // ---------------------------------------------------------------------------
 
-const constName = `${out.replace(/^gen-/, 'gen_').replace(/-/g, '_').toUpperCase()}_PROBLEMS`;
+/**
+ * A batch never overwrites an earlier batch's file. Two runs can share a
+ * number (a restarted worker, two fleets), and the second would silently
+ * erase the first's problems while the ledger still pointed at them. It
+ * happened once; now the second takes a suffixed name.
+ */
+const outName = (() => {
+  let name = out;
+  for (const suffix of ['', '-b', '-c', '-d', '-e', '-f']) {
+    name = `${out}${suffix}`;
+    if (!existsSync(join('src', 'corpus', 'problems', `${name}.ts`))) return name;
+  }
+  throw new Error(`too many batches named ${out}`);
+})();
+const constName = `${outName.replace(/^gen-/, 'gen_').replace(/-/g, '_').toUpperCase()}_PROBLEMS`;
 
 function emit(accepted: Draft[]): void {
   const body = accepted
@@ -832,7 +846,7 @@ export const ${constName}: ProblemDefinition[] = [
 ${body}
 ];
 `;
-  const path = join('src', 'corpus', 'problems', `${out}.ts`);
+  const path = join('src', 'corpus', 'problems', `${outName}.ts`);
   writeFileSync(path, file);
 
   const indexPath = join('src', 'corpus', 'problems', 'index.ts');
@@ -840,7 +854,7 @@ ${body}
   if (!index.includes(constName)) {
     index = index.replace(
       "import type { ProblemDefinition } from '../problem.js';\n",
-      `import type { ProblemDefinition } from '../problem.js';\nimport { ${constName} } from './${out}.js';\n`,
+      `import type { ProblemDefinition } from '../problem.js';\nimport { ${constName} } from './${outName}.js';\n`,
     );
     index = index.replace(
       'export const ALL_PROBLEMS: ProblemDefinition[] = [\n',
