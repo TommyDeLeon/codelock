@@ -974,6 +974,7 @@ async function main() {
     if (codex.startsWith('SKIPPED')) console.log(`    ${codex}`);
     console.log(`  asking ${reviewModel} to review alongside Codex ...`);
     const second = geminiReview(accepted);
+    if (second.startsWith('SKIPPED')) console.log(`    ${second.slice(0, 240)}`);
     const both = [codex.startsWith('SKIPPED') ? '' : codex, second.startsWith('SKIPPED') ? '' : `(${reviewModel} reviewer)\n${second}`]
       .filter(Boolean)
       .join('\n');
