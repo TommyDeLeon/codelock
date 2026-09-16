@@ -1679,5 +1679,36 @@
     "ours": "intersecting-fleet-registries",
     "batch": "gen-lc-w2-052",
     "date": "2026-09-16"
+  },
+  "find-smallest-letter-greater-than-target": {
+    "ours": "next-available-docking-bay",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-the-child-who-has-the-ball-after-k-seconds": {
+    "ours": "locate-wandering-maintenance-robot",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-mode-in-binary-search-tree": {
+    "ours": "most-frequent-cargo-types",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-numbers-with-even-number-of-digits": {
+    "ours": "count-even-length-serial-codes",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-resultant-array-after-removing-anagrams": {
+    "ours": "filter-redundant-encrypted-messages",
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16"
+  },
+  "find-nearest-point-that-has-the-same-x-or-y-coordinate": {
+    "ours": null,
+    "batch": "gen-lc-w1-053",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
