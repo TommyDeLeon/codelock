@@ -479,5 +479,159 @@
     "batch": "gen-lc-019",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "check-if-any-element-has-prime-frequency": {
+    "ours": "detect-suspicious-artifacts",
+    "batch": "gen-lc-020",
+    "date": "2026-09-16"
+  },
+  "check-if-array-is-good": {
+    "ours": "validate-building-block-set",
+    "batch": "gen-lc-020",
+    "date": "2026-09-16"
+  },
+  "check-if-array-is-sorted-and-rotated": {
+    "ours": "verify-cyclic-pressure-log",
+    "batch": "gen-lc-020",
+    "date": "2026-09-16"
+  },
+  "check-if-a-word-occurs-as-a-prefix-of-any-word-in-a-sentence": {
+    "ours": "find-first-matching-broadcast",
+    "batch": "gen-lc-020",
+    "date": "2026-09-16"
+  },
+  "check-if-a-number-is-majority-element-in-a-sorted-array": {
+    "ours": null,
+    "batch": "gen-lc-020",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "check-if-all-1s-are-at-least-length-k-places-away": {
+    "ours": null,
+    "batch": "gen-lc-020",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "check-if-binary-string-has-at-most-one-segment-of-ones": {
+    "ours": "single-work-block",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-bitwise-or-has-trailing-zeros": {
+    "ours": "even-weight-containers",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-grid-satisfies-conditions": {
+    "ours": "optimal-crop-layout",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-it-is-a-straight-line": {
+    "ours": "comet-linear-trajectory",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-digits-are-equal-in-string-after-operations-i": {
+    "ours": "secure-code-reduction",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-every-row-and-column-contains-all-numbers": {
+    "ours": "perfect-mosaic-design",
+    "batch": "gen-lc-021",
+    "date": "2026-09-16"
+  },
+  "check-if-matrix-is-x-matrix": {
+    "ours": "verify-cross-star-system",
+    "batch": "gen-lc-022",
+    "date": "2026-09-16"
+  },
+  "check-if-n-and-its-double-exist": {
+    "ours": "fleet-double-speed",
+    "batch": "gen-lc-022",
+    "date": "2026-09-16"
+  },
+  "check-if-number-has-equal-digit-count-and-digit-value": {
+    "ours": "valid-robotic-inventory",
+    "batch": "gen-lc-022",
+    "date": "2026-09-16"
+  },
+  "check-if-numbers-are-ascending-in-a-sentence": {
+    "ours": "ascending-temperature-log",
+    "batch": "gen-lc-022",
+    "date": "2026-09-16"
+  },
+  "check-if-one-string-swap-can-make-strings-equal": {
+    "ours": null,
+    "batch": "gen-lc-022",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "check-if-string-is-a-prefix-of-array": {
+    "ours": null,
+    "batch": "gen-lc-022",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "check-if-strings-can-be-made-equal-with-operations-i": {
+    "ours": "verify-parallel-schematics",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-the-sentence-is-pangram": {
+    "ours": "all-frequencies-active",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-two-chessboard-squares-have-the-same-color": {
+    "ours": "farm-grid-tractors",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-string-is-decomposable-into-value-equal-substrings": {
+    "ours": "valid-drone-formations",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-the-number-is-fascinating": {
+    "ours": "verify-tripartite-code",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-two-string-arrays-are-equivalent": {
+    "ours": "verify-fragmented-logs",
+    "batch": "gen-lc-023",
+    "date": "2026-09-16"
+  },
+  "check-if-word-equals-summation-of-two-words": {
+    "ours": "sum-of-runic-values",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
+  },
+  "check-whether-two-strings-are-almost-equivalent": {
+    "ours": "compare-flora-samples",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
+  },
+  "chunk-array": {
+    "ours": "batch-data-sums",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
+  },
+  "circular-sentence": {
+    "ours": "verify-trade-route",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
+  },
+  "classes-with-at-least-5-students": {
+    "ours": "active-guilds",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
+  },
+  "classifying-triangles-by-lengths": {
+    "ours": "identify-star-systems",
+    "batch": "gen-lc-024",
+    "date": "2026-09-16"
   }
 }
