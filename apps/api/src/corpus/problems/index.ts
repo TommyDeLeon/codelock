@@ -1,4 +1,11 @@
 import type { ProblemDefinition } from '../problem.js';
+import { GEN_LC_009_PROBLEMS } from './gen-lc-009.js';
+import { GEN_LC_007_PROBLEMS } from './gen-lc-007.js';
+import { GEN_LC_006_PROBLEMS } from './gen-lc-006.js';
+import { GEN_LC_005_PROBLEMS } from './gen-lc-005.js';
+import { GEN_LC_003_PROBLEMS } from './gen-lc-003.js';
+import { GEN_LC_002_PROBLEMS } from './gen-lc-002.js';
+import { GEN_LC_001_PROBLEMS } from './gen-lc-001.js';
 import { GEN_T1_ARRAYS_HASHING_A_PROBLEMS } from './gen-t1-arrays-hashing-a.js';
 import { TIER_0_PROBLEMS } from './tier0.js';
 import { TIER_0B_PROBLEMS } from './tier0b.js';
@@ -74,6 +81,13 @@ import { TIER_3_STRINGS_BREADTH_PROBLEMS } from './tier3-strings-breadth.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
 export const ALL_PROBLEMS: ProblemDefinition[] = [
+  ...GEN_LC_009_PROBLEMS,
+  ...GEN_LC_007_PROBLEMS,
+  ...GEN_LC_006_PROBLEMS,
+  ...GEN_LC_005_PROBLEMS,
+  ...GEN_LC_003_PROBLEMS,
+  ...GEN_LC_002_PROBLEMS,
+  ...GEN_LC_001_PROBLEMS,
   ...GEN_T1_ARRAYS_HASHING_A_PROBLEMS,
   ...TIER_0_PROBLEMS,
   ...TIER_0B_PROBLEMS,

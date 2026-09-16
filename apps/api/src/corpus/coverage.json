@@ -1,0 +1,244 @@
+{
+  "1-bit-and-2-bit-characters": {
+    "ours": "final-message-packet-type",
+    "batch": "gen-lc-001",
+    "date": "2026-09-16"
+  },
+  "a-number-after-a-double-reversal": {
+    "ours": "valid-reversible-barcode",
+    "batch": "gen-lc-001",
+    "date": "2026-09-16"
+  },
+  "account-balance-after-rounded-purchase": {
+    "ours": "loyalty-balance-after-purchase",
+    "batch": "gen-lc-001",
+    "date": "2026-09-16"
+  },
+  "actors-and-directors-who-cooperated-at-least-three-times": {
+    "ours": "frequent-collaborator-pairs",
+    "batch": "gen-lc-001",
+    "date": "2026-09-16"
+  },
+  "ad-free-sessions": {
+    "ours": "undisturbed-gaming-sessions",
+    "batch": "gen-lc-001",
+    "date": "2026-09-16"
+  },
+  "absolute-difference-between-maximum-and-minimum-k-elements": {
+    "ours": "team-wage-gap",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "add-binary": {
+    "ours": "combine-access-codes",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "add-digits": {
+    "ours": "lucky-number-reduction",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "add-strings": {
+    "ours": "large-payload-sum",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "add-to-array-form-of-integer": {
+    "ours": "boost-sensor-readings",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "add-two-integers": {
+    "ours": "net-balance-change",
+    "batch": "gen-lc-002",
+    "date": "2026-09-16"
+  },
+  "all-the-matches-of-the-league": {
+    "ours": "tournament-matchups",
+    "batch": "gen-lc-003",
+    "date": "2026-09-16"
+  },
+  "all-valid-triplets-that-can-represent-a-country": {
+    "ours": "count-ascending-trios",
+    "batch": "gen-lc-003",
+    "date": "2026-09-16"
+  },
+  "allow-one-function-call": {
+    "ours": "single-execution-policy",
+    "batch": "gen-lc-003",
+    "date": "2026-09-16"
+  },
+  "add-two-promises": {
+    "ours": null,
+    "batch": "gen-lc-003",
+    "date": "2026-09-16",
+    "reason": "rejected: JavaScript-only or SQL problem, no six-language function shape"
+  },
+  "ads-performance": {
+    "ours": null,
+    "batch": "gen-lc-003",
+    "date": "2026-09-16",
+    "reason": "rejected: JavaScript-only or SQL problem, no six-language function shape"
+  },
+  "alternating-digit-sum": {
+    "ours": "oscillating-power-levels",
+    "batch": "gen-lc-005",
+    "date": "2026-09-16"
+  },
+  "ant-on-the-boundary": {
+    "ours": "drone-base-returns",
+    "batch": "gen-lc-005",
+    "date": "2026-09-16"
+  },
+  "apply-operations-to-an-array": {
+    "ours": "combine-slimes",
+    "batch": "gen-lc-005",
+    "date": "2026-09-16"
+  },
+  "alternating-groups-i": {
+    "ours": "alternating-work-shifts",
+    "batch": "gen-lc-005",
+    "date": "2026-09-16"
+  },
+  "adjacent-increasing-subarrays-detection-i": {
+    "ours": null,
+    "batch": "gen-lc-005",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "apple-redistribution-into-boxes": {
+    "ours": null,
+    "batch": "gen-lc-005",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "apply-transform-over-each-element-in-array": {
+    "ours": "boost-signal-amplitudes",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "armstrong-number": {
+    "ours": "magical-artifact-authentication",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "arranging-coins": {
+    "ours": "pyramid-block-stacking",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "array-partition": {
+    "ours": "forming-scout-teams",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "array-prototype-foreach": {
+    "ours": "apply-account-deltas",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "array-prototype-last": {
+    "ours": "latest-data-point",
+    "batch": "gen-lc-006",
+    "date": "2026-09-16"
+  },
+  "array-reduce-transformation": {
+    "ours": "signal-attenuation-result",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "array-transformation": {
+    "ours": "score-multiplier-scaling",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "array-upper-bound": {
+    "ours": "first-oversized-package",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "array-wrapper": {
+    "ours": "packet-total-checksum",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "article-views-i": {
+    "ours": "self-reviewing-developers",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "assign-cookies": {
+    "ours": "quest-player-matching",
+    "batch": "gen-lc-007",
+    "date": "2026-09-16"
+  },
+  "available-captures-for-rook": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "average-of-levels-in-binary-tree": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "average-salary-excluding-the-minimum-and-maximum-salary": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "average-selling-price": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "average-time-of-process-per-machine": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "average-value-of-even-numbers-that-are-divisible-by-three": {
+    "ours": null,
+    "batch": "gen-lc-008",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "bank-account-summary-ii": {
+    "ours": "vip-customer-rewards",
+    "batch": "gen-lc-009",
+    "date": "2026-09-16"
+  },
+  "base-7": {
+    "ours": "quinary-number-encoding",
+    "batch": "gen-lc-009",
+    "date": "2026-09-16"
+  },
+  "baseball-game": {
+    "ours": "potion-mixing-scores",
+    "batch": "gen-lc-009",
+    "date": "2026-09-16"
+  },
+  "best-poker-hand": {
+    "ours": "monster-squad-tier",
+    "batch": "gen-lc-009",
+    "date": "2026-09-16"
+  },
+  "backspace-string-compare": {
+    "ours": null,
+    "batch": "gen-lc-009",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "balanced-binary-tree": {
+    "ours": null,
+    "batch": "gen-lc-009",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  }
+}
