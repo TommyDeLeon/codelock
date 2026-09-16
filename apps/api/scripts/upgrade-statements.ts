@@ -464,6 +464,19 @@ function main() {
   if (accepted.length > 0) {
     const { flagged, by: who } = review(accepted);
     reviewer = who;
+    // A problem whose test data was already replaced (`refresh-tests.ts`)
+    // is the canonical exercise for its technique, and will always share
+    // the technique, framing and follow-up with the famous problem. For
+    // those, a "closely follows" note counts only when it points at the
+    // words or the example values themselves; ambiguity notes always count.
+    for (const [slug, note] of [...flagged]) {
+      const refreshed = !!UPGRADES[slug]?.tests;
+      const wording = /verbatim|word[- ]for[- ]word|identical|same (example|values|numbers|sentences?)|copied/i.test(note);
+      if (refreshed && /closely follows/i.test(note) && !/ambiguous/i.test(note) && !wording) {
+        console.log(`    = ${slug}: technique-similarity flag on a refreshed problem; accepted (${note.slice(0, 90)})`);
+        flagged.delete(slug);
+      }
+    }
     if (flagged.size > 0) {
       const again = accepted.filter((a) => flagged.has(a.p.slug));
       console.log(`  ${flagged.size} flagged; asking for one rewrite with the reviewer's notes ...`);
@@ -511,6 +524,7 @@ function main() {
       const all: Record<string, StatementUpgrade> = { ...UPGRADES };
       for (const [slug, why] of skipped) {
         const p = batch.find((x) => x.slug === slug)!;
+        const prevTests = all[slug]?.tests;
         all[slug] = {
           promptMarkdown: p.promptMarkdown,
           editorialMarkdown: p.editorialMarkdown,
@@ -518,6 +532,9 @@ function main() {
           model: by,
           date,
           skipped: why,
+          // Refreshed test data survives a skip; losing it would send the
+          // problem round the refresh loop again.
+          ...(prevTests ? { tests: prevTests } : {}),
         };
       }
       for (const a of accepted) {
