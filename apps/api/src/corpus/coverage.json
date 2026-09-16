@@ -1710,5 +1710,35 @@
     "batch": "gen-lc-w1-053",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "find-latest-salaries": {
+    "ours": "peak-server-loads",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
+  },
+  "find-minimum-operations-to-make-all-elements-divisible-by-three": {
+    "ours": "drone-platoon-alignments",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
+  },
+  "find-missing-and-repeated-values": {
+    "ours": "blueprint-page-recovery",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
+  },
+  "find-products-with-valid-serial-numbers": {
+    "ours": "validate-container-labels",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
+  },
+  "find-subsequence-of-length-k-with-the-largest-sum": {
+    "ours": "select-elite-operatives",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
+  },
+  "find-most-frequent-vowel-and-consonant": {
+    "ours": "extraterrestrial-signal-frequencies",
+    "batch": "gen-lc-w0-052",
+    "date": "2026-09-16"
   }
 }
