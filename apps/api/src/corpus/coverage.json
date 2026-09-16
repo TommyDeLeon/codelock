@@ -362,5 +362,122 @@
     "batch": "gen-lc-014",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "button-with-longest-push-time": {
+    "ours": "longest-diagnostic-phase",
+    "batch": "gen-lc-015",
+    "date": "2026-09-16"
+  },
+  "calculate-amount-paid-in-taxes": {
+    "ours": "compute-bandwidth-cost",
+    "batch": "gen-lc-015",
+    "date": "2026-09-16"
+  },
+  "calculate-compressed-mean": {
+    "ours": "determine-average-signal-strength",
+    "batch": "gen-lc-015",
+    "date": "2026-09-16"
+  },
+  "calculate-delayed-arrival-time": {
+    "ours": "dial-lock-final-position",
+    "batch": "gen-lc-015",
+    "date": "2026-09-16"
+  },
+  "build-array-from-permutation": {
+    "ours": "find-grand-mentors",
+    "batch": "gen-lc-015",
+    "date": "2026-09-16"
+  },
+  "buy-two-chocolates": {
+    "ours": null,
+    "batch": "gen-lc-015",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "capitalize-the-title": {
+    "ours": "normalize-planet-names",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "categorize-box-according-to-criteria": {
+    "ours": "classify-cargo-crate",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "cells-in-a-range-on-an-excel-sheet": {
+    "ours": "expand-seat-range",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "cells-with-odd-values-in-a-matrix": {
+    "ours": "active-sensor-count",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "change-data-type": {
+    "ours": "truncate-decimal-strings",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "check-adjacent-digit-differences": {
+    "ours": "check-step-code",
+    "batch": "gen-lc-016",
+    "date": "2026-09-16"
+  },
+  "check-balanced-string": {
+    "ours": "balanced-cargo-weights",
+    "batch": "gen-lc-017",
+    "date": "2026-09-16"
+  },
+  "check-good-integer": {
+    "ours": "flagged-serial-numbers",
+    "batch": "gen-lc-017",
+    "date": "2026-09-16"
+  },
+  "check-if-a-string-is-an-acronym-of-words": {
+    "ours": "verify-system-acronym",
+    "batch": "gen-lc-018",
+    "date": "2026-09-16"
+  },
+  "check-if-all-as-appears-before-all-bs": {
+    "ours": "validate-assembly-order",
+    "batch": "gen-lc-018",
+    "date": "2026-09-16"
+  },
+  "check-if-all-characters-have-equal-number-of-occurrences": {
+    "ours": "balanced-server-load",
+    "batch": "gen-lc-018",
+    "date": "2026-09-16"
+  },
+  "check-ascii-palindromic": {
+    "ours": "verify-symmetric-waveform",
+    "batch": "gen-lc-019",
+    "date": "2026-09-16"
+  },
+  "check-divisibility-by-digit-sum-and-product": {
+    "ours": "verify-core-frequency",
+    "batch": "gen-lc-019",
+    "date": "2026-09-16"
+  },
+  "check-if-all-the-integers-in-a-range-are-covered": {
+    "ours": "planetary-shield-coverage",
+    "batch": "gen-lc-019",
+    "date": "2026-09-16"
+  },
+  "check-if-an-array-is-consecutive": {
+    "ours": "verify-assembly-sequence",
+    "batch": "gen-lc-019",
+    "date": "2026-09-16"
+  },
+  "check-distances-between-same-letters": {
+    "ours": "validate-sensor-intervals",
+    "batch": "gen-lc-019",
+    "date": "2026-09-16"
+  },
+  "check-array-formation-through-concatenation": {
+    "ours": null,
+    "batch": "gen-lc-019",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
