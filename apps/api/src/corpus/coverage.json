@@ -1373,5 +1373,66 @@
     "batch": "gen-lc-w1-049",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "distribute-money-to-maximum-children": {
+    "ours": "allocate-vm-memory",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "divide-an-array-into-subarrays-with-minimum-cost-i": {
+    "ours": "split-journey-cost",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "divide-array-into-equal-pairs": {
+    "ours": "identical-shoe-pairs",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "divisible-and-non-divisible-sums-difference": {
+    "ours": "alien-game-score",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "divisor-game": {
+    "ours": "alchemist-transmutation",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "divide-a-string-into-groups-of-size-k": {
+    "ours": "format-identification-code",
+    "batch": "gen-lc-w2-049",
+    "date": "2026-09-16"
+  },
+  "duplicate-zeros": {
+    "ours": "stuttering-audio-sensor",
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16"
+  },
+  "employee-bonus": {
+    "ours": "high-performing-workers",
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16"
+  },
+  "drop-missing-data": {
+    "ours": "filter-corrupted-readings",
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16"
+  },
+  "elevator-requests-i": {
+    "ours": "drone-delivery-distance",
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16"
+  },
+  "evaluate-boolean-binary-tree": {
+    "ours": "evaluate-logic-circuit",
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16"
+  },
+  "earliest-finish-time-for-land-and-water-rides-i": {
+    "ours": null,
+    "batch": "gen-lc-w0-049",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
