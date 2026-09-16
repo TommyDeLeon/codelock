@@ -1,7 +1,8 @@
 /**
  * Rewritten statements and editorials for hand-authored problems, keyed by
- * slug. Generated and extended by `scripts/upgrade-statements.ts`; applied
- * by `upgrade.ts`. Do not edit by hand — rerun the script.
+ * slug. Generated and extended by `scripts/upgrade-statements.ts` and
+ * `scripts/refresh-tests.ts`; applied by `upgrade.ts`. Do not edit by
+ * hand — rerun the scripts.
  */
 export interface StatementUpgrade {
   promptMarkdown: string;
@@ -756,7 +757,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows the classic FizzBuzz problem statement, with only a manufacturing-line narrative wrapper added around the identical divisibility rules and outpu"
+    "tests": [
+      {
+        "stdin": "2",
+        "expectedStdout": "1 2",
+        "isSample": true
+      },
+      {
+        "stdin": "4",
+        "expectedStdout": "1 2 Fizz 4",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "6",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz"
+      },
+      {
+        "stdin": "7",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7"
+      },
+      {
+        "stdin": "8",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7 8"
+      },
+      {
+        "stdin": "10",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz"
+      },
+      {
+        "stdin": "20",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz 16 17 Fizz 19 Buzz"
+      },
+      {
+        "stdin": "30",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz 16 17 Fizz 19 Buzz Fizz 22 23 Fizz Buzz 26 Fizz 28 29 FizzBuzz"
+      },
+      {
+        "stdin": "40",
+        "expectedStdout": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz 16 17 Fizz 19 Buzz Fizz 22 23 Fizz Buzz 26 Fizz 28 29 FizzBuzz 31 32 Fizz 34 Buzz Fizz 37 38 Fizz Buzz"
+      }
+    ]
   },
   "graph-bfs-ascending-order": {
     "promptMarkdown": "Design a directed adjacency-list graph and implement both breadth-first and depth-first search traversals. You must build the adjacency structure yourself without wrapping a built-in graph implementation.\n\nImplement the `Graph` class:\n- `Graph(int n)` Initializes a directed graph with `n` vertices, numbered `0` to `n - 1`.\n- `void addEdge(int u, int v)` Adds a directed edge from vertex `u` to vertex `v`. If the edge already exists, do nothing.\n- `int[] neighbors(int u)` Returns a list of outgoing neighbors for vertex `u` in ascending vertex order.\n- `int[] bfs(int source)` Returns a list of reachable vertices in breadth-first discovery order, starting with the `source` vertex. When multiple neighbors are discovered, they must be visited in ascending vertex order regardless of the order edges were added.\n- `int[] dfs(int source)` Returns a list of reachable vertices in depth-first preorder discovery, starting with the `source` vertex. Like BFS, neighbors must be explored in ascending vertex order.\n\nFor the operation log, the constructor and void methods should output `null`. Methods that return a list should output the space-separated elements on a single line (an empty list outputs an empty line).\n\n**Constraints**\n- `1 <= Number of operations <= 1000`\n- `1 <= n <= 1000`\n- `0 <= u, v, source < n`\n\n**Example 1**\n```\ninput:\n9\nGraph 6\naddEdge 0 2\naddEdge 0 1\naddEdge 1 4\naddEdge 2 3\naddEdge 2 5\nbfs 0\nneighbors 0\ndfs 0\noutput:\nnull\nnull\nnull\nnull\nnull\nnull\n0 1 2 4 3 5\n1 2\n0 1 4 2 3 5\n```\nNodes are explored starting from 0. Note how neighbors are always visited in ascending order (e.g., 0 visits 1 then 2).\n\n**Example 2**\n```\ninput:\n4\nGraph 4\nbfs 2\nneighbors 2\ndfs 2\noutput:\nnull\n2\n\n2\n```\nA graph with no edges, showing that traversals from isolated vertices return just the source itself, and `neighbors` returns an empty list.\n\n**Example 3**\n```\ninput:\n8\nGraph 5\naddEdge 0 1\naddEdge 0 2\naddEdge 1 3\naddEdge 2 3\naddEdge 3 4\nbfs 0\nbfs 4\noutput:\nnull\nnull\nnull\nnull\nnull\nnull\n0 1 2 3 4\n4\n```\nA graph with converging paths. Notice that BFS does not visit vertex 3 twice.\n\n**Follow-up:** What data structure guarantees that your BFS correctly processes nodes layer by layer?",
@@ -822,7 +866,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 217, Contains Duplicate](https://leetcode.com/problems/contains-duplicate/): the sentence specifying true for repeated IDs and false w"
+    "tests": [
+      {
+        "stdin": "10 20 30 10",
+        "expectedStdout": "true",
+        "isSample": true
+      },
+      {
+        "stdin": "5 6 7 8",
+        "expectedStdout": "false",
+        "isSample": true
+      },
+      {
+        "stdin": "100",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "0 0",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "-5 -5",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "1 1 1 1 1",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "-10 0 10 20 30",
+        "expectedStdout": "false"
+      },
+      {
+        "stdin": "999 888 777 666 999",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 1",
+        "expectedStdout": "true"
+      },
+      {
+        "stdin": "1000 -1000 500 -500 0",
+        "expectedStdout": "false"
+      }
+    ]
   },
   "hash-map-delete-probe-chain": {
     "promptMarkdown": "Design a custom dictionary structure utilizing open addressing. You are not permitted to use any standard library map or dictionary classes.\n\nYour structure, `HashMap`, must map integer keys to integer values. When collisions occur, resolve them by scanning forward one index at a time (linear probing). \n\nYou must implement a `remove(key)` method that carefully removes a key without breaking the contiguous cluster of elements. If another key was displaced during insertion and sits after the removed key, it must still be discoverable by future lookups. You can achieve this by leaving a tombstone marker or by shifting subsequent colliding elements backward. \n\nThe `get(key)` method retrieves the value associated with a key, yielding `-1` only if the key is genuinely absent. You will also provide `put(key, value)`, `containsKey(key)`, and `size()` to report the number of active entries.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\n**Constraints**\n- Keys and values are non-negative integers.\n- The map will not exceed its predefined internal capacity.\n\n**Example 1**\n```\ninput:\n9\nHashMap\nput 1 10\nput 18 20\nput 35 30\nremove 18\nget 35\nget 1\ncontainsKey 18\nsize\noutput:\nnull\nnull\nnull\nnull\nnull\n30\n10\nfalse\n2\n```\nKeys 1, 18, and 35 all hash to the same slot modulo 17, and deleting 18 does not prevent finding 35.\n\n**Example 2**\n```\ninput:\n10\nHashMap\nput 0 1\nput 17 2\nput 34 3\nremove 0\nget 17\nget 34\nput 51 4\nget 51\nsize\noutput:\nnull\nnull\nnull\nnull\nnull\n2\n3\nnull\n4\n3\n```\nAfter removing the head of a collision chain, the remaining elements are still intact and new elements can be appended.\n\n**Follow-up:** How does your deletion strategy affect the average search time as elements are repeatedly added and removed?",
@@ -1155,7 +1242,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 146](https://leetcode.com/problems/lru-cache/description/): the positive-capacity constructor sentence, key-exists/otherwise-`-1` retr"
+    "tests": [
+      {
+        "stdin": "5\nLRUCache 1\nput 10 100\nget 10\nput 20 200\nget 10",
+        "expectedStdout": "null\nnull\n100\nnull\n-1",
+        "isSample": true
+      },
+      {
+        "stdin": "6\nLRUCache 2\nput 5 50\nput 6 60\nget 5\nget 6",
+        "expectedStdout": "null\nnull\nnull\n50\n60\nnull",
+        "isSample": true
+      },
+      {
+        "stdin": "6\nLRUCache 0\nput 10 100\nget 10\nput 20 200\nget 20\nget 10",
+        "expectedStdout": "null\nnull\n-1\nnull\n-1\n-1"
+      },
+      {
+        "stdin": "8\nLRUCache 3\nput 1 10\nput 2 20\nput 3 30\nput 4 40\nget 1\nget 2\nget 3",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\n-1\n20\n30"
+      },
+      {
+        "stdin": "10\nLRUCache 2\nput 1 1\nput 2 2\nget 1\nput 3 3\nget 2\nput 4 4\nget 1\nget 3\nget 4",
+        "expectedStdout": "null\nnull\nnull\n1\nnull\n-1\nnull\n-1\n3\n4"
+      },
+      {
+        "stdin": "7\nLRUCache 2\nput 1 10\nput 1 20\nget 1\nput 2 30\nput 3 40\nget 1",
+        "expectedStdout": "null\nnull\nnull\n20\nnull\nnull\n-1"
+      },
+      {
+        "stdin": "4\nLRUCache 2\nget 99\nget 100",
+        "expectedStdout": "null\n-1\n-1\nnull"
+      },
+      {
+        "stdin": "12\nLRUCache 2\nput 1 1\nput 2 2\nput 3 3\nput 4 4\nput 5 5\nget 1\nget 2\nget 3\nget 4\nget 5\nput 5 55",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\nnull\n-1\n-1\n-1\n4\n5\nnull"
+      },
+      {
+        "stdin": "9\nLRUCache 1\nput 1 10\nget 1\nput 1 100\nget 1\nput 2 20\nget 1\nget 2",
+        "expectedStdout": "null\nnull\n10\nnull\n100\nnull\n-1\n20\nnull"
+      },
+      {
+        "stdin": "22\nLRUCache 4\nput 1 10\nput 2 20\nput 3 30\nput 4 40\nget 1\nput 5 50\nget 2\nget 3\nget 4\nget 5\nput 6 60\nput 7 70\nget 1\nget 3\nget 4\nget 5\nget 6\nget 7\nput 8 80\nget 4",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\n10\nnull\n-1\n30\n40\n50\nnull\nnull\n-1\n-1\n40\n50\n60\n70\nnull\n-1\nnull"
+      }
+    ]
   },
   "lru-cache-get-promotes": {
     "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nImplement `LRUCache(capacity)` for traces where `get` must PROMOTE a key to most recently used. `get` returns `-1` for a missing key. Updating an existing key also promotes it; a new key beyond capacity evicts the least recently used key.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nA missing key read by `get` returns `-1`.",
@@ -1163,7 +1293,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 146, LRU Cache](https://leetcode.com/problems/lru-cache/) in the constructor description and the put wording about updating an existin"
+    "tests": [
+      {
+        "stdin": "5\nLRUCache 2\nput 10 100\nput 20 200\nget 10\nget 30",
+        "expectedStdout": "null\nnull\nnull\n100\n-1",
+        "isSample": true
+      },
+      {
+        "stdin": "6\nLRUCache 1\nput 1 1\nput 2 2\nget 1\nget 2\nput 3 3",
+        "expectedStdout": "null\nnull\nnull\n-1\n2\nnull",
+        "isSample": true
+      },
+      {
+        "stdin": "2\nLRUCache 1\nget 1",
+        "expectedStdout": "null\n-1"
+      },
+      {
+        "stdin": "4\nLRUCache 2\nget 1\nget 2\nget 3",
+        "expectedStdout": "null\n-1\n-1\n-1"
+      },
+      {
+        "stdin": "6\nLRUCache 2\nput 5 50\nput 5 55\nget 5\nput 5 60\nget 5",
+        "expectedStdout": "null\nnull\nnull\n55\nnull\n60"
+      },
+      {
+        "stdin": "5\nLRUCache 2\nput -1 -10\nput -2 -20\nget -1\nget -2",
+        "expectedStdout": "null\nnull\nnull\n-10\n-20"
+      },
+      {
+        "stdin": "8\nLRUCache 3\nput 1 10\nput 2 20\nput 3 30\nput 4 40\nget 1\nget 2\nget 3",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\n-1\n20\n30"
+      },
+      {
+        "stdin": "4\nLRUCache 1\nput 1 0\nget 1\nget 2",
+        "expectedStdout": "null\nnull\n0\n-1"
+      },
+      {
+        "stdin": "9\nLRUCache 2\nput 1 10\nput 2 20\nget 1\nput 3 30\nget 2\nget 1\nget 3\nput 4 40",
+        "expectedStdout": "null\nnull\nnull\n10\nnull\n-1\n10\n30\nnull"
+      },
+      {
+        "stdin": "15\nLRUCache 3\nput 1 1\nput 2 2\nput 3 3\nget 1\nput 4 4\nget 2\nget 3\nget 4\nget 1\nput 5 5\nput 1 10\nget 1\nget 2\nget 3\nget 5",
+        "expectedStdout": "null\nnull\nnull\nnull\n1\nnull\n-1\n3\n4\n1\nnull\nnull\n10\n-1\n-1"
+      }
+    ]
   },
   "majority-element": {
     "promptMarkdown": "## The Majority Element\n\nYou are given a non-empty list of integers. One value is guaranteed to appear in **more than half** of the positions. Return that value.\n\n**Constraints**\n\n- 1 ≤ length of list ≤ 50 000\n- Values fit in a 32-bit signed integer\n- Exactly one value occupies more than half the positions; this is guaranteed\n\n**Example 1**\n\n```\ninput:\n3 2 3\noutput: 3\n```\n\n`3` appears twice out of three positions, which is more than half.\n\n**Example 2**\n\n```\ninput:\n2 2 1 1 1 2 2\noutput: 2\n```\n\n`2` appears four times out of seven.\n\n**Example 3**\n\n```\ninput:\n5\noutput: 5\n```\n\nA single-element list: the only element is trivially the majority.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) extra space, without a hash map?",
@@ -1345,7 +1518,46 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode"
+    "tests": [
+      {
+        "stdin": "3 4 5 6",
+        "expectedStdout": "120 90 72 60",
+        "isSample": true
+      },
+      {
+        "stdin": "-2 5 -3 4",
+        "expectedStdout": "-60 24 -40 30",
+        "isSample": true
+      },
+      {
+        "stdin": "9 10",
+        "expectedStdout": "10 9"
+      },
+      {
+        "stdin": "7 -7 7 -7",
+        "expectedStdout": "343 -343 343 -343"
+      },
+      {
+        "stdin": "8 0 4",
+        "expectedStdout": "0 32 0"
+      },
+      {
+        "stdin": "0 -5 0 8",
+        "expectedStdout": "0 0 0 0"
+      },
+      {
+        "stdin": "2 2 2 2 2",
+        "expectedStdout": "16 16 16 16 16"
+      },
+      {
+        "stdin": "-1 -1 -1 -1 -1",
+        "expectedStdout": "1 1 1 1 1"
+      },
+      {
+        "stdin": "10 20 30 40 50",
+        "expectedStdout": "1200000 600000 400000 300000 240000"
+      }
+    ]
   },
   "product-of-list": {
     "promptMarkdown": "Given a list of integers, compute and return the product of all the numbers in the list. If the list is empty, return `1`.\n\n**Constraints**\n- The list length is between `0` and `100`.\n- The elements are small enough that the final product fits within a standard integer type.\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 24\n```\nThe product is 2 * 3 * 4 = 24.\n\n**Example 2**\n```\ninput:\n\noutput: 1\n```\nThe product of an empty list is 1.\n\n**Follow-up:** Can you compute the product in O(n) time and O(1) extra space?",
@@ -1367,7 +1579,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 232, Implement Queue using Stacks](https://leetcode.com/problems/implement-queue-using-stacks/description/): the dequeue, peek, and is"
+    "tests": [
+      {
+        "stdin": "4\nQueue\nenqueue 99\ndequeue",
+        "expectedStdout": "null\nnull\n99\nnull",
+        "isSample": true
+      },
+      {
+        "stdin": "6\nQueue\nenqueue 10\npeek\nsize\ndequeue",
+        "expectedStdout": "null\nnull\n10\n1\n10\nnull",
+        "isSample": true
+      },
+      {
+        "stdin": "4\nQueue\nsize\nisEmpty",
+        "expectedStdout": "null\n0\ntrue\nnull"
+      },
+      {
+        "stdin": "5\nQueue\ndequeue\npeek\nisEmpty",
+        "expectedStdout": "null\n-1\n-1\ntrue\nnull"
+      },
+      {
+        "stdin": "10\nQueue\nenqueue 42\nenqueue 43\ndequeue\nenqueue 44\nsize\ndequeue\ndequeue\ndequeue\nisEmpty",
+        "expectedStdout": "null\nnull\nnull\n42\nnull\n2\n43\n44\n-1\ntrue"
+      },
+      {
+        "stdin": "7\nQueue\nenqueue -5\nenqueue -10\ndequeue\npeek\nsize",
+        "expectedStdout": "null\nnull\nnull\n-5\n-10\n1\nnull"
+      },
+      {
+        "stdin": "11\nQueue\nenqueue 100\nenqueue 200\nenqueue 300\ndequeue\nenqueue 400\ndequeue\ndequeue\nenqueue 500\npeek\nsize",
+        "expectedStdout": "null\nnull\nnull\nnull\n100\nnull\n200\n300\nnull\n400\n2"
+      },
+      {
+        "stdin": "8\nQueue\nisEmpty\nenqueue 0\nisEmpty\ndequeue\nisEmpty\nsize",
+        "expectedStdout": "null\ntrue\nnull\nfalse\n0\ntrue\n0\nnull"
+      },
+      {
+        "stdin": "9\nQueue\nenqueue 1\ndequeue\nenqueue 2\ndequeue\nenqueue 3\ndequeue\nisEmpty",
+        "expectedStdout": "null\nnull\n1\nnull\n2\nnull\n3\ntrue\nnull"
+      },
+      {
+        "stdin": "22\nQueue\nenqueue 10\nenqueue 20\nenqueue 30\nenqueue 40\nenqueue 50\ndequeue\ndequeue\nenqueue 60\nenqueue 70\nsize\npeek\ndequeue\ndequeue\ndequeue\nenqueue 80\nenqueue 90\ndequeue\ndequeue\ndequeue\nisEmpty\nsize",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\nnull\n10\n20\nnull\nnull\n5\n30\n30\n40\n50\nnull\nnull\n60\n70\n80\nfalse\n1"
+      }
+    ]
   },
   "queue-two-stacks": {
     "promptMarkdown": "Implement a queue yourself; do not use your language's built-in queue type.\n\nImplement `Queue` using exactly two stacks: an input stack for `enqueue` and an output stack for `dequeue` and `peek`. Move items from input to output only when output is empty. Do not use a queue or deque internally.\n\nWhen an operation cannot return an element (an empty removal or an invalid index), return `-1`.\n\n**Constraints**\n- At most 1000 operations.\n- Enqueued elements are integers.\n\n**Example 1**\n```\ninput:\n8\nQueue\nenqueue 1\nenqueue 2\ndequeue\nenqueue 3\ndequeue\npeek\nsize\noutput:\nnull\nnull\nnull\n1\nnull\n2\n3\n1\n```\nItems transfer from the input stack to the output stack lazily.\n\n**Example 2**\n```\ninput:\n5\nQueue\ndequeue\npeek\nisEmpty\nsize\noutput:\nnull\n-1\n-1\ntrue\n0\n```\nOperating on an empty two-stack queue.\n\n**Follow-up:** Can you justify why the overall time complexity of `n` operations is linear?",
@@ -1676,7 +1931,42 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 208](https://leetcode.com/problems/implement-trie-prefix-tree/): the operation descriptions retain the original sentence structure and"
+    "tests": [
+      {
+        "stdin": "3\nTrie\nsearch hello\nstartsWith hell",
+        "expectedStdout": "null\nfalse\nfalse",
+        "isSample": true
+      },
+      {
+        "stdin": "6\nTrie\ninsert hello\ninsert hello\nsearch hello\nstartsWith h\nstartsWith he",
+        "expectedStdout": "null\nnull\nnull\ntrue\ntrue\ntrue",
+        "isSample": true
+      },
+      {
+        "stdin": "4\nTrie\ninsert x\nsearch x\nstartsWith y",
+        "expectedStdout": "null\nnull\ntrue\nfalse"
+      },
+      {
+        "stdin": "6\nTrie\ninsert abc\nsearch ab\nsearch abcd\nstartsWith b\nstartsWith abcd",
+        "expectedStdout": "null\nnull\nfalse\nfalse\nfalse\nfalse"
+      },
+      {
+        "stdin": "7\nTrie\ninsert a\ninsert ab\ninsert abc\nsearch a\nsearch ab\nsearch abc",
+        "expectedStdout": "null\nnull\nnull\nnull\ntrue\ntrue\ntrue"
+      },
+      {
+        "stdin": "6\nTrie\ninsert blue\ninsert red\nsearch blue\nsearch red\nstartsWith b",
+        "expectedStdout": "null\nnull\nnull\ntrue\ntrue\ntrue"
+      },
+      {
+        "stdin": "10\nTrie\ninsert foo\ninsert bar\ninsert baz\ninsert qux\nsearch foo\nsearch ba\nstartsWith ba\nsearch baz\nstartsWith q",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\ntrue\nfalse\ntrue\ntrue\ntrue"
+      },
+      {
+        "stdin": "16\nTrie\ninsert algorithm\ninsert data\ninsert structure\ninsert tree\ninsert trie\nsearch algorithm\nsearch alg\nstartsWith alg\nsearch tree\nsearch trie\nstartsWith tr\nsearch graph\nsearch data\nstartsWith d\nstartsWith z",
+        "expectedStdout": "null\nnull\nnull\nnull\nnull\nnull\ntrue\nfalse\ntrue\ntrue\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse"
+      }
+    ]
   },
   "trie-overlapping-prefixes": {
     "promptMarkdown": "You are building an efficient text storage structure that minimizes memory usage by overlapping common prefixes. You must build this prefix tree using custom nodes and pointers, without relying on built-in map or set abstractions.\n\nThe system will store many words that share the same starting characters (e.g., `car`, `cart`, `care`). These words must share the same node path for their common prefix, branching off only where their characters diverge. Each word must maintain its own terminal marker. \n\nThe system supports:\n- `Trie()`: Initializes the structure.\n- `insert(word)`: Adds `word` to the structure.\n- `search(word)`: Returns `true` only if `word` was explicitly inserted. If `word` is merely a prefix of an inserted word but was never explicitly inserted itself, `search` must return `false`.\n- `startsWith(prefix)`: Returns `true` if any explicitly inserted word begins with `prefix`. Unlike `search`, this will evaluate to `true` for valid prefixes even if they were not explicitly inserted.\n\n**Operation log**\n\nThe first operation is the constructor (`Trie`), returning `null`. The `insert` method is void and outputs `null`. Boolean methods output `true` or `false`.\n\n**Constraints**\n- Words and prefixes consist of lowercase English letters.\n- The structure must reuse existing prefix nodes rather than creating duplicate paths.\n\n**Example 1**\n```\ninput:\n9\nTrie\ninsert car\ninsert cart\ninsert care\nsearch car\nsearch cat\nstartsWith ca\nstartsWith cart\nsearch care\noutput:\nnull\nnull\nnull\nnull\ntrue\nfalse\ntrue\ntrue\ntrue\n```\nExplanation: \"car\", \"cart\", and \"care\" all share the \"c-a-r\" prefix nodes. \"car\" was explicitly inserted, so searching for it returns `true`. \"ca\" is a valid prefix, so `startsWith` returns `true`.\n\n**Example 2**\n```\ninput:\n3\nTrie\nsearch car\nstartsWith c\noutput:\nnull\nfalse\nfalse\n```\nExplanation: Searching for paths in an unpopulated structure always yields `false`.\n\n**Follow-up:** How does prefix sharing affect the total number of nodes compared to storing each string independently?",
