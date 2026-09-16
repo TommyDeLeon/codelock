@@ -1,0 +1,4 @@
+scripts/author-out/
+scripts/*.log
+scripts/*.stdout
+scripts/.author-stop

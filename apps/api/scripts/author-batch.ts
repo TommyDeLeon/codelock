@@ -108,8 +108,14 @@ interface Anchor {
   paidOnly: boolean;
 }
 
+/**
+ * `ours` names the admitted problem. `ours: null` records an anchor that was
+ * drafted and rejected (typically a JavaScript-only or SQL problem that has
+ * no six-language function shape), so the run moves on instead of redrawing
+ * it every batch. Delete the entry to try it again.
+ */
 interface Coverage {
-  [anchorSlug: string]: { ours: string; batch: string; date: string };
+  [anchorSlug: string]: { ours: string | null; batch: string; date: string; reason?: string };
 }
 
 const coveragePath = join('src', 'corpus', 'coverage.json');
@@ -355,6 +361,54 @@ function draftWithGemini(): Draft[] {
   return parsed.structured_output.problems;
 }
 
+/**
+ * One repair round. Each rejected draft goes back to Gemini with the judge's
+ * exact failures; the model returns a corrected draft with the same slug and
+ * anchor. The result is re-checked and re-judged like anything else — a
+ * repair earns nothing until it passes.
+ */
+function repairWithGemini(rejected: Array<{ draft: Draft; why: string[] }>): Draft[] {
+  if (rejected.length === 0) return [];
+  const dir = mkdtempSync(join(tmpdir(), 'codelock-repair-'));
+  const schemaPath = join(dir, 'schema.json');
+  const briefPath = join(dir, 'brief.md');
+  writeFileSync(schemaPath, JSON.stringify(schema));
+  const brief = `You drafted the problems below for CodeLock. Each one FAILED verification for the stated reason. Fix each problem so it passes, keeping its slug${anchorsPath ? ', anchor' : ''}, family, tier and difficulty. If a reference solution is wrong, fix the solution; if the expected output is wrong, fix the test; if the statement is ambiguous, fix the statement and keep tests consistent. Return all ${rejected.length} problems, corrected, matching the schema.
+${WIRE_FORMAT}
+${rejected
+  .map(
+    (r) => `## ${r.draft.slug}
+Failures:
+${r.why.map((w) => `- ${w}`).join('\n')}
+
+Draft:
+${JSON.stringify(r.draft, null, 1)}`,
+  )
+  .join('\n\n')}`;
+  writeFileSync(briefPath, brief);
+  console.log(`  asking ${model} to repair ${rejected.length} rejected draft(s) ...`);
+  try {
+    const raw = execFileSync(
+      'agy',
+      [
+        `--print=Read the brief at ${briefPath} and do exactly what it says. Return JSON matching the schema.`,
+        '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
+        '--model', model, '--output-format', 'json', '--json-schema', schemaPath,
+        '--print-timeout', '20m', '--disable-slash-commands',
+      ],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true },
+    );
+    const parsed = JSON.parse(raw) as { status?: string; structured_output?: { problems?: Draft[] } };
+    const fixed = parsed.structured_output?.problems ?? [];
+    // Only repairs of what was sent; a model inventing a new slug here is ignored.
+    const sent = new Set(rejected.map((r) => r.draft.slug));
+    return fixed.filter((d) => sent.has(d.slug));
+  } catch (err) {
+    console.log(`  repair skipped: ${(err as Error).message.split('\n')[0]}`);
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Local checks
 // ---------------------------------------------------------------------------
@@ -449,13 +503,21 @@ function codexReview(accepted: Draft[]): string {
     .join('\n\n');
   const ask = `Read-only review. For each problem statement below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement that reads like a known LeetCode problem's wording. Output one line per slug: "<slug>: OK" or "<slug>: <issue>". No edits.\n\n${text}`;
   try {
-    const bin = process.platform === 'win32' ? 'codex.cmd' : 'codex';
-    return execFileSync(bin, ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', ask], {
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-      windowsHide: true,
-      timeout: 10 * 60_000,
-    });
+    // The ask is far past the argv limit, so it goes through a file too.
+    const dir = mkdtempSync(join(tmpdir(), 'codelock-codex-'));
+    const askPath = join(dir, 'ask.md');
+    writeFileSync(askPath, ask);
+    // Node refuses to spawn a .cmd shim without a shell; the arguments are
+    // fixed strings and a temp path, so a shell is safe here.
+    // With a shell the arguments are concatenated, not escaped, so the one
+    // argument with spaces is quoted by hand. The path is a temp dir we made.
+    const win = process.platform === 'win32';
+    const instruction = `Read ${askPath} and do exactly what it says.`;
+    return execFileSync(
+      'codex',
+      ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', win ? `"${instruction}"` : instruction],
+      { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true, timeout: 10 * 60_000, shell: win },
+    );
   } catch (err) {
     return `SKIPPED: codex unavailable (${(err as Error).message.split('\n')[0]})`;
   }
@@ -532,14 +594,25 @@ ${body}
     writeFileSync(indexPath, index);
   }
   console.log(`  wrote ${path} and registered ${constName} in index.ts`);
+}
 
-  if (anchorsPath) {
-    const coverage = readCoverage();
-    const date = new Date().toISOString().slice(0, 10);
-    for (const d of accepted) if (d.anchor) coverage[d.anchor] = { ours: d.slug, batch: out, date };
-    writeFileSync(coveragePath, JSON.stringify(coverage, null, 2) + '\n');
-    console.log(`  coverage: ${Object.keys(coverage).length} anchors covered`);
+/**
+ * Record every anchor this batch drew: admitted ones by slug, the rest set
+ * aside. Runs even when nothing was admitted, otherwise a zero-yield batch
+ * would leave its anchors uncovered and the next batch would draw the same
+ * ones again, forever.
+ */
+function recordCoverage(accepted: Draft[]): void {
+  if (!anchorsPath) return;
+  const coverage = readCoverage();
+  const date = new Date().toISOString().slice(0, 10);
+  for (const d of accepted) if (d.anchor) coverage[d.anchor] = { ours: d.slug, batch: out, date };
+  for (const a of anchors) {
+    if (!coverage[a.slug]) coverage[a.slug] = { ours: null, batch: out, date, reason: 'rejected' };
   }
+  writeFileSync(coveragePath, JSON.stringify(coverage, null, 2) + '\n');
+  const covered = Object.values(coverage).filter((c) => c.ours !== null).length;
+  console.log(`  coverage: ${covered} anchors covered, ${Object.keys(coverage).length - covered} set aside`);
 }
 
 // ---------------------------------------------------------------------------
@@ -569,8 +642,36 @@ async function main() {
 
   const failures = await judgeReject(local);
   const accepted = local.filter((d) => !failures.has(d.slug));
-  for (const [slug, why] of failures) rejected.push({ slug, why });
   console.log(`  passed the judge: ${accepted.length}/${local.length}`);
+
+  // One repair round for everything the judge rejected (local rejects are
+  // not repaired: an unknown signature or a renamed anchor is a new draft,
+  // not a fix). Repairs must pass the same local checks and the same judge.
+  const toRepair = local.filter((d) => failures.has(d.slug)).map((d) => ({ draft: d, why: failures.get(d.slug)! }));
+  const repaired = repairWithGemini(toRepair);
+  const repairable: Draft[] = [];
+  for (const d of repaired) {
+    seen.delete(d.slug);
+    const why = localReject(d, seen);
+    if (why) rejected.push({ slug: d.slug, why: [`repair: ${why}`] });
+    else {
+      seen.add(d.slug);
+      repairable.push(d);
+    }
+  }
+  if (repairable.length > 0) {
+    const again = await judgeReject(repairable);
+    for (const d of repairable) {
+      if (again.has(d.slug)) rejected.push({ slug: d.slug, why: again.get(d.slug)!.map((w) => `repair: ${w}`) });
+      else {
+        accepted.push(d);
+        console.log(`  repaired: ${d.slug}`);
+      }
+    }
+  }
+  for (const [slug, why] of failures) {
+    if (!accepted.some((d) => d.slug === slug) && !rejected.some((r) => r.slug === slug)) rejected.push({ slug, why });
+  }
 
   for (const d of accepted) {
     const skills = skillsRequiredBy(d);
@@ -588,8 +689,9 @@ async function main() {
 
   if (dryRun) {
     console.log('  dry run: nothing written');
-  } else if (accepted.length > 0) {
-    emit(accepted);
+  } else {
+    if (accepted.length > 0) emit(accepted);
+    recordCoverage(accepted);
   }
 
   console.log(
