@@ -109,9 +109,11 @@ already is, in the performance panel, as a fact and not a reward.
 
 **Surface.** The full success moment (existing motion + soft chime, respecting
 reduce-motion and the chime setting) is shown **only** when an event above
-`solved` fired. A plain solve gets the `quiet` surface: the headline and the
-one most informative detail, no motion, no chime, and "Finish" exactly where
-it always is.
+`solved` fired. A plain solve gets the `quiet` surface: the headline, the
+one most informative detail and the one-line record of help used ("No help
+used. Saved as an independent solve."), no motion, no chime, and "Finish"
+exactly where it always is. The help line is the record, not a reward, and
+stays on both surfaces.
 
 The first draft added a seeded 0.3 draw so some plain solves got the full
 moment. Gemini (point 3) called that a variable-ratio schedule — a

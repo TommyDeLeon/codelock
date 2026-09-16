@@ -102,6 +102,15 @@ function isAccomplishment(value: unknown): value is Accomplishment {
   if (typeof a.headline !== 'string' || typeof a.helpSummary !== 'string') return false;
   if (typeof a.kind !== 'string' || !Object.prototype.hasOwnProperty.call(KIND_LABELS, a.kind)) return false;
   if (!Array.isArray(a.details) || !a.details.every((d) => typeof d === 'string')) return false;
+  // Newer, optional fields. An unknown surface must not default to motion and sound.
+  if (a.surface !== undefined && a.surface !== 'full' && a.surface !== 'quiet') return false;
+  if (
+    a.events !== undefined &&
+    (!Array.isArray(a.events) ||
+      !a.events.every((e) => !!e && typeof e.kind === 'string' && typeof e.note === 'string'))
+  ) {
+    return false;
+  }
   if (
     !Array.isArray(a.skills) ||
     !a.skills.every(

@@ -1,229 +1,186 @@
 # Handoff — reward and stretch (2026-09-16)
 
-Follows the tutor and success-moment handoff below. Design:
-`docs/reward-and-stretch.md`. Evidence: `RESEARCH.md`, "Reward and
-difficulty (2026-09-16)".
+## The problem
 
-## The bug, reproduced and fixed
+After the success moment shipped, the app re-served solved problems and the
+learner's skill level stopped moving. Replayed against the owner's own local
+database: thirteen locks on 2026-09-15, eight distinct problems, three of
+them served two or three times in one day.
 
-On 2026-09-15 the owner's history showed 13 locks, 8 distinct problems, three
-of them served two or three times the same day. Every repeat came through a
-`too_hard` swap: `chooseReplacement` excluded only the problem on screen, and
-its "too hard" score ranked fully-practised problems highest. The 21-day
-cooldown at lock time keyed on submissions, so a mastered problem would have
-returned at full weight on day 22.
+## Root cause (reproduced by tests first, then fixed)
 
-- **`apps/api/src/services/repetition.ts`** (new, pure + one loader): a problem
-  stays out of full locks while attempted within 21 days *or* solved with every
-  skill still `demonstrated`. Only a skill falling due lifts it. Used by both
-  `pickProblem` and `swapProblem`. A swap whose pool empties refuses; the
-  problem on screen still opens the lock.
-- Tests: `repetition.test.ts`; `sessionFlow.test.ts` ("a swap never walks back
-  to a problem already solved", written red first).
+- **Every repeat came through a `too_hard` swap.** `chooseReplacement`
+  excluded only the problem on screen, and its "too hard" ranking rewards
+  fully-practised problems — so a problem solved that morning ranked highest.
+  Shortlist before the fix: 6 of 8 already solved; after: 0.
+- **The 21-day cooldown keyed on submissions, not mastery.** A solved problem
+  whose skills were all demonstrated was due back at full weight on day 22.
+  Latent in the history, fixed with the same rule.
+- **Due-for-review had no distinct treatment**; nothing in selection
+  distinguished review from new work. Now review is never a lock.
+- **The progression gate itself was not stuck.** The picker used
+  `fitForLearner` as a boolean and then chose by problem value, so mastered
+  and frontier problems had the same chance. Replay of 200 picks: 69%
+  mastered-only, 32% stretch.
+
+Tests: `apps/api/src/services/repetition.test.ts`,
+`sessionFlow.test.ts` ("a swap never walks back…"), `stretch.test.ts`,
+`tutor/reward.test.ts`, `frontier.test.ts`, `tutor/accomplishment.test.ts`.
 
 ## What exists now
 
-- **`stretch.ts`** (new, pure): fair rows split into *stretch* (needs a skill
-  not yet demonstrated) and *consolidating*; a lock draws stretch with fixed
-  weight 0.8; one consolidating lock after two stretch locks that ended in a
-  worked solution, bypass or abandon. `pickProblem` returns `pool`, recorded in
-  the `PROBLEM_SERVED` event detail. Every fallback rung is unchanged.
-- **`tutor/reward.ts`** (new, pure): `deriveRewardEvents` →
-  `skill_demonstrated | first_unaided | review_held | near_miss_improved |
-  transfer | recall | solved`; `chooseSurface` is `full` only when something
-  rarer than `solved` fired — no random draw. `Accomplishment` gains `events`
-  and `surface`.
-- **Review is never a lock**: when a skill is due, `deriveAccomplishment`
-  offers the oldest unaided solved problem on it in the existing `variation`
-  slot after the lock opens.
-- **Near miss**: `grading.ts` compares a failed attempt with the previous one
-  in the session on the same problem; once per problem per session; returned
-  as `nearMiss` and stored in the `ATTEMPT_FAILED` detail.
-- **`frontier.ts`** (new, pure + loader): `GET /v1/progress` gains `frontier`
-  — next skill, distance in words, what the last attempt on it proved, and
-  first-try pass rate over the last 20 locks beside the 75–85% band. Shown,
-  never acted on.
-- **Web**: `success-moment.tsx` waits for the surface before motion or chime;
-  quiet shows headline + one detail. `test-results.tsx` shows the near-miss
-  line. The fit line on the problem panel already existed.
-- **Desktop**: `celebration.tsx` gates motion/chime/skill chips on the surface;
-  `screens/progress.tsx` shows the frontier above the skill map.
-- **`apps/api/scripts/replay-selection.ts`**: read-only replay and the
-  measurements in the design doc.
+### API
 
-No schema change. No change to `ladder.ts`, `diagnose.ts`, `starter.ts`, the
-hint levels, or `apps/mobile`.
+- **`services/repetition.ts`** — a problem stays out of full locks while
+  attempted within 21 days, or solved with every required skill still
+  `demonstrated`. Only a skill falling due lifts it. Used by `pickProblem`
+  and `swapProblem`. Swaps refuse rather than repeat; the on-screen problem
+  still opens the lock.
+- **`services/stretch.ts`** — the fair pool of each rung is split into
+  *stretch* (needs a skill not yet demonstrated) and *consolidating*; the lock
+  draws stretch with a fixed 0.8. One consolidating lock after two stretch
+  locks that ended in the worked solution, a bypass or an abandon. The pool
+  is recorded in the `PROBLEM_SERVED` event detail (JSON; no schema change).
+  Every fallback rung in `pickProblem` is unchanged: the lock always opens.
+- **`services/sessionFlow.ts`** — `too_hard` prefers a smaller stretch
+  problem; consolidating only when no stretch problem fits. No cap on swaps
+  (the owner's standing decision).
+- **`services/tutor/reward.ts`** — pure `deriveRewardEvents` →
+  `skill_demonstrated | first_unaided | review_held | transfer | recall |
+  solved`, and `chooseSurface`: `full` only when something rarer than a solve
+  happened, otherwise `quiet`. No random draw. `nearMissImproved` for failed
+  attempts, once per problem per session.
+- **`services/tutor/accomplishment.ts`** — `Accomplishment` gains `events`
+  and `surface`. When a skill is due for review, the follow-up `variation`
+  slot offers the oldest solved problem on that skill as an optional graded
+  retrieval.
+- **`services/grading.ts`** — failed attempts carry `nearMiss` in the
+  response and in the `ATTEMPT_FAILED` detail.
+- **`services/frontier.ts`** and **`GET /v1/progress`** — `frontier`: next
+  skill, distance in words, what the last attempt on it proved, first-try
+  pass rate over the last 20 locks beside the 75–85% band. Measured, never
+  acted on.
+- **`scripts/replay-selection.ts`** — read-only replay of selection plus the
+  measurements the design asks for.
 
-## Replay on the owner's real history
+### Shared types
 
-Before: stretch 32%, mastered-only 69%; `too_hard` shortlist 6/8 already
-solved. After: stretch 77–82% across runs, mastered-only 18–23%, repeats of
-solved 0%, out-of-depth 0%; `too_hard` shortlist 0/4 solved. Real locks so far
-carry no recorded pool (the field is new), so per-pool pass rates start
-accumulating from the next lock.
-
-## Providers
-
-- **Claude (Opus 5):** coordinated, researched, designed, implemented.
-- **OpenAI Codex** (`codex-rescue`, read-only): Phase 1 trace of the selector
-  agreed with the DB replay (H2, H3, H4 confirmed; H1 reframed as "the picker
-  never preferred the frontier"). The Phase 5 diff review **did not complete**:
-  Codex hit its usage limit mid-run (resets 2026-09-19). One partial finding —
-  that the near-miss acknowledgment is scoped per problem — matched a fix
-  already applied. Re-run the review after the reset.
-- **Gemini** (`gemini-3.1-pro-low` via `agy`, plan mode): adversarial critique
-  of the design against the research, 12 points; each adopted or rebutted in
-  `docs/reward-and-stretch.md`. Adopted: static weight, relief rule, no random
-  surface draw, review as a real retrieval, distance in words, near-miss once
-  per session, drop `faster_than_own` and `fewer_hints`, three new
-  measurements. Rebutted: a cap on swaps; optimising time on screen.
-- **ECC typescript-reviewer:** 5 findings, all addressed (near-miss scoped per
-  problem, served-records read bounded by distinct problems, type-guard filter
-  in `dueReview`, shadowed `pool` renamed, JSON `pool` guarded).
-- **ECC react-reviewer:** 6 findings; 4 addressed (non-null assertion, list
-  `aria-label`, `aria-live` on the near-miss line, single prefs read). Two left
-  as pre-existing or speculative (text keys on details; frontier copy styling).
-
-## Verify
-
-```bash
-npm run typecheck
-```
-
-```bash
-npm test -w @codelock/api
-```
-
-Replay selection and the measurements against the local database:
-
-```bash
-cd apps/api && LOG_LEVEL=silent npx tsx --env-file-if-exists=.env scripts/replay-selection.ts 300
-```
-
-
-
-## Open limitations
-
-- **Lint:** `npm run lint` fails in `apps/web` before this change — ESLint 10
-  finds no `eslint.config.*`. Not touched here.
-- **Corpus gap at the frontier:** only two EASY problems introduce `lists`
-  alone; the stretch pool at the owner's current edge is those two. The replay
-  shows it. More one-new-idea problems around `lists` and `loops` would widen
-  it.
-- **Pass rate is a bet:** the 75–85% band is an analogy from gradient-descent
-  classifiers; it is displayed and measured, never tuned toward.
-- **No web Progress page:** the frontier is on the desktop Progress tab and in
-  the API; the web app has no progress page to show it on.
-- **Desktop shell** still drops the overlay to its dashboard; the quiet/full
-  surface applies there through `celebration.tsx`.
-
----
-
-# Handoff — tutor hints and success moment (2026-09-15)
-
-## What exists
-
-### Hints
-
-All hint logic lives in `apps/api/src/services/tutor/`. It is rule-based and
-needs no AI connection.
-
-- **`diagnose.ts`** reads the current code and the real results on sample
-  cases, and labels each finding confirmed, likely or possible.
-- **`ladder.ts`** builds five levels: question, trace, concept, outline with
-  one gap, worked solution. It also handles "didn't help", "explain word",
-  "step by step", "smaller example" and "different explanation".
-- **`starter.ts`** holds reviewed content and reference tracers for 6 starter
-  problems. Every tracer is tested against every test case.
-- **`POST /v1/tutor/hint`** runs the current code on sample cases only. It
-  re-runs a hidden failure against the current code, and records the hint
-  (awaited) before responding.
-- **`POST /v1/tutor/feedback`** stores optional feedback.
-
-### Success moment
-
-- **`successMoment.ts` and `accomplishment.ts`** work out what the solve
-  showed. They run after the unlock and never delay it.
-- The result is saved as an `ACCOMPLISHMENT` event and read from
-  `GET /v1/progress/accomplishment/:id`.
-
-### Desktop
-
-- A **Progress** tab shows the skill map and recent solves, with help and
-  independent work counted separately.
+`RewardEvent`, `RewardSurface`, `NearMiss`, `FrontierView`; optional fields on
+`Accomplishment`, `GradeResult`, `ProgressView` so older rows and servers
+keep working.
 
 ### Web
 
-- The lock screen's `hints-panel.tsx` is rewritten and `success-moment.tsx` is added.
-  The desktop app loads this lock screen. No other web pages were added.
+- `success-moment.tsx`: motion and chime wait until the surface is known;
+  `quiet` shows the headline and one detail, no motion, no chime, no skill
+  map. Reduce-motion and the sound preference are respected as before.
+- `test-results.tsx`: one plain near-miss line under a failed result.
+- `problem-panel.tsx` already showed the fit line for eligible problems
+  ("Chosen for you because it builds on one new idea: lists").
+- There is no web Progress page; the Progress tab is desktop-only.
 
-### Recording fixes
+### Desktop
 
-- Practice help and a recently opened debrief now count as help.
-- The legacy lock hint is recorded awaited.
-- A solve after hints no longer counts as mastery.
-- A level-5 worked solution now counts as seeing the editorial.
+- `screens/progress.tsx`: "What is next" block above the skill map.
+- `celebration.tsx`: same surface rule as the web moment.
 
 ### Database
 
-Migration `20260915090000_tutor_feedback` adds `ACCOMPLISHMENT` and `FEEDBACK`.
+No schema change. New facts live in existing JSON `detail` columns.
+
+## Replay on the owner's real history (`scripts/replay-selection.ts`)
+
+| | before | after |
+|---|---|---|
+| picks needing an undemonstrated skill | 32% | 82% |
+| picks needing only demonstrated skills | 69% | 18% |
+| repeats of solved problems (lock pick) | 0% | 0% |
+| `too_hard` shortlist already solved | 6 of 8 | 0 of 4 |
+| out-of-depth picks | 0% | 0% |
+
+Per-pool first-try pass, time-to-solve and hint level are reported from the
+next locks on, since the pool was not recorded before this change.
 
 ## Providers
 
-- **Claude (Opus 5):** coordinated and implemented.
-- **OpenAI Codex** (`gpt-5.6-sol`, medium, read-only):
-  - Inspected the runner and learning logic before implementation.
-  - Reviewed the implementation afterwards and raised 7 actionable findings.
-    All 7 are fixed.
-- **Gemini** (`gemini-3.1-pro-low` via `agy`, plan mode):
-  - Critiqued the baseline hints, then the real generated hints and the success
-    copy.
-  - Its jargon and pressure fixes were adopted.
-  - One suggestion was rejected: "NEW FEATURE UNLOCKED", as gamified.
+- **Claude (Opus 5):** traced the bug against the local database, wrote the
+  failing tests and the fixes, did the research pass (12 sources, tagged in
+  RESEARCH.md), wrote the design, implemented all three surfaces, and
+  addressed every review finding below.
+- **OpenAI Codex** (`codex:codex-rescue`, read-only):
+  - Phase 1: independent trace of the selector, skill state, session flow
+    and progression gate. Verdicts matched: H2/H3/H4 confirmed, H1 killed as
+    stated (tiers do advance; the picker never preferred the frontier).
+  - Phase 5: **the diff review did not run.** Codex hit its usage limit
+    ("try again at Sep 19th, 2026") before producing output. No credits were
+    bought and no other provider was substituted for it. Re-run after the
+    reset: `codex:codex-rescue` on the diff of commit `stretch`.
+- **Gemini** (`gemini-3.1-pro-low` via `agy`, plan mode, read-only):
+  adversarial critique of `docs/reward-and-stretch.md` against the research.
+  Twelve points; each adopted or rebutted in writing at the end of that
+  document. Adopted, among others: no random full-celebration draw, static
+  0.8 weight, relief rule, `faster_than_own` and `fewer_hints` dropped,
+  near miss once per problem per session, review as a real graded solve.
+  Rejected: a cap on swaps.
+- **ECC `typescript-reviewer`:** 7 findings. Fixed: unbounded submissions
+  read on the selection path (now two aggregates bounded by distinct
+  problems); `nearMiss` validated at the loader boundary instead of cast;
+  one-pass fit computation in `rankReplacements`. Not changed: `recordStep`
+  already catches internally, so a `.catch` would be redundant; the
+  read-then-write race on the near-miss acknowledgement is documented in
+  `grading.ts` and accepted for a single-user tool.
+- **ECC `react-reviewer`:** 5 findings. Fixed: the chime could play on a
+  later sound-preference toggle (now fires once, on the moment becoming
+  full); the near-miss live region is always in the tree so it is announced;
+  `surface`/`events` are validated on both web and desktop so an unknown
+  value never defaults to motion and sound. Not changed: module-level
+  `animated`/`chimed` in `celebration.tsx` predate this change and were only
+  gated, not restructured; the help-used line stays on the quiet surface as
+  the record of the solve (documented in the design).
 
 ## Verify
 
-Unit tests, including the real-judge evaluation set:
+All API tests (332), including the regressions for the repetition bug:
 
 ```bash
 npm test -w @codelock/api
 ```
 
-Typecheck the API:
+Typecheck every workspace:
 
 ```bash
-npm run typecheck -w @codelock/api
+npm run typecheck -w @codelock/shared -w @codelock/api -w @codelock/web -w @codelock/desktop
 ```
 
-Typecheck the web app:
+Replay selection against the local history (read-only; needs the Docker
+stack up) and print pool share, repeats, per-pool pass rate, per-problem
+stretch difficulty, active days and the frontier block:
 
 ```bash
-npm run typecheck -w @codelock/web
-```
-
-Re-record the real judge runs (needs the Docker stack up):
-
-```bash
-npm run record:hint-fixtures -w @codelock/api
-```
-
-Print real hint ladders for review:
-
-```bash
-npm run hints:samples -w @codelock/api -- samples.md
+LOG_LEVEL=silent npx tsx --env-file-if-exists=.env apps/api/scripts/replay-selection.ts 300
 ```
 
 ## Open limitations
 
-- **Desktop shell:** it drops the overlay straight to its bundled dashboard, so
-  the success screen only appears in the browser flow. Progress is still saved
-  and shown on the desktop app's Progress tab.
-- **Understanding:** nobody has measured whether beginners actually understand
-  the hints.
-- **Coverage:** reviewed starter content exists for 6 problems only. The rest
-  get rule-based hints.
-- **Traces:** they come from a checked reference solution, not a step trace of
-  the learner's own code.
-- **Languages:** the evaluation uses Python, JavaScript and Java only.
-- **Legacy route:** `/lock/:id/hint` still exists but the web app no longer
-  uses it.
+- **Codex diff review outstanding** (see Providers).
+- **Web lint** fails to start: ESLint 10 with no `eslint.config.*` in
+  `apps/web`. Pre-existing; not touched in this pass.
+- **Pool history starts now.** Per-pool pass rate, time and hint level only
+  exist for locks served after this change; the replay labels older locks
+  `unrecorded`.
+- **Review offers depend on due skills.** Nothing is due yet in the local
+  history (`SKILL_REVIEW_DAYS = 7`), so the follow-up review offer has been
+  exercised only by unit test, not in the running app. The growing review
+  interval described in the design (doubling, capped at eight weeks) is not
+  implemented; the fixed 7-day rule in `skillState.ts` stands.
+- **Stretch pool is thin at the owner's frontier:** two EASY problems
+  introduce `lists`. The replay serves them 82% of the time, which is the
+  target, but the corpus is what limits variety there.
+- **Not measured:** whether any of this changes how the app feels. The
+  design's bets are listed as bets in RESEARCH.md, with what each would take
+  to test.
+- **Desktop shell** still drops the overlay to its dashboard; the success
+  moment there is the dashboard celebration, which now follows the same
+  surface rule.
+- **Not touched:** `tutor/ladder.ts`, `diagnose.ts`, `starter.ts`, the hint
+  level scheme, the DB schema, `apps/mobile`.
