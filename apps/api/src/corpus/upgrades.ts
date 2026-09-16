@@ -10,8 +10,6 @@ export interface StatementUpgrade {
   promoteSamples: string[];
   model: string;
   date: string;
-  /** Set when the reviewer would not pass a rewrite; the original statement stays. */
-  skipped?: string;
 }
 
 export const UPGRADES: Record<string, StatementUpgrade> = {
@@ -301,6 +299,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "length-of-string": {
+    "promptMarkdown": "Given a string, determine the number of characters it contains. Note that spaces are considered valid characters.\n\n**Constraints**\n- The string length is between `0` and `10^5`.\n\n**Example 1**\n```\ninput:\nhello\noutput: 5\n```\nThe word \"hello\" consists of 5 characters.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty string contains 0 characters.\n\n**Example 3**\n```\ninput:\na\noutput: 1\n```\nA single character string has a length of 1.\n\n**Follow-up:** What is the time complexity of finding a string's length in your chosen programming language?",
+    "editorialMarkdown": "The intended approach is to simply use the built-in length property or function provided by your language. This demonstrates the pattern of utilizing Built-in Methods.\n\nThe one trap most solvers hit is overthinking the problem and trying to manually iterate through the string to count characters, or mishandling whitespace characters. A space is a standard character and contributes to the total length.\n\nThe time complexity is typically O(1) in most modern languages because the length is stored as metadata with the string. If a language requires traversing the string to find a null terminator (like C), the time complexity would be O(n). The space complexity is O(1) as no additional memory is required.",
+    "promoteSamples": [
+      "a"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
   "min-and-max": {
     "promptMarkdown": "Given a list of integers, return two numbers: the smallest number in the list followed by the largest number in the list.\n\n**Constraints**\n- The list will always contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 1 4 1 5\noutput: 1 5\n```\nThe smallest number is 1 and the largest is 5.\n\n**Example 2**\n```\ninput:\n7\noutput: 7 7\n```\nSince 7 is the only element, it is both the smallest and the largest.\n\n**Follow-up:** Can you solve this in a single pass with O(1) auxiliary space?",
     "editorialMarkdown": "The intended approach is to initialize both the minimum and maximum trackers to the first element of the list, then iterate through the rest of the list once, updating the bounds as needed. The pattern's name is running best. Time complexity is O(n) and space complexity is O(1). The one trap most solvers hit is initializing the minimum value to 0 or another arbitrary constant. If the list contains only numbers greater than 0, a starting minimum of 0 will be incorrectly returned as the answer. By seeding the starting values directly from the input array, the logic safely accommodates negatives.",
@@ -315,9 +322,44 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "nth-character": {
+    "promptMarkdown": "Given a string and an integer index, return the character at that specific zero-based index as a string. If the index is out of bounds (greater than or equal to the length of the string), return an empty string.\n\n**Constraints**\n- The string length is between `0` and `10^4`.\n- The index is a non-negative integer.\n\n**Example 1**\n```\ninput:\nhello\n1\noutput: e\n```\nThe character at index 1 is 'e', since indices are zero-based.\n\n**Example 2**\n```\ninput:\nhello\n9\noutput: \n```\nThe index 9 is beyond the length of the string, so an empty string is returned.\n\n**Follow-up:** Can you solve this with O(1) time complexity?",
+    "editorialMarkdown": "The optimal approach is to directly access the character at the given index after explicitly verifying that the index is within the valid bounds of the string. This reflects a simple Array/String Indexing pattern.\n\nThe one trap most solvers hit is the off-by-one error when checking bounds. The valid indices for a string of length `L` are `0` through `L - 1`. If the condition is written as `index <= length` instead of `index < length`, an out-of-bounds index will slip through, potentially causing a runtime exception depending on the language.\n\nThe time complexity is O(1) because accessing a character by index and checking the length of a string take constant time. The space complexity is O(1) as we only return a single character string.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
   "palindrome-check": {
     "promptMarkdown": "Determine whether a given string reads the same forwards and backwards. Return `true` if it is a palindrome, and `false` otherwise. Compare the characters exactly as they are provided, without removing spaces.\n\n**Constraints**\n- The input string will consist of lowercase letters and spaces.\n- The string length is between 0 and 100,000.\n\n**Example 1**\n```\ninput:\nracecar\noutput: true\n```\nThe string racecar reads the same forwards and backwards.\n\n**Example 2**\n```\ninput:\nhello\noutput: false\n```\nThe string hello is not a palindrome.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) extra space without allocating a reversed string?",
     "editorialMarkdown": "The intended approach is to initialize two pointers, one at the beginning of the string and one at the end, and walk them inwards towards the center. The pattern's name is two pointers. Time complexity is O(n) and space complexity is O(1). The one trap most solvers hit is building a completely reversed string in memory and then comparing it to the original. While technically correct, this approach allocates O(n) extra space and always processes the entire string, even if the mismatch occurs immediately on the first character. The two-pointer approach avoids this and halts on the first discrepancy.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "product-of-list": {
+    "promptMarkdown": "Given a list of integers, compute and return the product of all the numbers in the list. If the list is empty, return `1`.\n\n**Constraints**\n- The list length is between `0` and `100`.\n- The elements are small enough that the final product fits within a standard integer type.\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 24\n```\nThe product is 2 * 3 * 4 = 24.\n\n**Example 2**\n```\ninput:\n\noutput: 1\n```\nThe product of an empty list is 1.\n\n**Follow-up:** Can you compute the product in O(n) time and O(1) extra space?",
+    "editorialMarkdown": "The standard approach is to initialize an accumulator variable and multiply it by each element in the list as you iterate through it. This is a classic Accumulator pattern.\n\nThe one trap most solvers hit is initializing the accumulator to `0` instead of `1`. Because `1` is the multiplicative identity, initializing to `0` will cause all subsequent multiplications to yield `0`, leading to an incorrect result for any input. Furthermore, returning `1` for an empty list gracefully aligns with this identity.\n\nThe time complexity is O(n), where n is the number of elements in the list, since we must visit each element once. The space complexity is O(1) because we only need a single variable to store the running product.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "range-from-one": {
+    "promptMarkdown": "Given an integer `n`, return a list containing all the numbers from `1` up to and including `n` in ascending order. If `n` is `0`, return an empty list.\n\n**Constraints**\n- `0 <= n <= 10^4`\n\n**Example 1**\n```\ninput:\n4\noutput: 1 2 3 4\n```\nThe list contains integers from 1 up to 4, inclusive.\n\n**Example 2**\n```\ninput:\n0\noutput: \n```\nSince n is 0, the resulting list is empty.\n\n**Follow-up:** What is the space complexity of your solution?",
+    "editorialMarkdown": "The straightforward approach is to use a loop that starts at 1 and increments until it reaches `n`, appending each number to a list. This demonstrates a standard Sequence Generation pattern.\n\nThe one trap most solvers hit is writing the loop continuation condition incorrectly, specifically by using `< n` instead of `<= n`. Because the problem requires the sequence to include `n` itself, stopping strictly before `n` drops the final element.\n\nThe time complexity is O(n) because we execute the loop `n` times to generate the sequence. The space complexity is O(n) since we need to store all `n` integers in the output list.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "remove-duplicates-in-order": {
+    "promptMarkdown": "Given a list of integers, remove any duplicate values while preserving the original order of their first appearance.\n\n**Constraints**\n- The list length is between `0` and `10^4`.\n- The elements are integers between `-10^5` and `10^5`.\n\n**Example 1**\n```\ninput:\n1 2 1 3\noutput: 1 2 3\n```\nThe second appearance of 1 is removed, and the initial order of 1, 2, and 3 is maintained.\n\n**Example 2**\n```\ninput:\n\noutput: \n```\nAn empty list remains empty.\n\n**Follow-up:** Can you solve this in O(n) time complexity?",
+    "editorialMarkdown": "The optimal approach is to iterate through the list and maintain a hash set of the items we've seen so far. For each item, if it is not in the set, we add it to the set and append it to our result list. This combines the Seen-Before pattern with an order-preserving data structure.\n\nThe one trap most solvers hit is converting the list directly into a set and back into a list to remove duplicates. While this takes only one line of code in many languages, it destroys the original order because sets are inherently unordered collections. The problem explicitly demands that the first appearance order is preserved.\n\nThe time complexity is O(n) since we iterate through the `n` elements in the list once, and hash set lookups and insertions take O(1) time on average. The space complexity is O(n) to store the seen elements in the hash set and the unique elements in the output list.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "repeat-a-string": {
+    "promptMarkdown": "Given a string and a non-negative integer representing a count, return a new string that repeats the original string the specified number of times with no characters in between.\n\n**Constraints**\n- The string length is between `0` and `1000`.\n- The repeat count is between `0` and `1000`.\n\n**Example 1**\n```\ninput:\nab\n3\noutput: ababab\n```\nThe string \"ab\" is repeated 3 times.\n\n**Example 2**\n```\ninput:\nx\n0\noutput: \n```\nRepeating any string 0 times results in an empty string.\n\n**Follow-up:** Are strings mutable or immutable in your programming language, and how does this affect performance?",
+    "editorialMarkdown": "The standard approach is to start with an empty string and repeatedly append or concatenate the target string in a loop. This falls under the String Concatenation pattern.\n\nThe one trap most solvers hit is poor performance caused by naive string concatenation. In languages where strings are immutable (like Java, Python, or C#), appending to a string in a loop creates a completely new string in memory during each iteration. This leads to an O(n^2) time complexity. Using a built-in string repeat function or a specialized string builder class avoids this issue.\n\nAssuming an efficient built-in function or a string builder is used, the time complexity is O(n * k), where n is the length of the string and k is the repetition count. The space complexity is also O(n * k) to hold the final resulting string.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
