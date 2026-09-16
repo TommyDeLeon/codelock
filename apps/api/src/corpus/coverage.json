@@ -240,5 +240,127 @@
     "batch": "gen-lc-009",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "best-time-to-buy-and-sell-stock": {
+    "ours": "maximum-spice-profit",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "big-countries": {
+    "ours": "heavy-duty-vehicles",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "binary-gap": {
+    "ours": "longest-silent-period",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "binary-number-with-alternating-bits": {
+    "ours": "zebra-barcode-check",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "biggest-single-number": {
+    "ours": "highest-unique-bid",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "bikes-last-time-used": {
+    "ours": "latest-sensor-readings",
+    "batch": "gen-lc-010",
+    "date": "2026-09-16"
+  },
+  "binary-prefix-divisible-by-5": {
+    "ours": "sensor-signal-stability",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "binary-search": {
+    "ours": "locate-pressure-level",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "binary-tree-inorder-traversal": {
+    "ours": "botanical-index-order",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "binary-tree-paths": {
+    "ours": "pipeline-capacity-sums",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "binary-tree-postorder-traversal": {
+    "ours": "robot-assembly-sequence",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "binary-tree-preorder-traversal": {
+    "ours": "planetary-scan-log",
+    "batch": "gen-lc-011",
+    "date": "2026-09-16"
+  },
+  "bitwise-or-of-even-numbers-in-an-array": {
+    "ours": "assembled-robot-diagnostics",
+    "batch": "gen-lc-012",
+    "date": "2026-09-16"
+  },
+  "books-with-null-ratings": {
+    "ours": "missing-weather-readings",
+    "batch": "gen-lc-012",
+    "date": "2026-09-16"
+  },
+  "buddy-strings": {
+    "ours": "ancient-scroll-swap",
+    "batch": "gen-lc-012",
+    "date": "2026-09-16"
+  },
+  "binary-watch": {
+    "ours": "reactor-status-display",
+    "batch": "gen-lc-012",
+    "date": "2026-09-16"
+  },
+  "bitwise-or-of-adjacent-elements": {
+    "ours": "combined-security-codes",
+    "batch": "gen-lc-012",
+    "date": "2026-09-16"
+  },
+  "binary-tree-tilt": {
+    "ours": null,
+    "batch": "gen-lc-012",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "calculate-money-in-leetcode-bank": {
+    "ours": "collect-rare-gems",
+    "batch": "gen-lc-014",
+    "date": "2026-09-16"
+  },
+  "calculator-with-method-chaining": {
+    "ours": "drone-flight-adjustments",
+    "batch": "gen-lc-014",
+    "date": "2026-09-16"
+  },
+  "can-make-arithmetic-progression-from-sequence": {
+    "ours": "verify-staircase-arrangement",
+    "batch": "gen-lc-014",
+    "date": "2026-09-16"
+  },
+  "can-place-flowers": {
+    "ours": "can-place-cooling-servers",
+    "batch": "gen-lc-014",
+    "date": "2026-09-16"
+  },
+  "calculate-digit-sum-of-a-string": {
+    "ours": "compress-serial-number",
+    "batch": "gen-lc-014",
+    "date": "2026-09-16"
+  },
+  "calculate-special-bonus": {
+    "ours": null,
+    "batch": "gen-lc-014",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }
