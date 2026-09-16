@@ -1767,5 +1767,37 @@
     "batch": "gen-lc-w4-053",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "find-the-peaks": {
+    "ours": "identify-power-surges",
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16"
+  },
+  "find-the-team-size": {
+    "ours": "squad-member-counts",
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16"
+  },
+  "first-unique-character-in-a-string": {
+    "ours": "first-isolated-frequency",
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16"
+  },
+  "first-letter-to-appear-twice": {
+    "ours": "first-duplicate-signal",
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16"
+  },
+  "find-total-time-spent-by-each-employee": {
+    "ours": null,
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-x-sum-of-all-k-long-subarrays-i": {
+    "ours": null,
+    "batch": "gen-lc-w4-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }

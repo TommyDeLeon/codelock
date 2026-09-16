@@ -91,7 +91,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows — the magnitude/sign description, equal-speed sentence, smaller-object destruction rule, equal-mass destruction rule, and same-direction noncoll"
+    "tests": [
+      {
+        "stdin": "4 6 -3 -8",
+        "expectedStdout": "-8",
+        "isSample": true
+      },
+      {
+        "stdin": "-3 3 5 -5",
+        "expectedStdout": "-3 3",
+        "isSample": true
+      },
+      {
+        "stdin": "10",
+        "expectedStdout": "10"
+      },
+      {
+        "stdin": "10 -10",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "7 7 7 -7 -7 -7",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "-10 -20 -30",
+        "expectedStdout": "-10 -20 -30"
+      },
+      {
+        "stdin": "100 200 300",
+        "expectedStdout": "100 200 300"
+      },
+      {
+        "stdin": "2 -1 1 -2",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "5 -5 5 -5",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 -11",
+        "expectedStdout": "-11"
+      }
+    ]
   },
   "average-of-list": {
     "promptMarkdown": "Given a list of whole numbers, calculate and return their average. The answer is a decimal, printed to six decimal places.\n\n**Example 1**\n\n```\ninput:\n1 2 3 4\noutput: 2.500000\n```\nThe sum is 10 and there are 4 numbers; 10 / 4 = 2.5.\n\n**Example 2**\n\n```\ninput:\n5\noutput: 5.000000\n```\nThe average of a single number is the number itself.\n\n**Example 3**\n\n```\ninput:\n1 2\noutput: 1.500000\n```\nThe sum is 3, divided by 2 is 1.5.\n\n**Constraints**\n- The list always has at least one number.\n\n**Follow-up:** Can you do this in a single pass with O(1) extra space?",
@@ -256,7 +299,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode Gas Station](https://leetcode.com/problems/gas-station/): the sentences about beginning with zero resource at a checkpoint and returni"
+    "tests": [
+      {
+        "stdin": "1 1 -1 -2 3",
+        "expectedStdout": "4",
+        "isSample": true
+      },
+      {
+        "stdin": "-3 4 -2",
+        "expectedStdout": "-1",
+        "isSample": true
+      },
+      {
+        "stdin": "5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-5",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "0 0 0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-1 -1 -1 3",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "2 -5 3 -2 4",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "-4 1 1 1 1 1 -2",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "10 -5 -5 10 -5 -5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1 1 -1",
+        "expectedStdout": "0"
+      }
+    ]
   },
   "climbing-steps-count": {
     "promptMarkdown": "A communication device transmits a message that takes exactly `n` milliseconds. The message is composed entirely of short beeps, which last 1 millisecond, and long beeps, which last 2 milliseconds. \n\nCalculate how many distinct sequences of beeps can make up a message of exactly `n` milliseconds.\n\n**Constraints**\n- `n` is between 0 and 45.\n- For a duration of 0 milliseconds, there is exactly 1 valid sequence: an empty message with no beeps.\n\n**Example 1**\n```\ninput:\n4\noutput: 5\n```\nThe sequences of beep durations can be: 1+1+1+1, 1+1+2, 1+2+1, 2+1+1, or 2+2.\n\n**Example 2**\n```\ninput:\n2\noutput: 2\n```\nThe sequences can be 1+1 or 2.\n\n**Follow-up:**\nCan you optimize your solution to run in O(n) time and O(1) space?",
@@ -271,7 +357,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode Best Time to Buy and Sell Stock II](https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/): the consecutive sentences abou"
+    "tests": [
+      {
+        "stdin": "2 5 1 6",
+        "expectedStdout": "8",
+        "isSample": true
+      },
+      {
+        "stdin": "4 1 8 5 9",
+        "expectedStdout": "11",
+        "isSample": true
+      },
+      {
+        "stdin": "10",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "10 10 10 10 10",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "5 4 3 2 1 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0 5 0 5 0 5",
+        "expectedStdout": "15"
+      },
+      {
+        "stdin": "1 3 2 4 3 5 4 6",
+        "expectedStdout": "8"
+      },
+      {
+        "stdin": "100 10 20 5 50",
+        "expectedStdout": "55"
+      },
+      {
+        "stdin": "2 2 4 4 6 6 8 8",
+        "expectedStdout": "6"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25",
+        "expectedStdout": "24"
+      }
+    ]
   },
   "common-time-blocks": {
     "promptMarkdown": "The rows before `-1 -1` are one person’s closed availability ranges; rows after it are another person’s. Within each person, ranges are sorted and do not overlap. Return every non-empty intersection **sorted by start, then by end**. Touching ranges overlap at that single point, so `[1,2]` and `[2,3]` produce `[2,2]`. Either side may be empty.\n\n**Constraints**\n- Within each person, ranges are sorted and do not overlap.\n\n**Example 1**\n```\ninput:\n1 3;5 7;-1 -1;2 6\noutput: 2 3;5 6\n```\nThe intersection of the two persons' ranges yields the shared time blocks.\n\n**Example 2**\n```\ninput:\n1 2;-1 -1;2 3\noutput: 2 2\n```\nTouching ranges overlap at a single point.\n\n**Example 3**\n```\ninput:\n-1 -1;1 2\noutput: \n```\nWhen one side is empty, there are no non-empty intersections.\n\n**Follow-up:** Can you solve this in O(n) time assuming the input ranges are already sorted?",
@@ -535,7 +664,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 739, Daily Temperatures](https://leetcode.com/problems/daily-temperatures/): the consecutive instructions to calculate days until a hi"
+    "tests": [
+      {
+        "stdin": "15 20 18 25 10 30",
+        "expectedStdout": "1 2 1 2 1 0",
+        "isSample": true
+      },
+      {
+        "stdin": "30 20 10 15 25",
+        "expectedStdout": "0 3 1 1 0",
+        "isSample": true
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 1 1 1 1",
+        "expectedStdout": "0 0 0 0 0"
+      },
+      {
+        "stdin": "-100 -50 -10 0",
+        "expectedStdout": "1 1 1 0"
+      },
+      {
+        "stdin": "50 49 48 47 46",
+        "expectedStdout": "0 0 0 0 0"
+      },
+      {
+        "stdin": "10 20 30 20 10 40",
+        "expectedStdout": "1 1 3 2 1 0"
+      },
+      {
+        "stdin": "-5 -10 -5 -10",
+        "expectedStdout": "0 1 0 0"
+      },
+      {
+        "stdin": "0 0 1 1 2 2",
+        "expectedStdout": "2 1 2 1 0 0"
+      },
+      {
+        "stdin": "10 9 8 7 6 5 4 3 2 1 11 10 9 8 7 6 5 4 3 2 12",
+        "expectedStdout": "10 9 8 7 6 5 4 3 2 1 10 9 8 7 6 5 4 3 2 1 0"
+      }
+    ]
   },
   "decode-digit-message-count": {
     "promptMarkdown": "An ancient manuscript encodes words using numbers, where the letter 'A' is represented by `1`, 'B' by `2`, and so on up to 'Z' represented by `26`. You are given a string of digits, and you must find the total number of valid ways it could be split into individual letters.\n\nA valid letter code is a one- or two-digit number between 1 and 26. A sequence starting with a '0', such as '06', is not valid because '0' does not map to any letter and cannot be combined with a subsequent digit in that order.\n\n**Constraints**\n- The input is a string of digits with a length between 0 and 45.\n- An empty input string has exactly `0` valid decodings.\n\n**Example 1**\n```\ninput:\n226\noutput: 3\n```\nThe string can be split as \"2 2 6\", \"22 6\", and \"2 26\".\n\n**Example 2**\n```\ninput:\n06\noutput: 0\n```\nThe string cannot be decoded because '0' is not a valid letter and \"06\" is not a valid mapping.\n\n**Example 3**\n```\ninput:\n10\noutput: 1\n```\nThe only valid split is \"10\", as '1' and '0' cannot be parsed separately.\n\n**Follow-up:** Can you determine the number of decodings using O(1) additional space?",
@@ -552,7 +724,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 394, Decode String](https://leetcode.com/problems/decode-string/description/): the repetition-rule sentence and the combined assurance"
+    "tests": [
+      {
+        "stdin": "2[xy]3[z]",
+        "expectedStdout": "xyxyzzz",
+        "isSample": true
+      },
+      {
+        "stdin": "p2[q2[r]]s",
+        "expectedStdout": "pqrrqrrs",
+        "isSample": true
+      },
+      {
+        "stdin": "z",
+        "expectedStdout": "z"
+      },
+      {
+        "stdin": "1[a]1[b]",
+        "expectedStdout": "ab"
+      },
+      {
+        "stdin": "11[w]",
+        "expectedStdout": "wwwwwwwwwww"
+      },
+      {
+        "stdin": "2[2[2[a]]]",
+        "expectedStdout": "aaaaaaaa"
+      },
+      {
+        "stdin": "3[xyz]",
+        "expectedStdout": "xyzxyzxyz"
+      },
+      {
+        "stdin": "ab15[c]de",
+        "expectedStdout": "abcccccccccccccccde"
+      },
+      {
+        "stdin": "2[a]3[b]4[c]",
+        "expectedStdout": "aabbbcccc"
+      },
+      {
+        "stdin": "2[x10[y]z3[w]]v",
+        "expectedStdout": "xyyyyyyyyyyzwwwxyyyyyyyyyyzwwwv"
+      }
+    ]
   },
   "deque-both-ends": {
     "promptMarkdown": "Implement a double-ended queue yourself; do not use your language's built-in double-ended queue type.\n\nBuild `Deque`. `pushFront` and `pushBack` add values at either end; `popFront` and `popBack` remove from their matching ends. `size()` reports stored values.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nWhen an operation cannot return an element (an empty removal or an invalid index), return `-1`.\n\n**Constraints**\n- The number of operations will be greater than 0.\n- Pushed values will be valid integers.\n\n**Example 1**\n```\ninput:\n7\nDeque\npushFront 2\npushBack 3\npushFront 1\npopBack\npopFront\nsize\noutput:\nnull\nnull\nnull\nnull\n3\n1\n1\n```\nThis example shows adding values to both ends and popping them off correctly.\n\n**Example 2**\n```\ninput:\n4\nDeque\npopFront\npopBack\nsize\noutput:\nnull\n-1\n-1\n0\n```\nThis example demonstrates the edge case of attempting to pop from an empty deque, which correctly returns -1.\n\n**Example 3**\n```\ninput:\n8\nDeque\npushBack 1\npushBack 2\npopFront\npushFront 0\npopBack\npopFront\nsize\noutput:\nnull\nnull\nnull\n1\nnull\n2\n0\n0\n```\nThis example tests a mix of pushes and pops on both ends.\n\n**Follow-up:** Can you implement this so that every operation is O(1) time?",
@@ -686,7 +901,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 322, Coin Change](https://leetcode.com/problems/coin-change/): the consecutive minimum-count and impossible-amount sentences closely p"
+    "tests": [
+      {
+        "stdin": "1 5 10 25\n47",
+        "expectedStdout": "5",
+        "isSample": true
+      },
+      {
+        "stdin": "1 4 5\n8",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "10 20\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "5\n25",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "3\n10",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "1 2 2 5\n6",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "\n100",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "1 2 3 5 8 13 21 34 55 89\n1000",
+        "expectedStdout": "12"
+      },
+      {
+        "stdin": "2 4 6 8\n15",
+        "expectedStdout": "-1"
+      }
+    ]
   },
   "fewest-hops-to-finish": {
     "promptMarkdown": "You are piloting a spaceship navigating a linear sequence of space stations. Each station provides a hyperdrive booster that can launch your ship up to a certain number of stations forward. The list of numbers represents the maximum forward reach from each station. Assuming you start at the very first station and it is always physically possible to reach the final station, determine the minimum number of hyperdrive activations needed to arrive at the last station.\n\n**Constraints**\n- The list has between 1 and 20 non-negative numbers.\n- The last station is guaranteed to be reachable.\n- A sequence with only 1 station requires 0 activations.\n\n**Example 1**\n```\ninput:\n2 3 1 1 4\noutput: 2\n```\nLaunch 1 station forward to the second station, which then has enough range (3) to reach the end.\n\n**Example 2**\n```\ninput:\n2 3 0 1 4\noutput: 2\n```\nSimilarly, move to the second station, then jump directly to the end.\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\nYou start at the final station, requiring zero activations.\n\n**Follow-up:** Can you achieve a solution that scans the stations exactly once in O(n) time?",
@@ -849,7 +1107,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 994, Rotting Oranges](https://leetcode.com/problems/rotting-oranges/): the three cell descriptions, round-by-round adjacency sentence,"
+    "tests": [
+      {
+        "stdin": "2 1 1 1",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "1 2 1;0 0 0;1 2 1",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "2 1 0 1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2 2;2 2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0 0;0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 1;1 1",
+        "expectedStdout": "-1"
+      },
+      {
+        "stdin": "2 1 1 1 1 1 1;1 1 1 1 1 1 1;1 1 1 1 1 1 1",
+        "expectedStdout": "8"
+      },
+      {
+        "stdin": "2",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2 1;0 0;1 1",
+        "expectedStdout": "-1"
+      }
+    ]
   },
   "has-a-cycle": {
     "promptMarkdown": "You are given a list of next-pointers written as indices. Position `i` points at position `a[i]`, and the value `-1` means \"nothing follows\".\n\nStart at position `0` and keep following the pointers. Decide whether you ever arrive at a position you have already stood on. Print `true` if you do and `false` if the trail runs off the end at some `-1`.\n\nA single position pointing at itself (`0`) is a cycle, and a single position holding `-1` is not.\n\n**Constraints**\n- The list has between `1` and `100,000` elements.\n- Every value is either `-1` or a valid index into the list `0 <= a[i] < length`.\n\n**Example 1**\n\n```\ninput:\n1 2 3 1\noutput: true\n```\nThe trail is `0 -> 1 -> 2 -> 3 -> 1`, and position `1` comes round again.\n\n**Example 2**\n\n```\ninput:\n1 2 3 -1\noutput: false\n```\nThe trail ends at the `-1`.\n\n**Example 3**\n\n```\ninput:\n0\noutput: true\n```\nPosition 0 points to itself, forming a cycle.\n\n**Follow-up:** Can you solve it in constant extra space without maintaining a set of visited positions?",
@@ -976,7 +1277,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 35, Search Insert Position](https://leetcode.com/problems/search-insert-position/): the insertion-position and existing-ID sentences p"
+    "tests": [
+      {
+        "stdin": "2 4 6 8\n5",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "2 4 6 8\n1",
+        "expectedStdout": "0",
+        "isSample": true
+      },
+      {
+        "stdin": "10\n15",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-10 -5 0 5 10\n-7",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "10 20 30 40 50\n30",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "-10 -5 -2\n-1",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n15",
+        "expectedStdout": "14"
+      },
+      {
+        "stdin": "1 2 3\n-5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-100\n-100",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-3 0 3 9\n9",
+        "expectedStdout": "3"
+      }
+    ]
   },
   "integer-square-root": {
     "promptMarkdown": "Return the greatest non-negative integer whose square is at most `n`. \n\nDo not use fractional arithmetic or floating point functions. For a perfect square such as 81, return its exact root.\n\n**Constraints**\n- `n` is a non-negative integer between `0` and `1,000,000`.\n\n**Example 1**\n\n```\ninput:\n20\noutput: 4\n```\n`4 × 4` is at most 20, but `5 × 5` is larger.\n\n**Example 2**\n\n```\ninput:\n81\noutput: 9\n```\n`9 × 9` is exactly 81.\n\n**Example 3**\n\n```\ninput:\n0\noutput: 0\n```\n`0 × 0` is exactly 0.\n\n**Follow-up:** Can you compute the root without checking every number?",
@@ -1120,7 +1464,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode's Last Stone Weight"
+    "tests": [
+      {
+        "stdin": "6 2 4",
+        "expectedStdout": "0",
+        "isSample": true
+      },
+      {
+        "stdin": "8 5 3 2 1",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "10",
+        "expectedStdout": "10"
+      },
+      {
+        "stdin": "7 7 7 7",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "100 90 80",
+        "expectedStdout": "70"
+      },
+      {
+        "stdin": "2 2 2",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "10 5 5 1 1",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "20 15 10 5 1",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21",
+        "expectedStdout": "1"
+      }
+    ]
   },
   "length-of-string": {
     "promptMarkdown": "Given a string, determine the number of characters it contains. Note that spaces are considered valid characters.\n\n**Constraints**\n- The string length is between `0` and `10^5`.\n\n**Example 1**\n```\ninput:\nhello\noutput: 5\n```\nThe word \"hello\" consists of 5 characters.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty string contains 0 characters.\n\n**Example 3**\n```\ninput:\na\noutput: 1\n```\nA single character string has a length of 1.\n\n**Follow-up:** What is the time complexity of finding a string's length in your chosen programming language?",
