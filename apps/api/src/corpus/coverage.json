@@ -1341,5 +1341,37 @@
     "batch": "gen-lc-048",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "duplicate-emails": {
+    "ours": "identify-duplicate-transmissions",
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16"
+  },
+  "employees-whose-manager-left-the-company": {
+    "ours": "abandoned-guild-members",
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16"
+  },
+  "employees-with-missing-information": {
+    "ours": "unmatched-checkpoint-badges",
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16"
+  },
+  "distribute-elements-into-two-arrays-i": {
+    "ours": "deal-cards-to-two-players",
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16"
+  },
+  "earliest-time-to-finish-one-task": {
+    "ours": null,
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "equal-score-substrings": {
+    "ours": null,
+    "batch": "gen-lc-w1-049",
+    "date": "2026-09-16",
+    "reason": "rejected"
   }
 }

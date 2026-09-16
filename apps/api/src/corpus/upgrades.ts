@@ -10,6 +10,8 @@ export interface StatementUpgrade {
   promoteSamples: string[];
   model: string;
   date: string;
+  /** Set when the reviewer would not pass a rewrite; the original statement stays. */
+  skipped?: string;
 }
 
 export const UPGRADES: Record<string, StatementUpgrade> = {
@@ -238,6 +240,14 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "fizzbuzz-list": {
+    "promptMarkdown": "The classic.\n\nGiven a number `n`, return the list of words for `1` through `n`:\n\n- a multiple of both 3 and 5 becomes `FizzBuzz`\n- a multiple of 3 becomes `Fizz`\n- a multiple of 5 becomes `Buzz`\n- anything else becomes the number itself\n\n**Example**\n\n```\ninput:  5\noutput: 1 2 Fizz 4 Buzz\n```",
+    "editorialMarkdown": "## Order the conditions from most specific to least\n\nThe entire difficulty of FizzBuzz is the overlap at 15. Check\n`divisible by 3 and 5` **first**: if you check `divisible by 3` first, then\n15 matches it, you append `Fizz`, and you never reach the case you wanted.\n\nThat is a general rule worth keeping — when conditions overlap, the most\nspecific one goes first, or it is unreachable.\n\nThe other common way to write it builds the word by concatenation:\n\n```\nword = (n % 3 == 0 ? \"Fizz\" : \"\") + (n % 5 == 0 ? \"Buzz\" : \"\")\nif word is empty, use the number\n```\n\nThat version has no overlap problem at all, because 15 simply matches both\nhalves. Either is fine; the second generalises if a third rule arrives.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16",
+    "skipped": "review: closely follows the classic FizzBuzz problem statement, with only a manufacturing-line narrative wrapper added around the identical divisibility rules and outpu"
+  },
   "index-of-target": {
     "promptMarkdown": "Given an array of integers and a target integer, find the zero-based index of the first occurrence of the target in the array.\nThe input consists of two lines: the first line contains the space-separated integers of the array, and the second line contains the target integer. Return the index of the target. If the target is not found in the array, return `-1`.\n\n**Constraints**\n- The array can be empty.\n- The array can contain duplicates.\n\n**Example 1**\n```\ninput:\n5 3 7\n7\noutput: 2\n```\nThe target `7` is found at index 2.\n\n**Example 2**\n```\ninput:\n1 2\n9\noutput: -1\n```\nThe target `9` is not in the array.\n\n**Example 3**\n```\ninput:\n\n1\noutput: -1\n```\nThe array is empty, so the target cannot be found.\n\n**Follow-up:** Could you solve this with a single pass through the array?",
     "editorialMarkdown": "The optimal approach is a linear search. Iterate through the array while keeping track of the current index. At each step, compare the current element with the target. If they match, return the current index immediately. This early exit ensures you find the *first* occurrence and avoids unnecessary work. If the loop completes without finding a match, return -1.\n\nThe time complexity is O(n), where n is the length of the array, as you may need to inspect every element. The space complexity is O(1) since no additional data structures are required. A common trap is using an `else` branch inside the loop to return -1 when the current element does not match the target, which incorrectly terminates the search on the very first element if it's not a match. Another detail is using -1 as a sentinel value, which is safe because valid indices are non-negative.",
@@ -308,6 +318,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "longest-word": {
+    "promptMarkdown": "Given a string containing a sequence of words separated by single spaces, return the longest word in the string.\n\nIf there are multiple words that tie for the longest length, return the one that appears first in the string. If the input string is empty, return an empty string.\n\n**Constraints**\n- The input string consists of words separated by single spaces.\n- The input string may be empty.\n\n**Example 1**\n```\ninput:\nthe quick brown fox\noutput: quick\n```\nBoth \"quick\" and \"brown\" have a length of 5, but \"quick\" appears first.\n\n**Example 2**\n```\ninput:\naa bb\noutput: aa\n```\nBoth words have a length of 2, so the first word is chosen.\n\n**Example 3**\n```\ninput:\n\noutput: \n```\nAn empty input yields an empty output.\n\n**Follow-up:** Can you solve this with a single pass through the string without splitting it into an intermediate list of words?",
+    "editorialMarkdown": "The intended approach is to parse the string into words and maintain a running maximum for the longest word seen so far. This uses the running best pattern over sequences.\n\nThe time complexity is O(n) where n is the length of the string, as we must examine every character. The space complexity is O(n) if the string is split into an array of words, or O(1) if parsing character by character.\n\nThe one trap most solvers hit is the tie-breaking condition. Using a strictly greater than operator (`>`) correctly preserves the first longest word found, whereas a greater than or equal to operator (`>=`) would incorrectly overwrite the running best with a later word of the same length.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
   "min-and-max": {
     "promptMarkdown": "Given a list of integers, return two numbers: the smallest number in the list followed by the largest number in the list.\n\n**Constraints**\n- The list will always contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 1 4 1 5\noutput: 1 5\n```\nThe smallest number is 1 and the largest is 5.\n\n**Example 2**\n```\ninput:\n7\noutput: 7 7\n```\nSince 7 is the only element, it is both the smallest and the largest.\n\n**Follow-up:** Can you solve this in a single pass with O(1) auxiliary space?",
     "editorialMarkdown": "The intended approach is to initialize both the minimum and maximum trackers to the first element of the list, then iterate through the rest of the list once, updating the bounds as needed. The pattern's name is running best. Time complexity is O(n) and space complexity is O(1). The one trap most solvers hit is initializing the minimum value to 0 or another arbitrary constant. If the list contains only numbers greater than 0, a starting minimum of 0 will be incorrectly returned as the answer. By seeding the starting values directly from the input array, the logic safely accommodates negatives.",
@@ -361,6 +380,159 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "Given a string and a non-negative integer representing a count, return a new string that repeats the original string the specified number of times with no characters in between.\n\n**Constraints**\n- The string length is between `0` and `1000`.\n- The repeat count is between `0` and `1000`.\n\n**Example 1**\n```\ninput:\nab\n3\noutput: ababab\n```\nThe string \"ab\" is repeated 3 times.\n\n**Example 2**\n```\ninput:\nx\n0\noutput: \n```\nRepeating any string 0 times results in an empty string.\n\n**Follow-up:** Are strings mutable or immutable in your programming language, and how does this affect performance?",
     "editorialMarkdown": "The standard approach is to start with an empty string and repeatedly append or concatenate the target string in a loop. This falls under the String Concatenation pattern.\n\nThe one trap most solvers hit is poor performance caused by naive string concatenation. In languages where strings are immutable (like Java, Python, or C#), appending to a string in a loop creates a completely new string in memory during each iteration. This leads to an O(n^2) time complexity. Using a built-in string repeat function or a specialized string builder class avoids this issue.\n\nAssuming an efficient built-in function or a string builder is used, the time complexity is O(n * k), where n is the length of the string and k is the repetition count. The space complexity is also O(n * k) to hold the final resulting string.",
     "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "reverse-a-list": {
+    "promptMarkdown": "Given a list of integers, return a new list with the elements in the opposite order.\n\nRepeated values should keep their relative reversed order. If the input list is empty, return an empty list.\n\n**Constraints**\n- The list can contain duplicate integers.\n- The list can be empty.\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 3 2 1\n```\nThe entire list is reversed.\n\n**Example 2**\n```\ninput:\n\noutput: \n```\nAn empty list is returned as empty.\n\n**Example 3**\n```\ninput:\n7\noutput: 7\n```\nA single-element list remains the same.\n\n**Follow-up:** Can you reverse the list in-place?",
+    "editorialMarkdown": "The standard approach is to build a new list by iterating backward through the input list and appending each element to the result. This leverages the array indexing pattern.\n\nThe time complexity is O(n) where n is the length of the list, as each element is visited once. The space complexity is O(n) since a new list is constructed to hold the reversed elements.\n\nThe one trap most solvers hit when attempting an in-place swap is iterating over the entire list instead of stopping at the midpoint. If the loop runs all the way to the end, every pair of elements is swapped twice, causing the list to return to its original order.",
+    "promoteSamples": [
+      "7"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "reverse-a-string": {
+    "promptMarkdown": "Given a string, return a new string with its characters in the exact opposite order.\n\nSpaces and all other characters are treated identically and must be reversed. If the input string is empty, return an empty string.\n\n**Constraints**\n- The string may contain spaces and any standard characters.\n- The string may be empty.\n\n**Example 1**\n```\ninput:\nhello\noutput: olleh\n```\nThe characters of the string are reversed.\n\n**Example 2**\n```\ninput:\na\noutput: a\n```\nA single-character string remains the same.\n\n**Example 3**\n```\ninput:\n\noutput: \n```\nAn empty string returns an empty string.\n\n**Follow-up:** Can you implement this manually using a loop without relying on built-in string reversal functions?",
+    "editorialMarkdown": "The intended approach, while often achievable with standard library functions, is to iterate backward over the indices of the string from the last index down to zero, constructing a new string or list of characters along the way. This employs a reverse iteration pattern.\n\nThe time complexity is O(n) because every character is processed exactly once. The space complexity is O(n) since a new string must be allocated to hold the result, especially in languages where strings are immutable.\n\nThe one trap most solvers hit is an off-by-one error with the loop boundaries. Starting the loop at the string's length rather than length minus one causes an out-of-bounds error, while stopping the loop strictly greater than zero silently skips the first character of the original string.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "running-totals": {
+    "promptMarkdown": "Given a list of integers, return a list where each element at a given position is the cumulative sum of all elements up to and including that position in the input list.\n\n**Constraints**\n- The input list may contain negative and positive integers.\n- The input list may be empty.\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 1 3 6\n```\nThe running sums are 1, 1+2=3, and 1+2+3=6.\n\n**Example 2**\n```\ninput:\n\noutput: \n```\nAn empty input list yields an empty output list.\n\n**Example 3**\n```\ninput:\n5\noutput: 5\n```\nA single-element list yields a list with just that element.\n\n**Follow-up:** Can you compute the totals without a nested loop?",
+    "editorialMarkdown": "The intended approach is to maintain a single running accumulator variable that keeps a tally as you iterate through the list, appending the current sum to the output at each step. This is known as the prefix sum pattern.\n\nThe time complexity is O(n) since we iterate through the list exactly once. The space complexity is O(n) to store the output list of running totals.\n\nThe one trap most solvers hit is calculating the sum from scratch for every index using nested loops. This recomputation unnecessarily raises the time complexity to O(n^2), defeating the efficiency of carrying the running total forward.",
+    "promoteSamples": [
+      "5"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "second-largest-number": {
+    "promptMarkdown": "Given a list of integers, find the second largest distinct value in the list.\n\nIf there is no second distinct value, return `-1`. This can happen if the list contains fewer than two distinct numbers.\n\n**Constraints**\n- The list may contain duplicate numbers.\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 2\n```\nThe largest distinct value is 3, and the second largest is 2.\n\n**Example 2**\n```\ninput:\n5 5\noutput: -1\n```\nThere is no second distinct value, so -1 is returned.\n\n**Example 3**\n```\ninput:\n3\noutput: -1\n```\nThe list contains only one number, so there is no second distinct value.\n\n**Follow-up:** Can you find the answer in a single pass without sorting the list?",
+    "editorialMarkdown": "The intended approach is to track both the largest and second-largest values simultaneously in a single pass through the list. This relies on the pattern of maintaining multiple running bests.\n\nThe time complexity is O(n) because each number in the list is examined exactly once. The space complexity is O(1) as only a few variables are needed to store the current best values.\n\nThe one trap most solvers hit is mismanaging the update logic when a new maximum is found. If you overwrite the current maximum before assigning its previous value to the second maximum, the previous best value is lost entirely. Another common pitfall is forgetting to enforce distinctness, which can cause the second-largest value to equal the largest when duplicates are present.",
+    "promoteSamples": [
+      "3"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "shout-the-line": {
+    "promptMarkdown": "Given a string consisting of lowercase letters and spaces, return the exact same string with all lowercase letters converted to uppercase.\n\nSpaces should be left completely unchanged.\n\n**Constraints**\n- The string may be empty.\n- Only lowercase English letters and spaces are expected.\n\n**Example 1**\n```\ninput:\nhello world\noutput: HELLO WORLD\n```\nAll letters are converted to uppercase while the space remains untouched.\n\n**Example 2**\n```\ninput:\n\noutput: \n```\nAn empty string is returned empty.\n\n**Example 3**\n```\ninput:\na\noutput: A\n```\nA single letter is converted to uppercase.\n\n**Follow-up:** What edge cases occur when relying on character arithmetic rather than built-in string methods?",
+    "editorialMarkdown": "The intended approach is to use the standard library's uppercase conversion function, relying on built-in tools for case manipulation. This represents a direct case-conversion pattern.\n\nThe time complexity is O(n) since every character in the string must be evaluated and potentially modified. The space complexity is O(n) to store the new uppercase string.\n\nThe one trap most solvers hit is attempting to write manual character arithmetic by subtracting an offset from ASCII values. While this works for basic English alphabets, it breaks entirely on symbols, unexpected characters, and non-English alphabets with complex casing rules. Relying on library functions avoids this fragility.",
+    "promoteSamples": [
+      "a"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "smallest-number": {
+    "promptMarkdown": "Given a list of integers, find and return the smallest number present in the list.\n\nThe numbers can be positive, zero, or negative.\n\n**Constraints**\n- The input list will always contain at least one number.\n\n**Example 1**\n```\ninput:\n3 1 2\noutput: 1\n```\nThe smallest number in the list is 1.\n\n**Example 2**\n```\ninput:\n-5 -2\noutput: -5\n```\nAmong the negative numbers, -5 is the smallest.\n\n**Example 3**\n```\ninput:\n7\noutput: 7\n```\nWhen there is only one element, it is the smallest.\n\n**Follow-up:** Does your approach work safely for negative numbers without arbitrary constants?",
+    "editorialMarkdown": "The intended approach is to initialize a variable with the first element of the list and then iterate through the remaining elements, updating the variable whenever a smaller value is encountered. This is the running minimum pattern.\n\nThe time complexity is O(n) because each number in the list must be checked against the current minimum. The space complexity is O(1) since only a single variable is maintained for the state.\n\nThe one trap most solvers hit is initializing the running minimum to zero or a hardcoded large constant. If all numbers in the list are greater than zero, initializing with zero will wrongly output zero instead of the true minimum. Always initialize the running best with the first actual element of the data.",
+    "promoteSamples": [
+      "7"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "starts-with-vowel": {
+    "promptMarkdown": "Determine if a given string begins with a lowercase vowel (`a`, `e`, `i`, `o`, `u`). If the string is empty, it does not start with a vowel.\n\n**Constraints**\n- `0 <= length of string <= 10^4`\n- The string consists only of lowercase English letters.\n\n**Example 1**\n```\ninput:\napple\noutput: true\n```\nThe first character is 'a', which is a vowel.\n\n**Example 2**\n```\ninput:\nbanana\noutput: false\n```\nThe first character is 'b', which is not a vowel.\n\n**Example 3**\n```\ninput:\n\noutput: false\n```\nAn empty string has no first character, so it does not start with a vowel.\n\n**Follow-up:** Can you determine the answer in O(1) time and O(1) space complexity?",
+    "editorialMarkdown": "The intended approach requires checking two conditions: whether the string has any characters at all, and whether its first character is a vowel. This pattern is fundamental when dealing with sequence indexing, as you must guarantee a character exists before attempting to read it.\n\nMost programming languages use short-circuit evaluation for logical AND operations. Checking if the length is greater than zero before checking the first character is safe because if the string is empty, the second condition is never evaluated. The common trap solvers hit is reversing the order of these checks, or omitting the length check entirely, which results in an out-of-bounds error when reading the first character of an empty string.\n\nThe time complexity is O(1) because we only check the first character, and the space complexity is O(1) as no additional memory is required.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-comma-separated": {
+    "promptMarkdown": "You are given a raw text string containing comma-separated numbers. Add up the numbers and return the total sum. There are no spaces in the string, and numbers may be negative. If the string is empty, the sum should be `0`.\n\n**Constraints**\n- `0 <= length of string <= 10^4`\n- The string consists of comma-separated integers without spaces.\n\n**Example 1**\n```\ninput:\n3,4,5\noutput: 12\n```\nThe sum of 3, 4, and 5 is 12.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty line has no numbers, so the sum is 0.\n\n**Example 3**\n```\ninput:\n42\noutput: 42\n```\nThe only number is 42, which is the sum.\n\n**Follow-up:** Can you process the string and calculate the sum in O(n) time, where n is the length of the string?",
+    "editorialMarkdown": "The intended approach involves two distinct steps: parsing the raw string into individual pieces and then converting those pieces into integers to be summed. This split-then-convert pattern is essential for handling real-world text input.\n\nYou can split the input string by commas to get an array of string tokens, iterate over them, convert each to an integer, and accumulate the total. The most common trap solvers hit is not handling the empty string correctly. In many languages, splitting an empty string by a comma results in an array containing a single empty string, rather than an empty array. Attempting to convert an empty string into a number will crash the program. To avoid this, explicitly check if the input string is empty before attempting to split it.\n\nThis approach operates in O(n) time complexity, where n is the length of the string, since both splitting and iterating take linear time. The space complexity is O(n) to store the split string pieces.",
+    "promoteSamples": [
+      "42"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-a-digit-string": {
+    "promptMarkdown": "You are given a string consisting entirely of digit characters. Treat each character as a separate number, add them up, and return the total sum. There are no spaces, signs, or other characters in the string. If the string is empty, the total should be `0`.\n\n**Constraints**\n- `0 <= length of string <= 10^4`\n- The string contains only digits from `0` to `9`.\n\n**Example 1**\n```\ninput:\n1234\noutput: 10\n```\nThe digits 1, 2, 3, and 4 sum up to 10.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty string evaluates to a sum of 0.\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\nThe only digit is 0, so the sum is 0.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) space complexity?",
+    "editorialMarkdown": "The intended approach is to iterate over each character in the string, explicitly convert it to its numeric value, and add it to a running total. This is a classic accumulator pattern applied to character parsing.\n\nA digit character like '7' is stored as a numeric code, not as the number 7 itself. The most common trap solvers hit is either adding the character codes directly, resulting in a massively inflated sum, or inadvertently concatenating the characters as strings instead of performing mathematical addition. By deliberately converting each character to an integer before adding it to the accumulator, you ensure mathematically correct behavior.\n\nThe time complexity is O(n), where n is the length of the string, as you must process each character exactly once. The space complexity is O(1) because you only need a single variable to maintain the running total.",
+    "promoteSamples": [
+      "0"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-array": {
+    "promptMarkdown": "You are given a list of whole numbers. Add up every number in the list and return their total sum. If the list is empty, the sum should be `0`.\n\n**Constraints**\n- `0 <= length of list <= 10^4`\n- `-10^4 <= elements in the list <= 10^4`\n\n**Example 1**\n```\ninput:\n1 2 3 4\noutput: 10\n```\nThe numbers 1, 2, 3, and 4 add up to 10.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty list evaluates to a total of 0.\n\n**Example 3**\n```\ninput:\n-5 5\noutput: 0\n```\nThe positive and negative numbers cancel each other out to 0.\n\n**Follow-up:** Can you find the sum in O(n) time and O(1) space complexity?",
+    "editorialMarkdown": "The intended approach uses the accumulator pattern. You initialize a variable to hold the running total before starting a loop, then iterate through the list and add each element to this total.\n\nThere are two common traps that solvers hit. The first is declaring the accumulator variable inside the loop, which causes it to reset on every iteration and ultimately return only the last element. The second trap is initializing the accumulator to something other than zero. Zero is the identity value for addition, meaning it will perfectly handle an empty list without needing any special edge-case conditions—the loop simply won't execute, and the function correctly returns zero.\n\nThe time complexity is O(n), where n is the number of elements in the array, as you have to visit every element once. The space complexity is O(1) since only a single accumulator variable is needed.",
+    "promoteSamples": [
+      "-5 5"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-digits": {
+    "promptMarkdown": "You are given a single whole number, zero or greater. Add up the individual digits of this number and return the sum.\n\n**Constraints**\n- `0 <= number <= 10^9`\n\n**Example 1**\n```\ninput:\n123\noutput: 6\n```\nThe digits 1, 2, and 3 sum up to 6.\n\n**Example 2**\n```\ninput:\n0\noutput: 0\n```\nThe only digit is 0, so the sum is 0.\n\n**Example 3**\n```\ninput:\n9\noutput: 9\n```\nThe only digit is 9, so the sum is 9.\n\n**Follow-up:** Can you solve this mathematically without converting the number to a string?",
+    "editorialMarkdown": "The intended approach extracts each digit mathematically using the modulo and integer division operators, which is a core pattern for base conversion and numerical manipulation.\n\nIn a loop, you can extract the last digit of the number using modulo 10 (`% 10`), add it to a running total, and then remove the last digit by performing integer division by 10 (`/ 10`). A frequent trap solvers hit is writing a loop condition like `while n > 0` but forgetting to handle an input of exactly `0`. If the running total is initialized to `0`, this works out correctly, but relying on this behavior blindly without understanding it can lead to bugs in similar algorithms where zero should be processed inside the loop.\n\nThe time complexity is O(d), where d is the number of digits in the integer, and the space complexity is O(1) since it uses only a few variables.",
+    "promoteSamples": [
+      "9"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-even-numbers": {
+    "promptMarkdown": "You are given a list of whole numbers. Add together only the even numbers in the list, completely ignoring the odd ones, and return the total. Zero is considered even.\n\n**Constraints**\n- `0 <= length of list <= 10^4`\n- `-10^4 <= elements in the list <= 10^4`\n\n**Example 1**\n```\ninput:\n1 2 3 4\noutput: 6\n```\nThe even numbers are 2 and 4, which add up to 6.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty list evaluates to a total of 0.\n\n**Example 3**\n```\ninput:\n1 3 5\noutput: 0\n```\nThere are no even numbers, so the sum is 0.\n\n**Follow-up:** Can you filter and sum the numbers in a single pass with O(1) extra space?",
+    "editorialMarkdown": "The intended approach combines filtering and the accumulator pattern in a single loop. You maintain a running total outside the loop and use an `if` statement inside to check whether the current number is even before adding it.\n\nThe condition to check if a number is even is `n % 2 == 0`. The trap solvers frequently hit is using a condition like `n % 2 == 1` or `n % 2 != 1` to define odd and then inverting it. In many languages, the modulo operator retains the sign of the dividend, meaning `-3 % 2` evaluates to `-1`. If you check against `1`, an odd negative number will slip through and mistakenly be treated as even. Checking against `0` directly is mathematically safer since zero has no sign.\n\nThe time complexity is O(n), requiring one pass over the array, and the space complexity is O(1) since it only needs a running total variable.",
+    "promoteSamples": [
+      "1 3 5"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-positives": {
+    "promptMarkdown": "You are given a list of whole numbers. Add up only the numbers that are strictly greater than zero and return the total. Negative numbers and zero are ignored.\n\n**Constraints**\n- `0 <= length of list <= 10^4`\n- `-10^4 <= elements in the list <= 10^4`\n\n**Example 1**\n```\ninput:\n1 -2 3\noutput: 4\n```\nThe positive numbers are 1 and 3, which sum up to 4.\n\n**Example 2**\n```\ninput:\n-1 -2\noutput: 0\n```\nThere are no positive numbers, so the total is 0.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nAn empty list has no positive numbers, so the total is 0.\n\n**Follow-up:** Can you accomplish this with O(1) space complexity?",
+    "editorialMarkdown": "This approach utilizes filtering within an accumulator loop. As you iterate through each element, you only add it to the running total if it satisfies the condition of being positive.\n\nA common trap solvers hit is misunderstanding the boundary definition—specifically, whether zero counts as a positive number. In mathematics, zero is neither positive nor negative. Therefore, the filtering condition must be `n > 0`, rather than `n >= 0`. Additionally, solvers sometimes try to write a separate edge case for arrays containing no positive numbers, which is unnecessary. By initializing the running total to zero, an empty or all-negative list safely bypasses the addition and correctly returns zero.\n\nThe time complexity is O(n), as the algorithm inspects every element exactly once. The space complexity is O(1) since no extra memory is needed beyond the accumulator variable.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "sum-of-squares": {
+    "promptMarkdown": "You are given a list of whole numbers. Square every number, then add the results together and return the total sum.\n\n**Constraints**\n- `0 <= length of list <= 10^4`\n- `-10^4 <= elements in the list <= 10^4`\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 14\n```\nThe squares are 1, 4, and 9, which add up to 14.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty list evaluates to a total of 0.\n\n**Example 3**\n```\ninput:\n-3\noutput: 9\n```\nThe square of -3 is 9, which is the total sum.\n\n**Follow-up:** Can you calculate the total in a single loop without creating a new array?",
+    "editorialMarkdown": "The intended approach transforms and accumulates the elements in a single pass. Rather than allocating a new array to store the squared values and then summing them, you can directly add the square of each element to a running total as you iterate through the input array.\n\nA minor trap solvers hit involves the handling of negative numbers. Because the square of any real number is always non-negative (e.g., `-3 * -3 = 9`), there is no need to take the absolute value of the numbers before squaring them. Attempting to use an absolute value function first is redundant and adds unnecessary computational steps without changing the result.\n\nThe time complexity is O(n), as you process each number once. The space complexity is O(1) if computed in a single pass with an accumulator.",
+    "promoteSamples": [
+      "-3"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "swap-first-and-last": {
+    "promptMarkdown": "Given a list of integers, swap the first and last elements in the list and return the modified list. \n\nAll other elements must remain in their original positions. If the list contains fewer than two elements, return it unchanged.\n\n**Constraints**\n- `0 <= list.length <= 10^5`\n- Elements are valid integers.\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 3 2 1\n```\nThe first element 1 and the last element 3 are swapped.\n\n**Example 2**\n```\ninput:\n1\noutput: 1\n```\nA single-element list is returned unchanged.\n\n**Example 3**\n```\ninput:\n\noutput: \n```\nAn empty list is returned unchanged.\n\n**Follow-up:** Can you perform this swap in-place?",
+    "editorialMarkdown": "The intended approach is to use multiple assignment or a temporary variable to swap the elements at index `0` and `length - 1`. The pattern here is basic array indexing. Time complexity is O(1) and space complexity is O(1) since the swap can be done in-place. The one trap most solvers hit is failing to check if the list has fewer than two elements before attempting to access the first and last indices, which can lead to out-of-bounds or undefined behavior errors depending on the language.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "swap-letter-case": {
+    "promptMarkdown": "Given a string of characters, return a new string with every uppercase letter converted to lowercase, and every lowercase letter converted to uppercase.\n\nAny characters that are not letters, such as spaces, digits, or punctuation, must be copied to the output unchanged.\n\n**Constraints**\n- `0 <= string.length <= 10^5`\n- The string consists of printable ASCII characters.\n\n**Example 1**\n```\ninput:\nHello World\noutput: hELLO wORLD\n```\nThe uppercase 'H' and 'W' become lowercase, while the lowercase letters become uppercase. The space remains unchanged.\n\n**Example 2**\n```\ninput:\nA1b2\noutput: a1B2\n```\nThe digits '1' and '2' remain unchanged while the letters flip their case.\n\n**Example 3**\n```\ninput:\n\noutput: \n```\nAn empty string returns an empty string.\n\n**Follow-up:** Can you solve this in a single pass?",
+    "editorialMarkdown": "The intended approach is to iterate through the string and build a new result by checking the case of each character. The pattern is string traversal and character transformation. Time complexity is O(n) and space complexity is O(n) where n is the length of the string. The one trap most solvers hit is using a simple if/else with only two branches (e.g., if uppercase then lowercase, else uppercase) without realizing that this will incorrectly attempt to uppercase non-letter characters. An explicit third branch is needed to pass non-letter characters through unmodified.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-16"
+  },
+  "to-snake-case": {
+    "promptMarkdown": "Given a string of lowercase words separated by single spaces, convert the string to snake case by replacing all spaces with underscores. \n\nThe input string will not contain leading or trailing spaces.\n\n**Constraints**\n- `0 <= string.length <= 10^5`\n- The string consists of lowercase English letters and single spaces.\n- There are no leading or trailing spaces.\n\n**Example 1**\n```\ninput:\nhello world here\noutput: hello_world_here\n```\nThe spaces between the words are replaced by underscores.\n\n**Example 2**\n```\ninput:\n\noutput: \n```\nAn empty string is returned unchanged.\n\n**Example 3**\n```\ninput:\na\noutput: a\n```\nA single word without spaces is returned unchanged.\n\n**Follow-up:** Can you solve this with time and space complexity proportional to the string length?",
+    "editorialMarkdown": "The intended approach is to either perform a direct string replacement of spaces with underscores, or to split the string into words and join them back together using underscores as the delimiter. The pattern is string manipulation and delimiter replacement. Time complexity is O(n) and space complexity is O(n) to store the new string. The one trap most solvers hit is attempting to manually construct the string character-by-character without recognizing that simple built-in replace or split-and-join methods handle empty strings and single words cleanly without needing edge-case guards.",
+    "promoteSamples": [
+      "a"
+    ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
