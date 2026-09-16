@@ -322,21 +322,31 @@ function modelReview(text: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'codelock-review-'));
   const askPath = join(dir, 'ask.md');
   writeFileSync(askPath, `${REVIEW_ASK}\n\n${text}`);
-  try {
-    const raw = execFileSync(
-      'agy',
-      [
-        `--print=Read ${askPath} and do exactly what it says. Output only the slug lines.`,
-        '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
-        '--model', reviewModel, '--output-format', 'json', '--print-timeout', '10m', '--disable-slash-commands',
-      ],
-      { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true },
-    );
-    const parsed = JSON.parse(raw) as { status?: string; response?: string };
-    return parsed.status === 'SUCCESS' && parsed.response ? parsed.response : 'SKIPPED: review returned nothing';
-  } catch (err) {
-    return `SKIPPED: review unavailable (${(err as Error).message.split('\n')[0]})`;
+  // A chain: one model can hang past its timeout on a batch, so the next is
+  // tried. The first usable verdict wins.
+  const chain = [reviewModel, 'gpt-oss-120b-medium', reviewModel.startsWith('gemini') ? 'claude-sonnet-4-6' : 'gemini-3.8-flash-medium'];
+  const failures: string[] = [];
+  for (const which of [...new Set(chain)]) {
+    try {
+      const raw = execFileSync(
+        'agy',
+        [
+          `--print=Read ${askPath} and do exactly what it says. Output only the slug lines.`,
+          '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
+          '--model', which, '--output-format', 'json', '--print-timeout', '8m', '--disable-slash-commands',
+        ],
+        { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+      );
+      const parsed = JSON.parse(raw) as { status?: string; response?: string };
+      if (parsed.status === 'SUCCESS' && parsed.response && /^\s*[a-z0-9-]+:\s/m.test(parsed.response)) {
+        return parsed.response;
+      }
+      failures.push(`${which}: ${(parsed.response ?? raw).slice(0, 80).replace(/\n/g, ' ')}`);
+    } catch (err) {
+      failures.push(`${which}: ${(err as Error).message.split('\n')[0].slice(0, 80)}`);
+    }
   }
+  return `SKIPPED: review unavailable (${failures.join('; ')})`;
 }
 
 /** Slugs the reviewer flagged, with its note. Codex on a rate-limit error is recorded as SKIPPED and Claude reviews instead. */
