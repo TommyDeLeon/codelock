@@ -415,7 +415,46 @@ ${JSON.stringify(r.draft, null, 1)}`,
 
 const FORBIDDEN = /leetcode|hackerrank|codeforces|neetcode/i;
 
+/**
+ * A source that contains the two characters `\n` and no real newline was
+ * escaped twice on the way out of the model. Seen in one whole batch of
+ * JavaScript solutions, each rejected by the judge as a one-line syntax
+ * error. Unescaping here is exact: a real one-line solution never contains
+ * a literal backslash-n.
+ */
+function unescapeSources(d: Draft): void {
+  for (const lang of LANGUAGES) {
+    const src = d.referenceSolution[lang];
+    if (src && !src.includes('\n') && src.includes('\\n')) {
+      d.referenceSolution[lang] = src.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"');
+    }
+  }
+  d.promptMarkdown = cleanMarkdown(d.promptMarkdown);
+  d.editorialMarkdown = cleanMarkdown(d.editorialMarkdown);
+}
+
+/**
+ * Markdown as the app renders it: real newlines, and no `$…$` math — the
+ * lock screen has no LaTeX, so `$O(n \\log n)$` would show its dollar signs.
+ */
+function cleanMarkdown(s: string): string {
+  if (!s.includes('\n') && s.includes('\\n')) s = s.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+  return s.replace(/\$([^$\n]{1,80})\$/g, (_, m: string) =>
+    m
+      .replace(/\\times/g, '×')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\leq?\b/g, '≤')
+      .replace(/\\geq?\b/g, '≥')
+      .replace(/\\log/g, 'log')
+      .replace(/\\sqrt/g, 'sqrt')
+      .replace(/\\text\{([^}]*)\}/g, '$1')
+      .replace(/\^\{([^}]*)\}/g, '^$1')
+      .replace(/\\/g, ''),
+  );
+}
+
 function localReject(d: Draft, seen: Set<string>): string | null {
+  unescapeSources(d);
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(d.slug)) return 'slug not kebab-case';
   if (usedSlugs.has(d.slug) || seen.has(d.slug)) return 'slug already used';
   if (usedTitles.has(d.title.toLowerCase())) return 'title already used';
@@ -491,6 +530,85 @@ async function judgeReject(drafts: Draft[]): Promise<Map<string, string[]>> {
 // Codex, read-only, optional
 // ---------------------------------------------------------------------------
 
+/**
+ * Ask Gemini for a new title and statement for problems Codex flagged. The
+ * tests and reference solutions are fixed inputs: the rewrite must describe
+ * exactly the behaviour they already encode, in different words and a
+ * different scenario.
+ */
+function rewriteStatements(
+  drafts: Draft[],
+  notes: Map<string, string>,
+): Array<{ slug: string; title: string; promptMarkdown: string }> {
+  if (drafts.length === 0) return [];
+  const dir = mkdtempSync(join(tmpdir(), 'codelock-rewrite-'));
+  const schemaPath = join(dir, 'schema.json');
+  const briefPath = join(dir, 'brief.md');
+  writeFileSync(
+    schemaPath,
+    JSON.stringify({
+      type: 'object',
+      properties: {
+        problems: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              slug: { type: 'string' },
+              title: { type: 'string' },
+              promptMarkdown: { type: 'string' },
+            },
+            required: ['slug', 'title', 'promptMarkdown'],
+          },
+        },
+      },
+      required: ['problems'],
+    }),
+  );
+  const brief = `A reviewer flagged the statements below. Rewrite ONLY the title and promptMarkdown of each, keeping the slug. The tests and reference solutions are fixed and must not change, so the new statement must specify exactly the same behaviour: same inputs, same outputs, same edge cases, same ordering rules. Use a genuinely different scenario and different sentences; do not paraphrase the flagged wording. Keep the format: statement, **Constraints**, three **Example** blocks whose inputs and outputs match the sample tests exactly, **Follow-up**. Never mention any problem site.
+
+${drafts
+  .map(
+    (d) => `## ${d.slug}
+Reviewer note: ${notes.get(d.slug)}
+Current title: ${d.title}
+Sample tests (must be the three examples):
+${d.tests
+  .filter((t) => t.isSample)
+  .map((t) => `stdin: ${JSON.stringify(t.stdin)} -> ${JSON.stringify(t.expectedStdout)}`)
+  .join('\n')}
+Reference (Python) — the behaviour to describe:
+${d.referenceSolution.PYTHON}
+
+Current statement:
+${d.promptMarkdown}`,
+  )
+  .join('\n\n')}
+
+Return JSON matching the schema.`;
+  writeFileSync(briefPath, brief);
+  console.log(`  asking ${model} to rewrite ${drafts.length} flagged statement(s) ...`);
+  try {
+    const raw = execFileSync(
+      'agy',
+      [
+        `--print=Read the brief at ${briefPath} and do exactly what it says. Return JSON matching the schema.`,
+        '--mode', 'plan', '--dangerously-skip-permissions', '--add-dir', dir,
+        '--model', model, '--output-format', 'json', '--json-schema', schemaPath,
+        '--print-timeout', '15m', '--disable-slash-commands',
+      ],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true },
+    );
+    const parsed = JSON.parse(raw) as {
+      structured_output?: { problems?: Array<{ slug: string; title: string; promptMarkdown: string }> };
+    };
+    return parsed.structured_output?.problems ?? [];
+  } catch (err) {
+    console.log(`  rewrite skipped: ${(err as Error).message.split('\n')[0]}`);
+    return [];
+  }
+}
+
 function codexReview(accepted: Draft[]): string {
   const text = accepted
     .map(
@@ -501,7 +619,7 @@ function codexReview(accepted: Draft[]): string {
           .join('\n')}`,
     )
     .join('\n\n');
-  const ask = `Read-only review. For each problem statement below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement that reads like a known LeetCode problem's wording. Output one line per slug: "<slug>: OK" or "<slug>: <issue>". No edits.\n\n${text}`;
+  const ask = `Read-only review. For each problem statement below, say whether it is unambiguous enough that a careful reader would produce exactly the sample outputs, and flag any statement that reads like a known LeetCode problem's wording. Output exactly one line per slug and nothing else: "<slug>: OK" when the statement is unambiguous and its wording is its own, otherwise "<slug>: <issue>" where the issue starts with the word "ambiguous" or "closely follows" as appropriate. No edits.\n\n${text}`;
   try {
     // The ask is far past the argv limit, so it goes through a file too.
     const dir = mkdtempSync(join(tmpdir(), 'codelock-codex-'));
@@ -648,9 +766,17 @@ async function main() {
   // not repaired: an unknown signature or a renamed anchor is a new draft,
   // not a fix). Repairs must pass the same local checks and the same judge.
   const toRepair = local.filter((d) => failures.has(d.slug)).map((d) => ({ draft: d, why: failures.get(d.slug)! }));
+  for (const r of toRepair) console.log(`    ~ ${r.draft.slug} failed first pass: ${r.why.join(' | ')}`);
   const repaired = repairWithGemini(toRepair);
   const repairable: Draft[] = [];
   for (const d of repaired) {
+    // The model tends to drop the bookkeeping fields it did not write; the
+    // repair is the same problem, so its anchor is the original's.
+    const original = toRepair.find((r) => r.draft.slug === d.slug)!.draft;
+    d.anchor ??= original.anchor;
+    d.patternFamily ??= original.patternFamily;
+    d.tier ??= original.tier;
+    d.difficulty ??= original.difficulty;
     seen.delete(d.slug);
     const why = localReject(d, seen);
     if (why) rejected.push({ slug: d.slug, why: [`repair: ${why}`] });
@@ -685,6 +811,49 @@ async function main() {
     console.log('  asking Codex to read the statements ...');
     codex = codexReview(accepted);
     console.log(codex.split('\n').map((l) => '    ' + l).join('\n'));
+
+    // Codex's notes are acted on, not just logged. A statement it calls
+    // ambiguous, or too close to a known problem's wording, goes back to
+    // Gemini for a rewrite of the statement only — tests and solutions stay,
+    // so the judge's verdict stands — and the rewrite is re-checked locally.
+    // A statement that fails the rewrite is dropped rather than shipped.
+    const flagged = new Map<string, string>();
+    for (const line of codex.split('\n')) {
+      const m = /^\s*([a-z0-9-]+):\s*(.+)$/.exec(line);
+      if (!m) continue;
+      const [, slug, note] = m;
+      if (!accepted.some((d) => d.slug === slug)) continue;
+      if (/^ok\b/i.test(note!)) continue;
+      if (/\b(ambiguous|unclear|closely follows|reads like|same wording|mirrors|identical)\b/i.test(note!)) {
+        flagged.set(slug!, note!);
+      }
+    }
+    if (flagged.size > 0) {
+      const rewritten = rewriteStatements(accepted.filter((d) => flagged.has(d.slug)), flagged);
+      for (const r of rewritten) {
+        const i = accepted.findIndex((d) => d.slug === r.slug);
+        if (i === -1) continue;
+        const candidate: Draft = { ...accepted[i]!, title: r.title, promptMarkdown: r.promptMarkdown };
+        seen.delete(candidate.slug);
+        const why = localReject(candidate, seen);
+        seen.add(candidate.slug);
+        if (why) {
+          console.log(`    ! ${r.slug}: rewrite rejected (${why}); dropping the problem`);
+          rejected.push({ slug: r.slug, why: [`codex: ${flagged.get(r.slug)}`, `rewrite: ${why}`] });
+          accepted.splice(i, 1);
+        } else {
+          accepted[i] = candidate;
+          console.log(`    ~ ${r.slug}: statement rewritten after Codex note`);
+        }
+      }
+      for (const slug of flagged.keys()) {
+        if (!rewritten.some((r) => r.slug === slug) && accepted.some((d) => d.slug === slug)) {
+          console.log(`    ! ${slug}: no rewrite returned; dropping the problem`);
+          rejected.push({ slug, why: [`codex: ${flagged.get(slug)}`, 'no rewrite'] });
+          accepted.splice(accepted.findIndex((d) => d.slug === slug), 1);
+        }
+      }
+    }
   }
 
   if (dryRun) {
