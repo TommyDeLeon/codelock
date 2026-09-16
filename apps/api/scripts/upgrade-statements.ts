@@ -250,7 +250,10 @@ function reject(p: ProblemDefinition, r: Rewrite): string | null {
   r.promptMarkdown = cleanMarkdown(r.promptMarkdown);
   r.editorialMarkdown = cleanMarkdown(r.editorialMarkdown);
   if (FORBIDDEN.test(r.promptMarkdown) || FORBIDDEN.test(r.editorialMarkdown)) return 'mentions a problem site';
-  if (!/\*\*Constraints\*\*/.test(r.promptMarkdown)) return 'no Constraints section';
+  // Any heading style counts; what matters is that the bounds are stated.
+  if (!/(\*\*Constraints\*\*|^#+\s*Constraints|\bConstraints:)/im.test(r.promptMarkdown)) {
+    return `no Constraints section; got: ${JSON.stringify(r.promptMarkdown.slice(0, 200))}`;
+  }
   if ((r.promptMarkdown.match(/\*\*Example/g) ?? []).length < 2) return 'fewer than two examples';
   if (r.editorialMarkdown.length < 200) return 'editorial too short';
   const ex = checkExamples(p, r.promptMarkdown);
