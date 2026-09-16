@@ -158,6 +158,24 @@ function askJson(which: string, brief: string, timeout: string): Rewrite[] {
   return parsed.structured_output.problems;
 }
 
+/** A second attempt for flagged problems, with the reviewer's note attached to each. */
+function draftWithNotes(problems: ProblemDefinition[], notes: Map<string, string>): Rewrite[] {
+  const brief =
+    briefFor(problems) +
+    `\n\nA reviewer flagged the previous attempt at each of these. Address the note directly; if it says the wording follows a known problem, change the scenario and the sentences, not just words. If it names an ambiguity, resolve it explicitly in the statement and constraints (in the way the reference solution behaves). If it says an example explanation is wrong, correct the explanation to match the actual output.\n\n` +
+    problems.map((p) => `- ${p.slug}: ${notes.get(p.slug)}`).join('\n');
+  try {
+    return askJson(model, brief, '15m');
+  } catch (err) {
+    if (!(err as { quota?: boolean }).quota) return [];
+    try {
+      return askJson(fallbackModel, brief, '15m');
+    } catch {
+      return [];
+    }
+  }
+}
+
 function draft(problems: ProblemDefinition[]): { rewrites: Rewrite[]; by: string } {
   const brief = briefFor(problems);
   console.log(`  asking ${model} to rewrite ${problems.length} statements ...`);
@@ -364,6 +382,8 @@ export interface StatementUpgrade {
   promoteSamples: string[];
   model: string;
   date: string;
+  /** Set when the reviewer would not pass a rewrite; the original statement stays. */
+  skipped?: string;
 }
 
 export const UPGRADES: Record<string, StatementUpgrade> = {
@@ -399,24 +419,62 @@ function main() {
   console.log(`  passed checks: ${accepted.length}/${batch.length}`);
 
   let reviewer = 'none';
+  // Slugs the reviewer would not pass even after one rewrite with its note.
+  // Recorded as skipped so they keep their original statement and are not
+  // drawn again next batch; a Fizz Buzz will always read like Fizz Buzz.
+  const skipped = new Map<string, string>();
   if (accepted.length > 0) {
     const { flagged, by: who } = review(accepted);
     reviewer = who;
-    for (const [slug, note] of flagged) {
-      console.log(`    ! ${slug}: ${note.slice(0, 160)} — dropped from this batch`);
-      const i = accepted.findIndex((a) => a.p.slug === slug);
-      if (i !== -1) accepted.splice(i, 1);
-      rejected.push({ slug, why: `review: ${note.slice(0, 120)}` });
+    if (flagged.size > 0) {
+      const again = accepted.filter((a) => flagged.has(a.p.slug));
+      console.log(`  ${flagged.size} flagged; asking for one rewrite with the reviewer's notes ...`);
+      const second = draftWithNotes(again.map((a) => a.p), flagged);
+      const recheck: Array<{ p: ProblemDefinition; r: Rewrite }> = [];
+      for (const a of again) {
+        const r = second.find((x) => x.slug === a.p.slug);
+        const why = r ? reject(a.p, r) : 'no rewrite returned';
+        if (!r || why) {
+          skipped.set(a.p.slug, `review: ${flagged.get(a.p.slug)!.slice(0, 160)}`);
+          continue;
+        }
+        recheck.push({ p: a.p, r });
+      }
+      const verdict = recheck.length > 0 ? review(recheck).flagged : new Map<string, string>();
+      for (const a of again) {
+        const i = accepted.findIndex((x) => x.p.slug === a.p.slug);
+        const fixed = recheck.find((x) => x.p.slug === a.p.slug);
+        if (fixed && !verdict.has(a.p.slug)) {
+          accepted[i] = { p: a.p, r: fixed.r, used: (checkExamples(a.p, fixed.r.promptMarkdown) as { used: string[] }).used };
+          console.log(`    ~ ${a.p.slug}: rewritten after review note`);
+        } else {
+          if (fixed) skipped.set(a.p.slug, `review: ${(verdict.get(a.p.slug) ?? '').slice(0, 160)}`);
+          if (i !== -1) accepted.splice(i, 1);
+          console.log(`    ! ${a.p.slug}: ${skipped.get(a.p.slug)} — skipped, original statement kept`);
+          rejected.push({ slug: a.p.slug, why: skipped.get(a.p.slug)! });
+        }
+      }
     }
   }
 
   for (const a of accepted) console.log(`    + ${a.p.slug}`);
   for (const r of rejected) console.log(`    - ${r.slug}: ${r.why}`);
 
-  if (!dryRun && accepted.length > 0) {
+  if (!dryRun && (accepted.length > 0 || skipped.size > 0)) {
     const date = new Date().toISOString().slice(0, 10);
     withLock(() => {
       const all: Record<string, StatementUpgrade> = { ...UPGRADES };
+      for (const [slug, why] of skipped) {
+        const p = batch.find((x) => x.slug === slug)!;
+        all[slug] = {
+          promptMarkdown: p.promptMarkdown,
+          editorialMarkdown: p.editorialMarkdown,
+          promoteSamples: [],
+          model: by,
+          date,
+          skipped: why,
+        };
+      }
       for (const a of accepted) {
         all[a.p.slug] = {
           promptMarkdown: a.r.promptMarkdown,

@@ -22,7 +22,7 @@ import { UPGRADES } from './upgrades.js';
 export function applyUpgrades(problems: ProblemDefinition[]): ProblemDefinition[] {
   for (const problem of problems) {
     const up = UPGRADES[problem.slug];
-    if (!up) continue;
+    if (!up || up.skipped) continue;
     problem.promptMarkdown = up.promptMarkdown;
     problem.editorialMarkdown = up.editorialMarkdown;
     if (up.promoteSamples.length > 0) {
