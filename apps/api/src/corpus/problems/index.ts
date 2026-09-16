@@ -1,4 +1,9 @@
 import type { ProblemDefinition } from '../problem.js';
+import { GEN_LC_029_PROBLEMS } from './gen-lc-029.js';
+import { GEN_LC_028_PROBLEMS } from './gen-lc-028.js';
+import { GEN_LC_027_PROBLEMS } from './gen-lc-027.js';
+import { GEN_LC_026_PROBLEMS } from './gen-lc-026.js';
+import { GEN_LC_025_PROBLEMS } from './gen-lc-025.js';
 import { GEN_LC_024_PROBLEMS } from './gen-lc-024.js';
 import { GEN_LC_023_PROBLEMS } from './gen-lc-023.js';
 import { GEN_LC_022_PROBLEMS } from './gen-lc-022.js';
@@ -95,6 +100,11 @@ import { TIER_3_STRINGS_BREADTH_PROBLEMS } from './tier3-strings-breadth.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
 export const ALL_PROBLEMS: ProblemDefinition[] = [
+  ...GEN_LC_029_PROBLEMS,
+  ...GEN_LC_028_PROBLEMS,
+  ...GEN_LC_027_PROBLEMS,
+  ...GEN_LC_026_PROBLEMS,
+  ...GEN_LC_025_PROBLEMS,
   ...GEN_LC_024_PROBLEMS,
   ...GEN_LC_023_PROBLEMS,
   ...GEN_LC_022_PROBLEMS,

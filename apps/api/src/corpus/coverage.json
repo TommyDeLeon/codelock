@@ -633,5 +633,157 @@
     "ours": "identify-star-systems",
     "batch": "gen-lc-024",
     "date": "2026-09-16"
+  },
+  "climbing-stairs": {
+    "ours": "robot-step-climb",
+    "batch": "gen-lc-025",
+    "date": "2026-09-16"
+  },
+  "complement-of-base-10-integer": {
+    "ours": "flip-sensor-bits",
+    "batch": "gen-lc-025",
+    "date": "2026-09-16"
+  },
+  "clear-digits": {
+    "ours": "clean-corrupted-logs",
+    "batch": "gen-lc-025",
+    "date": "2026-09-16"
+  },
+  "combine-two-tables": {
+    "ours": "merge-salary-data",
+    "batch": "gen-lc-025",
+    "date": "2026-09-16"
+  },
+  "compute-alternating-sum": {
+    "ours": "net-energy-flux",
+    "batch": "gen-lc-025",
+    "date": "2026-09-16"
+  },
+  "closest-binary-search-tree-value": {
+    "ours": null,
+    "batch": "gen-lc-025",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "compute-decimal-representation": {
+    "ours": "binary-signal-to-decimal",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "concatenate-the-name-and-the-profession": {
+    "ours": "format-id-badge",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "concatenation-of-array": {
+    "ours": "double-transmission-packet",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "confusing-number": {
+    "ours": "inverted-display-valid",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "concatenate-array-with-reverse": {
+    "ours": "echo-chamber-waves",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "concatenate-non-zero-digits-and-multiply-by-sum-i": {
+    "ours": "checksum-multiplier",
+    "batch": "gen-lc-026",
+    "date": "2026-09-16"
+  },
+  "consecutive-available-seats": {
+    "ours": "adjacent-empty-desks",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "consecutive-characters": {
+    "ours": "longest-identical-signal",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "construct-uniform-parity-array-i": {
+    "ours": "minimum-removals-for-uniform-parity",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "contains-duplicate": {
+    "ours": "detect-repeated-samples",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "construct-the-minimum-bitwise-array-i": {
+    "ours": "find-smallest-origin-values",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "construct-the-rectangle": {
+    "ours": "optimal-packaging-dimensions",
+    "batch": "gen-lc-027",
+    "date": "2026-09-16"
+  },
+  "convert-a-number-to-hexadecimal": {
+    "ours": "generate-hex-identifier",
+    "batch": "gen-lc-028",
+    "date": "2026-09-16"
+  },
+  "convert-binary-number-in-a-linked-list-to-integer": {
+    "ours": "decode-linked-binary-sequence",
+    "batch": "gen-lc-028",
+    "date": "2026-09-16"
+  },
+  "contains-duplicate-ii": {
+    "ours": "nearby-identical-transmissions",
+    "batch": "gen-lc-028",
+    "date": "2026-09-16"
+  },
+  "convert-1d-array-into-2d-array": {
+    "ours": "organize-cargo-into-square",
+    "batch": "gen-lc-028",
+    "date": "2026-09-16"
+  },
+  "convert-date-format": {
+    "ours": "reformat-log-timestamp",
+    "batch": "gen-lc-028",
+    "date": "2026-09-16"
+  },
+  "convert-date-to-binary": {
+    "ours": null,
+    "batch": "gen-lc-028",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "convert-doubly-linked-list-to-array-i": {
+    "ours": "in-order-server-ids",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
+  },
+  "convert-integer-to-the-sum-of-two-no-zero-integers": {
+    "ours": "split-power-cell",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
+  },
+  "convert-sorted-array-to-binary-search-tree": {
+    "ours": "balance-the-communication-tree",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
+  },
+  "convert-the-temperature": {
+    "ours": "convert-time-units",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
+  },
+  "count-artist-occurrences-on-spotify-ranking-list": {
+    "ours": "count-error-codes",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
+  },
+  "count-asterisks": {
+    "ours": "count-exposed-flags",
+    "batch": "gen-lc-029",
+    "date": "2026-09-16"
   }
 }
