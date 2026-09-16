@@ -314,7 +314,11 @@ describe('the example from the brief', () => {
   it('mentions Python negative indexes when the problem does not rule them out', () => {
     const kase = EVAL_CASES.find((c) => c.id === 'nth-unguarded-py')!;
     const { def, evidence } = setup(kase);
-    const prompt = def.promptMarkdown.replace('The position is never negative.', '');
+    // Strip whatever sentence or bullet rules negatives out; the statement's
+    // exact wording is rewritten over time and the rule in `ladder.ts` reads
+    // any of these phrasings.
+    const prompt = def.promptMarkdown.replace(/[^.\n]*(never negative|not negative|non-?negative)[^.\n]*[.\n]?/gi, '');
+    assert.ok(!/never negative|not negative|non-?negative/i.test(prompt), 'the rule must be gone for this test');
     const diagnoses = diagnose({
       language: 'PYTHON',
       code: kase.code,
