@@ -785,5 +785,158 @@
     "ours": "count-exposed-flags",
     "batch": "gen-lc-029",
     "date": "2026-09-16"
+  },
+  "count-binary-substrings": {
+    "ours": "count-balanced-instruction-sequences",
+    "batch": "gen-lc-030",
+    "date": "2026-09-16"
+  },
+  "count-commas-in-range": {
+    "ours": "count-data-separators",
+    "batch": "gen-lc-030",
+    "date": "2026-09-16"
+  },
+  "count-common-words-with-one-occurrence": {
+    "ours": "unique-shared-alien-species",
+    "batch": "gen-lc-030",
+    "date": "2026-09-16"
+  },
+  "count-days-spent-together": {
+    "ours": "count-overlapping-work-days",
+    "batch": "gen-lc-030",
+    "date": "2026-09-16"
+  },
+  "count-dominant-indices": {
+    "ours": "detect-primary-signal",
+    "batch": "gen-lc-030",
+    "date": "2026-09-16"
+  },
+  "count-distinct-numbers-on-board": {
+    "ours": null,
+    "batch": "gen-lc-030",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "count-elements-with-maximum-frequency": {
+    "ours": "count-top-selling-items",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-elements-with-strictly-smaller-and-greater-elements": {
+    "ours": "count-average-performing-employees",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-good-triplets": {
+    "ours": "count-perfect-ingredient-trios",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-hills-and-valleys-in-an-array": {
+    "ours": "count-price-swings",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-equal-and-divisible-pairs-in-an-array": {
+    "ours": "matching-sensors-with-divisible-index-product",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-houses-in-a-circular-street": {
+    "ours": "count-isolated-habitats",
+    "batch": "gen-lc-031",
+    "date": "2026-09-16"
+  },
+  "count-indices-with-opposite-parity": {
+    "ours": "count-misplaced-flags",
+    "batch": "gen-lc-032",
+    "date": "2026-09-16"
+  },
+  "count-items-matching-a-rule": {
+    "ours": "count-valid-access-codes",
+    "batch": "gen-lc-032",
+    "date": "2026-09-16"
+  },
+  "count-monobit-integers": {
+    "ours": "count-primary-hubs",
+    "batch": "gen-lc-032",
+    "date": "2026-09-16"
+  },
+  "count-integers-appearing-in-a-single-block": {
+    "ours": "count-single-shift-servers",
+    "batch": "gen-lc-032",
+    "date": "2026-09-16"
+  },
+  "count-integers-with-even-digit-sum": {
+    "ours": "count-passing-serial-numbers",
+    "batch": "gen-lc-032",
+    "date": "2026-09-16"
+  },
+  "count-largest-group": {
+    "ours": null,
+    "batch": "gen-lc-032",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "count-negative-numbers-in-a-sorted-matrix": {
+    "ours": "defective-batches-count",
+    "batch": "gen-lc-033",
+    "date": "2026-09-16"
+  },
+  "count-number-of-pairs-with-absolute-difference-k": {
+    "ours": "compatible-astronaut-pairs",
+    "batch": "gen-lc-033",
+    "date": "2026-09-16"
+  },
+  "count-numbers-with-unique-digits-ii": {
+    "ours": "valid-serial-codes",
+    "batch": "gen-lc-033",
+    "date": "2026-09-16"
+  },
+  "count-odd-numbers-in-an-interval-range": {
+    "ours": "odd-households-survey",
+    "batch": "gen-lc-033",
+    "date": "2026-09-16"
+  },
+  "count-odd-letters-from-number": {
+    "ours": "anomalous-signal-frequencies",
+    "batch": "gen-lc-033",
+    "date": "2026-09-16"
+  },
+  "count-of-matches-in-tournament": {
+    "ours": null,
+    "batch": "gen-lc-033",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "count-partitions-with-even-sum-difference": {
+    "ours": "balanced-energy-splitting",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
+  },
+  "count-prefix-and-suffix-pairs-i": {
+    "ours": "symmetric-data-markers",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
+  },
+  "count-operations-to-obtain-zero": {
+    "ours": "volatile-compound-neutralisation",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
+  },
+  "count-pairs-of-similar-strings": {
+    "ours": "alien-cipher-equivalency",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
+  },
+  "count-pairs-that-form-a-complete-day-i": {
+    "ours": "orbital-satellite-alignment",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
+  },
+  "count-pairs-whose-sum-is-less-than-target": {
+    "ours": "cargo-loading-combinations",
+    "batch": "gen-lc-034",
+    "date": "2026-09-16"
   }
 }
