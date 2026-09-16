@@ -1744,30 +1744,6 @@
     "batch": "gen-lc-w4-053",
     "date": "2026-09-16"
   },
-  "find-the-highest-altitude": {
-    "ours": null,
-    "batch": "gen-lc-w4-053",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "find-the-k-or-of-an-array": {
-    "ours": null,
-    "batch": "gen-lc-w4-053",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "find-the-largest-almost-missing-integer": {
-    "ours": null,
-    "batch": "gen-lc-w4-053",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "find-the-middle-index-in-array": {
-    "ours": null,
-    "batch": "gen-lc-w4-053",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "find-the-peaks": {
     "ours": "identify-power-surges",
     "batch": "gen-lc-w4-055",
@@ -1922,6 +1898,98 @@
   "finding-3-digit-even-numbers": {
     "ours": null,
     "batch": "gen-lc-w3-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-the-original-typed-string-i": {
+    "ours": "faulty-sensor-transmission",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "find-the-width-of-columns-of-a-grid": {
+    "ours": "format-delivery-log-grid",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "find-valid-pair-of-adjacent-digits-in-string": {
+    "ours": "secure-pin-verification",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "find-words-that-can-be-formed-by-characters": {
+    "ours": "assemble-robot-parts",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "first-unique-even-element": {
+    "ours": "identify-rare-isotope",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "fix-names-in-a-table": {
+    "ours": "standardize-planetary-names",
+    "batch": "gen-lc-w2-056",
+    "date": "2026-09-16"
+  },
+  "find-the-highest-altitude": {
+    "ours": "maximum-probe-energy-level",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "find-the-k-or-of-an-array": {
+    "ours": "critical-subsystem-code",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "find-the-largest-almost-missing-integer": {
+    "ours": "rarest-high-value-cargo",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "find-the-middle-index-in-array": {
+    "ours": "balance-station-compartments",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "height-checker": {
+    "ours": "out-of-order-androids",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "highest-salaries-difference": {
+    "ours": "maximum-energy-difference",
+    "batch": "gen-lc-w4-057",
+    "date": "2026-09-16"
+  },
+  "extract-kth-character-from-the-rope-tree": {
+    "ours": "kth-ancient-rune-inorder",
+    "batch": "gen-lc-w0-055",
+    "date": "2026-09-16"
+  },
+  "find-products-with-three-consecutive-digits": {
+    "ours": "suspicious-transmission-logs",
+    "batch": "gen-lc-w0-055",
+    "date": "2026-09-16"
+  },
+  "find-pivot-index": {
+    "ours": "equilibrium-energy-zone",
+    "batch": "gen-lc-w0-055",
+    "date": "2026-09-16"
+  },
+  "find-subarrays-with-equal-sum": {
+    "ours": "duplicate-thermal-signatures",
+    "batch": "gen-lc-w0-055",
+    "date": "2026-09-16"
+  },
+  "earliest-time-to-finish-one-task": {
+    "ours": null,
+    "batch": "gen-lc-w0-055",
+    "date": "2026-09-16",
+    "reason": "rejected"
+  },
+  "find-special-substring-of-length-k": {
+    "ours": null,
+    "batch": "gen-lc-w0-055",
     "date": "2026-09-16",
     "reason": "rejected"
   }

@@ -1,8 +1,7 @@
 /**
  * Rewritten statements and editorials for hand-authored problems, keyed by
- * slug. Generated and extended by `scripts/upgrade-statements.ts` and
- * `scripts/refresh-tests.ts`; applied by `upgrade.ts`. Do not edit by
- * hand — rerun the scripts.
+ * slug. Generated and extended by `scripts/upgrade-statements.ts`; applied
+ * by `upgrade.ts`. Do not edit by hand — rerun the script.
  */
 export interface StatementUpgrade {
   promptMarkdown: string;
@@ -86,12 +85,55 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-16"
   },
   "asteroid-collisions": {
-    "promptMarkdown": "A row of asteroids is given left to right. Each number is one asteroid: its\nsize is the absolute value, and its sign is its direction — **positive moves\nright, negative moves left**. They all move at the same speed.\n\nTwo asteroids collide only when a right-mover has a left-mover somewhere ahead\nof it. In a collision the smaller one is destroyed; if they are the same size,\n**both** are destroyed. Two asteroids moving the same way never meet, and a\nleft-mover with a right-mover ahead of it never meets either — they are moving\napart.\n\nPrint the asteroids that survive, in their original left-to-right order,\nseparated by spaces.\n\n**Example**\n\n```\ninput:  5 10 -5\noutput: 5 10\n```\n\nThe `-5` runs into the `10`, and 5 is smaller than 10, so the `-5` is\ndestroyed and the `10` continues unharmed. It never reaches the `5`, which is\nmoving away from it.\n\nGuarantees you may rely on: the list has at least one asteroid and no asteroid\nhas size zero.\n\nThe edge case worth naming: **everything can be destroyed**. On `8 -8` the two\nare the same size, both are annihilated, and the answer is an empty list,\nprinted as an empty line.",
-    "editorialMarkdown": "## A stack of survivors, resolved as you go\n\nThe tempting reading is that this needs a simulation over time. It does not.\nEvery collision that will ever happen is already decided by the starting row,\nand one left-to-right pass resolves all of them.\n\nKeep a stack of the asteroids that have survived everything so far. Process\nthe row left to right. A right-mover (positive) can never be hit by anything\nalready behind it, so it is simply pushed and waits. A left-mover (negative)\nis the interesting case: it immediately runs into whatever is on top of the\nstack, provided that top is a right-mover.\n\n```\nstack = []\nfor x in row:\n    alive = true\n    while alive and x < 0 and stack and stack.top > 0:\n        if stack.top < -x:      stack.pop()            # top loses, x keeps going\n        elif stack.top == -x:   stack.pop(); alive = false   # both die\n        else:                   alive = false          # x dies, top survives\n    if alive: stack.push(x)\nreturn stack\n```\n\nWhy a stack, and why popping is safe: the only asteroid a new left-mover can\nhit first is the nearest right-mover to its left, and that is precisely the\ntop of the stack. If the incoming asteroid destroys it, the next thing it can\nhit is the next one down — last in, first out, exactly. And a popped asteroid\nis gone from the universe: it was destroyed, so nothing later can collide with\nit, and it can never come back to shield anything beneath it. That is what\nmakes a single pass sufficient rather than a repeated sweep.\n\nNote the loop guard `stack.top > 0`. If the top of the stack is itself a\nleft-mover, then everything on the stack is moving left, the incoming asteroid\nis moving left too, and no collision is possible ever again for it — it is\npushed and joins them.\n\nThe quiet mistake is treating the collision as a single comparison instead of\na loop. A `-10` arriving at a stack of `2 3 4` destroys three asteroids, not\none, and an `if` where a `while` belongs leaves `2 3` sitting in the answer.\nEvery test where the incoming asteroid wins exactly one fight passes, so this\nbug is genuinely easy to ship.\n\nThe second is the equal-size case, which needs **two** things to happen: pop\nthe top and stop the incoming asteroid. `5 -5` is the smallest input that\ncatches a half-done version. Do only the pop and the `-5` survives an empty\nstack, so you print `-5`; do only the stop and the `5` is never removed, so\nyou print `5`. The answer is neither — it is the empty line. Give equality its\nown branch instead of folding it into one of the inequalities.\n\nO(n) time: each asteroid is pushed at most once and popped at most once, so\nthe inner while loop performs at most `n` pops in total across the whole scan.\nO(n) space for the stack, bounded by the number of survivors, which is the\nwhole row when every asteroid moves the same way.",
+    "promptMarkdown": "A row of asteroids is given left to right. Each number is one asteroid: its size is the absolute value, and its sign is its direction — positive moves right, negative moves left. They all move at the same speed.\n\nTwo asteroids collide only when a right-mover has a left-mover somewhere ahead of it. In a collision the smaller one is destroyed; if they are the same size, both are destroyed. Two asteroids moving the same way never meet, and a left-mover with a right-mover ahead of it never meets either.\n\nPrint the asteroids that survive, in their original left-to-right order, separated by spaces.\n\n**Constraints**\n- `1 <= number of asteroids <= 10^5`\n- Asteroid sizes are non-zero integers.\n\n**Example 1**\n```\ninput:\n6 -2 -7 5\noutput: -7 5\n```\nThe 6 right-mover meets the -2 left-mover and destroys it. Then 6 meets -7 and is destroyed. The -7 continues left, and the 5 moves right.\n\n**Example 2**\n```\ninput:\n-5 10 -15 20\noutput: -5 -15 20\n```\nThe 10 right-mover meets the -15 left-mover and is destroyed. The surviving asteroids never meet.\n\n**Follow-up:** Can you determine the survivors in O(n) time using a single pass?",
+    "editorialMarkdown": "The intended approach uses a stack to resolve collisions in a single pass left to right. This pattern is the simulation stack. A right-mover is pushed to wait, and a left-mover repeatedly resolves collisions against the stack top as long as the top is a right-mover. The one trap most solvers hit is treating the collision as a single comparison instead of a loop, forgetting that a large left-mover can destroy multiple smaller right-movers already waiting on the stack. Equal sizes also require care to pop both and stop the incoming asteroid. The time complexity is O(n) and the space complexity is O(n) for the stack.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows — the magnitude/sign description, equal-speed sentence, smaller-object destruction rule, equal-mass destruction rule, and same-direction noncoll"
+    "tests": [
+      {
+        "stdin": "6 -2 -7 5",
+        "expectedStdout": "-7 5",
+        "isSample": true
+      },
+      {
+        "stdin": "-5 10 -15 20",
+        "expectedStdout": "-5 -15 20",
+        "isSample": true
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "42"
+      },
+      {
+        "stdin": "10 -10 10 -10",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "-10 -20 -30",
+        "expectedStdout": "-10 -20 -30"
+      },
+      {
+        "stdin": "10 20 30",
+        "expectedStdout": "10 20 30"
+      },
+      {
+        "stdin": "100 1 2 3 4 -5",
+        "expectedStdout": "100"
+      },
+      {
+        "stdin": "5 -5 6 -6 7 -7",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "2 -5 10 -4",
+        "expectedStdout": "-5 10"
+      },
+      {
+        "stdin": "1 -1 2 -2 3 -3 4 -4 5 -5 6 -6 7 -7 8 -8 9 -9 10 -10 100 -100",
+        "expectedStdout": ""
+      }
+    ]
   },
   "average-of-list": {
     "promptMarkdown": "Given a list of whole numbers, calculate and return their average. The answer is a decimal, printed to six decimal places.\n\n**Example 1**\n\n```\ninput:\n1 2 3 4\noutput: 2.500000\n```\nThe sum is 10 and there are 4 numbers; 10 / 4 = 2.5.\n\n**Example 2**\n\n```\ninput:\n5\noutput: 5.000000\n```\nThe average of a single number is the number itself.\n\n**Example 3**\n\n```\ninput:\n1 2\noutput: 1.500000\n```\nThe sum is 3, divided by 2 is 1.5.\n\n**Constraints**\n- The list always has at least one number.\n\n**Follow-up:** Can you do this in a single pass with O(1) extra space?",
@@ -135,7 +177,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16",
-    "skipped": "review: closely follows LeetCode Minimum Bit Flips to Convert Number"
+    "tests": [
+      {
+        "stdin": "3\n1",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "10\n12",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "0\n1",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "123\n123",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "2147483647\n0",
+        "expectedStdout": "31"
+      },
+      {
+        "stdin": "1431655765\n715827882",
+        "expectedStdout": "31"
+      },
+      {
+        "stdin": "2147483647\n2147483647",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1024\n2048",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "255\n256",
+        "expectedStdout": "9"
+      },
+      {
+        "stdin": "1073741824\n1073741825",
+        "expectedStdout": "1"
+      }
+    ]
   },
   "blocked-grid-route-count": {
     "promptMarkdown": "A non-empty grid contains `0` for an open square and `1` for a blocked square. Starting at the top-left square, move only right or down to the bottom-right square. Return the number of routes; a blocked start or finish gives `0`.\n\n**Constraints**\n- The grid is non-empty.\n- The grid contains only `0` and `1`.\n\n**Example 1**\n```\ninput:\n0 0 0;0 1 0;0 0 0\noutput: 2\n```\nThere are 2 routes around the block in the center.\n\n**Example 2**\n```\ninput:\n0 0;0 0\noutput: 2\n```\nThere are 2 routes to reach the bottom-right corner.\n\n**Example 3**\n```\ninput:\n1\noutput: 0\n```\nThe start is blocked, so there are 0 routes.\n\n**Follow-up:** Can you optimize the space complexity to use only a single row or column?",
@@ -713,12 +798,55 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-16"
   },
   "daily-warmer-day": {
-    "promptMarkdown": "You are given a list of daily temperatures, one per day, in order.\n\nFor each day, print how many days you would have to wait for a day that is\n**strictly warmer**. Print `0` for a day with no warmer day anywhere after it.\n\nAnswers go on one line, separated by spaces, one per input day.\n\n**Example**\n\n```\ninput:  73 74 75 71 69 72 76 73\noutput: 1 1 4 2 1 1 0 0\n```\n\nDay 0 (73) is beaten the very next day by 74, so `1`. Day 2 (75) is not\nbeaten until day 6 (76), four days later, so `4`. The last two days have\nnothing warmer after them, so both are `0`.\n\nThe list always has at least one temperature, so a one-day list answers `0`.\nTemperatures may be negative and may repeat. Equally warm is not warmer — a\nrun of identical temperatures answers `0` for every day in it.",
-    "editorialMarkdown": "## Monotonic stack, this time counting the gap\n\nThis is the same machine as \"find the next larger value\", with one change:\nyou report the *distance* to the warmer day rather than its temperature. That\nchange is small in code and large in what it teaches, because it forces you\nto keep **indices** on the stack rather than values. You cannot subtract two\ntemperatures and get a number of days.\n\nScan left to right, holding a stack of the days whose answer is still\nunknown. When a new temperature arrives, every day on the stack that is\ncooler than it has just been resolved: pop it and record `today - that day`.\nThen push today, whose own answer is not known yet.\n\n```\nanswer = [0] * n\nstack = []                       # day indices still waiting\nfor i in 0..n-1:\n    while stack and t[stack.top] < t[i]:\n        j = stack.pop()\n        answer[j] = i - j\n    stack.push(i)\nreturn answer\n```\n\nWhy is it safe to throw a popped day away forever? Because it has been given\nits answer, and that answer is the *first* warmer day, which is the only one\nit will ever be asked about. And because a day sitting below it on the stack\ncan never want it back: if day `j` was too cool to satisfy the days beneath\nit, then the day `i` that just beat `j` is both warmer than `j` and later\nthan `j`, so anything still waiting will meet `i` — or something warmer than\n`i` — before it would have needed `j`. A popped element is never needed\nagain. That is the property that turns a quadratic scan into a linear one.\n\nThe quiet mistake here is pushing temperatures instead of indices. It feels\nnatural, the comparison still reads correctly, and then you reach the line\nthat has to compute a distance and there is nothing to subtract. People patch\nit by pushing pairs, which works, or by searching the array for the value,\nwhich quietly reintroduces the O(n^2) they were trying to escape and is wrong\nas well the moment a temperature repeats. Push the index; read the\ntemperature through it.\n\nThe second is `<=` in the while test. `70 70 75` should answer `2 1 0`; with\n`<=` the first 70 is popped by the second and answers `1`. Strictly warmer\nmeans strictly.\n\nO(n) time — every day is pushed once and popped at most once, so the inner\nloop does at most `n` pops in total across the whole scan. O(n) space,\nbounded by the longest non-increasing run of temperatures, which is the whole\nlist on a steadily cooling week.",
+    "promptMarkdown": "You are given a list of daily temperatures, one per day, in order.\n\nFor each day, print how many days you would have to wait for a day that is strictly warmer. Print `0` for a day with no warmer day anywhere after it.\n\nAnswers go on one line, separated by spaces, one per input day.\n\n**Constraints**\n- `1 <= length of temperatures <= 10^5`\n- Temperatures may be negative and may repeat.\n\n**Example 1**\n```\ninput:\n80 82 81 85\noutput: 1 2 1 0\n```\n80 is beaten in 1 day by 82. 82 waits 2 days for 85. 81 waits 1 day for 85. 85 is never beaten.\n\n**Example 2**\n```\ninput:\n65 60 70 75 72\noutput: 2 1 1 0 0\n```\n65 waits 2 days for 70. 60 waits 1 day for 70. 70 waits 1 day for 75. 75 and 72 have no warmer day after them.\n\n**Follow-up:** Can you calculate the wait days in O(n) time?",
+    "editorialMarkdown": "The intended approach uses a monotonic stack storing indices of days waiting for a warmer temperature. When a new temperature arrives, pop all indices from the stack that are cooler and record the difference in indices. The one trap most solvers hit is pushing the temperature values onto the stack instead of their indices, leaving them with no way to compute the distance in days when a warmer day is finally found. The time complexity is O(n) because each day is pushed and popped at most once, and the space complexity is O(n) for the stack.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 739, Daily Temperatures](https://leetcode.com/problems/daily-temperatures/): the consecutive instructions to calculate days until a hi"
+    "tests": [
+      {
+        "stdin": "80 82 81 85",
+        "expectedStdout": "1 2 1 0",
+        "isSample": true
+      },
+      {
+        "stdin": "65 60 70 75 72",
+        "expectedStdout": "2 1 1 0 0",
+        "isSample": true
+      },
+      {
+        "stdin": "100",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0 0 0 0",
+        "expectedStdout": "0 0 0 0"
+      },
+      {
+        "stdin": "10 9 8 7",
+        "expectedStdout": "0 0 0 0"
+      },
+      {
+        "stdin": "-10 -5 0 5 10",
+        "expectedStdout": "1 1 1 1 0"
+      },
+      {
+        "stdin": "-20 -30 -10 -15",
+        "expectedStdout": "2 1 0 0"
+      },
+      {
+        "stdin": "45 45 50 50 45",
+        "expectedStdout": "2 1 0 0 0"
+      },
+      {
+        "stdin": "1 2 1 2 1 2",
+        "expectedStdout": "1 0 1 0 1 0"
+      },
+      {
+        "stdin": "12 11 10 9 8 7 6 5 4 3 2 1 0 -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 100",
+        "expectedStdout": "23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0"
+      }
+    ]
   },
   "decode-digit-message-count": {
     "promptMarkdown": "An ancient manuscript encodes words using numbers, where the letter 'A' is represented by `1`, 'B' by `2`, and so on up to 'Z' represented by `26`. You are given a string of digits, and you must find the total number of valid ways it could be split into individual letters.\n\nA valid letter code is a one- or two-digit number between 1 and 26. A sequence starting with a '0', such as '06', is not valid because '0' does not map to any letter and cannot be combined with a subsequent digit in that order.\n\n**Constraints**\n- The input is a string of digits with a length between 0 and 45.\n- An empty input string has exactly `0` valid decodings.\n\n**Example 1**\n```\ninput:\n226\noutput: 3\n```\nThe string can be split as \"2 2 6\", \"22 6\", and \"2 26\".\n\n**Example 2**\n```\ninput:\n06\noutput: 0\n```\nThe string cannot be decoded because '0' is not a valid letter and \"06\" is not a valid mapping.\n\n**Example 3**\n```\ninput:\n10\noutput: 1\n```\nThe only valid split is \"10\", as '1' and '0' cannot be parsed separately.\n\n**Follow-up:** Can you determine the number of decodings using O(1) additional space?",
@@ -730,12 +858,55 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-16"
   },
   "decode-repeated-string": {
-    "promptMarkdown": "Expand a compressed string and print the result.\n\nThe compression rule is `k[body]`, meaning: repeat `body` exactly `k` times.\nSo `3[ab]` expands to `ababab`. A body may itself contain more `k[...]`\ngroups, nested to any depth, and plain letters may appear anywhere, inside a\nbody or outside all of them.\n\nThe input is a line of lowercase letters, digits, `[` and `]`.\n\n**Example**\n\n```\ninput:  2[a3[bc]]\noutput: abcbcbcabcbcbc\n```\n\nThe inner `3[bc]` becomes `bcbcbc`, so the outer body is `abcbcbc`, and that\nis repeated twice.\n\nGuarantees you may rely on: brackets are always balanced, every `[` is\npreceded by its repeat count, digits appear only as repeat counts (never as\nliteral output), and every count is at least 1. Counts may have more than one\ndigit, so `10[a]` means ten `a`s and not one `a` followed by zero of\nsomething.\n\nThe edge case worth naming: a line with **no brackets at all** is already\nexpanded and comes back unchanged. The line always has at least one\ncharacter, and the output is never empty.",
-    "editorialMarkdown": "## Two stacks, because nesting is a stack\n\nThe recursive reading is the natural one — an expansion is a sequence of\nletters and sub-expansions — and recursion is a stack you did not write\nyourself. Writing the stack explicitly is worth doing here: it is a little\nmore code and it removes any question of recursion depth on a deeply nested\ninput, which in Python matters at a default limit of 1000 frames.\n\nHold three things: the piece of output you are currently building (`current`),\na stack of *unfinished outer* pieces, and a stack of the repeat counts waiting\nfor their closing bracket. Then read the line one character at a time.\n\n```\ncurrent = \"\"; counts = []; parts = []; num = 0\nfor ch in line:\n    if ch is a digit:  num = num * 10 + digit(ch)\n    elif ch == \"[\":    counts.push(num); num = 0\n                       parts.push(current); current = \"\"\n    elif ch == \"]\":    k = counts.pop()\n                       current = parts.pop() + current * k\n    else:              current += ch\nreturn current\n```\n\nThe `[` case is the one to understand. Entering a group means the work you\nwere doing is suspended, not finished — you must come back to it and append\nthe expanded group to it. Suspended work that resumes in reverse order is a\nstack, and that is why the structure fits: the group that opened most\nrecently is the one that closes first, and its result is handed back to the\npiece directly beneath it. `]` is the resume: pop the count, pop the\nsuspended prefix, and glue them together.\n\nThe quiet mistake is `num = digit(ch)` instead of `num = num * 10 + digit(ch)`.\nEvery single-digit test passes — and almost every test anyone writes by hand\nis single-digit — while `12[a]` silently produces two `a`s instead of twelve.\nMulti-digit counts are the reason the digit case accumulates rather than\nassigns. Resetting `num` to 0 at `[` matters for the same reason: without it,\nthe second count in `2[a]3[b]` becomes 23.\n\nThe second, subtler one is forgetting to save `current` when a `[` opens. If\nyou leave the prefix in `current` and repeat the whole thing at `]`, then\n`a2[b]` gives `abab` instead of `abb` — the `a` gets repeated along with the\ngroup. The `a` is finished output; only what was written *since the bracket*\nis subject to the repetition. Pushing `current` and starting a fresh empty one\nis what draws that boundary.\n\nO(m) time where `m` is the length of the *output*, since every character of\nthe result is written once (and, with naive string concatenation at each `]`,\npossibly copied a few times more). O(m) space, bounded by the expanded result\nplus one stack entry per level of nesting.",
+    "promptMarkdown": "Expand a compressed string and print the result.\n\nThe compression rule is `k[body]`, meaning: repeat `body` exactly `k` times. A body may itself contain more `k[...]` groups, nested to any depth, and plain letters may appear anywhere, inside a body or outside all of them.\n\nThe input is a line of lowercase letters, digits, `[` and `]`.\n\n**Constraints**\n- `1 <= length of input string <= 10^4`\n- Counts are always integers at least 1.\n- Brackets are perfectly balanced.\n\n**Example 1**\n```\ninput:\n2[p]q3[r]\noutput: ppqrrr\n```\nThe string `p` is repeated twice, followed by `q`, followed by `r` repeated three times.\n\n**Example 2**\n```\ninput:\na2[b2[c]]d\noutput: abccbccd\n```\nThe inner `2[c]` becomes `cc`, so the outer group is `bcc`, repeated twice as `bccbcc`. The plain letters `a` and `d` wrap it.\n\n**Follow-up:** Can you implement this iteratively using stacks rather than recursion?",
+    "editorialMarkdown": "The intended approach is to use a stack to explicitly track the nested groups and repeat counts. This pattern is nested string parsing. As you iterate through the string, accumulate digits, push the current state onto the stack at `[`, and pop/concatenate at `]`. The one trap most solvers hit is parsing numbers digit by digit without accumulating them correctly (e.g., `num = digit` instead of `num = num * 10 + digit`), which breaks silently for counts with multiple digits like `12[a]`. The time complexity is O(m) where m is the length of the expanded output, and space complexity is O(m) to store the result and stack.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
-    "skipped": "review: closely follows [LeetCode 394, Decode String](https://leetcode.com/problems/decode-string/description/): the repetition-rule sentence and the combined assurance"
+    "tests": [
+      {
+        "stdin": "2[p]q3[r]",
+        "expectedStdout": "ppqrrr",
+        "isSample": true
+      },
+      {
+        "stdin": "a2[b2[c]]d",
+        "expectedStdout": "abccbccd",
+        "isSample": true
+      },
+      {
+        "stdin": "z",
+        "expectedStdout": "z"
+      },
+      {
+        "stdin": "helloworld",
+        "expectedStdout": "helloworld"
+      },
+      {
+        "stdin": "12[z]",
+        "expectedStdout": "zzzzzzzzzzzz"
+      },
+      {
+        "stdin": "2[2[2[a]]]",
+        "expectedStdout": "aaaaaaaa"
+      },
+      {
+        "stdin": "m1[n]1[o]",
+        "expectedStdout": "mno"
+      },
+      {
+        "stdin": "2[x]2[y]2[z]",
+        "expectedStdout": "xxyyzz"
+      },
+      {
+        "stdin": "1[abc2[def3[g]]]",
+        "expectedStdout": "abcdefgggdefggg"
+      },
+      {
+        "stdin": "3[abc]4[d]5[ef]2[g1[h]2[i]]xyz",
+        "expectedStdout": "abcabcabcddddefefefefefghiighiixyz"
+      }
+    ]
   },
   "deque-both-ends": {
     "promptMarkdown": "Implement a double-ended queue yourself; do not use your language's built-in double-ended queue type.\n\nBuild `Deque`. `pushFront` and `pushBack` add values at either end; `popFront` and `popBack` remove from their matching ends. `size()` reports stored values.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nWhen an operation cannot return an element (an empty removal or an invalid index), return `-1`.\n\n**Constraints**\n- The number of operations will be greater than 0.\n- Pushed values will be valid integers.\n\n**Example 1**\n```\ninput:\n7\nDeque\npushFront 2\npushBack 3\npushFront 1\npopBack\npopFront\nsize\noutput:\nnull\nnull\nnull\nnull\n3\n1\n1\n```\nThis example shows adding values to both ends and popping them off correctly.\n\n**Example 2**\n```\ninput:\n4\nDeque\npopFront\npopBack\nsize\noutput:\nnull\n-1\n-1\n0\n```\nThis example demonstrates the edge case of attempting to pop from an empty deque, which correctly returns -1.\n\n**Example 3**\n```\ninput:\n8\nDeque\npushBack 1\npushBack 2\npopFront\npushFront 0\npopBack\npopFront\nsize\noutput:\nnull\nnull\nnull\n1\nnull\n2\n0\n0\n```\nThis example tests a mix of pushes and pops on both ends.\n\n**Follow-up:** Can you implement this so that every operation is O(1) time?",
@@ -986,9 +1157,11 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-16"
   },
   "fizzbuzz-list": {
-    "promptMarkdown": "The classic.\n\nGiven a number `n`, return the list of words for `1` through `n`:\n\n- a multiple of both 3 and 5 becomes `FizzBuzz`\n- a multiple of 3 becomes `Fizz`\n- a multiple of 5 becomes `Buzz`\n- anything else becomes the number itself\n\n**Example**\n\n```\ninput:  5\noutput: 1 2 Fizz 4 Buzz\n```",
-    "editorialMarkdown": "## Order the conditions from most specific to least\n\nThe entire difficulty of FizzBuzz is the overlap at 15. Check\n`divisible by 3 and 5` **first**: if you check `divisible by 3` first, then\n15 matches it, you append `Fizz`, and you never reach the case you wanted.\n\nThat is a general rule worth keeping — when conditions overlap, the most\nspecific one goes first, or it is unreachable.\n\nThe other common way to write it builds the word by concatenation:\n\n```\nword = (n % 3 == 0 ? \"Fizz\" : \"\") + (n % 5 == 0 ? \"Buzz\" : \"\")\nif word is empty, use the number\n```\n\nThat version has no overlap problem at all, because 15 simply matches both\nhalves. Either is fine; the second generalises if a third rule arrives.",
-    "promoteSamples": [],
+    "promptMarkdown": "Given a number `n`, return the list of words for `1` through `n`:\n- a multiple of both 3 and 5 becomes `FizzBuzz`\n- a multiple of 3 becomes `Fizz`\n- a multiple of 5 becomes `Buzz`\n- anything else becomes the number itself\n\n**Constraints**\n- `0 <= n <= 10^5`\n\n**Example 1**\n```\ninput:\n2\noutput: 1 2\n```\nA straightforward sequence of two numbers without any multiples of 3 or 5.\n\n**Example 2**\n```\ninput:\n4\noutput: 1 2 Fizz 4\n```\nThe number 3 is a multiple of 3, so it becomes `Fizz`.\n\n**Example 3**\n```\ninput:\n0\noutput: \n```\nWhen n is 0, the output is an empty list, represented by an empty line.\n\n**Follow-up:** Can you solve this in O(n) time and O(n) space complexity?",
+    "editorialMarkdown": "The intended approach is to check divisibility conditions in order. This pattern is standard conditional logic. The entire difficulty is the overlap at 15. Check divisible by 3 and 5 first. If you check divisible by 3 first, then 15 matches it, you append Fizz, and you never reach the FizzBuzz case. The one trap most solvers hit is checking the more general conditions before the most specific overlapping condition. Time complexity is O(n) and space complexity is O(n) to store the result list.",
+    "promoteSamples": [
+      "0"
+    ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
     "tests": [
@@ -1260,8 +1433,8 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-16"
   },
   "insert-position-in-sorted": {
-    "promptMarkdown": "Say where a value belongs in a sorted list.\n\nThe first line is the list, **sorted from smallest to largest**, with **no**\nrepeated values. The second line is a value. Return the position it would\noccupy if it were inserted and the list stayed sorted.\n\n**Example**\n\n```\ninput:  1 3 5 6\n        2\noutput: 1\n```\n\nInserting `2` at position 1 gives `1 2 3 5 6`, still sorted.\n\nIf the value **is already in the list**, return the position it is at. If it\nis smaller than everything, the answer is `0`; if it is larger than\neverything, the answer is the length of the list — one past the end. The list\nalways has at least one number, and values may be negative.",
-    "editorialMarkdown": "## Lower bound: the first position that is not too small\n\nThis is binary search asking a different question. Instead of \"is this the\nvalue?\" it asks \"is this position past the point where the value belongs?\" —\nand the answer is the **first** position where `a[i] >= target`.\n\nThat question is monotonic: `a[i] >= target` is false for a while and then\ntrue for the rest of the list, because the list ascends. Once a predicate has\nthat false-then-true shape, binary search can find the boundary, and the\nsearch does not need an equality case at all.\n\n```\nlo, hi = 0, n            # note hi = n, not n - 1\nwhile lo < hi:\n    mid = lo + (hi - lo) // 2\n    if a[mid] < target: lo = mid + 1\n    else:               hi = mid\nreturn lo\n```\n\n**Why each discarded half is safe.** When `a[mid] < target`, position `mid`\nis too small to be the boundary, and so is everything before it — sortedness\nmeans all of `a[0..mid]` is `<= a[mid] < target`. The boundary must lie\nstrictly after `mid`, so `lo = mid + 1`. When `a[mid] >= target`, `mid` itself\nsatisfies the predicate, so it is a candidate answer and must be **kept**:\n`hi = mid`, not `mid - 1`. The invariant held throughout is that the answer is\nalways inside `[lo, hi]`, and when the two meet that range holds exactly one\nposition — the answer.\n\nThe quiet mistake is mixing the two dialects. This loop needs `lo < hi`,\n`hi = n`, and `hi = mid`. Use `hi = mid - 1` here and you can step past a\nvalid boundary and return one too small. Use `hi = mid` with a `lo <= hi`\nloop and the window stops shrinking when `lo == hi` — an **infinite loop**,\nthe same non-termination as writing `lo = mid`. The asymmetry is deliberate:\n`lo` moves past a position that has been ruled out, `hi` moves onto a position\nthat is still in the running. Starting `hi` at `n - 1` instead of `n` is the\nthird flavour, and it silently caps the answer at `n - 1`, so a value larger\nthan everything reports the last position rather than one past the end.\n\nAnd use `lo + (hi - lo) / 2` for the midpoint: `(lo + hi) / 2` overflows in\nfixed-width integer types and wraps to a negative index.\n\nO(log n) time, O(1) space. This routine is worth memorising — it is the\nprimitive the next problem is built out of.",
+    "promptMarkdown": "Say where a value belongs in a sorted list.\n\nThe first line is the list, sorted from smallest to largest, with no repeated values. The second line is a value. Return the position it would occupy if it were inserted and the list stayed sorted.\n\nIf the value is already in the list, return the position it is at. If it is smaller than everything, the answer is `0`; if it is larger than everything, the answer is the length of the list.\n\n**Constraints**\n- `1 <= length of list <= 10^5`\n- List values are strictly increasing and may be negative.\n\n**Example 1**\n```\ninput:\n10 20 30 40\n25\noutput: 2\n```\n25 belongs at index 2, between 20 and 30.\n\n**Example 2**\n```\ninput:\n10 20 30 40\n30\noutput: 2\n```\n30 is already in the list at index 2.\n\n**Follow-up:** Can you find the correct insertion position in O(log n) time?",
+    "editorialMarkdown": "The intended approach uses binary search to find the lower bound, which is the first position where the element is greater than or equal to the target. This pattern is standard binary search on a monotonic predicate. The one trap most solvers hit is mixing different binary search dialects and accidentally causing infinite loops or incorrect boundaries. Specifically, if you use `hi = mid` you must loop while `lo < hi`; if you loop while `lo <= hi`, you risk an infinite loop. The time complexity is O(log n) and the space complexity is O(1).",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
@@ -1432,6 +1605,13 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       "5 5 5 5\n3"
     ],
     "model": "claude-sonnet-4-6",
+    "date": "2026-09-16"
+  },
+  "largest-contiguous-sum": {
+    "promptMarkdown": "Return the largest sum of a non-empty contiguous run of numbers.\n\nThe list has at least one number and may contain negatives. If every number is negative, return the least negative single number.\n\n**Constraints**\n- `1 <= length of list <= 10^5`\n- Numbers can be positive, negative, or zero.\n\n**Example 1**\n```\ninput:\n-2 1 -3 4 -1 2 1 -5 4\noutput: 6\n```\nThe best unbroken run is `4 -1 2 1`, which sums to 6.\n\n**Example 2**\n```\ninput:\n1\noutput: 1\n```\nA single positive number is the only possible run.\n\n**Follow-up:** Can you find the largest sum in O(n) time and O(1) extra space?",
+    "editorialMarkdown": "The intended approach tracks the best run ending at the current position, deciding whether to extend the previous run or start fresh from the current number. This pattern is Kadane's algorithm, a classic 1D dynamic programming strategy. The one trap most solvers hit is initializing the answer to zero instead of the first element, which causes the algorithm to incorrectly return zero for a list of entirely negative numbers instead of the least negative number. The time complexity is O(n) and the space complexity is O(1).",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
   "largest-number": {
@@ -1624,8 +1804,8 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "skipped": "review: ambiguous: The problem states \"The first line is the constructor call\", but the sample input shows the first line is the number of commands."
   },
   "lru-cache-get-promotes": {
-    "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nImplement `LRUCache(capacity)` for traces where `get` must PROMOTE a key to most recently used. `get` returns `-1` for a missing key. Updating an existing key also promotes it; a new key beyond capacity evicts the least recently used key.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nA missing key read by `get` returns `-1`.",
-    "editorialMarkdown": "## Promotion changes the next eviction\n\nRecency is an ordering invariant, not an optional counter. Touching a key with get removes it from its old position and appends it as newest, so the other key becomes eviction candidate. The quiet mistake is returning the value but leaving order unchanged. A hash map locates nodes and a linked order moves them in O(1) amortised time.\n\nThe quiet mistake is confusing an empty bucket or slot with proof that a key was never present. Collisions and deletion make that assumption dangerous: preserve the search path and update the stored count only when a key is actually inserted or removed.\n\nBoth get and put are O(1) amortised; the hash table and recency list store O(capacity) entries.",
+    "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nImplement `LRUCache(capacity)` for traces where `get` must PROMOTE a key to most recently used. `get` returns `-1` for a missing key. Updating an existing key also promotes it; a new key beyond capacity evicts the least recently used key.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value. A missing key read by `get` returns `-1`.\n\n**Constraints**\n- `1 <= capacity <= 10^5`\n- Keys and values are integers.\n\n**Example 1**\n```\ninput:\n5\nLRUCache 2\nput 10 100\nput 20 200\nget 10\nget 30\noutput:\nnull\nnull\nnull\n100\n-1\n```\nThe cache holds 2 items. Reading 10 returns 100 and promotes it. Reading 30 returns -1 because it is missing.\n\n**Example 2**\n```\ninput:\n6\nLRUCache 1\nput 1 1\nput 2 2\nget 1\nget 2\nput 3 3\noutput:\nnull\nnull\nnull\n-1\n2\nnull\n```\nThe capacity is 1, so putting 2 evicts 1. Then reading 1 returns -1. Putting 3 evicts 2.\n\n**Follow-up:** Can you achieve O(1) amortised time for both `get` and `put`?",
+    "editorialMarkdown": "The intended approach uses a hash map for O(1) lookup combined with a doubly-linked list (or ordered dictionary) to maintain the recency order. This pattern is the classic LRU Cache. Both `get` and `put` operate in O(1) time and use O(capacity) space. The one trap most solvers hit is returning the value for a `get` without promoting the key to the most recently used position. Recency is an ordering invariant, and touching a key with `get` must remove it from its old position and append it as newest so the other key becomes the eviction candidate.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
@@ -2354,6 +2534,7 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16",
+    "skipped": "review: closely follows LeetCode 208 (Implement Trie (Prefix Tree))",
     "tests": [
       {
         "stdin": "3\nTrie\nsearch hello\nstartsWith hell",
