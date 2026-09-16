@@ -23,7 +23,12 @@ log() { printf '%s [up%s] %s\n' "$(date -u +%FT%TZ)" "$WORKER" "$*" | tee -a "$L
 
 quota_wait() {
   local mins
-  mins=$(printf '%s' "$1" | sed -n 's/.*[Rr]esets in \([0-9]*\)m.*/\1/p' | head -1)
+  # "Resets in 1h36m40s" or "Resets in 9m17s": hours and minutes both count.
+  local h m
+  h=$(printf '%s' "$1" | sed -n 's/.*[Rr]esets in \([0-9]*\)h.*/\1/p' | head -1)
+  m=$(printf '%s' "$1" | sed -n 's/.*[Rr]esets in \([0-9]*h\)\{0,1\}\([0-9]*\)m.*/\2/p' | head -1)
+  mins=$(( ${h:-0} * 60 + ${m:-0} ))
+  [ "$mins" -eq 0 ] && mins=""
   if [ -n "$mins" ]; then log "quota reached; waiting $((mins + 1)) minutes for the reset"; sleep $(( (mins + 1) * 60 ));
   else log "quota reached; waiting 15 minutes"; sleep 900; fi
 }
@@ -58,6 +63,8 @@ while true; do
   fi
   failures=0
   log "upgrade batch $n: $(printf '%s' "$summary" | sed -n 's/.*"pending":\([0-9]*\),"accepted":\([0-9]*\),"rejected":\([0-9]*\),"draftedBy":"\([^"]*\)","reviewer":"\([^"]*\)".*/accepted=\2 rejected=\3 pending=\1 by=\4 review=\5/p')"
+  # Nobody could read the rewrites: wait for a reviewer rather than draft again.
+  if printf '%s' "$summary" | grep -q '"unreviewed"'; then log "no reviewer available; waiting 15 minutes"; sleep 900; continue; fi
   n=$((n + 1))
   since_commit=$((since_commit + 1))
   if [ "$since_commit" -ge "$COMMIT_EVERY" ]; then commit_progress; fi
