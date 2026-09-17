@@ -2149,5 +2149,66 @@
     "ours": "valid-encrypted-transmission-segment",
     "batch": "gen-lc-w4-059",
     "date": "2026-09-17"
+  },
+  "fixed-point": {
+    "ours": "calibrated-sensor-alignment",
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17"
+  },
+  "generate-fibonacci-sequence": {
+    "ours": "crystal-growth-layers",
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17"
+  },
+  "happy-number": {
+    "ours": "stable-energy-core",
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17"
+  },
+  "find-winner-on-a-tic-tac-toe-game": {
+    "ours": "control-node-capture",
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17"
+  },
+  "hexadecimal-and-hexatrigesimal-conversion": {
+    "ours": "telemetry-format-upgrade",
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17"
+  },
+  "guess-number-higher-or-lower": {
+    "ours": null,
+    "batch": "gen-lc-w0-057",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "intersection-of-two-arrays": {
+    "ours": "common-ingredient-matches",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "largest-perimeter-triangle": {
+    "ours": "longest-valid-tripod",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "latest-time-you-can-obtain-after-replacing-characters": {
+    "ours": "optimal-appointment-time",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "library-late-fee-calculator": {
+    "ours": "rental-overdue-charges",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "largest-local-values-in-a-matrix": {
+    "ours": "maximum-heat-zones",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "last-visited-integers": {
+    "ours": "history-playback-system",
+    "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
   }
 }
