@@ -2666,5 +2666,36 @@
     "batch": "gen-lc-w3-100",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "maximum-value-of-a-string-in-an-array": {
+    "ours": "heaviest-cargo-container",
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17"
+  },
+  "merge-strings-alternately": {
+    "ours": "interleave-alien-signals",
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17"
+  },
+  "minimum-element-after-replacement-with-digit-sum": {
+    "ours": "weakest-runic-stone",
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17"
+  },
+  "minimum-number-game": {
+    "ours": "gladiator-robot-pairing",
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17"
+  },
+  "minimum-number-of-chairs-in-a-waiting-room": {
+    "ours": "airlock-chamber-capacity",
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17"
+  },
+  "minimum-depth-of-binary-tree": {
+    "ours": null,
+    "batch": "gen-lc-w2-064",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
