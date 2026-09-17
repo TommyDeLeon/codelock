@@ -24,7 +24,7 @@
  *   npm run upgrade:batch -- --count 8 [--model gemini-3.1-pro-low] [--dry-run]
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ALL_PROBLEMS } from '../src/corpus/problems/index.js';
@@ -407,6 +407,22 @@ function withLock<T>(fn: () => T): T {
   }
 }
 
+/**
+ * The overlay as it is on disk right now. `UPGRADES` was imported when this
+ * process started; other workers (the other upgrade shard, the test refresh)
+ * may have written since, and merging onto the import would drop their
+ * entries. Always read inside the lock. The file body is JSON per slug.
+ */
+function readCurrent(): Record<string, StatementUpgrade> {
+  const text = readFileSync(upgradesPath, 'utf8');
+  const start = text.indexOf('> = {
+') + 5;
+  const end = text.lastIndexOf('
+};');
+  const body = text.slice(start, end).trim().replace(/,\s*$/, '');
+  return JSON.parse(`{${body}}`) as Record<string, StatementUpgrade>;
+}
+
 function emit(all: Record<string, StatementUpgrade>): void {
   const body = Object.keys(all)
     .sort()
@@ -533,7 +549,7 @@ function main() {
   if (!dryRun && (accepted.length > 0 || skipped.size > 0)) {
     const date = new Date().toISOString().slice(0, 10);
     withLock(() => {
-      const all: Record<string, StatementUpgrade> = { ...UPGRADES };
+      const all = readCurrent();
       for (const [slug, why] of skipped) {
         const p = batch.find((x) => x.slug === slug)!;
         const prevTests = all[slug]?.tests;
