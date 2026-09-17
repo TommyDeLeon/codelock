@@ -281,6 +281,8 @@ async function main() {
     );
     if (computed.length < 8) {
       rejected.push({ slug: p.slug, why: `only ${computed.length} inputs on which all six references agree` });
+      // The first proposed input, so a malformed wire format is visible in the log.
+      console.log(`    ? ${p.slug} sample input: ${JSON.stringify(inputs[0])}`);
       continue;
     }
     const tests = computed.slice(0, 12).map((t, i) => (i < 2 ? { ...t, isSample: true } : t));
