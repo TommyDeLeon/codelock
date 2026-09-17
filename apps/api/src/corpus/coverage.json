@@ -2697,5 +2697,35 @@
     "batch": "gen-lc-w2-064",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "minimum-recolors-to-get-k-consecutive-black-blocks": {
+    "ours": "drone-repair-minimum-replacements",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
+  },
+  "minimum-total-operations": {
+    "ours": "reactor-temperature-stabilization",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
+  },
+  "minimum-value-to-get-positive-step-by-step-sum": {
+    "ours": "minimum-shield-startup-power",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
+  },
+  "mirror-distance-of-an-integer": {
+    "ours": "teleportation-frequency-error",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
+  },
+  "missing-ranges": {
+    "ours": "unmapped-planetary-sectors",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
+  },
+  "n-repeated-element-in-size-2n-array": {
+    "ours": "identify-cloned-android-model",
+    "batch": "gen-lc-w4-064",
+    "date": "2026-09-17"
   }
 }

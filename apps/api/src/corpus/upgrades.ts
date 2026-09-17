@@ -2004,9 +2004,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "The first line is a list made only of `0`s and `1`s. The second line is a\nnumber `k`.\n\nYou may change at most `k` of the zeros into ones. Return the length of the\nlongest run of neighbouring `1`s you can end up with.\n\n**Example**\n\n```\ninput:  1 1 0 1 1 0 1\n        1\noutput: 5\n```\n\nFlip the zero at position 3 and the first five values become `1 1 1 1 1`.\nFlipping the other zero instead only reaches a run of 4, and with one flip\nyou cannot bridge both zeros.\n\n```\ninput:  0 0 0\n        0\noutput: 0\n```\n\nWith `k` of `0` you may not flip anything, so the answer is the longest run\nof `1`s already present — here there are none, and the answer is `0`.\n\nGuarantees: the list has at least one value, every value is `0` or `1`, and\n`k` is zero or more. If `k` is at least the number of zeros, the whole list\ncan be turned into `1`s and the answer is its length.",
     "editorialMarkdown": "## A window that grows greedily and shrinks only when it must\n\nRephrase the task and it stops being about flipping: you want the longest\ncontiguous stretch that contains **at most `k` zeros**. Every zero inside such\na stretch gets flipped; every one is already fine. Counting zeros is much\neasier than reasoning about which zeros to spend flips on.\n\nSo keep a window `[left, right]` and a count of the zeros inside it. Push\n`right` forward one step at a time. If the window now holds more than `k`\nzeros it is illegal, so pull `left` forward until it is legal again.\n\n```\nleft = 0, zeros = 0, best = 0\nfor right in 0..n-1:\n    if a[right] == 0: zeros += 1\n    while zeros > k:\n        if a[left] == 0: zeros -= 1\n        left += 1\n    best = max(best, right - left + 1)\n```\n\n**Why the left edge never moves backwards.** Suppose for a given `right` the\nsmallest legal `left` is `L`. Now advance to `right + 1`. Adding a value can\nonly increase the zero count, never decrease it, so every start position that\nwas already illegal for `right` is still illegal for `right + 1`. Nothing to\nthe left of `L` can ever become legal again. The best window ending at each\nposition therefore starts at a non-decreasing index, and `left` may march\nforward monotonically. Each index is entered once by `right` and left once by\n`left`, which is why two nested loops still add up to O(n) rather than O(n^2).\n\nThe quiet mistake this problem invites is shrinking with `if` instead of\n`while`. One `if` removes at most one element, which is enough whenever the\nwindow overshoots by exactly one — and pushing `right` one step can only add\none zero, so on this problem `if` looks right and passes most inputs. It\nbreaks the moment you reuse the shape on a problem where the right edge can\nadd more than one unit of badness at a time, and it breaks here too if you\never let `right` jump. Write `while`; it is correct in both worlds and costs\nnothing.\n\nThe other quiet mistake is measuring `best` before restoring validity —\nreading `right - left + 1` inside the growth step rather than after the shrink\nloop. That records the width of an illegal window, and it only shows up on\ninputs where the window actually overflows, so a test made of all `1`s will\nnever catch it.\n\nO(n) time, since both pointers only move right, and O(1) space — the window is\nsummarised by one integer count.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode 1004 \"Max Consecutive Ones III\" — the attendance/excused-absence framing is a direct paraphrase of the standard sliding-window problem "
+    "tests": [
+      {
+        "stdin": "1 0 1 0 1 0\n2",
+        "expectedStdout": "5",
+        "isSample": true
+      },
+      {
+        "stdin": "0 0 1 0 0 1\n1",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "1\n0",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "0\n1",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "1 1 1 1 1 1\n5",
+        "expectedStdout": "6"
+      },
+      {
+        "stdin": "0 0 0 0 0\n2",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "1 0 0 0 1\n3",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "0 1 1 0 1 1 0\n0",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "0 0 1 0 1 0 1 0 0\n4",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "1 0 1 0 1 0 1 0 1 0 1 0\n10",
+        "expectedStdout": "12"
+      }
+    ]
   },
   "longest-run-with-two-distinct": {
     "promptMarkdown": "Return the length of the longest contiguous stretch of a string that uses at\nmost two different characters.\n\nThe stretch must be a run of neighbouring characters. Return only its length.\n\n**Example**\n\n```\ninput:  eceba\noutput: 3\n```\n\nThe stretch `ece` uses only `e` and `c`. Extending it to `eceb` would bring\nin a third character.\n\n```\ninput:  aaaa\noutput: 4\n```\n\nWhen every character is the same the whole string qualifies — one distinct\ncharacter is still \"at most two\".\n\nGuarantees: the string has at least one character, so the answer is never\n`0`. A one-character string gives `1`. Characters are compared exactly, so\nupper and lower case count as different.",
@@ -2055,9 +2098,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "A non-empty grid gives the cost of entering each square, including the starting square. Move only right or down from top-left to bottom-right. Return the least total cost.\n\n**Example**\n\n```\ninput:  1 3 1;1 5 1;4 2 1\noutput: 7\n```",
     "editorialMarkdown": "## 2-D DP: minimum cost at each square\n\nMake a table whose cell `cost[r][c]` is the cheapest total for a route ending at that square. The recurrence works because every allowed final move or choice reaches this cell from smaller subproblems that have already been solved; combining those complete alternatives therefore describes every valid answer here. Fill in dependency order so no cell reads unfinished information.\n\nThe quiet mistake is initializing the first row or column as though it could be entered from two directions. It often passes a central example while corrupting a boundary or the first transition, so establish the base row and column before the main loops.\n\nTime is O(rows × columns), bounded by the two table dimensions, and space is O(rows × columns).",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #64 \"Minimum Path Sum\" (surveyor/fuel framing paraphrases the known statement)"
+    "tests": [
+      {
+        "stdin": "2 1;1 2",
+        "expectedStdout": "5",
+        "isSample": true
+      },
+      {
+        "stdin": "1 2 3;4 5 6;7 8 9",
+        "expectedStdout": "21",
+        "isSample": true
+      },
+      {
+        "stdin": "8",
+        "expectedStdout": "8"
+      },
+      {
+        "stdin": "-5 -1;-2 -10",
+        "expectedStdout": "-17"
+      },
+      {
+        "stdin": "0 0;0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "3 3 3;3 3 3",
+        "expectedStdout": "12"
+      },
+      {
+        "stdin": "10 10 10;1 1 10;10 1 1",
+        "expectedStdout": "14"
+      },
+      {
+        "stdin": "1 100;1 100;1 1",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "3 1 4;1 5 9",
+        "expectedStdout": "17"
+      },
+      {
+        "stdin": "1;2;3;4",
+        "expectedStdout": "10"
+      }
+    ]
   },
   "lru-cache-eviction": {
     "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nBuild `LRUCache(capacity)`. `put` stores a key/value pair; when full, inserting a new key evicts the least recently used key. `get` returns its value or `-1` for a missing key and makes a found key most recently used.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nA missing key read by `get` returns `-1`.",
@@ -2235,9 +2321,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "You are given a chain of nodes, each holding a number and a pointer to the\nnext node. Return the number stored in the middle node.\n\nWhen the chain has an even number of nodes there are two middles; return the\n**second** of them.\n\n**Example**\n\n```\ninput:  1 2 3 4 5\noutput: 3\n\ninput:  1 2 3 4 5 6\noutput: 4\n```\n\nThe chain always has at least one node. A single-node chain is its own\nmiddle, so the answer is that node’s number.\n\nYou are not told the length in advance, and you should not need two passes\nto find it.",
     "editorialMarkdown": "## Fast and slow pointers\n\nThe obvious solution walks the chain once to count the nodes, then walks it\nagain to node `n / 2`. That is correct and it is two passes. One pass is\navailable, and it is the reason this pattern is worth learning.\n\nStart two pointers at the head. Move `slow` one node per step and `fast` two\nnodes per step.\n\n```\nslow = fast = head\nwhile fast != null and fast.next != null:\n    slow = slow.next\n    fast = fast.next.next\nreturn slow.val\n```\n\nWhy the gap gives the answer: after `k` steps, `slow` has covered `k` nodes\nand `fast` has covered `2k`. The loop stops as soon as `fast` cannot take a\nfull double step, which happens the moment `2k` reaches the end of the\nchain — that is, when `k` is about half the length. `slow` is therefore\nsitting at the halfway mark without anyone ever having counted. The one\npointer measures the list while the other one indexes into it.\n\nThe quiet mistake is the loop condition, and it decides which of the two\nmiddles you get on an even-length chain. `while fast != null and fast.next\n!= null` lands on the second middle; `while fast.next != null and\nfast.next.next != null` lands on the first. Both look reasonable and neither\nis wrong in general — but only one matches what the statement asked for, and\non odd lengths they agree, so a test set of odd-length lists will not tell\nyou which one you wrote. Check the order of the two guards too: testing\n`fast.next` before `fast` dereferences null on an even-length chain.\n\nO(n) time, bounded by the fast pointer’s single traversal, and O(1) extra\nspace — two pointers, whatever the length.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #876 \"Middle of the Linked List\" — single-traversal constraint, even-length latter-of-two rule, and relay-station framing map directly "
+    "tests": [
+      {
+        "stdin": "10 20 30",
+        "expectedStdout": "20",
+        "isSample": true
+      },
+      {
+        "stdin": "10 20 30 40",
+        "expectedStdout": "30",
+        "isSample": true
+      },
+      {
+        "stdin": "100",
+        "expectedStdout": "100"
+      },
+      {
+        "stdin": "7 7 7 7 7",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "-5 -10 -15 -20 -25",
+        "expectedStdout": "-15"
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0 0 0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "5 4 3 2 1",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "10 20 30 40 50 60 70 80 90 100 110 120",
+        "expectedStdout": "70"
+      },
+      {
+        "stdin": "99 98 97",
+        "expectedStdout": "98"
+      }
+    ]
   },
   "min-and-max": {
     "promptMarkdown": "Given a list of integers, return two numbers: the smallest number in the list followed by the largest number in the list.\n\n**Constraints**\n- The list will always contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 1 4 1 5\noutput: 1 5\n```\nThe smallest number is 1 and the largest is 5.\n\n**Example 2**\n```\ninput:\n7\noutput: 7 7\n```\nSince 7 is the only element, it is both the smallest and the largest.\n\n**Follow-up:** Can you solve this in a single pass with O(1) auxiliary space?",
