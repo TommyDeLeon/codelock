@@ -2291,5 +2291,67 @@
     "batch": "gen-lc-w0-059",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "longer-contiguous-segments-of-ones-than-zeros": {
+    "ours": "longest-continuous-working-shift",
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17"
+  },
+  "longest-alternating-subarray": {
+    "ours": "longest-oscillating-temperature-sequence",
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17"
+  },
+  "matrix-cells-in-distance-order": {
+    "ours": "drone-watering-sequence",
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17"
+  },
+  "maximize-sum-of-array-after-k-negations": {
+    "ours": "maximize-accounting-profits",
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17"
+  },
+  "maximum-depth-of-binary-tree": {
+    "ours": "maximum-directory-depth",
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17"
+  },
+  "matrix-similarity-after-cyclic-shifts": {
+    "ours": null,
+    "batch": "gen-lc-w2-061",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "mean-of-array-after-removing-some-elements": {
+    "ours": "trimmed-sensor-average",
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17"
+  },
+  "meeting-rooms": {
+    "ours": "telescope-observation-conflicts",
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17"
+  },
+  "maximum-strong-pair-xor-i": {
+    "ours": "maximum-signal-resonance",
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17"
+  },
+  "maximum-subarray-with-equal-products": {
+    "ours": "longest-harmonious-sequence",
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17"
+  },
+  "maximum-unique-subarray-sum-after-deletion": {
+    "ours": "maximum-uncontaminated-sample",
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17"
+  },
+  "maximum-units-on-a-truck": {
+    "ours": null,
+    "batch": "gen-lc-w4-061",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
