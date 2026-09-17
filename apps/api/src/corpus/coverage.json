@@ -2384,5 +2384,132 @@
     "batch": "gen-lc-w0-060",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "maximum-nesting-depth-of-the-parentheses": {
+    "ours": "max-packet-nesting",
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17"
+  },
+  "maximum-difference-between-even-and-odd-frequency-i": {
+    "ours": "satellite-signal-difference",
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17"
+  },
+  "maximum-number-of-balloons": {
+    "ours": "maximum-potions-brewed",
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17"
+  },
+  "maximum-depth-of-n-ary-tree": {
+    "ours": null,
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "maximum-height-of-a-triangle": {
+    "ours": null,
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "maximum-number-of-words-found-in-sentences": {
+    "ours": null,
+    "batch": "gen-lc-w2-062",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "first-matching-character-from-both-ends": {
+    "ours": "first-shared-symbol-two-ends",
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17"
+  },
+  "generate-tag-for-video-caption": {
+    "ours": "trending-topic-hashtag",
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17"
+  },
+  "finding-3-digit-even-numbers": {
+    "ours": "three-digit-product-codes",
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17"
+  },
+  "flip-game": {
+    "ours": "light-switch-toggles",
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17"
+  },
+  "find-anagram-mappings": {
+    "ours": null,
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "find-the-town-judge": {
+    "ours": null,
+    "batch": "gen-lc-w3-056",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "merge-two-binary-trees": {
+    "ours": "alien-organism-merger",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "method-chaining": {
+    "ours": "sensor-data-pipeline",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "minimum-absolute-difference": {
+    "ours": "minimum-drone-gap",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "minimum-capacity-box": {
+    "ours": "standard-cargo-crate",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "minimum-changes-to-make-alternating-binary-string": {
+    "ours": "alternating-light-sequence",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "min-cost-climbing-stairs": {
+    "ours": "asteroid-belt-navigation",
+    "batch": "gen-lc-w4-062",
+    "date": "2026-09-17"
+  },
+  "low-quality-problems": {
+    "ours": "identify-faulty-sensors",
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17"
+  },
+  "majority-element": {
+    "ours": "primary-faction-leader",
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17"
+  },
+  "make-array-zero-by-subtracting-equal-amounts": {
+    "ours": "laser-asteroid-destruction",
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17"
+  },
+  "maximum-area-of-longest-diagonal-rectangle": {
+    "ours": "optimal-solar-panels",
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17"
+  },
+  "lucky-numbers-in-a-matrix": {
+    "ours": null,
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "maximize-pair-strength-using-gcd": {
+    "ours": null,
+    "batch": "gen-lc-w0-061",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }

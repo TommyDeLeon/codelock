@@ -1,7 +1,8 @@
 /**
  * Rewritten statements and editorials for hand-authored problems, keyed by
- * slug. Generated and extended by `scripts/upgrade-statements.ts`; applied
- * by `upgrade.ts`. Do not edit by hand — rerun the script.
+ * slug. Generated and extended by `scripts/upgrade-statements.ts` and
+ * `scripts/refresh-tests.ts`; applied by `upgrade.ts`. Do not edit by
+ * hand — rerun the scripts.
  */
 export interface StatementUpgrade {
   promptMarkdown: string;
@@ -1851,9 +1852,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "Find the length of the longest run of consecutive numbers.\n\nThe numbers may appear in any order, and the run does not have to be\ncontiguous in the list — only the *values* must be consecutive.\n\n**Example**\n\n```\ninput:  100 4 200 1 3 2\noutput: 4\n```\n\n`1 2 3 4` are all present, so the longest run has length 4.\n\nAn empty list has length `0`. Duplicates count once.",
     "editorialMarkdown": "## Only start counting from the start of a run\n\nSorting makes this easy and costs O(n log n). The O(n) solution is the reason\nthe problem is asked, and it turns on one small idea.\n\nPut every value in a hash set. Now, for each value, you *could* walk upward\ncounting `n+1`, `n+2`, ... — but doing that for every value re-walks the same\nrun once per member, which is O(n^2) on a long run.\n\nThe fix: only walk from a value that **starts** a run. And a value starts a\nrun exactly when `n - 1` is not in the set:\n\n```\nfor n in set:\n    if (n - 1) not in set:        # n is the start of its run\n        length = 1\n        while (n + length) in set: length += 1\n        best = max(best, length)\n```\n\nEach value is now visited at most twice — once by the outer loop, once by the\ninner walk of its own run — so the whole thing is O(n) despite the nested\nloop. That is worth internalising: a nested loop is not automatically\nquadratic; what matters is how many times each element is touched.\n\nIterate the **set**, not the list, or duplicates make you redo work.\n\nO(n) time, O(n) space.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #128 \"Longest Consecutive Sequence\" (sensor/pressure framing is a thin paraphrase of the canonical statement)"
+    "tests": [
+      {
+        "stdin": "10 11 12",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "9 1 8 2 7 3",
+        "expectedStdout": "3",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-5 -4 -3 -2",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "2 2 2 3 3 4",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "10 20 30 40 50",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-100 0 100",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "7 6 5 4 3 2 1",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "15 16 17 10 11 12 13",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
+        "expectedStdout": "20"
+      }
+    ]
   },
   "longest-directed-acyclic-path": {
     "promptMarkdown": "A build system models tasks as nodes in a directed graph: an edge from task `u` to task `v` means task `u` must complete before task `v` can begin. A valid build graph must be acyclic (no circular dependencies). Given the task graph, find the length of the longest dependency chain — measured in number of edges — in the graph. If the graph contains a cycle, return `-1` to signal that the build system is broken.\n\nThe input is a single line of semicolon-separated tokens. The first token is `n`, the number of tasks (vertices `0` to `n - 1`). Each subsequent token is a pair `u v` (space-separated) representing a directed edge from `u` to `v`.\n\nReturn the length of the longest directed path (in edges) if the graph is a DAG, or `-1` if it contains a directed cycle. A graph with no edges has longest path length `0`.\n\n**Constraints**\n\n- `1 <= n <= 100`\n- `0 <= number of edges <= n * (n - 1)`\n- Each edge `u v` satisfies `0 <= u, v < n` and `u != v`\n- There may be multiple edges between the same pair of vertices in the same direction\n\n**Example 1**\n\n```\ninput:\n4;0 1;0 2;1 3;2 3\noutput: 2\n```\n\nThe longest path is `0 → 1 → 3` or `0 → 2 → 3`, each with 2 edges.\n\n**Example 2**\n\n```\ninput:\n3;0 1;1 2;2 0\noutput: -1\n```\n\nThe edges form the cycle `0 → 1 → 2 → 0`, so the answer is `-1`.\n\n**Example 3**\n\n```\ninput:\n4\noutput: 0\n```\n\nFour tasks with no edges; longest path is `0` edges.\n\n**Follow-up:** Can you achieve O(n + e) time using topological sort, where e is the number of edges?",
@@ -1892,9 +1936,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "Return the length of the longest contiguous stretch of a string that uses at\nmost two different characters.\n\nThe stretch must be a run of neighbouring characters. Return only its length.\n\n**Example**\n\n```\ninput:  eceba\noutput: 3\n```\n\nThe stretch `ece` uses only `e` and `c`. Extending it to `eceb` would bring\nin a third character.\n\n```\ninput:  aaaa\noutput: 4\n```\n\nWhen every character is the same the whole string qualifies — one distinct\ncharacter is still \"at most two\".\n\nGuarantees: the string has at least one character, so the answer is never\n`0`. A one-character string gives `1`. Characters are compared exactly, so\nupper and lower case count as different.",
     "editorialMarkdown": "## A window carrying a count of what is inside it\n\nChecking every substring for its distinct count is O(n^2) substrings times the\ncost of counting, and most of that counting repeats work from the substring\none character shorter.\n\nOne window does it in a single pass. Keep a map from character to how many\ntimes it occurs inside the window; the map's size is the distinct count. Push\n`right` forward, incrementing. While the map holds three or more keys, pull\n`left` forward, decrementing — and **delete the key when its count hits zero**,\nbecause a key sitting at zero still counts toward the map size.\n\n```\nleft = 0, counts = {}, best = 0\nfor right in 0..n-1:\n    counts[s[right]] += 1\n    while len(counts) > 2:\n        counts[s[left]] -= 1\n        if counts[s[left]] == 0: delete counts[s[left]]\n        left += 1\n    best = max(best, right - left + 1)\n```\n\n**Why the left edge never moves backwards.** Adding a character can only keep\nthe distinct count the same or raise it; it can never lower it. So if starting\nat index `i` already gives three distinct characters for some `right`, it gives\nat least three for every larger `right` too — that start is permanently dead.\nThe smallest legal start is a non-decreasing function of `right`, so `left`\nsweeps forward once. Each index is added once and removed at most once: O(n)\ntotal, not O(n^2), even though the code has a loop inside a loop.\n\nThe quiet mistake is exactly that deletion: decrementing the count but leaving\nthe key in the map. The map then reports characters that have already slid out\nof the window, `len(counts)` never comes back down, and after the first shrink\nthe window can never grow again. It is quiet because on a string like `aaaa`,\nwhere nothing is ever removed, the answer is still right — and on `eceba` it\nis still right, because the first shrink happens late. Test it on something\nlike `abaccc`, where the window has to abandon `b` and then expand over the\nrun of `c`s; the buggy version reports `3` instead of `4`.\n\nThe second quiet mistake is reading the width before the shrink loop, which\nmeasures a window that currently holds three distinct characters.\n\nO(n) time — both pointers only move right — and O(1) space in practice, since\nthe map never holds more than three entries.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #159 \"Longest Substring with At Most Two Distinct Characters\" (botanist/transect framing paraphrases the known statement)"
+    "tests": [
+      {
+        "stdin": "abcabc",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "aabbcc",
+        "expectedStdout": "4",
+        "isSample": true
+      },
+      {
+        "stdin": "z",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "xyxyx",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "zzzzzzz",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "abbcccdddd",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "abcabcabc",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "abcdefggggggghhhhhhh",
+        "expectedStdout": "14"
+      },
+      {
+        "stdin": "aAaAabBbB",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "qwertyuiopasdfghjklzxcvbnm",
+        "expectedStdout": "2"
+      }
+    ]
   },
   "longest-shared-prefix": {
     "promptMarkdown": "You are given a list of words on one line, separated by spaces.\n\nPrint the longest prefix that **every** word in the list starts with.\n\n**Example**\n\n```\ninput:  flower flow flight\noutput: fl\n```\n\nAll three start with `fl`. They do not all start with `flo`, because\n`flight` does not.\n\nGuarantees: there is always at least one word, and every word is one or\nmore lowercase letters `a`–`z`.\n\nThe named edge case: when the words share nothing — `dog cat bird` — the\nanswer is the empty prefix, so print an **empty line**. A list of one word\nanswers with that whole word.",
@@ -1935,9 +2022,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "A non-empty grid gives the cost of entering each square, including the starting square. Move only right or down from top-left to bottom-right. Return the least total cost.\n\n**Example**\n\n```\ninput:  1 3 1;1 5 1;4 2 1\noutput: 7\n```",
     "editorialMarkdown": "## 2-D DP: minimum cost at each square\n\nMake a table whose cell `cost[r][c]` is the cheapest total for a route ending at that square. The recurrence works because every allowed final move or choice reaches this cell from smaller subproblems that have already been solved; combining those complete alternatives therefore describes every valid answer here. Fill in dependency order so no cell reads unfinished information.\n\nThe quiet mistake is initializing the first row or column as though it could be entered from two directions. It often passes a central example while corrupting a boundary or the first transition, so establish the base row and column before the main loops.\n\nTime is O(rows × columns), bounded by the two table dimensions, and space is O(rows × columns).",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #64 \"Minimum Path Sum\" (surveyor/fuel framing paraphrases the known statement)"
+    "tests": [
+      {
+        "stdin": "1 2 3;4 5 6;7 8 9",
+        "expectedStdout": "21",
+        "isSample": true
+      },
+      {
+        "stdin": "2 1;1 2",
+        "expectedStdout": "5",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 1 1 1;2 2 2 2",
+        "expectedStdout": "6"
+      },
+      {
+        "stdin": "1 5;2 5;3 5;4 1",
+        "expectedStdout": "11"
+      },
+      {
+        "stdin": "0 0;0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "9 9 9;9 1 9;9 9 9",
+        "expectedStdout": "37"
+      },
+      {
+        "stdin": "1 1 1;1 1 1;1 1 1",
+        "expectedStdout": "5"
+      },
+      {
+        "stdin": "-1 -2;-3 -4",
+        "expectedStdout": "-8"
+      },
+      {
+        "stdin": "1 2 3 4 5;6 7 8 9 10;11 12 13 14 15;16 17 18 19 20",
+        "expectedStdout": "60"
+      }
+    ]
   },
   "lru-cache-eviction": {
     "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nBuild `LRUCache(capacity)`. `put` stores a key/value pair; when full, inserting a new key evicts the least recently used key. `get` returns its value or `-1` for a missing key and makes a found key most recently used.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nA missing key read by `get` returns `-1`.",
@@ -2017,6 +2147,36 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
   },
+  "max-of-each-window": {
+    "promptMarkdown": "The first line is a list of numbers. The second line is a window width `k`.\n\nSlide a window of width `k` across the list from left to right, one step at a\ntime, and report the largest value inside it at each position. Return those\nmaxima in order, as a list.\n\n**Example**\n\n```\ninput:  1 3 -1 -3 5 3 6 7\n        3\noutput: 3 3 5 5 6 7\n```\n\nThe windows are `1 3 -1`, `3 -1 -3`, `-1 -3 5`, `-3 5 3`, `5 3 6`, `3 6 7`,\nand their maxima are `3 3 5 5 6 7`. A list of length `n` produces exactly\n`n - k + 1` answers.\n\n```\ninput:  4 4 4 4\n        4\noutput: 4\n```\n\nWhen `k` equals the length there is a single window, so the output is one\nnumber. All values being equal changes nothing.\n\nGuarantees: `k` is at least 1 and never larger than the length of the list,\nso the output is never empty. Values may be negative. With `k` of `1` the\noutput is the list itself.",
+    "editorialMarkdown": "## A monotonic deque: the window remembers only its possible futures\n\nRecomputing the maximum for each of the `n - k + 1` windows costs O(k) each,\nso O(n*k). A heap gets it to O(n log k) but has to cope with stale entries.\nThe O(n) answer is a deque of **indices** whose values are strictly\ndecreasing from front to back.\n\n```\ndeque = []            # indices, values decreasing front -> back\nout = []\nfor right in 0..n-1:\n    while deque and a[deque.back] <= a[right]: deque.pop_back()\n    deque.push_back(right)\n    if deque.front <= right - k: deque.pop_front()   # slid out of the window\n    if right >= k - 1: out.append(a[deque.front])\n```\n\n**Why a smaller element can be discarded forever.** Take two positions `i < j`\nwith `a[i] <= a[j]`. Any window that still contains `i` must start at or before\n`i` and end at or after the current right edge, so it contains `j` as well —\n`j` is between them. In every such window `a[j]` is at least as large as\n`a[i]`, so `a[i]` can never be the unique maximum, and reporting `a[j]` is\nalways at least as correct. Once a bigger-or-equal value arrives to its right,\n`i` has no possible future in which it matters. That is why the pop is\npermanent and not a temporary reordering, and it is what keeps the total work\nlinear: every index is pushed once and popped at most once.\n\n**Why the left edge never moves backwards.** The window width is fixed, so the\nleft edge is `right - k + 1` and advances in lockstep. The deque front is the\nanswer for the current window precisely because everything ahead of it was\neither dominated (popped from the back) or has slid out of range (popped from\nthe front). Both kinds of removal are forward-only, which is what turns the\nnested `while` into amortised O(1) per step.\n\nThe quiet mistake is forgetting to remove the outgoing element — dropping the\nfront-expiry check because the back-popping already keeps the deque short.\nThe front index then refers to a value that left the window steps ago, and the\noutput holds a maximum that is no longer inside. It is quiet because it only\nshows on inputs where the running maximum sits near the left edge and expires:\non `1 2 3 4 5` with `k = 2` the deque never holds a stale front and the answer\nis right; on `9 8 7 6` with `k = 2` the buggy version reports `9 9 9` instead\nof `9 8 7`.\n\nThe second is popping with `<` instead of `<=` when the entering value ties.\nKeeping equal values is still correct — they expire in order — but only if the\nfront-expiry check is by index, not by value. Comparing values to decide what\nhas left the window is how ties turn into wrong answers.\n\nO(n) time, amortised, bounded by each index entering and leaving the deque once.\nO(k) space, since the deque never holds more than one window's worth of indices.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17",
+    "skipped": "review: closely follows LeetCode #239 \"Sliding Window Maximum\" — the array, window size k, and left-to-right max output match the known statement's phrasing and structu"
+  },
+  "median-of-two-sorted": {
+    "promptMarkdown": "Find the middle of two sorted lists without merging them.\n\nBoth lines are lists **sorted from smallest to largest**. Imagine the two\nmerged into one sorted sequence of length `n`. Return **two** numbers: the\nvalue at position `(n - 1) / 2` and the value at position `n / 2`, both\nrounded down and counted from `0`. Their average is the median.\n\n**Example**\n\n```\ninput:  1 2\n        3 4\noutput: 2 3\n```\n\nMerged, that is `1 2 3 4`. Positions 1 and 2 hold `2` and `3`, so the median\nwould be `2.5`.\n\nWhen the combined length is **odd** the two positions coincide, so the same\nvalue is printed twice — `1 3` and `2` merge to `1 2 3`, and the answer is\n`2 2`. Either list may be **empty**, which on the wire is an empty line; they\nare never both empty. Duplicates are allowed, across the two lists and within\none, and values may be negative.",
+    "editorialMarkdown": "## Binary search on the partition point\n\nMerging the lists and indexing into the result is O(n + m) and is a fine first\nanswer. The logarithmic solution never builds the merge; it searches for the\nright place to **cut**.\n\nThe idea: a correct answer corresponds to slicing both lists so that the left\npieces together hold exactly the first `half = (n + m + 1) / 2` values of the\nmerged sequence. Take `i` items from `a` and the remaining `j = half - i` from\n`b`. That single number `i` determines everything, so the search space is\n`i` in `[0, n]` — and searching the **shorter** list keeps that range small\nand keeps `j` in range.\n\nA cut is correct exactly when both left pieces stay below both right pieces:\n\n```\naLeft  = a[i-1] if i > 0 else -inf      aRight = a[i] if i < n else +inf\nbLeft  = b[j-1] if j > 0 else -inf      bRight = b[j] if j < m else +inf\ncorrect  <=>  aLeft <= bRight and bLeft <= aRight\n```\n\nEach list is already internally sorted, so `aLeft <= aRight` and\n`bLeft <= bRight` come free; only the two cross-comparisons need checking.\nWhen they hold, `max(aLeft, bLeft)` is the last value on the left of the\nmerged sequence and `min(aRight, bRight)` is the first on the right — the two\nvalues being asked for. If the total is odd, `half` gave the left side the\nextra element, so both requested positions land on `max(aLeft, bLeft)`.\n\n**Why the discarded half cannot contain the answer.** If `aLeft > bRight`, the\ncut took too much from `a`: a value on `a`'s left exceeds a value on `b`'s\nright, which cannot happen in a correct split. Taking *even more* from `a`\nonly makes `aLeft` larger and `bRight` smaller, so every `i' > i` is wrong too\n— the whole range `[i, hi]` is eliminated at once, and `hi = i - 1`. The\nsymmetric case, `bLeft > aRight`, eliminates `[lo, i]` and sets `lo = i + 1`.\nThe two failing conditions are mutually exclusive and cover everything that is\nnot correct, so each probe either finishes or halves the range.\n\nThe quiet mistake is the sentinels. Without treating `i == 0` as negative\ninfinity and `i == n` as positive infinity, the empty-side cuts read off the\nend of an array — or, worse, a language that quietly returns a default value\ngives you `0` as the \"missing\" neighbour, and the comparison silently accepts\na wrong cut. It fails only when one list is entirely on one side of the other,\nwhich is exactly the empty-list and disjoint-range cases the statement names.\nA related one: `half` must be `(n + m + 1) / 2`, not `(n + m) / 2`. The `+ 1`\nputs the extra element on the left for odd totals, which is what lets the odd\ncase be answered from `max(aLeft, bLeft)` alone; without it the odd case reads\nthe wrong side and lands one position off.\n\nThe search itself is an ordinary `lo <= hi` loop over `i`, so the standard\ntraps apply: both updates must step past `i` or the range stalls into an\n**infinite loop**, and the midpoint must be `lo + (hi - lo) / 2` rather than\n`(lo + hi) / 2`, which overflows in fixed-width integer types.\n\nO(log(min(n, m))) time — the search runs over the shorter list only — and O(1)\nspace, since nothing is merged and nothing is copied.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17",
+    "skipped": "review: closely follows LeetCode #4 \"Median of Two Sorted Arrays\" — the two-sorted-arrays setup, no-full-merge framing, and O(log n) follow-up mirror the known problem "
+  },
+  "merge-overlapping-ranges": {
+    "promptMarkdown": "A shared facility tracks reservations as blocks of time, represented by start and end hours. To optimize the schedule display, you need to consolidate any reservations that overlap or sit back-to-back into continuous uninterrupted blocks.\n\nGiven a list of time blocks where each is defined by `[start, end]`, combine all intersecting or adjacent blocks. Return the consolidated schedule ordered by the start time, and then by the end time.\n\n**Constraints**\n- There are at most 8 blocks provided.\n- An empty input yields an empty schedule.\n- `start` will always be less than or equal to `end`.\n\n**Example 1**\n```\ninput:\n5 7;1 3;2 4\noutput: 1 4;5 7\n```\nThe blocks `1 3` and `2 4` intersect and merge into a single `1 4` block.\n\n**Example 2**\n```\ninput:\n1 2;2 3\noutput: 1 3\n```\nThe block ending at 2 is adjacent to the block starting at 2, so they merge entirely.",
+    "editorialMarkdown": "## Interval sweep: carrying the merged range\n\nSorting the schedule blocks by their start time allows us to process them in a single linear sweep. Once sorted, we can confidently carry a \"current active block\" and iterate through the rest.\n\nAs we encounter each subsequent block, we only need to compare its start time with the end time of our active block. If the new block begins before or precisely when our active block ends, we extend the active block's end time if necessary. If the new block starts after our active block ends, we know no future block can ever connect back to our active block (due to the initial sorting). We can safely commit the active block to the result and start carrying the new block.\n\nA standard trap is ignoring the adjacent boundary case. When one block ends at the exact same hour another begins, they must be treated as continuous. Using a strict inequality for overlapping logic will erroneously keep them separate, which violates the requirement to merge back-to-back reservations. \n\nBecause the reference implementation utilizes a basic insertion sort to order the blocks initially, the sorting step dictates the time complexity as O(n²), followed by an O(n) sweep. For small inputs, this is negligible. Space complexity requires O(n) to construct the consolidated schedule array.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "merge-sorted-groups": {
+    "promptMarkdown": "You are given a list of numbers and a group size `g`. The list consists of back-to-back groups of exactly `g` numbers each. Each group is already sorted ascending, but the list as a whole is not. Merge every group into one list sorted ascending and output it.\n\n**Constraints**\n- The list has at least one number.\n- `g` is at least 1.\n- The length of the list is an exact multiple of `g`.\n- Values may be negative and may repeat.\n\n**Example 1**\n```\ninput:\n1 4 7 2 5 8 3 6 9\n3\noutput: 1 2 3 4 5 6 7 8 9\n```\nThe groups are 1 4 7, 2 5 8, and 3 6 9. They are merged into a single sorted list.\n\n**Example 2**\n```\ninput:\n2 1\n1\noutput: 1 2\n```\nWhen `g = 1`, every number is its own group, resulting in sorting the whole list.\n\n**Follow-up:** Can you achieve this with O(m) space where `m` is the number of groups?",
+    "editorialMarkdown": "The intended approach uses a min-heap to perform a k-way merge of the front-runners.\n\nInstead of concatenating and sorting the entire list, keep a min-heap holding exactly one candidate per group. Pop the smallest value, emit it, and push the next number from the group it came from. Since the groups are already sorted internally, the next number in the merged output is always the current front of one of the groups.\n\nThe one trap most solvers hit is pushing every element of every group onto the heap at the beginning. This works and sorts correctly, but it uses O(n) memory instead of O(m) and throws away the streamability of the pattern.\n\nThe time complexity is O(n log m) where n is the total number of elements and m is the number of groups. Space complexity is O(m) for the heap.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "merge-two-ordered-sequences": {
     "promptMarkdown": "## Zip Two Sorted Chains Together\n\nYou are given two linked lists, each with nodes in non-decreasing order. Merge them into one linked list, also in non-decreasing order, by re-pointing the existing nodes — do not create new nodes or sort after concatenating.\n\nEither list may be empty, represented on the wire as an empty line. If one list is empty, the result is the other. If both are empty, the result is an empty list, printed as an empty line.\n\n**Constraints**\n\n- 0 ≤ nodes in each list ≤ 50 000\n- Node values fit in a 32-bit signed integer\n- Duplicate values may appear within and across both lists\n\n**Example 1**\n\n```\ninput:\n1 3 5\n2 4 6\noutput: 1 2 3 4 5 6\n```\n\nAlternating smaller elements from each list produce a fully sorted result.\n\n**Example 2**\n\n```\ninput:\n1 2 3\n\noutput: 1 2 3\n```\n\nThe second list is empty; the result is the first list unchanged.\n\n**Example 3**\n\n```\ninput:\n\n\noutput: \n```\n\nBoth lists are empty; the result is an empty list.\n\n**Follow-up:** Can you solve this iteratively in O(m + n) time and O(1) extra space?",
     "editorialMarkdown": "## Two pointers and a dummy head\n\nWalk both lists simultaneously. At each step, compare the two front nodes and re-point `tail.next` to the smaller one, then advance that list's pointer. When one list is exhausted, attach the remainder of the other whole — it is already sorted and already linked, so no further traversal is needed.\n\n```\ndummy = new Node(0); tail = dummy\nwhile x != null and y != null:\n    if x.val <= y.val: tail.next = x; x = x.next\n    else:              tail.next = y; y = y.next\n    tail = tail.next\ntail.next = (x != null) ? x : y\nreturn dummy.next\n```\n\nWhy the greedy choice is always safe: both inputs are sorted, so the globally smallest remaining value must be one of the two front nodes. Choosing the smaller one can never strand a smaller value behind it, because everything behind a front node is at least as large. Apply the same argument to the remaining lists, and the output comes out sorted.\n\nThe dummy head is not decoration. Without it, the very first append is a special case — there is no `tail` to write through until a result head has been chosen — and that first-node special case is where empty-input bugs concentrate. With a sentinel in front, the first append is identical to every other: `tail.next = node`. The final answer is `dummy.next`, which is correctly null when nothing was appended.\n\nTwo quiet mistakes to watch for. First, forgetting `tail.next = leftovers`: the loop exits the moment one list empties, and the other list's remaining nodes are still linked from the last node appended from that list, which is correct by accident in many cases but fails whenever the loop exits with nodes from the *other* list being the leftovers. Attach the remainder explicitly. Second, using `<` instead of `<=`: sorting still comes out right, but equal values from the two lists are interleaved in reverse order, breaking stability.\n\nTime is O(m + n) — every node is looked at once and re-pointed once. Space is O(1) beyond the single dummy node.",
@@ -2025,6 +2185,65 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
+  },
+  "merge-two-sorted-lists": {
+    "promptMarkdown": "Combine two sorted lists into one sorted list.\n\nBoth lines are **sorted from smallest to largest**. Every number from both\nlists appears in the output, so duplicates are kept.\n\n**Example**\n\n```\ninput:  1 3 5\n        2 4 6\noutput: 1 2 3 4 5 6\n```\n\nEither list may be **empty**, which on the wire is an empty line — the answer\nis then just the other list. If both are empty the answer is empty. Values may\nbe negative, and a value may appear in both lists.",
+    "editorialMarkdown": "## One pointer per list, always take the smaller head\n\nThe lazy solution concatenates and sorts: O((n+m) log(n+m)), and it throws away\nthe sortedness you were handed. The merge does it in linear time.\n\nKeep a pointer into each list. Repeatedly compare the two values they point at,\nappend the smaller, and advance only that pointer. When one list runs out,\nappend what is left of the other.\n\n```\ni = j = 0\nwhile i < n and j < m:\n    if a[i] <= b[j]: out.append(a[i]); i += 1\n    else:            out.append(b[j]); j += 1\nout.extend(a[i:]); out.extend(b[j:])\n```\n\nWhy taking the smaller head is always safe: both lists are sorted, so `a[i]` is\nthe smallest value left in `a` and `b[j]` is the smallest left in `b`. The\nminimum of those two is therefore the smallest value remaining anywhere, and it\nhas to be the next element of the merged output. There is no future value that\ncould have gone first, so nothing is skipped — and because you advance exactly\none pointer per step, no value is emitted twice.\n\nThe quiet mistake is the tail. It is easy to write the while loop, feel done,\nand forget that one list still has elements in it — the output is then simply\nshort. Merging `1 2 3` with `9` produces `1 2 3` and looks plausible, which is\nthe worst kind of wrong. Both drain steps have to be there, and only one of\nthem can do anything, so writing both is not defensive, it is the algorithm.\n\nThe `<=` rather than `<` in the comparison is what makes the merge **stable**:\non a tie, the element from the first list goes first. It does not change this\nanswer, but it is the property that lets the same routine drive a merge sort's\ncombine step without disturbing equal keys.\n\nO(n + m) time — each element is emitted once — and O(n + m) for the output,\nO(1) beyond it.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17",
+    "skipped": "review: closely follows LeetCode #21 \"Merge Two Sorted Lists\" — the linked-list merge task is reframed as packet sequence numbers but the structural phrasing (two pre-s"
+  },
+  "middle-of-sequence": {
+    "promptMarkdown": "You are given a chain of nodes, each holding a number and a pointer to the\nnext node. Return the number stored in the middle node.\n\nWhen the chain has an even number of nodes there are two middles; return the\n**second** of them.\n\n**Example**\n\n```\ninput:  1 2 3 4 5\noutput: 3\n\ninput:  1 2 3 4 5 6\noutput: 4\n```\n\nThe chain always has at least one node. A single-node chain is its own\nmiddle, so the answer is that node’s number.\n\nYou are not told the length in advance, and you should not need two passes\nto find it.",
+    "editorialMarkdown": "## Fast and slow pointers\n\nThe obvious solution walks the chain once to count the nodes, then walks it\nagain to node `n / 2`. That is correct and it is two passes. One pass is\navailable, and it is the reason this pattern is worth learning.\n\nStart two pointers at the head. Move `slow` one node per step and `fast` two\nnodes per step.\n\n```\nslow = fast = head\nwhile fast != null and fast.next != null:\n    slow = slow.next\n    fast = fast.next.next\nreturn slow.val\n```\n\nWhy the gap gives the answer: after `k` steps, `slow` has covered `k` nodes\nand `fast` has covered `2k`. The loop stops as soon as `fast` cannot take a\nfull double step, which happens the moment `2k` reaches the end of the\nchain — that is, when `k` is about half the length. `slow` is therefore\nsitting at the halfway mark without anyone ever having counted. The one\npointer measures the list while the other one indexes into it.\n\nThe quiet mistake is the loop condition, and it decides which of the two\nmiddles you get on an even-length chain. `while fast != null and fast.next\n!= null` lands on the second middle; `while fast.next != null and\nfast.next.next != null` lands on the first. Both look reasonable and neither\nis wrong in general — but only one matches what the statement asked for, and\non odd lengths they agree, so a test set of odd-length lists will not tell\nyou which one you wrote. Check the order of the two guards too: testing\n`fast.next` before `fast` dereferences null on an even-length chain.\n\nO(n) time, bounded by the fast pointer’s single traversal, and O(1) extra\nspace — two pointers, whatever the length.",
+    "promoteSamples": [],
+    "model": "refresh",
+    "date": "2026-09-17",
+    "tests": [
+      {
+        "stdin": "10 20 30",
+        "expectedStdout": "20",
+        "isSample": true
+      },
+      {
+        "stdin": "5 6 7 8",
+        "expectedStdout": "7",
+        "isSample": true
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "42"
+      },
+      {
+        "stdin": "7 7 7 7 7 7 7",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "-10 -20 -30 -40",
+        "expectedStdout": "-30"
+      },
+      {
+        "stdin": "-5 -2 0 2 5",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
+        "expectedStdout": "11"
+      },
+      {
+        "stdin": "100 200",
+        "expectedStdout": "200"
+      },
+      {
+        "stdin": "-1 0 1 2",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-100 0 100 200 300 400",
+        "expectedStdout": "200"
+      }
+    ]
   },
   "min-and-max": {
     "promptMarkdown": "Given a list of integers, return two numbers: the smallest number in the list followed by the largest number in the list.\n\n**Constraints**\n- The list will always contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 1 4 1 5\noutput: 1 5\n```\nThe smallest number is 1 and the largest is 5.\n\n**Example 2**\n```\ninput:\n7\noutput: 7 7\n```\nSince 7 is the only element, it is both the smallest and the largest.\n\n**Follow-up:** Can you solve this in a single pass with O(1) auxiliary space?",
@@ -2069,6 +2288,20 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
+  },
+  "minimum-connection-cost": {
+    "promptMarkdown": "You are given a graph described by its number of vertices `n` and a list of undirected weighted edges `[u, v, w]`. Vertices are labeled from `0` to `n - 1`. Return the total weight of a minimum spanning tree, or `-1` if the graph cannot connect every vertex.\n\n**Constraints**\n- Vertices are numbered `0` through `n - 1`.\n- The graph might be disconnected.\n\n**Example 1**\n```\ninput:\n3;0 1 4;1 2 2;0 2 9\noutput: 6\n```\nVertices 1 and 2 connect for 2, and 0 and 1 connect for 4. Total is 6.\n\n**Example 2**\n```\ninput:\n3;0 1 5\noutput: -1\n```\nVertex 2 is unreachable, so it's impossible to connect all vertices.\n\n**Follow-up:** Can you solve this using Kruskal's algorithm?",
+    "editorialMarkdown": "The intended approach combines greedy edge selection with disjoint sets. This pattern is known as Kruskal's algorithm with Union-Find.\n\nSort all edges from lightest to heaviest. Iterate through them, adding an edge to the spanning tree only if its endpoints belong to different sets. Skipping edges within the same set prevents cycles. If the total number of added edges equals `n - 1`, the tree spans all vertices.\n\nThe one trap most solvers hit is returning a partial forest cost when the graph is disconnected, failing to check if exactly `n - 1` edges were successfully added.\n\nThe time complexity is bounded by the sorting step, O(E log E) where E is the number of edges. Space complexity is O(V) for the Union-Find parent array, where V is the number of vertices.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "minimum-cost-to-join-ropes": {
+    "promptMarkdown": "You are given a list of rope lengths. You may join any two ropes into one. Joining ropes of length `x` and `y` costs `x + y`, and leaves a single rope of length `x + y` that can be joined again. Keep going until one rope remains. Output the smallest total cost achievable.\n\n**Constraints**\n- There is at least one rope.\n- Every rope length is at least 1.\n\n**Example 1**\n```\ninput:\n4 3 2 6\noutput: 29\n```\nJoin 2 + 3 = 5 (cost 5), then 4 + 5 = 9 (cost 9), then 6 + 9 = 15 (cost 15). Total 5 + 9 + 15 = 29.\n\n**Example 2**\n```\ninput:\n5\noutput: 0\n```\nA single rope needs no joining at all, so the cost is 0.\n\n**Follow-up:** Can you achieve an O(n log n) solution?",
+    "editorialMarkdown": "The intended approach uses a greedy strategy powered by a min-heap.\n\nSince the length of a combined rope is charged again in every subsequent join it participates in, you must combine the shortest ropes first so they carry through the most joins. Maintain a min-heap of all rope lengths. Repeatedly extract the two shortest ropes, add their sum to the total cost, and push the combined length back into the heap until only one rope remains.\n\nThe one trap most solvers hit is adding the final combined rope length to the total, or adding each original rope's length at the start. The cost is only incurred at the join operations.\n\nThe time complexity is O(n log n) since each of the n-1 joins performs O(log n) heap operations. Space complexity is O(n) to store the heap.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "minimum-rooms-for-appointments": {
     "promptMarkdown": "## Fewest Appointment Rooms\n\nYou are given a list of appointments. Each appointment is a half-open interval `[start, end)`: it occupies the room from `start` up to but not including `end`. Two appointments **conflict** if they overlap, meaning one begins strictly before the other ends. An appointment ending at time `t` does not conflict with one beginning at time `t` — touching intervals do not conflict.\n\nReturn the minimum number of rooms needed so that every appointment has a room. An empty list of appointments requires 0 rooms.\n\n**Constraints**\n\n- 0 ≤ number of appointments ≤ 10 000\n- 0 ≤ start < end ≤ 10⁹ for each appointment\n- Input rows are separated by `;`; each row is two space-separated integers\n- Empty input is represented as an empty string\n\n**Example 1**\n\n```\ninput:\n1 4;2 5;4 6\noutput: 2\n```\n\n`[1,4)` and `[2,5)` overlap, so they need separate rooms. `[4,6)` starts exactly when `[1,4)` ends, so it can reuse that room. Peak simultaneous occupancy is 2.\n\n**Example 2**\n\n```\ninput:\n1 2;2 3\noutput: 1\n```\n\nThe two appointments touch but do not overlap; one room suffices.\n\n**Example 3**\n\n```\ninput:\n\noutput: 0\n```\n\nNo appointments; no rooms needed.\n\n**Follow-up:** Can you solve this in O(n log n) time using a sweep over sorted events?",
