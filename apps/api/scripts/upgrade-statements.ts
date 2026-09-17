@@ -66,9 +66,11 @@ const pending = ALL_PROBLEMS.filter(
   (p) => {
     if (p.provenance.source === 'codelock-generated' || shardOf(p.slug) !== shard.k) return false;
     const up = UPGRADES[p.slug];
-    // Not yet rewritten, or refreshed with new tests but still carrying the
-    // original statement (refresh clears `skipped` and keeps the old words).
-    return !up || (!!up.tests && !up.skipped && up.promptMarkdown === p.promptMarkdown);
+    // Not yet rewritten, or refreshed with new tests and still waiting for
+    // the statement pass (`refresh-tests.ts` marks those `model: 'refresh'`).
+    // The overlay is applied at load, so comparing prompts cannot tell an
+    // original from an applied rewrite.
+    return !up || (!!up.tests && !up.skipped && up.model === 'refresh');
   },
 ).sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || a.slug.localeCompare(b.slug));
 const batch = pending.slice(0, count);

@@ -284,7 +284,8 @@ async function main() {
         // Clearing `skipped` puts the problem back in the statement pass,
         // which will now see the new tests and write examples from them.
         const { skipped: _skipped, ...rest } = prev;
-        all[a.p.slug] = { ...rest, tests: a.tests, promoteSamples: [], date: new Date().toISOString().slice(0, 10) };
+        // `model: 'refresh'` is what the statement pass selects on.
+        all[a.p.slug] = { ...rest, tests: a.tests, promoteSamples: [], model: 'refresh', date: new Date().toISOString().slice(0, 10) };
       }
       emit(all);
       console.log(`  wrote ${upgradesPath}`);
