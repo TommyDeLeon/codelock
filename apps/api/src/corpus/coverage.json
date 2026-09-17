@@ -2572,5 +2572,99 @@
     "batch": "gen-lc-w2-063",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "minimum-common-value": {
+    "ours": "earliest-common-satellite-signal",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "minimum-moves-to-equal-array-elements-iii": {
+    "ours": "equalize-storage-units",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "minimum-number-of-operations-to-convert-time": {
+    "ours": "asteroid-rover-thrusters",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "minimum-number-of-pushes-to-type-word-i": {
+    "ours": "alien-telegraph-presses",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "minimum-operations-to-exceed-threshold-value-i": {
+    "ours": "prune-defective-orchids",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "minimum-number-of-flips-to-reverse-binary-string": {
+    "ours": "symmetric-packet-headers",
+    "batch": "gen-lc-w4-063",
+    "date": "2026-09-17"
+  },
+  "find-the-pivot-integer": {
+    "ours": "find-the-balance-station",
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17"
+  },
+  "first-bad-version": {
+    "ours": "find-the-defective-component",
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17"
+  },
+  "find-the-sum-of-encrypted-integers": {
+    "ours": "calculate-altered-planetary-masses",
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17"
+  },
+  "find-the-xor-of-numbers-which-appear-twice": {
+    "ours": "xor-of-paired-coordinates",
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17"
+  },
+  "find-the-losers-of-the-circular-game": {
+    "ours": null,
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "find-users-with-high-token-usage": {
+    "ours": null,
+    "batch": "gen-lc-w1-100",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "goat-latin": {
+    "ours": "alien-language-translation",
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17"
+  },
+  "harshad-number": {
+    "ours": "energy-core-stability",
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17"
+  },
+  "infinite-method-object": {
+    "ours": "processor-instruction-chain",
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17"
+  },
+  "invert-binary-tree": {
+    "ours": "mirror-solar-system",
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17"
+  },
+  "greatest-common-divisor-of-strings": {
+    "ours": null,
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "is-subsequence": {
+    "ours": null,
+    "batch": "gen-lc-w3-100",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }

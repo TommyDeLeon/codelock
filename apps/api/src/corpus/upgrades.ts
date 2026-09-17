@@ -551,6 +551,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "contains-rotated-duplicate-stock": {
+    "promptMarkdown": "You are analyzing a circular event log from a security system. The log records event ID codes as integers in nondecreasing order. However, due to a system reboot, the continuous log was shifted: some number of elements from the end of the log were moved to the front. The log may contain duplicate event codes.\n\nGiven the shifted log array and a target event code, determine if the target code exists in the log. Return `true` if it is present, and `false` otherwise.\n\n**Constraints**\n- The array length is between 1 and 100,000.\n- The array was originally sorted in nondecreasing order before being rotated.\n- The array elements and target are integers.\n\n**Example 1**\n```\ninput:\n2 5 6 0 0 1 2\n0\noutput: true\n```\nThe target event code 0 is found in the log.\n\n**Example 2**\n```\ninput:\n1 1 1 3 1\n3\noutput: true\n```\nThe target event code 3 is found in the log.\n\n**Example 3**\n```\ninput:\n1 1 1\n2\noutput: false\n```\nThe target event code 2 is not present in the log.\n\n**Follow-up:** Can you design a solution with an average time complexity of O(log n)?",
+    "editorialMarkdown": "The intended approach utilizes binary search, taking advantage of the fact that at least one half of the array will always be strictly sorted. However, because there are duplicates, we encounter a special case when the elements at the start, middle, and end of our search window are equal. When this happens, we cannot determine which half is sorted, so we cautiously shrink the window by moving both bounds inward. \n\nThis pattern is a classic application of binary search on a rotated array with duplicates. The worst-case time complexity degrades to O(n) when all elements are identical, but the average time complexity is O(log n). The space complexity is O(1) as we only need to maintain a few pointers.\n\nThe most common trap solvers fall into is failing to handle the duplicate endpoints correctly. If they simply compare the middle element to one of the bounds without explicitly handling the case where both bounds equal the middle element, their algorithm will incorrectly discard the half containing the target.",
+    "promoteSamples": [
+      "1 1 1\n2"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "contains-word": {
     "promptMarkdown": "Given two lines of text containing lower-case letters and spaces, determine whether the first line contains the second line somewhere inside it as a substring.\n\n**Example 1**\n\n```\ninput:\nhello world\nlo w\noutput: true\n```\nThe substring \"lo w\" appears directly inside \"hello world\".\n\n**Example 2**\n\n```\ninput:\nhello\nxyz\noutput: false\n```\nThe substring \"xyz\" does not appear in \"hello\".\n\n**Example 3**\n\n```\ninput:\nabc\n\noutput: true\n```\nEvery string contains the empty string as a substring.\n\n**Constraints**\n- Both strings contain only lowercase English letters and spaces.\n- The strings can be empty.\n\n**Follow-up:** Can you determine this without using built-in substring search functions?",
     "editorialMarkdown": "The intended approach is to use your language's built-in substring or \"contains\" functionality, which is heavily optimized for this operation. This is a basic substring search pattern.\n\nThe one trap most solvers hit is getting confused by the problem title and trying to split the text into words to check for word inclusion. A substring can span across spaces and partial words, so breaking the text apart by spaces will give incorrect results. It is important to read the example cases, which clearly show a partial word match succeeding.\n\nThe time complexity is O(n * m) in the worst case with a naive search, where n is the length of the first string and m is the length of the second string, but built-in functions often achieve better performance in practice. The space complexity is O(1).",
@@ -560,6 +569,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "count-balanced-stretches": {
+    "promptMarkdown": "You are processing a sequence of characters consisting only of open `(` and close `)` parentheses. The sequence represents a log of system resource allocations (`(`) and deallocations (`)`). \n\nA \"finished stretch\" is defined as a contiguous sequence of allocations and deallocations that perfectly balances (returns to a running depth of zero) without attempting to deallocate when the depth is already zero. If a `)` is encountered when the depth is zero, it acts as a wall, and the depth remains at zero to start tracking new stretches from that point forward. Trailing `(` characters that are never balanced do not invalidate any previously finished stretches; they are simply ignored.\n\nCount the total number of finished stretches encountered while scanning the sequence from left to right. Adjacent balanced stretches count separately (e.g., `()()` contains two finished stretches). \n\n**Constraints**\n- The string consists only of `(` and `)`.\n- The string length is between 0 and 100,000.\n\n**Example 1**\n```\ninput:\n)()(())(\noutput: 2\n```\nThe first `)` acts as a wall since depth is zero. Then `()` forms the first finished stretch. Then `(())` forms the second finished stretch. The final `(` remains unbalanced and is ignored, leaving the total count at 2.\n\n**Example 2**\n```\ninput:\n()()\noutput: 2\n```\nThere are two adjacent finished stretches: `()` and `()`.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nAn empty input contains no finished stretches.\n\n**Follow-up:** Can you solve this in a single pass with O(1) extra space?",
+    "editorialMarkdown": "The intended approach avoids building actual stack data structures and instead tracks the conceptual stack depth with a single integer counter. We iterate through the string, incrementing the depth for every open parenthesis and decrementing it for every close parenthesis. Every time the depth reaches zero after a valid stretch, we increment our stretch counter. If the depth ever becomes negative, we immediately reset it to zero, treating the unmatched close parenthesis as a strict boundary.\n\nThis pattern is a single-pass state machine or optimized stack counting. The time complexity is O(n) to iterate through the string once, and the space complexity is O(1) because we only need a couple of integer variables to keep track of the depth and the total count.\n\nThe most common trap is misinterpreting how to handle incomplete structures at the end of the string. Many solvers might attempt to invalidate the entire sequence or roll back counts if an unmatched open parenthesis is left over, but the problem requires us to preserve the count of any independent stretches that successfully finished prior to that.",
+    "promoteSamples": [
+      ""
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "count-characters-appearing-once": {
     "promptMarkdown": "Given a string of lowercase English letters, count the number of characters that appear exactly once.\n\n**Constraints**\n- The input string consists of only lowercase English letters.\n- The length of the string is between 0 and 10^5.\n\n**Example 1**\n```\ninput:\naabbc\noutput: 1\n```\nOnly `c` appears exactly once in the string.\n\n**Example 2**\n```\ninput:\nabc\noutput: 3\n```\nAll three characters `a`, `b`, and `c` appear exactly once.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nAn empty string contains no characters.\n\n**Follow-up:** Can you do this in O(n) time and O(1) space?",
     "editorialMarkdown": "The intended approach is to use the gather and decide pattern with a hash map or array.\n\nBecause you cannot know whether a character is unique until you have seen the entire string, the solution requires two passes. In the first pass, iterate through the string and build a frequency map of the characters. In the second pass, iterate through the values in the frequency map and count how many characters have a frequency of exactly 1. \n\nA common trap is iterating over the string during the second pass instead of the frequency map. Doing so would count a character multiple times if you're not careful (though for unique characters, it wouldn't matter, but iterating the map avoids this completely and is cleaner). \n\nThe time complexity is O(n) where n is the length of the string, as we do a constant amount of work for each character. The space complexity is O(k) where k is the size of the alphabet. Since there are only 26 lowercase English letters, this is bounded by O(1) space.",
@@ -568,6 +586,24 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "count-closed-ranges-at-marker": {
+    "promptMarkdown": "You are given a list of closed ranges and a marker value. Count how many closed ranges contain the given marker. A closed range includes its endpoints, meaning a range like `[1, 2]` contains `2`.\n\n**Constraints**\n- The input list of ranges is non-empty.\n- There are at most 8 ranges.\n\n**Example 1**\n```\ninput:\n1 2;2 4\n2\noutput: 2\n```\nBoth ranges `[1, 2]` and `[2, 4]` contain the marker `2`.\n\n**Example 2**\n```\ninput:\n1 2\n3\noutput: 0\n```\nThe range `[1, 2]` does not contain the marker `3`.\n\n**Example 3**\n```\ninput:\n5 5\n5\noutput: 1\n```\nThe range `[5, 5]` contains the marker `5`.\n\n**Follow-up:**\nCan you solve this efficiently with limited constraints?",
+    "editorialMarkdown": "## Closed Range Markers\n\nThe intended approach is to iterate through the given closed ranges and verify if the marker lies within the bounds of each range. Since the problem explicitly defines ranges as closed, endpoint inclusion must be properly handled by ensuring the boundary comparison uses inclusive inequalities (less than or equal to).\n\nThe pattern's name is Interval Checking. The one trap most solvers hit is treating touching ranges incorrectly by using strict inequalities like `<` instead of `<=`, which passes ordinary examples but fails exactly at an endpoint. The time complexity is O(n) where n is the number of ranges, or O(n²) if sorting is used for a sweep approach. The space complexity is O(1) beyond the input storage.",
+    "promoteSamples": [
+      "5 5\n5"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "count-coin-recipes-for-total": {
+    "promptMarkdown": "You are given a list of positive coin values and a target total. Return the total number of combinations that make up the target sum, where each coin value may be used any number of times. The order of coins in a combination does not make it unique (e.g., `2+1` is the same as `1+2`).\n\n**Constraints**\n- All coin values are positive integers.\n- The target is a non-negative integer.\n\n**Example 1**\n```\ninput:\n1 2 5\n5\noutput: 4\n```\nThe combinations are `5`, `2+2+1`, `2+1+1+1`, and five ones.\n\n**Example 2**\n```\ninput:\n2\n3\noutput: 0\n```\nThe target `3` cannot be formed using only `2`.\n\n**Example 3**\n```\ninput:\n2 3\n0\noutput: 1\n```\nThe target `0` can be formed by exactly one combination: using zero coins.\n\n**Follow-up:**\nCan you solve this problem with O(n) space complexity where n is the target total?",
+    "editorialMarkdown": "## Unbounded Knapsack Counting\n\nThe intended approach uses 1-D dynamic programming to accumulate combinations for each possible total. We process one coin value at a time and iterate upwards through the possible totals, adding the number of ways to make `total - coin` to the current total. By evaluating the outer loop over coins rather than totals, we count each multiset of coins exactly once, effectively enforcing that the order of coins does not create a new combination.\n\nThe pattern's name is Unbounded Knapsack DP. The one trap most solvers hit is placing the loop over totals outside the loop over coins; this incorrectly counts different orderings of the same coins as distinct recipes. To avoid this, state the base cases first and update in the order demanded by choice reuse. The time complexity is O(n × k) where n is the number of coins and k is the target value. The space complexity is O(k) for the dynamic programming array.",
+    "promoteSamples": [
+      "2 3\n0"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "count-combinations-reaching-total": {
     "promptMarkdown": "Count the ways to reach a total by adding values from a list.\n\nThe first line is the list of values, the second is the total. **Each value may be used as many times as you like**, including not at all.\n\nCount **collections, not orderings**: `2 + 3` and `3 + 2` are the same answer and count once. What distinguishes two answers is how many times each value is used.\n\n**Constraints**\n- All values are distinct and at least 1, and there are at most 5 of them.\n- The total is between 0 and 30.\n\n**Example 1**\n```\ninput:\n2 3 6 7\n7\noutput: 2\n```\nEither 7, or 2 + 2 + 3. There is no third way.\n\n**Example 2**\n```\ninput:\n2 3 5\n8\noutput: 3\n```\nThe combinations are 3 + 5, 2 + 3 + 3, and 2 + 2 + 2 + 2.\n\n**Example 3**\n```\ninput:\n1 2\n0\noutput: 1\n```\nA total of 0 has exactly one answer — use nothing.\n\n**Follow-up:** Can you implement a dynamic programming solution to optimize the time complexity?",
@@ -587,6 +623,33 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "count-deranged-orderings": {
+    "promptMarkdown": "Count the number of orderings of a list of distinct values such that no value remains in its original position. \n\n**Constraints**\n- The input is a sorted list.\n- The list contains between 1 and 8 values.\n\n**Example 1**\n```\ninput:\n1 2 3\noutput: 2\n```\nThe valid orderings are `2 3 1` and `3 1 2`.\n\n**Example 2**\n```\ninput:\n1 2 3 4\noutput: 9\n```\nThere are 9 valid orderings where no value remains in its original spot.\n\n**Example 3**\n```\ninput:\n7\noutput: 0\n```\nA one-value list has no valid ordering because the single tile must stay in its original place.\n\n**Follow-up:**\nCan you solve this with backtracking?",
+    "editorialMarkdown": "## Permutations with a Forbidden Choice\n\nThe intended approach uses backtracking to generate permutations while strictly enforcing a positional constraint. As we build the output permutation, the current recursion depth represents the target position. We maintain a shared boolean array to track which values are used. At each depth, we try every unused index, but explicitly forbid choosing the value whose original index equals the current depth.\n\nThe pattern's name is Backtracking Permutations. The one trap most solvers hit is comparing the actual list values to the current depth instead of comparing the chosen original index to the depth; this only accidentally works if the input values exactly match the indices. Furthermore, it is critical to properly backtrack by clearing the `used` mark so later branches do not inherit an incorrect state. The time complexity is O(n!) and the space complexity is O(n) where n is capped at 8.",
+    "promoteSamples": [
+      "7"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "count-directed-sink-vertices": {
+    "promptMarkdown": "You are given a directed graph represented as an edge-list matrix. The first row contains a single integer `n` indicating the number of vertices, numbered `0` through `n - 1`. Every subsequent row represents a directed edge `[from, to]`. Return how many vertices have no outgoing edges. If there are no routes, all vertices are considered sinks.\n\n**Constraints**\n- The graph has `n` vertices, where `n > 0`.\n- The first row is `[n]`, and every later row is a directed edge.\n\n**Example 1**\n```\ninput:\n4;0 1;0 2;2 3\noutput: 2\n```\nVertices `1` and `3` have no outgoing edges.\n\n**Example 2**\n```\ninput:\n2\noutput: 2\n```\nWith no edges, both vertices `0` and `1` are sinks.\n\n**Example 3**\n```\ninput:\n2;0 1\noutput: 1\n```\nVertex `1` has no outgoing edges.\n\n**Follow-up:**\nCan you solve this in O(V + E) time without a full graph traversal?",
+    "editorialMarkdown": "## Outdegree Marking\n\nThe intended approach is to determine the outdegree of each vertex. A sink is identified by having an outdegree of exactly zero. Instead of a full graph traversal, we can simply initialize an array for the vertices and mark only the origin vertex of each directed edge. After processing all edges, the answer is the count of vertices that remain unmarked.\n\nThe pattern's name is Degree Counting. The one trap most solvers hit is accidentally marking the destination vertices as well, which incorrectly measures isolated vertices instead of just capturing outgoing degrees. The time complexity is O(V + E), bounded by the number of vertices and edge rows. The space complexity is O(V) to store the degree state of each vertex.",
+    "promoteSamples": [
+      "2;0 1"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "count-directed-source-vertices": {
+    "promptMarkdown": "You are given a directed graph represented as an edge-list matrix. The first row contains a single integer `n` indicating the number of vertices, numbered `0` through `n - 1`. Every subsequent row represents a directed edge `[from, to]`. Return how many vertices have no incoming edges. If there are no routes, all vertices are considered sources.\n\n**Constraints**\n- The graph has `n` vertices, where `n > 0`.\n- The first row is `[n]`, and every later row is a directed edge.\n\n**Example 1**\n```\ninput:\n4;0 1;0 2;2 3\noutput: 1\n```\nOnly vertex `0` has no incoming edges.\n\n**Example 2**\n```\ninput:\n2\noutput: 2\n```\nWith no edges, both vertices `0` and `1` are sources.\n\n**Example 3**\n```\ninput:\n3;0 1;2 1\noutput: 2\n```\nVertices `0` and `2` have no incoming edges.\n\n**Follow-up:**\nCan you solve this in O(V + E) time without a full graph traversal?",
+    "editorialMarkdown": "## Indegree Marking\n\nThe intended approach is to determine the indegree of each vertex. A source is defined by having an incoming degree of exactly zero. We can process the edge list and mark the destination of each edge in an array. After evaluating all edges, the sources are simply the vertices that were never marked, avoiding the need for a complex traversal from every possible start point.\n\nThe pattern's name is Degree Counting. The one trap most solvers hit is marking the origin vertices instead of destinations, which answers the mirror-image question about sinks. The time complexity is O(V + E), bounded by the number of vertices and edge rows. The space complexity is O(V) to store the marking state of the vertices.",
+    "promoteSamples": [
+      "3;0 1;2 1"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "count-distinct-prefixes": {
     "promptMarkdown": "You are given a list of words on one line, separated by spaces.\n\nCount the **distinct non-empty prefixes** across the whole list. A prefix is any opening run of a word, including the word itself. Two words that share a prefix contribute it only once.\n\n**Constraints**\n- There is at least one word.\n- Every word is one or more lowercase letters `a`–`z`.\n\n**Example 1**\n```\ninput:\ncat car\noutput: 4\n```\nThe prefixes are c, ca, cat, car. c and ca come from both words but are counted once each.\n\n**Example 2**\n```\ninput:\ndog dog\noutput: 3\n```\nA repeated word contributes nothing the second time.\n\n**Example 3**\n```\ninput:\na ab abc\noutput: 3\n```\nThe distinct prefixes are a, ab, abc.\n\n**Follow-up:** Can you solve this using a Trie to save space compared to a hash set?",
     "editorialMarkdown": "The intended approach is Trie node counting. The answer is the number of nodes in the trie, not counting the root. That is not a trick, it is the definition read out loud: a trie node is a distinct prefix, since the path from the root to it spells that prefix and no two different prefixes reach the same node. You do not need to collect anything or deduplicate anything; insert every word and count how many times you had to create a new child.\n\nThe one trap most solvers hit is counting the root. It is a real node, but it spells the empty prefix, and the statement asks for non-empty ones. The answer comes out exactly one too high on every input. The second quiet mistake is counting a duplicated word twice, which happens if you count characters inserted rather than nodes created.\n\nTime complexity is O(total characters) and space complexity is O(total characters) nodes.",
@@ -595,6 +658,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "count-distinct-value-pairs": {
+    "promptMarkdown": "Count the different **value pairs** whose two values add to the target. Positions do not matter: a pair of values like `1` and `4` is only counted once, even if it appears multiple times. A value may pair with itself only when it occurs at least twice in the input list.\n\n**Constraints**\n- The input list contains at least one number.\n- The target is an integer.\n\n**Example 1**\n```\ninput:\n1 4 1 4 2 3\n5\noutput: 2\n```\nThe unique value pairs that sum to `5` are `1,4` and `2,3`.\n\n**Example 2**\n```\ninput:\n3 3 3\n6\noutput: 1\n```\nThe pair `3,3` sums to `6` and is counted once.\n\n**Example 3**\n```\ninput:\n3\n6\noutput: 0\n```\nNo pair can be formed since `3` only occurs once.\n\n**Follow-up:**\nCan you solve this problem with an expected time complexity of O(n)?",
+    "editorialMarkdown": "## Canonical Complement Pairs\n\nThe intended approach involves using hash sets to track seen numbers and uniquely store the valid pairs. As we iterate through the array, we calculate the required complement for the current number. If the complement is already in the `seen` set, we form a canonical pair by always storing the smaller value first and the larger value second. We add this canonical pair to a second set to ensure each pair is only counted once by its values, ignoring positional repetitions.\n\nThe pattern's name is Two Sum Hash Set. The one trap most solvers hit is directly counting each occurrence of a valid sum without deduplicating by value, or incorrectly allowing a value to pair with itself when it only appears once. The time complexity is O(n) because each lookup and insertion in a hash set operates in O(1) average time. The space complexity is O(n) to store the elements and the resulting pairs.",
+    "promoteSamples": [
+      "3\n6"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "count-distinct-values": {
     "promptMarkdown": "Given a list of integers, determine the total number of distinct integers present in the list.\n\n**Constraints**\n- The number of elements in the list is between 0 and 10^5.\n- Each integer in the list fits within a standard 32-bit signed integer.\n\n**Example 1**\n```\ninput:\n1 2 2 3 1\noutput: 3\n```\nThe distinct values in the list are 1, 2, and 3.\n\n**Example 2**\n```\ninput:\n4 4 4\noutput: 1\n```\nThe only distinct value in the list is 4.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nAn empty list contains 0 distinct values.\n\n**Follow-up:** Can you solve this in O(n) time complexity?",
@@ -1856,46 +1928,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-17",
     "tests": [
       {
-        "stdin": "10 11 12",
-        "expectedStdout": "3",
+        "stdin": "10 9 12 11",
+        "expectedStdout": "4",
         "isSample": true
       },
       {
-        "stdin": "9 1 8 2 7 3",
-        "expectedStdout": "3",
+        "stdin": "7 8",
+        "expectedStdout": "2",
         "isSample": true
       },
       {
-        "stdin": "0",
+        "stdin": "5 5",
         "expectedStdout": "1"
       },
       {
-        "stdin": "-5 -4 -3 -2",
-        "expectedStdout": "4"
-      },
-      {
-        "stdin": "2 2 2 3 3 4",
+        "stdin": "-5 -4 -3",
         "expectedStdout": "3"
       },
       {
-        "stdin": "10 20 30 40 50",
+        "stdin": "10 20 30",
         "expectedStdout": "1"
       },
       {
-        "stdin": "-100 0 100",
-        "expectedStdout": "1"
-      },
-      {
-        "stdin": "7 6 5 4 3 2 1",
-        "expectedStdout": "7"
-      },
-      {
-        "stdin": "15 16 17 10 11 12 13",
+        "stdin": "1 2 3 5 6 7 9 10 11 12",
         "expectedStdout": "4"
       },
       {
-        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
-        "expectedStdout": "20"
+        "stdin": "-100 100 0 -1 1",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "3 3 4 4 5 5",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "10 9 8 7 6 5 4 3 2 1 0 -1 -2 -3 -4 -5",
+        "expectedStdout": "16"
+      },
+      {
+        "stdin": "42",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "1000 2000 3000",
+        "expectedStdout": "1"
       }
     ]
   },
@@ -1928,158 +2004,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "The first line is a list made only of `0`s and `1`s. The second line is a\nnumber `k`.\n\nYou may change at most `k` of the zeros into ones. Return the length of the\nlongest run of neighbouring `1`s you can end up with.\n\n**Example**\n\n```\ninput:  1 1 0 1 1 0 1\n        1\noutput: 5\n```\n\nFlip the zero at position 3 and the first five values become `1 1 1 1 1`.\nFlipping the other zero instead only reaches a run of 4, and with one flip\nyou cannot bridge both zeros.\n\n```\ninput:  0 0 0\n        0\noutput: 0\n```\n\nWith `k` of `0` you may not flip anything, so the answer is the longest run\nof `1`s already present — here there are none, and the answer is `0`.\n\nGuarantees: the list has at least one value, every value is `0` or `1`, and\n`k` is zero or more. If `k` is at least the number of zeros, the whole list\ncan be turned into `1`s and the answer is its length.",
     "editorialMarkdown": "## A window that grows greedily and shrinks only when it must\n\nRephrase the task and it stops being about flipping: you want the longest\ncontiguous stretch that contains **at most `k` zeros**. Every zero inside such\na stretch gets flipped; every one is already fine. Counting zeros is much\neasier than reasoning about which zeros to spend flips on.\n\nSo keep a window `[left, right]` and a count of the zeros inside it. Push\n`right` forward one step at a time. If the window now holds more than `k`\nzeros it is illegal, so pull `left` forward until it is legal again.\n\n```\nleft = 0, zeros = 0, best = 0\nfor right in 0..n-1:\n    if a[right] == 0: zeros += 1\n    while zeros > k:\n        if a[left] == 0: zeros -= 1\n        left += 1\n    best = max(best, right - left + 1)\n```\n\n**Why the left edge never moves backwards.** Suppose for a given `right` the\nsmallest legal `left` is `L`. Now advance to `right + 1`. Adding a value can\nonly increase the zero count, never decrease it, so every start position that\nwas already illegal for `right` is still illegal for `right + 1`. Nothing to\nthe left of `L` can ever become legal again. The best window ending at each\nposition therefore starts at a non-decreasing index, and `left` may march\nforward monotonically. Each index is entered once by `right` and left once by\n`left`, which is why two nested loops still add up to O(n) rather than O(n^2).\n\nThe quiet mistake this problem invites is shrinking with `if` instead of\n`while`. One `if` removes at most one element, which is enough whenever the\nwindow overshoots by exactly one — and pushing `right` one step can only add\none zero, so on this problem `if` looks right and passes most inputs. It\nbreaks the moment you reuse the shape on a problem where the right edge can\nadd more than one unit of badness at a time, and it breaks here too if you\never let `right` jump. Write `while`; it is correct in both worlds and costs\nnothing.\n\nThe other quiet mistake is measuring `best` before restoring validity —\nreading `right - left + 1` inside the growth step rather than after the shrink\nloop. That records the width of an illegal window, and it only shows up on\ninputs where the window actually overflows, so a test made of all `1`s will\nnever catch it.\n\nO(n) time, since both pointers only move right, and O(1) space — the window is\nsummarised by one integer count.",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "1 0 0 1\n1",
-        "expectedStdout": "2",
-        "isSample": true
-      },
-      {
-        "stdin": "1 0 1 0 1\n2",
-        "expectedStdout": "5",
-        "isSample": true
-      },
-      {
-        "stdin": "0\n0",
-        "expectedStdout": "0"
-      },
-      {
-        "stdin": "0\n1",
-        "expectedStdout": "1"
-      },
-      {
-        "stdin": "0 0 0 0\n10",
-        "expectedStdout": "4"
-      },
-      {
-        "stdin": "1 1 1 1 1 1\n2",
-        "expectedStdout": "6"
-      },
-      {
-        "stdin": "0 0 0 0 0\n0",
-        "expectedStdout": "0"
-      },
-      {
-        "stdin": "1 1 0 1 1 1 0 1\n0",
-        "expectedStdout": "3"
-      },
-      {
-        "stdin": "0 1 0 1 0 1 0 1 0 1\n3",
-        "expectedStdout": "7"
-      },
-      {
-        "stdin": "1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0\n4",
-        "expectedStdout": "10"
-      },
-      {
-        "stdin": "0 1 1 0 1 0\n5",
-        "expectedStdout": "6"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode 1004 \"Max Consecutive Ones III\" — the attendance/excused-absence framing is a direct paraphrase of the standard sliding-window problem "
   },
   "longest-run-with-two-distinct": {
     "promptMarkdown": "Return the length of the longest contiguous stretch of a string that uses at\nmost two different characters.\n\nThe stretch must be a run of neighbouring characters. Return only its length.\n\n**Example**\n\n```\ninput:  eceba\noutput: 3\n```\n\nThe stretch `ece` uses only `e` and `c`. Extending it to `eceb` would bring\nin a third character.\n\n```\ninput:  aaaa\noutput: 4\n```\n\nWhen every character is the same the whole string qualifies — one distinct\ncharacter is still \"at most two\".\n\nGuarantees: the string has at least one character, so the answer is never\n`0`. A one-character string gives `1`. Characters are compared exactly, so\nupper and lower case count as different.",
     "editorialMarkdown": "## A window carrying a count of what is inside it\n\nChecking every substring for its distinct count is O(n^2) substrings times the\ncost of counting, and most of that counting repeats work from the substring\none character shorter.\n\nOne window does it in a single pass. Keep a map from character to how many\ntimes it occurs inside the window; the map's size is the distinct count. Push\n`right` forward, incrementing. While the map holds three or more keys, pull\n`left` forward, decrementing — and **delete the key when its count hits zero**,\nbecause a key sitting at zero still counts toward the map size.\n\n```\nleft = 0, counts = {}, best = 0\nfor right in 0..n-1:\n    counts[s[right]] += 1\n    while len(counts) > 2:\n        counts[s[left]] -= 1\n        if counts[s[left]] == 0: delete counts[s[left]]\n        left += 1\n    best = max(best, right - left + 1)\n```\n\n**Why the left edge never moves backwards.** Adding a character can only keep\nthe distinct count the same or raise it; it can never lower it. So if starting\nat index `i` already gives three distinct characters for some `right`, it gives\nat least three for every larger `right` too — that start is permanently dead.\nThe smallest legal start is a non-decreasing function of `right`, so `left`\nsweeps forward once. Each index is added once and removed at most once: O(n)\ntotal, not O(n^2), even though the code has a loop inside a loop.\n\nThe quiet mistake is exactly that deletion: decrementing the count but leaving\nthe key in the map. The map then reports characters that have already slid out\nof the window, `len(counts)` never comes back down, and after the first shrink\nthe window can never grow again. It is quiet because on a string like `aaaa`,\nwhere nothing is ever removed, the answer is still right — and on `eceba` it\nis still right, because the first shrink happens late. Test it on something\nlike `abaccc`, where the window has to abandon `b` and then expand over the\nrun of `c`s; the buggy version reports `3` instead of `4`.\n\nThe second quiet mistake is reading the width before the shrink loop, which\nmeasures a window that currently holds three distinct characters.\n\nO(n) time — both pointers only move right — and O(1) space in practice, since\nthe map never holds more than three entries.",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "abcabc",
-        "expectedStdout": "2",
-        "isSample": true
-      },
-      {
-        "stdin": "aabbcc",
-        "expectedStdout": "4",
-        "isSample": true
-      },
-      {
-        "stdin": "z",
-        "expectedStdout": "1"
-      },
-      {
-        "stdin": "xyxyx",
-        "expectedStdout": "5"
-      },
-      {
-        "stdin": "zzzzzzz",
-        "expectedStdout": "7"
-      },
-      {
-        "stdin": "abbcccdddd",
-        "expectedStdout": "7"
-      },
-      {
-        "stdin": "abcabcabc",
-        "expectedStdout": "2"
-      },
-      {
-        "stdin": "abcdefggggggghhhhhhh",
-        "expectedStdout": "14"
-      },
-      {
-        "stdin": "aAaAabBbB",
-        "expectedStdout": "5"
-      },
-      {
-        "stdin": "qwertyuiopasdfghjklzxcvbnm",
-        "expectedStdout": "2"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode #159 \"Longest Substring with At Most Two Distinct Characters\" (botanist/transect framing paraphrases the known statement)"
   },
   "longest-shared-prefix": {
     "promptMarkdown": "You are given a list of words on one line, separated by spaces.\n\nPrint the longest prefix that **every** word in the list starts with.\n\n**Example**\n\n```\ninput:  flower flow flight\noutput: fl\n```\n\nAll three start with `fl`. They do not all start with `flo`, because\n`flight` does not.\n\nGuarantees: there is always at least one word, and every word is one or\nmore lowercase letters `a`–`z`.\n\nThe named edge case: when the words share nothing — `dog cat bird` — the\nanswer is the empty prefix, so print an **empty line**. A list of one word\nanswers with that whole word.",
     "editorialMarkdown": "## Trie: walk the shared path until it forks\n\nPush every word into a trie. The root has one child per distinct first\nletter, that child has one per distinct second letter, and so on. Now the\nquestion answers itself geometrically: the longest shared prefix is the path\nfrom the root that runs while there is exactly **one** way forward and no\nword has ended yet.\n\n```\nnode = root, out = \"\"\nwhile node is not the end of a word and node has exactly one child c:\n    out += c\n    node = child(node, c)\n```\n\nWhy the fork is the right stopping point: two children at a node means two\nwords disagreed on that character, so no prefix reaching past it is common\nto both. And a word ending at the node means one word is exactly this long,\nso nothing longer can be a prefix of it.\n\nWhat the trie buys you over comparing the words pairwise is that each\ncharacter of each word is looked at once, on the way in, instead of being\nrescanned for every comparison. The prefixes are shared, so the work on them\nis shared too.\n\nThe quiet mistake is forgetting the word-end check and only stopping at a\nfork. On `pre prefix` the trie path `p → r → e → f → i → x` never forks, so\nthat version answers `prefix` — a string the shorter word does not even\ncontain. It is quiet because it passes on every input where no word is a\nprefix of another, which is most of the inputs you will invent by hand.\n\nO(total characters) time to build and O(length of the answer) to walk, so\nbuilding the trie is what bounds it. Space is O(total characters) for the\nnodes — which is the honest cost of the structure, and why a plain\ncharacter-by-character scan across the words is the better answer if you only\never ask this question once.",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "apple application app",
-        "expectedStdout": "app",
-        "isSample": true
-      },
-      {
-        "stdin": "test testing tester",
-        "expectedStdout": "test",
-        "isSample": true
-      },
-      {
-        "stdin": "b",
-        "expectedStdout": "b"
-      },
-      {
-        "stdin": "hello hello",
-        "expectedStdout": "hello"
-      },
-      {
-        "stdin": "cat dog horse",
-        "expectedStdout": ""
-      },
-      {
-        "stdin": "car cart carpet carpool",
-        "expectedStdout": "car"
-      },
-      {
-        "stdin": "zz zzz zzzz z",
-        "expectedStdout": "z"
-      },
-      {
-        "stdin": "coding code codex",
-        "expectedStdout": "cod"
-      },
-      {
-        "stdin": "xyz xyza xyzb xyzc",
-        "expectedStdout": "xyz"
-      },
-      {
-        "stdin": "a a a a a a a a a a a a a a a a a a a a",
-        "expectedStdout": "a"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode #14 \"Longest Common Prefix\" (archivist/log-file framing paraphrases the known statement)"
   },
   "longest-unique-substring": {
     "promptMarkdown": "## Longest Run Without a Repeat\n\nYou are given a string of characters. Find the length of the longest contiguous substring that contains no repeated character. A **contiguous** substring is a run of neighbouring characters — you may not skip positions.\n\nCharacters are compared exactly; uppercase and lowercase count as different. The string always has at least one character, so the answer is never 0.\n\n**Constraints**\n\n- 1 ≤ length of string ≤ 50 000\n- Characters may be any printable ASCII character\n- Upper and lowercase letters are distinct\n\n**Example 1**\n\n```\ninput:\nabcabcbb\noutput: 3\n```\n\nThe best runs are `abc`, `bca`, and `cab`, all of length 3. A fourth character always repeats one already in the window.\n\n**Example 2**\n\n```\ninput:\nbbbbb\noutput: 1\n```\n\nEvery character is the same, so the longest repeat-free run is a single `b`.\n\n**Example 3**\n\n```\ninput:\nabba\noutput: 2\n```\n\nThe best runs are `ab` and `ba`, each of length 2.\n\n**Follow-up:** Can you solve this in O(n) time using O(k) extra space, where k is the size of the character alphabet?",
@@ -2112,52 +2055,9 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "A non-empty grid gives the cost of entering each square, including the starting square. Move only right or down from top-left to bottom-right. Return the least total cost.\n\n**Example**\n\n```\ninput:  1 3 1;1 5 1;4 2 1\noutput: 7\n```",
     "editorialMarkdown": "## 2-D DP: minimum cost at each square\n\nMake a table whose cell `cost[r][c]` is the cheapest total for a route ending at that square. The recurrence works because every allowed final move or choice reaches this cell from smaller subproblems that have already been solved; combining those complete alternatives therefore describes every valid answer here. Fill in dependency order so no cell reads unfinished information.\n\nThe quiet mistake is initializing the first row or column as though it could be entered from two directions. It often passes a central example while corrupting a boundary or the first transition, so establish the base row and column before the main loops.\n\nTime is O(rows × columns), bounded by the two table dimensions, and space is O(rows × columns).",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "1 2 3;4 5 6;7 8 9",
-        "expectedStdout": "21",
-        "isSample": true
-      },
-      {
-        "stdin": "2 1;1 2",
-        "expectedStdout": "5",
-        "isSample": true
-      },
-      {
-        "stdin": "0",
-        "expectedStdout": "0"
-      },
-      {
-        "stdin": "1 1 1 1;2 2 2 2",
-        "expectedStdout": "6"
-      },
-      {
-        "stdin": "1 5;2 5;3 5;4 1",
-        "expectedStdout": "11"
-      },
-      {
-        "stdin": "0 0;0 0",
-        "expectedStdout": "0"
-      },
-      {
-        "stdin": "9 9 9;9 1 9;9 9 9",
-        "expectedStdout": "37"
-      },
-      {
-        "stdin": "1 1 1;1 1 1;1 1 1",
-        "expectedStdout": "5"
-      },
-      {
-        "stdin": "-1 -2;-3 -4",
-        "expectedStdout": "-8"
-      },
-      {
-        "stdin": "1 2 3 4 5;6 7 8 9 10;11 12 13 14 15;16 17 18 19 20",
-        "expectedStdout": "60"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode #64 \"Minimum Path Sum\" (surveyor/fuel framing paraphrases the known statement)"
   },
   "lru-cache-eviction": {
     "promptMarkdown": "Implement a capacity-bounded LRU cache yourself; do not use your language's built-in capacity-bounded lru cache type.\n\nBuild `LRUCache(capacity)`. `put` stores a key/value pair; when full, inserting a new key evicts the least recently used key. `get` returns its value or `-1` for a missing key and makes a found key most recently used.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value.\n\nA missing key read by `get` returns `-1`.",
@@ -2241,52 +2141,9 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "The first line is a list of numbers. The second line is a window width `k`.\n\nSlide a window of width `k` across the list from left to right, one step at a\ntime, and report the largest value inside it at each position. Return those\nmaxima in order, as a list.\n\n**Example**\n\n```\ninput:  1 3 -1 -3 5 3 6 7\n        3\noutput: 3 3 5 5 6 7\n```\n\nThe windows are `1 3 -1`, `3 -1 -3`, `-1 -3 5`, `-3 5 3`, `5 3 6`, `3 6 7`,\nand their maxima are `3 3 5 5 6 7`. A list of length `n` produces exactly\n`n - k + 1` answers.\n\n```\ninput:  4 4 4 4\n        4\noutput: 4\n```\n\nWhen `k` equals the length there is a single window, so the output is one\nnumber. All values being equal changes nothing.\n\nGuarantees: `k` is at least 1 and never larger than the length of the list,\nso the output is never empty. Values may be negative. With `k` of `1` the\noutput is the list itself.",
     "editorialMarkdown": "## A monotonic deque: the window remembers only its possible futures\n\nRecomputing the maximum for each of the `n - k + 1` windows costs O(k) each,\nso O(n*k). A heap gets it to O(n log k) but has to cope with stale entries.\nThe O(n) answer is a deque of **indices** whose values are strictly\ndecreasing from front to back.\n\n```\ndeque = []            # indices, values decreasing front -> back\nout = []\nfor right in 0..n-1:\n    while deque and a[deque.back] <= a[right]: deque.pop_back()\n    deque.push_back(right)\n    if deque.front <= right - k: deque.pop_front()   # slid out of the window\n    if right >= k - 1: out.append(a[deque.front])\n```\n\n**Why a smaller element can be discarded forever.** Take two positions `i < j`\nwith `a[i] <= a[j]`. Any window that still contains `i` must start at or before\n`i` and end at or after the current right edge, so it contains `j` as well —\n`j` is between them. In every such window `a[j]` is at least as large as\n`a[i]`, so `a[i]` can never be the unique maximum, and reporting `a[j]` is\nalways at least as correct. Once a bigger-or-equal value arrives to its right,\n`i` has no possible future in which it matters. That is why the pop is\npermanent and not a temporary reordering, and it is what keeps the total work\nlinear: every index is pushed once and popped at most once.\n\n**Why the left edge never moves backwards.** The window width is fixed, so the\nleft edge is `right - k + 1` and advances in lockstep. The deque front is the\nanswer for the current window precisely because everything ahead of it was\neither dominated (popped from the back) or has slid out of range (popped from\nthe front). Both kinds of removal are forward-only, which is what turns the\nnested `while` into amortised O(1) per step.\n\nThe quiet mistake is forgetting to remove the outgoing element — dropping the\nfront-expiry check because the back-popping already keeps the deque short.\nThe front index then refers to a value that left the window steps ago, and the\noutput holds a maximum that is no longer inside. It is quiet because it only\nshows on inputs where the running maximum sits near the left edge and expires:\non `1 2 3 4 5` with `k = 2` the deque never holds a stale front and the answer\nis right; on `9 8 7 6` with `k = 2` the buggy version reports `9 9 9` instead\nof `9 8 7`.\n\nThe second is popping with `<` instead of `<=` when the entering value ties.\nKeeping equal values is still correct — they expire in order — but only if the\nfront-expiry check is by index, not by value. Comparing values to decide what\nhas left the window is how ties turn into wrong answers.\n\nO(n) time, amortised, bounded by each index entering and leaving the deque once.\nO(k) space, since the deque never holds more than one window's worth of indices.",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "5 1 5 1 5\n3",
-        "expectedStdout": "5 5 5",
-        "isSample": true
-      },
-      {
-        "stdin": "2 4 6 8 10\n3",
-        "expectedStdout": "6 8 10",
-        "isSample": true
-      },
-      {
-        "stdin": "42\n1",
-        "expectedStdout": "42"
-      },
-      {
-        "stdin": "10 20 5 15\n4",
-        "expectedStdout": "20"
-      },
-      {
-        "stdin": "8 6 4 2 0\n1",
-        "expectedStdout": "8 6 4 2 0"
-      },
-      {
-        "stdin": "7 7 7 7 7 7\n2",
-        "expectedStdout": "7 7 7 7 7"
-      },
-      {
-        "stdin": "-10 -20 -30 -40 -50\n2",
-        "expectedStdout": "-10 -20 -30 -40"
-      },
-      {
-        "stdin": "-5 0 -2 0 -5\n2",
-        "expectedStdout": "0 0 0 0"
-      },
-      {
-        "stdin": "1 3 5 7 5 3 1\n3",
-        "expectedStdout": "5 7 7 7 5"
-      },
-      {
-        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n5",
-        "expectedStdout": "5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode #239 \"Sliding Window Maximum\" — the array, window size k, and left-to-right max output match the known statement's phrasing and structu"
   },
   "median-of-two-sorted": {
     "promptMarkdown": "Find the middle of two sorted lists without merging them.\n\nBoth lines are lists **sorted from smallest to largest**. Imagine the two\nmerged into one sorted sequence of length `n`. Return **two** numbers: the\nvalue at position `(n - 1) / 2` and the value at position `n / 2`, both\nrounded down and counted from `0`. Their average is the median.\n\n**Example**\n\n```\ninput:  1 2\n        3 4\noutput: 2 3\n```\n\nMerged, that is `1 2 3 4`. Positions 1 and 2 hold `2` and `3`, so the median\nwould be `2.5`.\n\nWhen the combined length is **odd** the two positions coincide, so the same\nvalue is printed twice — `1 3` and `2` merge to `1 2 3`, and the answer is\n`2 2`. Either list may be **empty**, which on the wire is an empty line; they\nare never both empty. Duplicates are allowed, across the two lists and within\none, and values may be negative.",
@@ -2296,46 +2153,50 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "date": "2026-09-17",
     "tests": [
       {
-        "stdin": "2 6\n4 8",
-        "expectedStdout": "4 6",
+        "stdin": "10 20\n15 25",
+        "expectedStdout": "15 20",
         "isSample": true
       },
       {
-        "stdin": "10 20\n30",
-        "expectedStdout": "20 20",
+        "stdin": "1 5 9\n2 6 10",
+        "expectedStdout": "5 6",
         "isSample": true
       },
       {
-        "stdin": "\n5 10 15",
-        "expectedStdout": "10 10"
+        "stdin": "\n42",
+        "expectedStdout": "42 42"
       },
       {
-        "stdin": "-5 0 5\n",
-        "expectedStdout": "0 0"
+        "stdin": "42\n",
+        "expectedStdout": "42 42"
       },
       {
-        "stdin": "3 3 3\n3 3",
-        "expectedStdout": "3 3"
+        "stdin": "-5 -3\n-4 -2",
+        "expectedStdout": "-4 -3"
       },
       {
-        "stdin": "-10 -5\n-15 -2",
-        "expectedStdout": "-10 -5"
+        "stdin": "5 5 5\n5 5",
+        "expectedStdout": "5 5"
       },
       {
-        "stdin": "-2 0\n0 2",
-        "expectedStdout": "0 0"
+        "stdin": "1 2 3\n4 5 6",
+        "expectedStdout": "3 4"
       },
       {
-        "stdin": "9\n9",
-        "expectedStdout": "9 9"
+        "stdin": "4 5 6\n1 2 3",
+        "expectedStdout": "3 4"
       },
       {
-        "stdin": "1 4 7 10\n2 5 8 11",
-        "expectedStdout": "5 7"
+        "stdin": "10 20 30 40 50 60 70 80 90\n15 25 35 45 55 65 75 85 95",
+        "expectedStdout": "50 55"
       },
       {
-        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40",
-        "expectedStdout": "20 21"
+        "stdin": "10\n20",
+        "expectedStdout": "10 20"
+      },
+      {
+        "stdin": "100 200\n150",
+        "expectedStdout": "150 150"
       }
     ]
   },
@@ -2374,52 +2235,9 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "You are given a chain of nodes, each holding a number and a pointer to the\nnext node. Return the number stored in the middle node.\n\nWhen the chain has an even number of nodes there are two middles; return the\n**second** of them.\n\n**Example**\n\n```\ninput:  1 2 3 4 5\noutput: 3\n\ninput:  1 2 3 4 5 6\noutput: 4\n```\n\nThe chain always has at least one node. A single-node chain is its own\nmiddle, so the answer is that node’s number.\n\nYou are not told the length in advance, and you should not need two passes\nto find it.",
     "editorialMarkdown": "## Fast and slow pointers\n\nThe obvious solution walks the chain once to count the nodes, then walks it\nagain to node `n / 2`. That is correct and it is two passes. One pass is\navailable, and it is the reason this pattern is worth learning.\n\nStart two pointers at the head. Move `slow` one node per step and `fast` two\nnodes per step.\n\n```\nslow = fast = head\nwhile fast != null and fast.next != null:\n    slow = slow.next\n    fast = fast.next.next\nreturn slow.val\n```\n\nWhy the gap gives the answer: after `k` steps, `slow` has covered `k` nodes\nand `fast` has covered `2k`. The loop stops as soon as `fast` cannot take a\nfull double step, which happens the moment `2k` reaches the end of the\nchain — that is, when `k` is about half the length. `slow` is therefore\nsitting at the halfway mark without anyone ever having counted. The one\npointer measures the list while the other one indexes into it.\n\nThe quiet mistake is the loop condition, and it decides which of the two\nmiddles you get on an even-length chain. `while fast != null and fast.next\n!= null` lands on the second middle; `while fast.next != null and\nfast.next.next != null` lands on the first. Both look reasonable and neither\nis wrong in general — but only one matches what the statement asked for, and\non odd lengths they agree, so a test set of odd-length lists will not tell\nyou which one you wrote. Check the order of the two guards too: testing\n`fast.next` before `fast` dereferences null on an even-length chain.\n\nO(n) time, bounded by the fast pointer’s single traversal, and O(1) extra\nspace — two pointers, whatever the length.",
     "promoteSamples": [],
-    "model": "refresh",
+    "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
-    "tests": [
-      {
-        "stdin": "10 20 30",
-        "expectedStdout": "20",
-        "isSample": true
-      },
-      {
-        "stdin": "5 6 7 8",
-        "expectedStdout": "7",
-        "isSample": true
-      },
-      {
-        "stdin": "42",
-        "expectedStdout": "42"
-      },
-      {
-        "stdin": "7 7 7 7 7 7 7",
-        "expectedStdout": "7"
-      },
-      {
-        "stdin": "-10 -20 -30 -40",
-        "expectedStdout": "-30"
-      },
-      {
-        "stdin": "-5 -2 0 2 5",
-        "expectedStdout": "0"
-      },
-      {
-        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
-        "expectedStdout": "11"
-      },
-      {
-        "stdin": "100 200",
-        "expectedStdout": "200"
-      },
-      {
-        "stdin": "-1 0 1 2",
-        "expectedStdout": "1"
-      },
-      {
-        "stdin": "-100 0 100 200 300 400",
-        "expectedStdout": "200"
-      }
-    ]
+    "skipped": "review: closely follows LeetCode #876 \"Middle of the Linked List\" — single-traversal constraint, even-length latter-of-two rule, and relay-station framing map directly "
   },
   "min-and-max": {
     "promptMarkdown": "Given a list of integers, return two numbers: the smallest number in the list followed by the largest number in the list.\n\n**Constraints**\n- The list will always contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 1 4 1 5\noutput: 1 5\n```\nThe smallest number is 1 and the largest is 5.\n\n**Example 2**\n```\ninput:\n7\noutput: 7 7\n```\nSince 7 is the only element, it is both the smallest and the largest.\n\n**Follow-up:** Can you solve this in a single pass with O(1) auxiliary space?",
@@ -2475,6 +2293,13 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
   "minimum-cost-to-join-ropes": {
     "promptMarkdown": "You are given a list of rope lengths. You may join any two ropes into one. Joining ropes of length `x` and `y` costs `x + y`, and leaves a single rope of length `x + y` that can be joined again. Keep going until one rope remains. Output the smallest total cost achievable.\n\n**Constraints**\n- There is at least one rope.\n- Every rope length is at least 1.\n\n**Example 1**\n```\ninput:\n4 3 2 6\noutput: 29\n```\nJoin 2 + 3 = 5 (cost 5), then 4 + 5 = 9 (cost 9), then 6 + 9 = 15 (cost 15). Total 5 + 9 + 15 = 29.\n\n**Example 2**\n```\ninput:\n5\noutput: 0\n```\nA single rope needs no joining at all, so the cost is 0.\n\n**Follow-up:** Can you achieve an O(n log n) solution?",
     "editorialMarkdown": "The intended approach uses a greedy strategy powered by a min-heap.\n\nSince the length of a combined rope is charged again in every subsequent join it participates in, you must combine the shortest ropes first so they carry through the most joins. Maintain a min-heap of all rope lengths. Repeatedly extract the two shortest ropes, add their sum to the total cost, and push the combined length back into the heap until only one rope remains.\n\nThe one trap most solvers hit is adding the final combined rope length to the total, or adding each original rope's length at the start. The cost is only incurred at the join operations.\n\nThe time complexity is O(n log n) since each of the n-1 joins performs O(log n) heap operations. Space complexity is O(n) to store the heap.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "minimum-removals-for-clear-calendar": {
+    "promptMarkdown": "You are managing a calendar of appointments, where each appointment is given as a half-open time interval `[start, end)`. Your task is to find the minimum number of appointments to cancel so that no two remaining appointments overlap.\n\nAppointments that touch at their boundaries (e.g., one ends at 2 and the next starts at 2) are considered compatible and do not overlap. If there are no appointments scheduled, `0` cancellations are needed.\n\n**Constraints**\n- The input can be empty.\n- Each appointment is a pair of integers `[start, end)` where `start < end`.\n\n**Example 1**\n\n```\ninput:\n1 4;2 3;3 5\noutput: 1\n```\nCancel the `[1, 4)` appointment to keep `[2, 3)` and `[3, 5)` which do not overlap.\n\n**Example 2**\n\n```\ninput:\n1 2;2 3\noutput: 0\n```\nThe appointments touch at `2`, which is allowed, so no cancellations are needed.\n\n**Follow-up:**\nCan you solve this with O(1) additional space beyond the input array?",
+    "editorialMarkdown": "The intended approach is a greedy interval sweep. You should sort the appointments by their end times, then iterate through them, keeping track of the earliest finishing appointment.\n\nBy always selecting the appointment that ends earliest, you leave the maximum possible room for subsequent appointments. As you sweep from left to right, if an appointment starts before the current tracked end time, it overlaps and must be canceled. Otherwise, you update the tracked end time to this new appointment's end time.\n\nThe most common trap solvers hit is treating touching ranges (like `[1, 2)` and `[2, 3)`) as overlapping. The problem explicitly states that touching appointments are compatible, so the overlap check must be strictly less than (`<`), not less than or equal to (`<=`).\n\nThe time complexity is O(n log n) due to sorting the intervals, where n is the number of appointments. The space complexity is O(1) assuming the sorting is done in-place and we only keep a few variables for counting and tracking the end time.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
@@ -2538,6 +2363,31 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "numeric-palindrome": {
+    "promptMarkdown": "Determine if a given non-negative integer reads the same forwards and backwards. You must accomplish this without converting the integer to a string or text format. \n\n**Constraints**\n- `0 <= input <= 1,000,000`\n\n**Example 1**\n\n```\ninput:\n12321\noutput: true\n```\nThe digits mirror themselves perfectly.\n\n**Example 2**\n\n```\ninput:\n123\noutput: false\n```\nReading backwards gives 321, which does not match.\n\n**Follow-up:**\nCan you solve it in O(d) time where d is the number of decimal digits, using only O(1) extra space?",
+    "editorialMarkdown": "The pattern here is digit comparison using two pointers (conceptually). You want to peel off and compare the matching ends of the number.\n\nFirst, determine the largest decimal place value. Then, repeatedly compare the leading digit (extracted using division by the place value) with the trailing digit (extracted using modulo 10). If they match, discard both digits by taking the modulo of the place value, dividing by 10, and reducing the place value by a factor of 100.\n\nThe one trap most solvers hit is reducing the place value by 10 instead of 100 after removing two digits (one from the front, one from the back). This misalignment causes subsequent leading-digit extractions to look at the wrong position.\n\nThe time complexity is O(d), where d is the number of decimal digits in the number. The space complexity is O(1) since we only use a few integer variables.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "pair-sum-in-sorted-list": {
+    "promptMarkdown": "You are analyzing an ordered catalog of inventory weights to find two distinct items that together add up exactly to a required total capacity. The provided list of weights is already sorted from lightest to heaviest.\n\nGiven the sorted list of weights and the target capacity, determine the zero-based indices of the two items that achieve the exact sum. Return the two indices, placing the smaller index first.\n\n**Constraints**\n- The list contains at least two items.\n- There is exactly one valid pair of indices that sums to the target.\n- You may not use the same index twice.\n- The values may be zero or negative.\n- The list is guaranteed to be strictly non-decreasing.\n\n**Example 1**\n```\ninput:\n2 7 11 15\n9\noutput: 0 1\n```\nThe weights 2 and 7 sum to 9, and they are located at indices 0 and 1.\n\n**Example 2**\n```\ninput:\n1 2 3 4 6\n6\noutput: 1 3\n```\nThe weights 2 and 4 sum to 6, located at indices 1 and 3.\n\n**Example 3**\n```\ninput:\n-5 -3 0 2 8\n-3\noutput: 0 3\n```\nThe weights -5 and 2 sum to -3, located at indices 0 and 3.\n\n**Follow-up:**\nCan you solve this using only O(1) extra space without modifying the input array?",
+    "editorialMarkdown": "The two-pointer pattern is the intended approach here. While a hash map storing seen values and checking for complements would work, it would require O(n) auxiliary space. Since the input is already provided in sorted order, we can leverage that structure for free to optimize our space usage.\n\nBy placing a `left` pointer at the beginning of the list and a `right` pointer at the end, we can evaluate the sum of the two elements. If the sum is smaller than our target, the only way to increase it is to move the `left` pointer forward. Conversely, if the sum is too large, we must decrease it by moving the `right` pointer backward. We repeat this process until the exact target sum is found, which is guaranteed by the constraints. This approach operates in O(n) time and O(1) space.\n\nThe most common trap solvers fall into is re-sorting the already sorted list out of habit. Sorting the list again is not just wasted time; if the list was somehow not perfectly sorted or you used a sort that disrupts the original indexing, you would lose the correct initial positions that the problem explicitly asks you to return.",
+    "promoteSamples": [
+      "-5 -3 0 2 8\n-3"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
+  "pair-with-target-sum": {
+    "promptMarkdown": "You are auditing an unsorted ledger of financial transactions to find a pair of distinct entries that sum to a specific target value.\n\nGiven the list of transaction amounts and the target value, return the zero-based indices of the two transactions that add up to the target. List the smaller index first.\n\n**Constraints**\n- The list contains at least two amounts.\n- There is exactly one valid pair of indices that sums to the target.\n- You may not use the same index twice to form the sum.\n- Values can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n2 7 11 15\n9\noutput: 0 1\n```\nThe amounts 2 and 7 add up to 9, found at indices 0 and 1.\n\n**Example 2**\n```\ninput:\n3 2 4\n6\noutput: 1 2\n```\nThe amounts 2 and 4 add up to 6, found at indices 1 and 2.\n\n**Example 3**\n```\ninput:\n3 3\n6\noutput: 0 1\n```\nThe two 3s add up to 6, found at indices 0 and 1.\n\n**Follow-up:**\nCan you solve this with an algorithm that runs in less than O(n^2) time complexity?",
+    "editorialMarkdown": "The one-pass hash map pattern is the ideal strategy for this problem. While a naive brute-force approach checks every possible pair using nested loops in O(n^2) time, you can achieve a much more efficient solution by trading space for time.\n\nInstead of searching for a partner for the current number, calculate its complement—the exact value needed to reach the target. As you iterate through the ledger, check if this complement already exists in a hash map that records previously seen numbers and their indices. If it does, you have found the pair and can immediately return their positions. If it does not, add the current number and its index to the hash map. This single pass reduces the time complexity to O(n) while utilizing O(n) space.\n\nA critical trap is inserting the current number into the hash map before checking for its complement. If the target is exactly double the current number, inserting it first will cause the number to incorrectly pair with itself, violating the rule against reusing the same index. Always check the hash map first before storing the current element.",
+    "promoteSamples": [
+      "3 3\n6"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "palindrome-check": {
     "promptMarkdown": "Determine whether a given string reads the same forwards and backwards. Return `true` if it is a palindrome, and `false` otherwise. Compare the characters exactly as they are provided, without removing spaces.\n\n**Constraints**\n- The input string will consist of lowercase letters and spaces.\n- The string length is between 0 and 100,000.\n\n**Example 1**\n```\ninput:\nracecar\noutput: true\n```\nThe string racecar reads the same forwards and backwards.\n\n**Example 2**\n```\ninput:\nhello\noutput: false\n```\nThe string hello is not a palindrome.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) extra space without allocating a reversed string?",
     "editorialMarkdown": "The intended approach is to initialize two pointers, one at the beginning of the string and one at the end, and walk them inwards towards the center. The pattern's name is two pointers. Time complexity is O(n) and space complexity is O(1). The one trap most solvers hit is building a completely reversed string in memory and then comparing it to the original. While technically correct, this approach allocates O(n) extra space and always processes the entire string, even if the mismatch occurs immediately on the first character. The two-pointer approach avoids this and halts on the first discrepancy.",
@@ -2553,6 +2403,64 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
+  },
+  "peak-element-index": {
+    "promptMarkdown": "Find a position whose value is larger than both of its neighbours.\n\nThe list is **not sorted**. A position is a peak when its value is greater\nthan the value on its left and greater than the value on its right. The two\nends count as having an imaginary neighbour of negative infinity, so the\nfirst position is a peak whenever it beats the second, and the last is a peak\nwhenever it beats the second-to-last.\n\nReturn the position, counting from `0`.\n\n**Example**\n\n```\ninput:  1 2 3 1\noutput: 2\n```\n\n`3` at position 2 beats `2` on its left and `1` on its right.\n\nThe list always has at least one number, and **no two neighbouring numbers**\n**are equal**. A one-number list is a peak at position `0`. Every input here\nhas exactly **one** peak, so there is a single correct answer.",
+    "editorialMarkdown": "## Binary search without a sorted array\n\nThe list is not sorted, and it is worth sitting with why binary search still\napplies. Sortedness was never the requirement — a monotonic decision was. The\ndecision here is \"does the list go **up** as I step right from this\nposition?\", and the slope at the midpoint tells you which side must hold a\npeak.\n\n```\nlo, hi = 0, n - 1\nwhile lo < hi:\n    mid = lo + (hi - lo) // 2\n    if a[mid] < a[mid + 1]: lo = mid + 1   # uphill, peak lies right\n    else:                   hi = mid       # downhill, peak lies here or left\nreturn lo\n```\n\n**Why the discarded half cannot contain the answer** — or more precisely, why\nthe half you keep is guaranteed to contain one. Suppose\n`a[mid] < a[mid + 1]`, so you are on a rising step. Walk right from\n`mid + 1`. Either the values keep rising until the end of the list, in which\ncase the last position is a peak (its right neighbour is negative infinity),\nor at some point they stop rising, and the position where that happens is\nhigher than both its neighbours — a peak. Either way a peak exists in\n`[mid + 1, hi]`, so throwing away `[lo, mid]` cannot lose the search. The\ndownhill case is the mirror image, and note it keeps `mid` itself, because\n`mid` may be the peak.\n\nThis argument also proves a peak always exists, which is why the routine never\nneeds a \"not found\" branch.\n\nThe quiet mistake is the pair `hi = mid` and `lo <= hi`. Those two do not go\ntogether: once `lo == hi` the midpoint is `lo`, the assignment `hi = mid`\nchanges nothing, and the loop spins **forever**. It is quiet because it is not\na wrong answer, it is a hang — under a timed lock it reads as a slow solution\nrather than a broken one. With `hi = mid` the loop condition must be\n`lo < hi`, and the return is `lo` after they meet. Conversely, writing\n`hi = mid - 1` here would step over the peak whenever `mid` is the peak.\n\nAlso: `a[mid + 1]` is only safe because `lo < hi` guarantees `mid < hi <= n-1`.\nHoisting that comparison outside the loop reads off the end of the list. And\nas always `lo + (hi - lo) / 2`, not `(lo + hi) / 2`, which overflows in\nfixed-width integer types.\n\nO(log n) time and O(1) space — the surprise being that a linear scan is not\nrequired even though the input carries no global order.",
+    "promoteSamples": [],
+    "model": "refresh",
+    "date": "2026-09-17",
+    "tests": [
+      {
+        "stdin": "10 20 15",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "5 10 15 10",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "7",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "-5 -2 -5",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "10 9 8 7 6 5 4 3 2 1",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10",
+        "expectedStdout": "9"
+      },
+      {
+        "stdin": "1 3 5 7 9 8 6 4 2",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "1 10 2",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "-10 -5 -1 -3 -8",
+        "expectedStdout": "2"
+      },
+      {
+        "stdin": "2 4 6 8 10 12 14 16 18 20 19 17 15 13 11 9 7 5 3 1",
+        "expectedStdout": "9"
+      }
+    ]
+  },
+  "point-covered-by-range": {
+    "promptMarkdown": "You are given a list of closed ranges, where each range is represented as `[start, end]`. You are also given a single point. Your task is to calculate exactly how many of these ranges contain the given point.\n\nA point is considered contained by a range if it falls within the boundaries, inclusive of the endpoints (e.g., the point `2` is contained by `[1, 2]`). The ranges may overlap.\n\n**Constraints**\n- The list always has at least one range.\n- Each range is a valid `[start, end]` where `start <= end`.\n\n**Example 1**\n\n```\ninput:\n1 3;7 9\n8\noutput: 1\n```\nThe point 8 is only contained within the range `[7, 9]`.\n\n**Example 2**\n\n```\ninput:\n1 2\n3\noutput: 0\n```\nThe point 3 is outside the range `[1, 2]`.\n\n**Follow-up:**\nCan you solve this with O(1) additional space?",
+    "editorialMarkdown": "The intended approach is a straightforward linear scan. You iterate through each range and check if the target point is contained within its boundaries.\n\nFor each range, simply test if `start <= point <= end`. If it is, increment a counter. There is no need to sort the ranges because containment of a point is determined by each range independently.\n\nThe trap most solvers hit is stopping their search early after finding the first range that covers the point, returning 1 when they should be returning the total count of overlapping ranges. Another common mistake is using strict comparisons (`<`) which drops points that land exactly on the boundaries.\n\nThe time complexity is O(n), where n is the number of ranges, as you examine each range exactly once. The space complexity is O(1) since you only need a counter variable.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "priority-queue-changing-priorities": {
     "promptMarkdown": "Implement a priority queue yourself; do not wrap a built-in priority queue implementation.\n\nThe same value may be pushed more than once with different priorities. Each `push(value, priority)` creates a separate queue entry; do not search for or mutate an older entry. Lower priority wins and equal priorities use insertion order. Empty `pop` and `peek` return `-1`.\n\n**Constraints**\n- The number of operations is up to 1000.\n- Values and priorities are valid integers.\n\n**Example 1**\n```\ninput:\n9\nPriorityQueue\npush 5 9\npush 5 1\npush 8 2\npop\npop\npop\nsize\npeek\noutput:\nnull\nnull\nnull\nnull\n5\n8\n5\n0\n-1\n```\nDuplicate values are pushed and popped correctly according to their independent priorities.\n\n**Example 2**\n```\ninput:\n4\nPriorityQueue\npeek\npop\nsize\noutput:\nnull\n-1\n-1\n0\n```\nEmpty queue operations safely return -1.\n\n**Follow-up:** Can you maintain the queue using O(log n) time per push and pop?",
@@ -2691,6 +2599,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
   },
+  "remove-all-with-value": {
+    "promptMarkdown": "You are processing a sequence of sequentially linked data packets. A specific error code has been identified, and your task is to purge every packet from the sequence that contains this error code. The remaining packets must stay in their original relative order.\n\nGiven the linked sequence and the targeted error code to remove, return the resulting sequence after all matching packets have been deleted.\n\n**Constraints**\n- The original sequence contains at least one packet.\n- The error code might not be present at all, in which case the sequence remains unchanged.\n- The error code might match every packet, resulting in a completely empty sequence.\n- Consecutive packets with the error code must all be removed.\n\n**Example 1**\n```\ninput:\n1 2 6 3 4 6 6\n6\noutput: 1 2 3 4\n```\nAll packets containing 6 are removed. Note that the consecutive 6s at the end are completely purged.\n\n**Example 2**\n```\ninput:\n7 7 7\n7\noutput: \n```\nEvery packet contains the error code 7, leaving an empty sequence.\n\n**Example 3**\n```\ninput:\n1 2 3\n9\noutput: 1 2 3\n```\nThe error code 9 is absent, so the original sequence is returned exactly as it arrived.\n\n**Follow-up:**\nCan you perform the deletion in a single pass using only O(1) extra space?",
+    "editorialMarkdown": "Using a dummy head pattern simplifies linked list manipulation remarkably well here. Unlinking a node from a singly linked list requires altering the pointer of its predecessor. However, the first node inherently lacks a predecessor, forcing developers to write cumbersome special-case logic just to handle matches at the front of the list.\n\nBy initializing a dummy node and pointing its `next` reference to the head of the list, every original node suddenly has a predecessor. You can then iterate through the list with a pointer, looking one node ahead. If the next node contains the error code, you unlink it by rerouting the current node's `next` pointer to the node after the match, crucially remaining in place to re-evaluate the new `next` node. This seamlessly handles consecutive matches and front-of-list matches alike. The algorithm runs in O(n) time and uses O(1) extra space.\n\nThe most common trap is unconditionally advancing the iteration pointer after unlinking a node. If you reroute the pointer to skip a deleted node and immediately step forward, you will bypass the newly linked node without inspecting it. This bug silently leaves behind every second element of a consecutive run of matches. The pointer should only advance when no deletion occurs.",
+    "promoteSamples": [
+      "1 2 3\n9"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "remove-duplicates-from-sorted": {
     "promptMarkdown": "Given a sorted list of integers, return the list with all duplicate values removed. The remaining values must stay in their original (sorted) order, each appearing exactly once.\n\n**Constraints**\n- The list has at least 1 integer.\n- The list is sorted from smallest to largest, so equal values are always adjacent.\n- Values may be negative.\n\n**Example 1**\n```\ninput:\n0 0 1 1 1 2 2 3 3 4\noutput: 0 1 2 3 4\n```\nEach value appears once; the sorted order is preserved.\n\n**Example 2**\n```\ninput:\n2 2 2 2\noutput: 2\n```\nAll copies collapse to a single value.\n\n**Example 3**\n```\ninput:\n1 1 2\noutput: 1 2\n```\nThe duplicate `1` is removed; `2` stays.\n\n**Follow-up:** Can you do this in O(n) time and O(1) extra space, modifying the list in place?",
     "editorialMarkdown": "## Read/write two pointers — sortedness replaces the hash set\n\nA hash set would work and is O(n) time and space. It is also answering a harder question than necessary. Because the list is sorted, every copy of a value occupies a contiguous block, which means a value is a duplicate exactly when it equals its immediate predecessor in the **kept** output. That is a single comparison, requiring no extra memory.\n\nUse the same read/write pointer pattern as the zero-moving problem, but now the write cursor starts at 1 (the first element is always kept) and advances only when the current read value differs from the last kept value:\n\n```\nwrite = 1                        # a[0] is always kept\nfor read in range(1, n):\n    if a[read] != a[write - 1]:\n        a[write] = a[read]\n        write += 1\nreturn a[:write]\n```\n\nThe critical comparison is `a[read] != a[write - 1]`, not `a[read] != a[read - 1]`. The write cursor lags behind, so `a[write - 1]` is the last value that was actually kept. `a[read - 1]` is a cell that may already have been overwritten by this very loop, so comparing against it means comparing against garbage. On many inputs both agree — that is exactly what makes this a quiet bug that slips through most hand-tested cases.\n\nNo value is dropped incorrectly: every element is examined once by the read cursor, and a value is skipped only when an identical value is already present in the output — losing a copy loses no information.\n\nA language-level trap: shrinking the list while iterating it. Deleting the element in place shifts the tail leftward under the index, so `1 1 1` leaves a stray `1` behind. Building forward into the same array avoids this entirely.\n\nO(n) time — one forward pass — and O(1) extra space beyond the returned prefix.",
@@ -2715,6 +2632,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
+  },
+  "reorder-first-last-alternating": {
+    "promptMarkdown": "You are implementing a special routing protocol that folds a linear chain of communication nodes back onto itself. To reduce latency between the perimeter and the core, the sequence must be rewired to alternate systematically: the first node, followed by the last node, then the second node, then the second-to-last node, progressing inwards until every node has been repositioned.\n\nGiven the starting node of the chain, reconnect the pointers to achieve this interleaved order. You must physically re-point the existing nodes rather than merely modifying their internal values or temporarily storing them in an array.\n\n**Constraints**\n- The original chain contains at least one node.\n- You must perform the reordering strictly in place, altering the `next` pointers of the nodes.\n- When the sequence length is odd, the middle node naturally settles as the final node in the rewired chain.\n\n**Example 1**\n```\ninput:\n1 2 3 4 5 6\noutput: 1 6 2 5 3 4\n```\nThe first node (1) connects to the last (6), then the second (2) to the second-to-last (5), and so on.\n\n**Example 2**\n```\ninput:\n1 2 3 4 5\noutput: 1 5 2 4 3\n```\nWith an odd length, the middle node (3) becomes the final node in the chain.\n\n**Example 3**\n```\ninput:\n1\noutput: 1\n```\nA chain consisting of only one node is inherently already in the required order.\n\n**Follow-up:**\nCan you accomplish this structural rewiring with an algorithm that operates in O(n) time and O(1) auxiliary space?",
+    "editorialMarkdown": "This complex structural transformation is elegantly achieved by composing three distinct linked list patterns: fast and slow pointers, in-place reversal, and sequence interleaving. Since a singly linked list cannot be traversed backward, you must structurally modify the second half of the sequence to allow a front-to-back traversal that yields the correct elements.\n\nFirst, employ a slow pointer and a fast pointer to traverse the sequence; when the fast pointer reaches the end, the slow pointer will rest at the midpoint. Next, sever the sequence into two separate halves by clearing the midpoint's `next` reference. Take the entire second half and reverse it in place using a sliding window of three pointers. Finally, iterate through both the first half and the newly reversed second half simultaneously, weaving them together by alternately linking a node from the first half to a node from the second half. This composition of techniques achieves the result in O(n) time and strictly O(1) space.\n\nA notorious trap in this multi-stage process is forgetting to sever the first half from the second half before beginning the interleave phase. If you reverse the second half but leave the midpoint's `next` pointer pointing into it, you inadvertently introduce a cycle. When the interleaving loop executes, it will traverse this cycle endlessly, resulting in an infinite loop or a timeout error. Always nullify the end of the first half to establish two discrete, clean sequences.",
+    "promoteSamples": [
+      "1"
+    ],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "repeat-a-string": {
     "promptMarkdown": "Given a string and a non-negative integer representing a count, return a new string that repeats the original string the specified number of times with no characters in between.\n\n**Constraints**\n- The string length is between `0` and `1000`.\n- The repeat count is between `0` and `1000`.\n\n**Example 1**\n```\ninput:\nab\n3\noutput: ababab\n```\nThe string \"ab\" is repeated 3 times.\n\n**Example 2**\n```\ninput:\nx\n0\noutput: \n```\nRepeating any string 0 times results in an empty string.\n\n**Follow-up:** Are strings mutable or immutable in your programming language, and how does this affect performance?",
