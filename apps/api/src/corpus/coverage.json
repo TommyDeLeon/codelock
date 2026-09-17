@@ -2759,5 +2759,398 @@
     "batch": "gen-lc-w3-101",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "nearest-available-drone": {
+    "ours": "closest-origin-beacon",
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17"
+  },
+  "not-boring-movies": {
+    "ours": "retrieve-important-transmissions",
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17"
+  },
+  "number-of-1-bits": {
+    "ours": "active-robot-subsystems",
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17"
+  },
+  "number-of-changing-keys": {
+    "ours": "security-key-changes",
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17"
+  },
+  "number-of-different-integers-in-a-string": {
+    "ours": "unique-energy-signatures",
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17"
+  },
+  "nim-game": {
+    "ours": null,
+    "batch": "gen-lc-w4-140",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "minimum-operations-to-make-array-sum-divisible-by-k": {
+    "ours": "fuel-top-up-operations",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "minimum-operations-to-make-array-values-equal-to-k": {
+    "ours": "equalize-signal-frequencies",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "minimum-operations-to-make-the-array-increasing": {
+    "ours": "stacking-cargo-crates",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "minimum-right-shifts-to-sort-the-array": {
+    "ours": "conveyor-belt-sorting",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "minimum-subsequence-in-non-increasing-order": {
+    "ours": "high-yield-power-cells",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "minimum-pair-removal-to-sort-array-i": {
+    "ours": "misplaced-storage-boxes",
+    "batch": "gen-lc-w2-140",
+    "date": "2026-09-17"
+  },
+  "middle-of-the-linked-list": {
+    "ours": "space-relay-diagnostic-tap",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "minimum-amount-of-time-to-fill-cups": {
+    "ours": "alien-beverage-brew-time",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "minimum-cost-to-reach-every-position": {
+    "ours": "solar-panel-alignment-energy",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "minimum-hours-of-training-to-win-a-competition": {
+    "ours": "gladiator-power-deficit",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "minimum-number-of-moves-to-seat-everyone": {
+    "ours": "drone-charging-assignment",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "minimum-cost-of-buying-candies-with-discount": {
+    "ours": "discounted-spacesuit-components",
+    "batch": "gen-lc-w0-140",
+    "date": "2026-09-17"
+  },
+  "implement-queue-using-stacks": {
+    "ours": "simulate-cargo-queue",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "implement-stack-using-queues": {
+    "ours": "simulate-cargo-stack",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "index-pairs-of-a-string": {
+    "ours": "anomalous-signal-matcher",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "fizz-buzz": {
+    "ours": "interstellar-comms-routing",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "hamming-distance": {
+    "ours": "alien-gene-divergence",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "hexspeak": {
+    "ours": "artifact-hex-decoder",
+    "batch": "gen-lc-w1-140",
+    "date": "2026-09-17"
+  },
+  "largest-even-number": {
+    "ours": "maximize-even-energy-core",
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17"
+  },
+  "latest-time-by-replacing-hidden-digits": {
+    "ours": "restore-countdown-timer",
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17"
+  },
+  "left-and-right-sum-differences": {
+    "ours": "bridge-segment-strain",
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17"
+  },
+  "lemonade-change": {
+    "ours": "galactic-toll-booth",
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17"
+  },
+  "linked-list-frequency": {
+    "ours": "access-code-frequencies",
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17"
+  },
+  "leaf-similar-trees": {
+    "ours": null,
+    "batch": "gen-lc-w3-140",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "list-the-products-ordered-in-a-period": {
+    "ours": "heavy-duty-storage-parts",
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17"
+  },
+  "logger-rate-limiter": {
+    "ours": "transmission-relay-filter",
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17"
+  },
+  "long-pressed-name": {
+    "ours": "stuttering-alien-signal",
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17"
+  },
+  "longest-continuous-increasing-subsequence": {
+    "ours": "maximal-acceleration-phase",
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17"
+  },
+  "longest-palindrome": {
+    "ours": "symmetric-cargo-distribution",
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17"
+  },
+  "longest-nice-substring": {
+    "ours": null,
+    "batch": "gen-lc-w3-141",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "missing-number": {
+    "ours": "absent-student-photo-day",
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17"
+  },
+  "modify-columns": {
+    "ours": "inflation-merchant-price-markup",
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17"
+  },
+  "number-complement": {
+    "ours": "invert-bitwise-signal-id",
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17"
+  },
+  "minimum-sum-of-four-digit-number-after-splitting-digits": {
+    "ours": "minimal-transport-fuel-cost",
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17"
+  },
+  "most-common-word": {
+    "ours": "most-frequent-signal-code-log",
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17"
+  },
+  "minimum-sum-of-mountain-triplets-i": {
+    "ours": null,
+    "batch": "gen-lc-w0-141",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "intersection-of-multiple-arrays": {
+    "ours": "common-elements-in-multiple-datasets",
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17"
+  },
+  "intersection-of-two-linked-lists": {
+    "ours": "synchronized-data-streams",
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17"
+  },
+  "invalid-tweets-ii": {
+    "ours": "filter-long-transmissions",
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17"
+  },
+  "is-object-empty": {
+    "ours": "check-empty-storage",
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17"
+  },
+  "interval-cancellation": {
+    "ours": null,
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "island-perimeter": {
+    "ours": null,
+    "batch": "gen-lc-w1-141",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "minimum-time-visiting-all-points": {
+    "ours": "drone-delivery-route-time",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "missing-number-in-arithmetic-progression": {
+    "ours": "missing-temperature-reading",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "modify-the-matrix": {
+    "ours": "reconstruct-corrupted-spreadsheet",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "most-frequent-number-following-key-in-an-array": {
+    "ours": "most-frequent-subsequent-page",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "most-visited-sector-in-a-circular-track": {
+    "ours": "circular-perimeter-patrol",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "n-th-tribonacci-number": {
+    "ours": "microorganism-population-growth",
+    "batch": "gen-lc-w2-141",
+    "date": "2026-09-17"
+  },
+  "number-of-good-pairs": {
+    "ours": "matching-signal-frequencies",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "number-of-steps-to-reduce-a-number-to-zero": {
+    "ours": "engine-cooling-steps",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "number-of-unique-subjects-taught-by-each-teacher": {
+    "ours": "distinct-planetary-scans",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "number-of-valid-words-in-a-sentence": {
+    "ours": "count-valid-comm-links",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "palindrome-linked-list": {
+    "ours": "palindromic-cargo-train",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "number-of-strings-that-appear-as-substrings-in-word": {
+    "ours": "detect-malware-signatures",
+    "batch": "gen-lc-w4-141",
+    "date": "2026-09-17"
+  },
+  "number-of-arithmetic-triplets": {
+    "ours": "signal-frequency-triplets",
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17"
+  },
+  "number-of-comments-per-post": {
+    "ours": "forum-interaction-counts",
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17"
+  },
+  "next-greater-element-i": {
+    "ours": "next-higher-stock-price",
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17"
+  },
+  "neither-minimum-nor-maximum": {
+    "ours": null,
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "npv-queries": {
+    "ours": null,
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "number-of-elapsed-seconds-between-two-times": {
+    "ours": null,
+    "batch": "gen-lc-w2-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "project-employees-i": {
+    "ours": "calculate-team-experience-average",
+    "batch": "gen-lc-w4-142",
+    "date": "2026-09-17"
+  },
+  "reformat-department-table": {
+    "ours": "aggregate-server-metrics",
+    "batch": "gen-lc-w4-142",
+    "date": "2026-09-17"
+  },
+  "read-n-characters-given-read4": {
+    "ours": null,
+    "batch": "gen-lc-w4-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "largest-integer-with-given-digit-sum": {
+    "ours": "maximum-matching-security-code",
+    "batch": "gen-lc-w1-142",
+    "date": "2026-09-17"
+  },
+  "make-a-square-with-the-same-color": {
+    "ours": "solar-panel-repair",
+    "batch": "gen-lc-w3-142",
+    "date": "2026-09-17"
+  },
+  "matrix-diagonal-sum": {
+    "ours": null,
+    "batch": "gen-lc-w3-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "max-consecutive-ones": {
+    "ours": null,
+    "batch": "gen-lc-w3-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "number-of-recent-calls": {
+    "ours": "recent-weather-readings",
+    "batch": "gen-lc-w0-142",
+    "date": "2026-09-17"
+  },
+  "occurrences-after-bigram": {
+    "ours": "critical-failure-consequences",
+    "batch": "gen-lc-w0-142",
+    "date": "2026-09-17"
+  },
+  "number-of-students-unable-to-eat-lunch": {
+    "ours": null,
+    "batch": "gen-lc-w0-142",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }

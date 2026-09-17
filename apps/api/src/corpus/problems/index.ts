@@ -1,4 +1,19 @@
 import type { ProblemDefinition } from '../problem.js';
+import { GEN_LC_W0_142_PROBLEMS } from './gen-lc-w0-142.js';
+import { GEN_LC_W3_142_PROBLEMS } from './gen-lc-w3-142.js';
+import { GEN_LC_W1_142_PROBLEMS } from './gen-lc-w1-142.js';
+import { GEN_LC_W4_142_PROBLEMS } from './gen-lc-w4-142.js';
+import { GEN_LC_W2_142_PROBLEMS } from './gen-lc-w2-142.js';
+import { GEN_LC_W4_141_PROBLEMS } from './gen-lc-w4-141.js';
+import { GEN_LC_W2_141_PROBLEMS } from './gen-lc-w2-141.js';
+import { GEN_LC_W1_141_PROBLEMS } from './gen-lc-w1-141.js';
+import { GEN_LC_W0_141_PROBLEMS } from './gen-lc-w0-141.js';
+import { GEN_LC_W3_141_PROBLEMS } from './gen-lc-w3-141.js';
+import { GEN_LC_W3_140_PROBLEMS } from './gen-lc-w3-140.js';
+import { GEN_LC_W1_140_PROBLEMS } from './gen-lc-w1-140.js';
+import { GEN_LC_W0_140_PROBLEMS } from './gen-lc-w0-140.js';
+import { GEN_LC_W2_140_PROBLEMS } from './gen-lc-w2-140.js';
+import { GEN_LC_W4_140_PROBLEMS } from './gen-lc-w4-140.js';
 import { GEN_LC_W1_101_PROBLEMS } from './gen-lc-w1-101.js';
 import { GEN_LC_W4_064_PROBLEMS } from './gen-lc-w4-064.js';
 import { GEN_LC_W2_064_PROBLEMS } from './gen-lc-w2-064.js';
@@ -168,6 +183,21 @@ import { TIER_3_STRINGS_BREADTH_PROBLEMS } from './tier3-strings-breadth.js';
 import { TIER_3_STRINGS_SIMULATION_PROBLEMS } from './tier3-strings-simulation.js';
 
 export const ALL_PROBLEMS: ProblemDefinition[] = [
+  ...GEN_LC_W0_142_PROBLEMS,
+  ...GEN_LC_W3_142_PROBLEMS,
+  ...GEN_LC_W1_142_PROBLEMS,
+  ...GEN_LC_W4_142_PROBLEMS,
+  ...GEN_LC_W2_142_PROBLEMS,
+  ...GEN_LC_W4_141_PROBLEMS,
+  ...GEN_LC_W2_141_PROBLEMS,
+  ...GEN_LC_W1_141_PROBLEMS,
+  ...GEN_LC_W0_141_PROBLEMS,
+  ...GEN_LC_W3_141_PROBLEMS,
+  ...GEN_LC_W3_140_PROBLEMS,
+  ...GEN_LC_W1_140_PROBLEMS,
+  ...GEN_LC_W0_140_PROBLEMS,
+  ...GEN_LC_W2_140_PROBLEMS,
+  ...GEN_LC_W4_140_PROBLEMS,
   ...GEN_LC_W1_101_PROBLEMS,
   ...GEN_LC_W4_064_PROBLEMS,
   ...GEN_LC_W2_064_PROBLEMS,

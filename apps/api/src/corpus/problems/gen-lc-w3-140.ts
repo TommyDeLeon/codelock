@@ -1,0 +1,175 @@
+import { GENERATED, type ProblemDefinition } from '../problem.js';
+
+/**
+ * Generated batch `gen-lc-w3-140` (anchored to a public problem index; metadata only).
+ *
+ * Drafted with gemini-3.1-pro-low on 2026-09-17 and admitted only after
+ * every reference solution passed every test on the judge
+ * (`scripts/author-batch.ts`). Statements are original; provenance says so.
+ */
+
+const p = (d: ProblemDefinition): ProblemDefinition => d;
+
+const base = { provenance: GENERATED } as const;
+
+export const GEN_LC_W3_140_PROBLEMS: ProblemDefinition[] = [
+  p({
+    ...base,
+    slug: "maximize-even-energy-core",
+    difficulty: "EASY",
+    tier: "TIER_1",
+    patternFamily: "ARRAYS_HASHING",
+    title: "Vault Passcode Assembly",
+    patternTags: ["strings","sorting","greedy","digits"],
+    signatureId: "fn:string->string",
+    avgSolveSeconds: 600,
+    promptMarkdown: "You are an archivist piecing together a combination code from a set of fragmented digits. Each fragment contains a single digit from `'0'` to `'9'`.\n\nYou are provided with a string `code` consisting of these digits. You need to use every single digit to construct one complete number. The vault mechanism requires the final number to be **even**. To ensure the highest level of clearance, you must arrange the digits to produce the **largest possible even number**. \n\nIf there is no way to arrange the available digits to form an even number, return an empty string `\"\"`.\n\nGiven the string `code`, return the maximum even number as a string.\n\n**Constraints**\n- `1 <= code.length <= 100`\n- `code` consists only of digits `'0'` through `'9'`.\n\n**Example 1**\n```\ninput:\n1324\noutput:\n4312\n```\n*Explanation: The available even digits are 2 and 4. Placing 2 at the end allows us to keep the larger digit 4 at the front, creating the largest even combination.*\n\n**Example 2**\n```\ninput:\n357\noutput:\n\n```\n*Explanation: There are no even digits available, making it impossible to form an even number.*\n\n**Example 3**\n```\ninput:\n001\noutput:\n100\n```\n*Explanation: Using all the given digits, the largest even number we can assemble is 100.*\n\n**Follow-up**\nCan you solve this in O(N) time complexity by using a frequency array to count the occurrences of each digit?",
+    editorialMarkdown: "## Maximize Even Energy Core\n\nThe problem asks us to rearrange the digits of a given string to form the largest possible even number. If no even digit exists, we return an empty string.\n\nTo maximize the number, we generally want the largest digits at the most significant positions (the beginning of the string). Since the number must be even, its last digit must be an even number. To keep the largest digits available for the front, we should place the **smallest** available even digit at the very end.\n\n**Trap**: A common mistake is to place the largest even digit at the end, or to just sort the string and then swap the last digit with the nearest even one. This often leads to sub-optimal numbers. Instead, explicitly extract the smallest even digit, sort the remaining digits in descending order, and append the smallest even digit.\n\n**Complexity:**\n- **Time:** O(N log N) where N is the length of the string, dominated by the sorting step.\n- **Space:** O(N) to store the result string and any intermediate character arrays.",
+    referenceSolution: {
+      JAVASCRIPT: "function solve(code) {\n    let evens = [];\n    for (let c of code) {\n        if (parseInt(c) % 2 === 0) evens.push(c);\n    }\n    if (evens.length === 0) return \"\";\n    let smallestEven = evens.reduce((a, b) => a < b ? a : b);\n    let chars = code.split(\"\");\n    chars.splice(chars.indexOf(smallestEven), 1);\n    chars.sort((a, b) => b.localeCompare(a));\n    return chars.join(\"\") + smallestEven;\n}",
+      TYPESCRIPT: "function solve(code: string): string {\n    let evens: string[] = [];\n    for (let c of code) {\n        if (parseInt(c) % 2 === 0) evens.push(c);\n    }\n    if (evens.length === 0) return \"\";\n    let smallestEven = evens.reduce((a, b) => a < b ? a : b);\n    let chars = code.split(\"\");\n    chars.splice(chars.indexOf(smallestEven), 1);\n    chars.sort((a, b) => b.localeCompare(a));\n    return chars.join(\"\") + smallestEven;\n}",
+      PYTHON: "def solve(code):\n    evens = [c for c in code if int(c) % 2 == 0]\n    if not evens:\n        return \"\"\n    smallest_even = min(evens)\n    chars = list(code)\n    chars.remove(smallest_even)\n    chars.sort(reverse=True)\n    return \"\".join(chars) + smallest_even",
+      JAVA: "    static String solve(String code) {\n        java.util.List<Character> evens = new java.util.ArrayList<>();\n        for (char c : code.toCharArray()) {\n            if ((c - '0') % 2 == 0) evens.add(c);\n        }\n        if (evens.isEmpty()) return \"\";\n        char smallestEven = evens.get(0);\n        for (char c : evens) {\n            if (c < smallestEven) smallestEven = c;\n        }\n        java.util.List<Character> chars = new java.util.ArrayList<>();\n        for (char c : code.toCharArray()) chars.add(c);\n        chars.remove((Character) smallestEven);\n        chars.sort(java.util.Collections.reverseOrder());\n        StringBuilder sb = new StringBuilder();\n        for (char c : chars) sb.append(c);\n        sb.append(smallestEven);\n        return sb.toString();\n    }",
+      CPP: "#include <string>\n#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nstring solve(string code) {\n    vector<char> evens;\n    for (char c : code) {\n        if ((c - '0') % 2 == 0) evens.push_back(c);\n    }\n    if (evens.empty()) return \"\";\n    \n    char smallestEven = evens[0];\n    for (char c : evens) {\n        if (c < smallestEven) smallestEven = c;\n    }\n    \n    code.erase(code.find(smallestEven), 1);\n    sort(code.rbegin(), code.rend());\n    return code + smallestEven;\n}",
+      GO: "func solve(code string) string {\n    var evens []rune\n    for _, c := range code {\n        if (c-'0')%2 == 0 {\n            evens = append(evens, c)\n        }\n    }\n    if len(evens) == 0 {\n        return \"\"\n    }\n    smallestEven := evens[0]\n    for _, c := range evens {\n        if c < smallestEven {\n            smallestEven = c\n        }\n    }\n    chars := []rune(code)\n    for i, c := range chars {\n        if c == smallestEven {\n            chars = append(chars[:i], chars[i+1:]...)\n            break\n        }\n    }\n    for i := 0; i < len(chars)-1; i++ {\n        for j := i + 1; j < len(chars); j++ {\n            if chars[j] > chars[i] {\n                chars[i], chars[j] = chars[j], chars[i]\n            }\n        }\n    }\n    return string(chars) + string(smallestEven)\n}",
+    },
+    tests: [
+      { stdin: "1324", expectedStdout: "4312", isSample: true },
+      { stdin: "357", expectedStdout: "", isSample: true },
+      { stdin: "001", expectedStdout: "100" },
+      { stdin: "02468", expectedStdout: "86420" },
+      { stdin: "222", expectedStdout: "222" },
+      { stdin: "10", expectedStdout: "10" },
+      { stdin: "428", expectedStdout: "842" },
+      { stdin: "1234567890", expectedStdout: "9876543210" },
+    ],
+  }),
+
+  p({
+    ...base,
+    slug: "restore-countdown-timer",
+    difficulty: "EASY",
+    tier: "TIER_1",
+    patternFamily: "GREEDY",
+    title: "Recover Log Timestamp",
+    patternTags: ["strings","greedy","simulation"],
+    signatureId: "fn:string->string",
+    avgSolveSeconds: 400,
+    promptMarkdown: "You are investigating a security breach and need to analyze a corrupted log file. The system records timestamps in a standard 24-hour format, `\"HH:MM\"`, ranging from `\"00:00\"` to `\"23:59\"`.\n\nSome characters in the critical timestamp have been overwritten and appear as `'?'`. Your task is to deduce the **latest possible valid time** that this log entry could have recorded by substituting each `'?'` with a digit from `'0'` to `'9'`.\n\nGiven a string `time` representing the corrupted timestamp, return the latest valid time that could be formed.\n\n**Constraints**\n- `time.length == 5`\n- `time` is a valid string in the format `\"HH:MM\"`, except that any digit may be replaced by `'?'`.\n\n**Example 1**\n```\ninput:\n2?:?0\noutput:\n23:50\n```\n*Explanation: The maximum possible hour starting with 2 is 23. The maximum minute ending in 0 is 50.*\n\n**Example 2**\n```\ninput:\n0?:3?\noutput:\n09:39\n```\n*Explanation: The maximum possible hour starting with 0 is 09. The maximum minute starting with 3 is 39.*\n\n**Example 3**\n```\ninput:\n1?:22\noutput:\n19:22\n```\n*Explanation: The maximum possible hour starting with 1 is 19. The minutes are already fully legible.*\n\n**Follow-up**\nCould you refactor your solution to cleanly separate the parsing of hours from the parsing of minutes?",
+    editorialMarkdown: "## Restore Countdown Timer\n\nThe problem asks us to find the latest valid 24-hour time by replacing `'?'` characters in a string. The time format is `\"HH:MM\"`. \n\nThe best approach is a greedy one: at each `'?'` position, we want to place the highest valid digit. However, the highest valid digit often depends on the other digits.\n- For `HH`, the first digit can be `2` only if the second digit is `'?'` or between `'0'` and `'3'`. Otherwise, it can at most be `1`.\n- The second digit of `HH` can be `3` if the first digit is `2`. Otherwise, it can be `9`.\n- The minutes `MM` are simpler: the first digit can always be up to `5`, and the second up to `9`.\n\n**Trap**: Checking the validity of `HH` can be tricky if both digits are `'?'` (like `\"??:??\"`), or if one restricts the other. Make sure your conditions evaluate both positions of the hour component correctly.\n\n**Complexity:**\n- **Time:** O(1), since the string is always exactly 5 characters long.\n- **Space:** O(1), as we only need a few variables to build the output string.",
+    referenceSolution: {
+      JAVASCRIPT: "function solve(time) {\n    let t = time.split('');\n    if (t[0] === '?') {\n        if (t[1] === '?' || parseInt(t[1]) <= 3) {\n            t[0] = '2';\n        } else {\n            t[0] = '1';\n        }\n    }\n    if (t[1] === '?') {\n        if (t[0] === '2') {\n            t[1] = '3';\n        } else {\n            t[1] = '9';\n        }\n    }\n    if (t[3] === '?') {\n        t[3] = '5';\n    }\n    if (t[4] === '?') {\n        t[4] = '9';\n    }\n    return t.join('');\n}",
+      TYPESCRIPT: "function solve(time: string): string {\n    let t = time.split('');\n    if (t[0] === '?') {\n        if (t[1] === '?' || parseInt(t[1]) <= 3) {\n            t[0] = '2';\n        } else {\n            t[0] = '1';\n        }\n    }\n    if (t[1] === '?') {\n        if (t[0] === '2') {\n            t[1] = '3';\n        } else {\n            t[1] = '9';\n        }\n    }\n    if (t[3] === '?') {\n        t[3] = '5';\n    }\n    if (t[4] === '?') {\n        t[4] = '9';\n    }\n    return t.join('');\n}",
+      PYTHON: "def solve(time):\n    t = list(time)\n    if t[0] == '?':\n        if t[1] == '?' or t[1] in '0123':\n            t[0] = '2'\n        else:\n            t[0] = '1'\n    if t[1] == '?':\n        if t[0] == '2':\n            t[1] = '3'\n        else:\n            t[1] = '9'\n    if t[3] == '?':\n        t[3] = '5'\n    if t[4] == '?':\n        t[4] = '9'\n    return \"\".join(t)",
+      JAVA: "    static String solve(String time) {\n        char[] t = time.toCharArray();\n        if (t[0] == '?') {\n            if (t[1] == '?' || t[1] <= '3') {\n                t[0] = '2';\n            } else {\n                t[0] = '1';\n            }\n        }\n        if (t[1] == '?') {\n            if (t[0] == '2') {\n                t[1] = '3';\n            } else {\n                t[1] = '9';\n            }\n        }\n        if (t[3] == '?') {\n            t[3] = '5';\n        }\n        if (t[4] == '?') {\n            t[4] = '9';\n        }\n        return new String(t);\n    }",
+      CPP: "#include <string>\n\nusing namespace std;\n\nstring solve(string time) {\n    if (time[0] == '?') {\n        if (time[1] == '?' || time[1] <= '3') {\n            time[0] = '2';\n        } else {\n            time[0] = '1';\n        }\n    }\n    if (time[1] == '?') {\n        if (time[0] == '2') {\n            time[1] = '3';\n        } else {\n            time[1] = '9';\n        }\n    }\n    if (time[3] == '?') {\n        time[3] = '5';\n    }\n    if (time[4] == '?') {\n        time[4] = '9';\n    }\n    return time;\n}",
+      GO: "func solve(time string) string {\n    t := []byte(time)\n    if t[0] == '?' {\n        if t[1] == '?' || t[1] <= '3' {\n            t[0] = '2'\n        } else {\n            t[0] = '1'\n        }\n    }\n    if t[1] == '?' {\n        if t[0] == '2' {\n            t[1] = '3'\n        } else {\n            t[1] = '9'\n        }\n    }\n    if t[3] == '?' {\n        t[3] = '5'\n    }\n    if t[4] == '?' {\n        t[4] = '9'\n    }\n    return string(t)\n}",
+    },
+    tests: [
+      { stdin: "2?:?0", expectedStdout: "23:50", isSample: true },
+      { stdin: "0?:3?", expectedStdout: "09:39", isSample: true },
+      { stdin: "1?:22", expectedStdout: "19:22", isSample: true },
+      { stdin: "?4:5?", expectedStdout: "14:59" },
+      { stdin: "??:??", expectedStdout: "23:59" },
+      { stdin: "?9:??", expectedStdout: "19:59" },
+      { stdin: "00:00", expectedStdout: "00:00" },
+      { stdin: "23:59", expectedStdout: "23:59" },
+    ],
+  }),
+
+  p({
+    ...base,
+    slug: "bridge-segment-strain",
+    difficulty: "EASY",
+    tier: "TIER_1",
+    patternFamily: "ARRAYS_HASHING",
+    title: "Chemical Vat Equilibrium",
+    patternTags: ["arrays","prefix-sum","absolute-value","math"],
+    signatureId: "fn:ints->ints",
+    avgSolveSeconds: 400,
+    promptMarkdown: "You are monitoring a sequential processing line of chemical vats. The volume of reactive liquid in each vat is provided in an integer array `weights`.\n\nThe equilibrium differential for vat `i` is calculated as the absolute difference between the total volume of all vats to its left and the total volume of all vats to its right. If a vat has no neighbors to its left, the left volume sum is considered `0`. Likewise, if there are no vats to its right, the right volume sum is considered `0`.\n\nGiven the array `weights`, return an integer array `strains` of the same length, where `strains[i]` represents the equilibrium differential for vat `i`.\n\n**Constraints**\n- `1 <= weights.length <= 1000`\n- `1 <= weights[i] <= 100`\n\n**Example 1**\n```\ninput:\n10 4 8 3\noutput:\n15 1 11 22\n```\n*Explanation:*\n- *Vat 0: left sum = 0, right sum = 4 + 8 + 3 = 15. Differential = |0 - 15| = 15.*\n- *Vat 1: left sum = 10, right sum = 8 + 3 = 11. Differential = |10 - 11| = 1.*\n- *Vat 2: left sum = 10 + 4 = 14, right sum = 3. Differential = |14 - 3| = 11.*\n- *Vat 3: left sum = 10 + 4 + 8 = 22, right sum = 0. Differential = |22 - 0| = 22.*\n\n**Example 2**\n```\ninput:\n1\noutput:\n0\n```\n*Explanation: There are no vats to the left or right, so both volume sums are 0, making the differential 0.*\n\n**Example 3**\n```\ninput:\n2 2 2\noutput:\n4 0 4\n```\n*Explanation:*\n- *Vat 0: left sum = 0, right sum = 4. Differential = 4.*\n- *Vat 1: left sum = 2, right sum = 2. Differential = 0.*\n- *Vat 2: left sum = 4, right sum = 0. Differential = 4.*\n\n**Follow-up**\nCan you optimize this to run in exactly O(N) time without allocating extra space for prefix sum arrays (other than the output array)?",
+    editorialMarkdown: "## Bridge Segment Strain\n\nThe problem asks us to find the absolute difference between the sum of the elements to the left and to the right of each element in an array.\n\nA naive approach would be to calculate the left and right sums for each element from scratch, taking O(N^2) time. We can optimize this to O(N) using the prefix sum technique. We first compute the total sum of all elements. Then, as we iterate through the array, we can dynamically maintain the sum of elements seen so far (`left_sum`). The sum of elements to the right can be easily derived as `total_sum - left_sum - current_element`.\n\n**Trap**: When updating the `left_sum` inside the loop, be careful with the order of operations. You must calculate the right sum and the difference *before* you add the current element's weight to the `left_sum`.\n\n**Complexity:**\n- **Time:** O(N) where N is the number of segments, as we traverse the array twice (once for the total sum, once to compute the answers).\n- **Space:** O(N) to store the result array. The auxiliary space is O(1).",
+    referenceSolution: {
+      JAVASCRIPT: "function solve(weights) {\n    let total = weights.reduce((a, b) => a + b, 0);\n    let left = 0;\n    let res = [];\n    for (let w of weights) {\n        let right = total - left - w;\n        res.push(Math.abs(left - right));\n        left += w;\n    }\n    return res;\n}",
+      TYPESCRIPT: "function solve(weights: number[]): number[] {\n    let total = weights.reduce((a, b) => a + b, 0);\n    let left = 0;\n    let res: number[] = [];\n    for (let w of weights) {\n        let right = total - left - w;\n        res.push(Math.abs(left - right));\n        left += w;\n    }\n    return res;\n}",
+      PYTHON: "def solve(weights):\n    total = sum(weights)\n    left = 0\n    res = []\n    for w in weights:\n        right = total - left - w\n        res.append(abs(left - right))\n        left += w\n    return res",
+      JAVA: "    static int[] solve(int[] weights) {\n        int total = 0;\n        for (int w : weights) total += w;\n        \n        int left = 0;\n        int[] res = new int[weights.length];\n        for (int i = 0; i < weights.length; i++) {\n            int right = total - left - weights[i];\n            res[i] = Math.abs(left - right);\n            left += weights[i];\n        }\n        return res;\n    }",
+      CPP: "#include <vector>\n#include <cmath>\n\nusing namespace std;\n\nvector<int> solve(vector<int> weights) {\n    int total = 0;\n    for (int w : weights) total += w;\n    \n    int left = 0;\n    vector<int> res;\n    res.reserve(weights.size());\n    for (int w : weights) {\n        int right = total - left - w;\n        res.push_back(abs(left - right));\n        left += w;\n    }\n    return res;\n}",
+      GO: "func solve(weights []int) []int {\n    total := 0\n    for _, w := range weights {\n        total += w\n    }\n    \n    left := 0\n    res := make([]int, len(weights))\n    for i, w := range weights {\n        right := total - left - w\n        diff := left - right\n        if diff < 0 {\n            diff = -diff\n        }\n        res[i] = diff\n        left += w\n    }\n    return res\n}",
+    },
+    tests: [
+      { stdin: "10 4 8 3", expectedStdout: "15 1 11 22", isSample: true },
+      { stdin: "1", expectedStdout: "0", isSample: true },
+      { stdin: "2 2 2", expectedStdout: "4 0 4", isSample: true },
+      { stdin: "5 10 1 5 2", expectedStdout: "18 3 8 14 21" },
+      { stdin: "100 100", expectedStdout: "100 100" },
+      { stdin: "4 4 4 4 4 4", expectedStdout: "20 12 4 4 12 20" },
+      { stdin: "0 0", expectedStdout: "0 0" },
+      { stdin: "27 39 30 31 11 16 6 32 8 10", expectedStdout: "183 117 48 13 55 82 104 142 182 200" },
+    ],
+  }),
+
+  p({
+    ...base,
+    slug: "galactic-toll-booth",
+    difficulty: "EASY",
+    tier: "TIER_1",
+    patternFamily: "GREEDY",
+    title: "Pastry Shop Register",
+    patternTags: ["arrays","greedy","simulation","counting"],
+    signatureId: "fn:ints->bool",
+    avgSolveSeconds: 400,
+    promptMarkdown: "You are operating a pop-up bakery stand selling a signature pastry that costs exactly $5. \n\nCustomers queue up to buy one pastry each and pay using a 5, 10, or $20 bill. You start your shift with no cash in the register. You must provide the correct change to every customer in the exact order they arrive, using only the bills you have received from previous sales.\n\nReturn `true` if you can successfully give the correct exact change to every customer, and `false` otherwise.\n\nGiven an integer array `payments` where `payments[i]` is the bill denomination the `i`-th customer pays with, determine whether you can complete all transactions smoothly.\n\n**Constraints**\n- `1 <= payments.length <= 1000`\n- `payments[i]` is either `5`, `10`, or `20`.\n\n**Example 1**\n```\ninput:\n5 5 5 10 20\noutput:\ntrue\n```\n*Explanation:*\n- *First 3 customers pay with 5. No change needed. We have three 5 bills.*\n- *4th customer pays with 10. We return one 5 bill as change. We now have two 5 bills and one 10 bill.*\n- *5th customer pays with 20. We return one 10 bill and one $5 bill as change.*\n\n**Example 2**\n```\ninput:\n5 5 10 10 20\noutput:\nfalse\n```\n*Explanation:*\n- *First 2 customers pay with 5. We have two 5 bills.*\n- *3rd customer pays with 10. We return one 5 bill as change. We now have one 5 bill and one 10 bill.*\n- *4th customer pays with 10. We return one 5 bill as change. We now have zero 5 bills and two 10 bills.*\n- *5th customer pays with 20. We need to give 15 as change, but we only have $10 bills.*\n\n**Example 3**\n```\ninput:\n5\noutput:\ntrue\n```\n*Explanation: The only customer pays with exact change.*\n\n**Follow-up**\nWhy is a greedy strategy (always preferring to give a 10 and a 5 instead of three 5s) strictly optimal in this scenario?",
+    editorialMarkdown: "## Galactic Toll Booth\n\nThe problem asks us to determine whether we can provide exact change to every customer given a sequential list of their payment bills. We start with no change, items cost `5`, and customers pay with `5`, `10`, or `20`.\n\nWe can simulate the register greedily. We track the number of `5` and `10` bills we have (we don't need to track `20` bills, since they cannot be used as change).\n- When a `5` is received, we simply keep it.\n- When a `10` is received, we must give one `5` in change. If we have one, we decrement our `5` count and increment our `10` count. If not, we fail.\n- When a `20` is received, we need to give `15` in change. The optimal strategy is to give one `10` and one `5` if possible, because `5` bills are more versatile (they can be used to make change for both `10`s and `20`s). If we don't have a `10`, we must use three `5` bills. If neither combination is available, we fail.\n\n**Trap**: When making change for a `20`, using three `5` bills instead of one `10` and one `5` (when you possess both) can lead to failing future transactions unnecessarily. Always prioritize giving away the `10`.\n\n**Complexity:**\n- **Time:** O(N), where N is the number of payments. We process each payment in constant time.\n- **Space:** O(1), as we only need two integer variables to track our change inventory.",
+    referenceSolution: {
+      JAVASCRIPT: "function solve(payments) {\n    let fives = 0;\n    let tens = 0;\n    for (let p of payments) {\n        if (p === 5) {\n            fives++;\n        } else if (p === 10) {\n            if (fives === 0) return false;\n            fives--;\n            tens++;\n        } else if (p === 20) {\n            if (tens > 0 && fives > 0) {\n                tens--;\n                fives--;\n            } else if (fives >= 3) {\n                fives -= 3;\n            } else {\n                return false;\n            }\n        }\n    }\n    return true;\n}",
+      TYPESCRIPT: "function solve(payments: number[]): boolean {\n    let fives = 0;\n    let tens = 0;\n    for (let p of payments) {\n        if (p === 5) {\n            fives++;\n        } else if (p === 10) {\n            if (fives === 0) return false;\n            fives--;\n            tens++;\n        } else if (p === 20) {\n            if (tens > 0 && fives > 0) {\n                tens--;\n                fives--;\n            } else if (fives >= 3) {\n                fives -= 3;\n            } else {\n                return false;\n            }\n        }\n    }\n    return true;\n}",
+      PYTHON: "def solve(payments):\n    fives = 0\n    tens = 0\n    for p in payments:\n        if p == 5:\n            fives += 1\n        elif p == 10:\n            if fives == 0:\n                return False\n            fives -= 1\n            tens += 1\n        elif p == 20:\n            if tens > 0 and fives > 0:\n                tens -= 1\n                fives -= 1\n            elif fives >= 3:\n                fives -= 3\n            else:\n                return False\n    return True",
+      JAVA: "    static boolean solve(int[] payments) {\n        int fives = 0;\n        int tens = 0;\n        for (int p : payments) {\n            if (p == 5) {\n                fives++;\n            } else if (p == 10) {\n                if (fives == 0) return false;\n                fives--;\n                tens++;\n            } else if (p == 20) {\n                if (tens > 0 && fives > 0) {\n                    tens--;\n                    fives--;\n                } else if (fives >= 3) {\n                    fives -= 3;\n                } else {\n                    return false;\n                }\n            }\n        }\n        return true;\n    }",
+      CPP: "#include <vector>\n\nusing namespace std;\n\nbool solve(vector<int> payments) {\n    int fives = 0;\n    int tens = 0;\n    for (int p : payments) {\n        if (p == 5) {\n            fives++;\n        } else if (p == 10) {\n            if (fives == 0) return false;\n            fives--;\n            tens++;\n        } else if (p == 20) {\n            if (tens > 0 && fives > 0) {\n                tens--;\n                fives--;\n            } else if (fives >= 3) {\n                fives -= 3;\n            } else {\n                return false;\n            }\n        }\n    }\n    return true;\n}",
+      GO: "func solve(payments []int) bool {\n    fives := 0\n    tens := 0\n    for _, p := range payments {\n        if p == 5 {\n            fives++\n        } else if p == 10 {\n            if fives == 0 {\n                return false\n            }\n            fives--\n            tens++\n        } else if p == 20 {\n            if tens > 0 && fives > 0 {\n                tens--\n                fives--\n            } else if fives >= 3 {\n                fives -= 3\n            } else {\n                return false\n            }\n        }\n    }\n    return true\n}",
+    },
+    tests: [
+      { stdin: "5 5 5 10 20", expectedStdout: "true", isSample: true },
+      { stdin: "5 5 10 10 20", expectedStdout: "false", isSample: true },
+      { stdin: "5", expectedStdout: "true", isSample: true },
+      { stdin: "10", expectedStdout: "false" },
+      { stdin: "20", expectedStdout: "false" },
+      { stdin: "5 5 5 5 20 20 5 5 5 20", expectedStdout: "false" },
+      { stdin: "5 5 10 20 5 5 5 5 5 5 5 5 5 10 20 20 20", expectedStdout: "true" },
+      { stdin: "5 5 10 20 5 5 5 5 5 5 5 5 5 10 20 20", expectedStdout: "true" },
+    ],
+  }),
+
+  p({
+    ...base,
+    slug: "access-code-frequencies",
+    difficulty: "EASY",
+    tier: "TIER_1",
+    patternFamily: "LINKED_LIST",
+    title: "Access Code Frequencies",
+    patternTags: ["linked-list","hash-map","counting","frequency"],
+    signatureId: "fn:list->list",
+    avgSolveSeconds: 500,
+    promptMarkdown: "You have a linked list representing a log of security access codes used to enter a secure door. You need to analyze the log to determine how many times each code was used. \n\nReturn a new linked list containing the frequencies of each unique access code. The frequencies should appear in the new list in the exact order that the access codes first appeared in the original log.\n\n**Constraints**\n- The number of nodes in the list is in the range `[0, 100]`.\n- `1 <= Node.val <= 100`\n\n**Example 1**\n```\ninput:\n1 1 2 1 3\noutput:\n3 1 1\n```\n*Explanation: Code 1 appeared 3 times, code 2 appeared 1 time, and code 3 appeared 1 time. They first appeared in the order 1, 2, 3.*\n\n**Example 2**\n```\ninput:\n5 5 5\noutput:\n3\n```\n*Explanation: Code 5 appeared 3 times. It is the only unique code.*\n\n**Example 3**\n```\ninput:\n1 2 3\noutput:\n1 1 1\n```\n*Explanation: Each code appeared exactly once.*\n\n**Follow-up**\nCan you do this by constructing the new list nodes dynamically during the first pass, updating their values in place?",
+    editorialMarkdown: "## Access Code Frequencies\n\nThe problem asks us to count the occurrences of each element in a linked list and return a new linked list with these counts. The values in the output list must appear in the order that the elements were first seen.\n\nSince we need both counting and order preservation, a Hash Map along with an array to track order is the ideal approach. We traverse the input linked list, counting each node's value in the map and adding new unique values to our order array. After the traversal, we iterate through the order array, constructing our new linked list using the counts from the hash map. \n\n**Trap**: Be careful with creating the new linked list. Use a dummy head node to simplify the initialization and attachment logic. Don't forget to handle the edge case of an empty input list.\n\n**Complexity:**\n- **Time:** O(N), where N is the number of nodes in the linked list. We traverse the list once, and then we iterate over the unique values to create the result list. Both take linear time.\n- **Space:** O(U), where U is the number of unique elements in the linked list, due to the hash map and the array tracking the order. This is bounded by O(N).",
+    referenceSolution: {
+      JAVASCRIPT: "function solve(head) {\n    if (!head) return null;\n    const counts = new Map();\n    let curr = head;\n    while (curr) {\n        counts.set(curr.val, (counts.get(curr.val) || 0) + 1);\n        curr = curr.next;\n    }\n    \n    const NodeCls = head.constructor;\n    let dummy = new NodeCls(0);\n    let tail = dummy;\n    for (const count of counts.values()) {\n        tail.next = new NodeCls(count);\n        tail = tail.next;\n    }\n    return dummy.next;\n}",
+      TYPESCRIPT: "function solve(head: any): any {\n    if (!head) return null;\n    const counts = new Map<number, number>();\n    const order: number[] = [];\n    let curr = head;\n    while (curr) {\n        if (!counts.has(curr.val)) {\n            order.push(curr.val);\n            counts.set(curr.val, 0);\n        }\n        counts.set(curr.val, counts.get(curr.val)! + 1);\n        curr = curr.next;\n    }\n    \n    const NodeCls = head.constructor as any;\n    let dummy = new NodeCls(0);\n    let tail = dummy;\n    for (let val of order) {\n        tail.next = new NodeCls(counts.get(val));\n        tail = tail.next;\n    }\n    return dummy.next;\n}",
+      PYTHON: "def solve(head):\n    if not head:\n        return None\n    counts = {}\n    order = []\n    curr = head\n    while curr:\n        if curr.val not in counts:\n            order.append(curr.val)\n            counts[curr.val] = 0\n        counts[curr.val] += 1\n        curr = curr.next\n    \n    NodeCls = type(head)\n    dummy = NodeCls(0)\n    tail = dummy\n    for val in order:\n        tail.next = NodeCls(counts[val])\n        tail = tail.next\n    return dummy.next",
+      JAVA: "    static ListNode solve(ListNode head) {\n        if (head == null) return null;\n        java.util.Map<Integer, Integer> counts = new java.util.HashMap<>();\n        java.util.List<Integer> order = new java.util.ArrayList<>();\n        \n        ListNode curr = head;\n        while (curr != null) {\n            if (!counts.containsKey(curr.val)) {\n                order.add(curr.val);\n                counts.put(curr.val, 0);\n            }\n            counts.put(curr.val, counts.get(curr.val) + 1);\n            curr = curr.next;\n        }\n        \n        ListNode dummy = new ListNode(0);\n        ListNode tail = dummy;\n        for (int val : order) {\n            tail.next = new ListNode(counts.get(val));\n            tail = tail.next;\n        }\n        return dummy.next;\n    }",
+      CPP: "#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\n// ListNode is defined by the runner\nListNode* solve(ListNode* head) {\n    if (!head) return nullptr;\n    unordered_map<int, int> counts;\n    vector<int> order;\n    \n    ListNode* curr = head;\n    while (curr) {\n        if (counts.find(curr->val) == counts.end()) {\n            order.push_back(curr->val);\n        }\n        counts[curr->val]++;\n        curr = curr->next;\n    }\n    \n    ListNode* dummy = new ListNode(0);\n    ListNode* tail = dummy;\n    for (int val : order) {\n        tail->next = new ListNode(counts[val]);\n        tail = tail->next;\n    }\n    return dummy->next;\n}",
+      GO: "func solve(head *ListNode) *ListNode {\n    if head == nil {\n        return nil\n    }\n    counts := make(map[int]int)\n    var order []int\n    for curr := head; curr != nil; curr = curr.Next {\n        if counts[curr.Val] == 0 {\n            order = append(order, curr.Val)\n        }\n        counts[curr.Val]++\n    }\n    \n    dummy := &ListNode{}\n    tail := dummy\n    for _, val := range order {\n        tail.Next = &ListNode{Val: counts[val]}\n        tail = tail.Next\n    }\n    return dummy.Next\n}",
+    },
+    tests: [
+      { stdin: "1 1 2 1 3", expectedStdout: "3 1 1", isSample: true },
+      { stdin: "5 5 5", expectedStdout: "3", isSample: true },
+      { stdin: "1 2 3", expectedStdout: "1 1 1", isSample: true },
+      { stdin: "", expectedStdout: "" },
+      { stdin: "42", expectedStdout: "1" },
+      { stdin: "9 9 2 2 2 7 8 8 8 8", expectedStdout: "2 3 1 4" },
+      { stdin: "10 10 5 10 10 15 15", expectedStdout: "4 1 2" },
+      { stdin: "1 2 3 1 4 5 4", expectedStdout: "2 1 1 2 1" },
+    ],
+  }),
+];
