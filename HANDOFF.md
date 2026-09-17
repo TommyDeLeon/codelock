@@ -1,4 +1,4 @@
-# Handoff — reward and stretch (2026-09-16)
+# Handoff — reward, stretch and corpus growth (2026-09-16 → 17)
 
 ## The problem
 
@@ -221,14 +221,58 @@ The judge is not published to the host by Compose; `npm run judge:host`
 starts a second instance of the built image on `127.0.0.1:2358` (same
 socket mount as Compose — stop it with `judge:host:stop` when done).
 
-### First batch
+### Pipeline as it runs now (2026-09-17)
 
-`gen-t1-arrays-hashing-a`: 4 problems admitted (`first-solo-guest`,
-`election-winner`, `count-vip-customers`, `inventory-restock-needed`), all
-ARRAYS_HASHING / TIER_1 / EASY, hash-map problems with LeetCode-format
-statements. Imported; the database holds 700 problems, 693 active. Codex
-review was skipped (binary not found under `execFileSync` on Windows; fixed
-to `codex.cmd` for the next run; Codex quota also resets Sep 19).
+The index was saved by hand to `data/leetcode-index.json` (gitignored;
+metadata only). Anchors are taken easy-first, sharded across workers by an
+FNV hash of the slug (`--shard k/N`), so five workers never draft the same
+anchor. Every batch: draft (6 anchors) → local checks → judge, all six
+languages → one repair round for judge rejections → statement review by
+Codex plus a second reader from the other pool (`--review-model`; chain
+falls through to `gpt-oss-120b-medium`, then `gemini-3.8-flash-medium` /
+`claude-sonnet-4-6`) → flagged statements rewritten once or dropped. A
+batch nobody could read exits 3 with `"unreviewed"` in the summary and the
+loop waits 15 minutes instead of drafting more. Zero-yield batches still
+record their anchors in `coverage.json` (`ours: null`, `reason`) so the
+loop advances.
+
+Scripts (all under `apps/api/scripts/`, logs in `author-out/`, shared log
+`author-loop.log`, stop file `.author-stop`, locks `src/corpus/.author-lock`
+and `scripts/.author-gitlock`):
+
+- `author-loop.sh START ANCHORS SHARD MODEL` — anchored batches forever;
+  commits `corpus` every 5 batches. Quota errors are parsed ("Resets in
+  1h15m") and the worker sleeps until the reset — it never switches model,
+  per the owner.
+- `upgrade-statements.ts` / `upgrade-loop.sh SHARD MODEL` — rewrites the
+  hand-authored statements into the same interview format, as an overlay in
+  `src/corpus/upgrades.ts` applied at load (`upgrade.ts`); the originals are
+  untouched. Review with one rewrite-with-notes attempt, then `skipped`
+  (original kept). Commits `statements`.
+- `refresh-tests.ts` / `refresh-loop.sh` — for upgrades skipped as
+  "closely follows", the model proposes ≥10 inputs, all six references run on
+  the judge, inputs where all agree become replacement `tests` in the
+  overlay. Commits `tests`.
+- `sweep-coverage.py [--apply]` — returns anchors whose draft passed the
+  judge but was dropped only because the rewrite/repair call hit a quota.
+  Run after each quota window.
+- `judge-watchdog.sh` — restarts the host judge when `queued>0 && active==0`
+  for 5 minutes. `npm run judge:host` publishes the judge on
+  `127.0.0.1:2358` (`JUDGE_CONCURRENCY=10`).
+
+Fleet as left running: w0/w2/w4 Gemini, w1/w3 Claude (`claude-sonnet-4-6`),
+up0 Gemini, up1 Claude, rf Gemini, watchdog. Codex `codex exec` reviews
+every batch when its 5-hour cap allows. Throughput with five workers sharing
+one judge is about 60 anchors an hour while quotas last; Gemini and Claude
+each deplete a 5-hour window in roughly 90 minutes of drafting.
+
+Counts at handoff: 384 anchors covered, 57 set aside (missing signatures
+such as `fn:matrix,int->bool` and `fn:strings->ints`, which the owner chose
+not to add; site mentions; anchors too close to the drafted title), 233 of
+695 originals upgraded (11 `skipped`, 16 with refreshed tests). Two batches
+were admitted without statement review before the `unreviewed` gate
+existed: see `scripts/needs-review.txt` (7 problems) — read them by hand or
+re-run the reviewer on them.
 
 ### Frontier
 
@@ -238,12 +282,8 @@ fewest undemonstrated skills and which skills they are. For the owner today:
 
 ### Outstanding
 
-- **The index file.** Saving `https://leetcode.com/api/problems/all/` from
-  the shell was blocked by the session's sandbox classifier. It needs to be
-  saved by hand (one `curl`/browser save) to e.g. `data/leetcode-index.json`
-  — metadata only — and then `npm run author:batch -w @codelock/api --
-  --anchors data/leetcode-index.json --count 6 --out gen-lc-001 --codex`,
-  repeated. Pace is judge-bound: roughly 4 admitted problems a minute, so
-  4,055 is on the order of 17 judge-hours across sessions.
+- Keep the loops running until "every anchor in the index is covered";
+  re-run `sweep-coverage.py --apply` after quota windows.
+- Review `scripts/needs-review.txt`.
 - `GENERATED` problems have no reviewed starter hint content; they get the
   rule-based ladder like the rest of the corpus.
