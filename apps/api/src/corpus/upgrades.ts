@@ -1928,9 +1928,56 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "The first line is a list made only of `0`s and `1`s. The second line is a\nnumber `k`.\n\nYou may change at most `k` of the zeros into ones. Return the length of the\nlongest run of neighbouring `1`s you can end up with.\n\n**Example**\n\n```\ninput:  1 1 0 1 1 0 1\n        1\noutput: 5\n```\n\nFlip the zero at position 3 and the first five values become `1 1 1 1 1`.\nFlipping the other zero instead only reaches a run of 4, and with one flip\nyou cannot bridge both zeros.\n\n```\ninput:  0 0 0\n        0\noutput: 0\n```\n\nWith `k` of `0` you may not flip anything, so the answer is the longest run\nof `1`s already present — here there are none, and the answer is `0`.\n\nGuarantees: the list has at least one value, every value is `0` or `1`, and\n`k` is zero or more. If `k` is at least the number of zeros, the whole list\ncan be turned into `1`s and the answer is its length.",
     "editorialMarkdown": "## A window that grows greedily and shrinks only when it must\n\nRephrase the task and it stops being about flipping: you want the longest\ncontiguous stretch that contains **at most `k` zeros**. Every zero inside such\na stretch gets flipped; every one is already fine. Counting zeros is much\neasier than reasoning about which zeros to spend flips on.\n\nSo keep a window `[left, right]` and a count of the zeros inside it. Push\n`right` forward one step at a time. If the window now holds more than `k`\nzeros it is illegal, so pull `left` forward until it is legal again.\n\n```\nleft = 0, zeros = 0, best = 0\nfor right in 0..n-1:\n    if a[right] == 0: zeros += 1\n    while zeros > k:\n        if a[left] == 0: zeros -= 1\n        left += 1\n    best = max(best, right - left + 1)\n```\n\n**Why the left edge never moves backwards.** Suppose for a given `right` the\nsmallest legal `left` is `L`. Now advance to `right + 1`. Adding a value can\nonly increase the zero count, never decrease it, so every start position that\nwas already illegal for `right` is still illegal for `right + 1`. Nothing to\nthe left of `L` can ever become legal again. The best window ending at each\nposition therefore starts at a non-decreasing index, and `left` may march\nforward monotonically. Each index is entered once by `right` and left once by\n`left`, which is why two nested loops still add up to O(n) rather than O(n^2).\n\nThe quiet mistake this problem invites is shrinking with `if` instead of\n`while`. One `if` removes at most one element, which is enough whenever the\nwindow overshoots by exactly one — and pushing `right` one step can only add\none zero, so on this problem `if` looks right and passes most inputs. It\nbreaks the moment you reuse the shape on a problem where the right edge can\nadd more than one unit of badness at a time, and it breaks here too if you\never let `right` jump. Write `while`; it is correct in both worlds and costs\nnothing.\n\nThe other quiet mistake is measuring `best` before restoring validity —\nreading `right - left + 1` inside the growth step rather than after the shrink\nloop. That records the width of an illegal window, and it only shows up on\ninputs where the window actually overflows, so a test made of all `1`s will\nnever catch it.\n\nO(n) time, since both pointers only move right, and O(1) space — the window is\nsummarised by one integer count.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode 1004 \"Max Consecutive Ones III\" — the attendance/excused-absence framing is a direct paraphrase of the standard sliding-window problem "
+    "tests": [
+      {
+        "stdin": "1 0 0 1\n1",
+        "expectedStdout": "2",
+        "isSample": true
+      },
+      {
+        "stdin": "1 0 1 0 1\n2",
+        "expectedStdout": "5",
+        "isSample": true
+      },
+      {
+        "stdin": "0\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "0\n1",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "0 0 0 0\n10",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "1 1 1 1 1 1\n2",
+        "expectedStdout": "6"
+      },
+      {
+        "stdin": "0 0 0 0 0\n0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 1 0 1 1 1 0 1\n0",
+        "expectedStdout": "3"
+      },
+      {
+        "stdin": "0 1 0 1 0 1 0 1 0 1\n3",
+        "expectedStdout": "7"
+      },
+      {
+        "stdin": "1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0 1 1 0 0\n4",
+        "expectedStdout": "10"
+      },
+      {
+        "stdin": "0 1 1 0 1 0\n5",
+        "expectedStdout": "6"
+      }
+    ]
   },
   "longest-run-with-two-distinct": {
     "promptMarkdown": "Return the length of the longest contiguous stretch of a string that uses at\nmost two different characters.\n\nThe stretch must be a run of neighbouring characters. Return only its length.\n\n**Example**\n\n```\ninput:  eceba\noutput: 3\n```\n\nThe stretch `ece` uses only `e` and `c`. Extending it to `eceb` would bring\nin a third character.\n\n```\ninput:  aaaa\noutput: 4\n```\n\nWhen every character is the same the whole string qualifies — one distinct\ncharacter is still \"at most two\".\n\nGuarantees: the string has at least one character, so the answer is never\n`0`. A one-character string gives `1`. Characters are compared exactly, so\nupper and lower case count as different.",
@@ -1987,9 +2034,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "You are given a list of words on one line, separated by spaces.\n\nPrint the longest prefix that **every** word in the list starts with.\n\n**Example**\n\n```\ninput:  flower flow flight\noutput: fl\n```\n\nAll three start with `fl`. They do not all start with `flo`, because\n`flight` does not.\n\nGuarantees: there is always at least one word, and every word is one or\nmore lowercase letters `a`–`z`.\n\nThe named edge case: when the words share nothing — `dog cat bird` — the\nanswer is the empty prefix, so print an **empty line**. A list of one word\nanswers with that whole word.",
     "editorialMarkdown": "## Trie: walk the shared path until it forks\n\nPush every word into a trie. The root has one child per distinct first\nletter, that child has one per distinct second letter, and so on. Now the\nquestion answers itself geometrically: the longest shared prefix is the path\nfrom the root that runs while there is exactly **one** way forward and no\nword has ended yet.\n\n```\nnode = root, out = \"\"\nwhile node is not the end of a word and node has exactly one child c:\n    out += c\n    node = child(node, c)\n```\n\nWhy the fork is the right stopping point: two children at a node means two\nwords disagreed on that character, so no prefix reaching past it is common\nto both. And a word ending at the node means one word is exactly this long,\nso nothing longer can be a prefix of it.\n\nWhat the trie buys you over comparing the words pairwise is that each\ncharacter of each word is looked at once, on the way in, instead of being\nrescanned for every comparison. The prefixes are shared, so the work on them\nis shared too.\n\nThe quiet mistake is forgetting the word-end check and only stopping at a\nfork. On `pre prefix` the trie path `p → r → e → f → i → x` never forks, so\nthat version answers `prefix` — a string the shorter word does not even\ncontain. It is quiet because it passes on every input where no word is a\nprefix of another, which is most of the inputs you will invent by hand.\n\nO(total characters) time to build and O(length of the answer) to walk, so\nbuilding the trie is what bounds it. Space is O(total characters) for the\nnodes — which is the honest cost of the structure, and why a plain\ncharacter-by-character scan across the words is the better answer if you only\never ask this question once.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #14 \"Longest Common Prefix\" (archivist/log-file framing paraphrases the known statement)"
+    "tests": [
+      {
+        "stdin": "apple application app",
+        "expectedStdout": "app",
+        "isSample": true
+      },
+      {
+        "stdin": "test testing tester",
+        "expectedStdout": "test",
+        "isSample": true
+      },
+      {
+        "stdin": "b",
+        "expectedStdout": "b"
+      },
+      {
+        "stdin": "hello hello",
+        "expectedStdout": "hello"
+      },
+      {
+        "stdin": "cat dog horse",
+        "expectedStdout": ""
+      },
+      {
+        "stdin": "car cart carpet carpool",
+        "expectedStdout": "car"
+      },
+      {
+        "stdin": "zz zzz zzzz z",
+        "expectedStdout": "z"
+      },
+      {
+        "stdin": "coding code codex",
+        "expectedStdout": "cod"
+      },
+      {
+        "stdin": "xyz xyza xyzb xyzc",
+        "expectedStdout": "xyz"
+      },
+      {
+        "stdin": "a a a a a a a a a a a a a a a a a a a a",
+        "expectedStdout": "a"
+      }
+    ]
   },
   "longest-unique-substring": {
     "promptMarkdown": "## Longest Run Without a Repeat\n\nYou are given a string of characters. Find the length of the longest contiguous substring that contains no repeated character. A **contiguous** substring is a run of neighbouring characters — you may not skip positions.\n\nCharacters are compared exactly; uppercase and lowercase count as different. The string always has at least one character, so the answer is never 0.\n\n**Constraints**\n\n- 1 ≤ length of string ≤ 50 000\n- Characters may be any printable ASCII character\n- Upper and lowercase letters are distinct\n\n**Example 1**\n\n```\ninput:\nabcabcbb\noutput: 3\n```\n\nThe best runs are `abc`, `bca`, and `cab`, all of length 3. A fourth character always repeats one already in the window.\n\n**Example 2**\n\n```\ninput:\nbbbbb\noutput: 1\n```\n\nEvery character is the same, so the longest repeat-free run is a single `b`.\n\n**Example 3**\n\n```\ninput:\nabba\noutput: 2\n```\n\nThe best runs are `ab` and `ba`, each of length 2.\n\n**Follow-up:** Can you solve this in O(n) time using O(k) extra space, where k is the size of the character alphabet?",
@@ -2151,17 +2241,103 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promptMarkdown": "The first line is a list of numbers. The second line is a window width `k`.\n\nSlide a window of width `k` across the list from left to right, one step at a\ntime, and report the largest value inside it at each position. Return those\nmaxima in order, as a list.\n\n**Example**\n\n```\ninput:  1 3 -1 -3 5 3 6 7\n        3\noutput: 3 3 5 5 6 7\n```\n\nThe windows are `1 3 -1`, `3 -1 -3`, `-1 -3 5`, `-3 5 3`, `5 3 6`, `3 6 7`,\nand their maxima are `3 3 5 5 6 7`. A list of length `n` produces exactly\n`n - k + 1` answers.\n\n```\ninput:  4 4 4 4\n        4\noutput: 4\n```\n\nWhen `k` equals the length there is a single window, so the output is one\nnumber. All values being equal changes nothing.\n\nGuarantees: `k` is at least 1 and never larger than the length of the list,\nso the output is never empty. Values may be negative. With `k` of `1` the\noutput is the list itself.",
     "editorialMarkdown": "## A monotonic deque: the window remembers only its possible futures\n\nRecomputing the maximum for each of the `n - k + 1` windows costs O(k) each,\nso O(n*k). A heap gets it to O(n log k) but has to cope with stale entries.\nThe O(n) answer is a deque of **indices** whose values are strictly\ndecreasing from front to back.\n\n```\ndeque = []            # indices, values decreasing front -> back\nout = []\nfor right in 0..n-1:\n    while deque and a[deque.back] <= a[right]: deque.pop_back()\n    deque.push_back(right)\n    if deque.front <= right - k: deque.pop_front()   # slid out of the window\n    if right >= k - 1: out.append(a[deque.front])\n```\n\n**Why a smaller element can be discarded forever.** Take two positions `i < j`\nwith `a[i] <= a[j]`. Any window that still contains `i` must start at or before\n`i` and end at or after the current right edge, so it contains `j` as well —\n`j` is between them. In every such window `a[j]` is at least as large as\n`a[i]`, so `a[i]` can never be the unique maximum, and reporting `a[j]` is\nalways at least as correct. Once a bigger-or-equal value arrives to its right,\n`i` has no possible future in which it matters. That is why the pop is\npermanent and not a temporary reordering, and it is what keeps the total work\nlinear: every index is pushed once and popped at most once.\n\n**Why the left edge never moves backwards.** The window width is fixed, so the\nleft edge is `right - k + 1` and advances in lockstep. The deque front is the\nanswer for the current window precisely because everything ahead of it was\neither dominated (popped from the back) or has slid out of range (popped from\nthe front). Both kinds of removal are forward-only, which is what turns the\nnested `while` into amortised O(1) per step.\n\nThe quiet mistake is forgetting to remove the outgoing element — dropping the\nfront-expiry check because the back-popping already keeps the deque short.\nThe front index then refers to a value that left the window steps ago, and the\noutput holds a maximum that is no longer inside. It is quiet because it only\nshows on inputs where the running maximum sits near the left edge and expires:\non `1 2 3 4 5` with `k = 2` the deque never holds a stale front and the answer\nis right; on `9 8 7 6` with `k = 2` the buggy version reports `9 9 9` instead\nof `9 8 7`.\n\nThe second is popping with `<` instead of `<=` when the entering value ties.\nKeeping equal values is still correct — they expire in order — but only if the\nfront-expiry check is by index, not by value. Comparing values to decide what\nhas left the window is how ties turn into wrong answers.\n\nO(n) time, amortised, bounded by each index entering and leaving the deque once.\nO(k) space, since the deque never holds more than one window's worth of indices.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #239 \"Sliding Window Maximum\" — the array, window size k, and left-to-right max output match the known statement's phrasing and structu"
+    "tests": [
+      {
+        "stdin": "5 1 5 1 5\n3",
+        "expectedStdout": "5 5 5",
+        "isSample": true
+      },
+      {
+        "stdin": "2 4 6 8 10\n3",
+        "expectedStdout": "6 8 10",
+        "isSample": true
+      },
+      {
+        "stdin": "42\n1",
+        "expectedStdout": "42"
+      },
+      {
+        "stdin": "10 20 5 15\n4",
+        "expectedStdout": "20"
+      },
+      {
+        "stdin": "8 6 4 2 0\n1",
+        "expectedStdout": "8 6 4 2 0"
+      },
+      {
+        "stdin": "7 7 7 7 7 7\n2",
+        "expectedStdout": "7 7 7 7 7"
+      },
+      {
+        "stdin": "-10 -20 -30 -40 -50\n2",
+        "expectedStdout": "-10 -20 -30 -40"
+      },
+      {
+        "stdin": "-5 0 -2 0 -5\n2",
+        "expectedStdout": "0 0 0 0"
+      },
+      {
+        "stdin": "1 3 5 7 5 3 1\n3",
+        "expectedStdout": "5 7 7 7 5"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n5",
+        "expectedStdout": "5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
+      }
+    ]
   },
   "median-of-two-sorted": {
     "promptMarkdown": "Find the middle of two sorted lists without merging them.\n\nBoth lines are lists **sorted from smallest to largest**. Imagine the two\nmerged into one sorted sequence of length `n`. Return **two** numbers: the\nvalue at position `(n - 1) / 2` and the value at position `n / 2`, both\nrounded down and counted from `0`. Their average is the median.\n\n**Example**\n\n```\ninput:  1 2\n        3 4\noutput: 2 3\n```\n\nMerged, that is `1 2 3 4`. Positions 1 and 2 hold `2` and `3`, so the median\nwould be `2.5`.\n\nWhen the combined length is **odd** the two positions coincide, so the same\nvalue is printed twice — `1 3` and `2` merge to `1 2 3`, and the answer is\n`2 2`. Either list may be **empty**, which on the wire is an empty line; they\nare never both empty. Duplicates are allowed, across the two lists and within\none, and values may be negative.",
     "editorialMarkdown": "## Binary search on the partition point\n\nMerging the lists and indexing into the result is O(n + m) and is a fine first\nanswer. The logarithmic solution never builds the merge; it searches for the\nright place to **cut**.\n\nThe idea: a correct answer corresponds to slicing both lists so that the left\npieces together hold exactly the first `half = (n + m + 1) / 2` values of the\nmerged sequence. Take `i` items from `a` and the remaining `j = half - i` from\n`b`. That single number `i` determines everything, so the search space is\n`i` in `[0, n]` — and searching the **shorter** list keeps that range small\nand keeps `j` in range.\n\nA cut is correct exactly when both left pieces stay below both right pieces:\n\n```\naLeft  = a[i-1] if i > 0 else -inf      aRight = a[i] if i < n else +inf\nbLeft  = b[j-1] if j > 0 else -inf      bRight = b[j] if j < m else +inf\ncorrect  <=>  aLeft <= bRight and bLeft <= aRight\n```\n\nEach list is already internally sorted, so `aLeft <= aRight` and\n`bLeft <= bRight` come free; only the two cross-comparisons need checking.\nWhen they hold, `max(aLeft, bLeft)` is the last value on the left of the\nmerged sequence and `min(aRight, bRight)` is the first on the right — the two\nvalues being asked for. If the total is odd, `half` gave the left side the\nextra element, so both requested positions land on `max(aLeft, bLeft)`.\n\n**Why the discarded half cannot contain the answer.** If `aLeft > bRight`, the\ncut took too much from `a`: a value on `a`'s left exceeds a value on `b`'s\nright, which cannot happen in a correct split. Taking *even more* from `a`\nonly makes `aLeft` larger and `bRight` smaller, so every `i' > i` is wrong too\n— the whole range `[i, hi]` is eliminated at once, and `hi = i - 1`. The\nsymmetric case, `bLeft > aRight`, eliminates `[lo, i]` and sets `lo = i + 1`.\nThe two failing conditions are mutually exclusive and cover everything that is\nnot correct, so each probe either finishes or halves the range.\n\nThe quiet mistake is the sentinels. Without treating `i == 0` as negative\ninfinity and `i == n` as positive infinity, the empty-side cuts read off the\nend of an array — or, worse, a language that quietly returns a default value\ngives you `0` as the \"missing\" neighbour, and the comparison silently accepts\na wrong cut. It fails only when one list is entirely on one side of the other,\nwhich is exactly the empty-list and disjoint-range cases the statement names.\nA related one: `half` must be `(n + m + 1) / 2`, not `(n + m) / 2`. The `+ 1`\nputs the extra element on the left for odd totals, which is what lets the odd\ncase be answered from `max(aLeft, bLeft)` alone; without it the odd case reads\nthe wrong side and lands one position off.\n\nThe search itself is an ordinary `lo <= hi` loop over `i`, so the standard\ntraps apply: both updates must step past `i` or the range stalls into an\n**infinite loop**, and the midpoint must be `lo + (hi - lo) / 2` rather than\n`(lo + hi) / 2`, which overflows in fixed-width integer types.\n\nO(log(min(n, m))) time — the search runs over the shorter list only — and O(1)\nspace, since nothing is merged and nothing is copied.",
     "promoteSamples": [],
-    "model": "gemini-3.1-pro-low",
+    "model": "refresh",
     "date": "2026-09-17",
-    "skipped": "review: closely follows LeetCode #4 \"Median of Two Sorted Arrays\" — the two-sorted-arrays setup, no-full-merge framing, and O(log n) follow-up mirror the known problem "
+    "tests": [
+      {
+        "stdin": "2 6\n4 8",
+        "expectedStdout": "4 6",
+        "isSample": true
+      },
+      {
+        "stdin": "10 20\n30",
+        "expectedStdout": "20 20",
+        "isSample": true
+      },
+      {
+        "stdin": "\n5 10 15",
+        "expectedStdout": "10 10"
+      },
+      {
+        "stdin": "-5 0 5\n",
+        "expectedStdout": "0 0"
+      },
+      {
+        "stdin": "3 3 3\n3 3",
+        "expectedStdout": "3 3"
+      },
+      {
+        "stdin": "-10 -5\n-15 -2",
+        "expectedStdout": "-10 -5"
+      },
+      {
+        "stdin": "-2 0\n0 2",
+        "expectedStdout": "0 0"
+      },
+      {
+        "stdin": "9\n9",
+        "expectedStdout": "9 9"
+      },
+      {
+        "stdin": "1 4 7 10\n2 5 8 11",
+        "expectedStdout": "5 7"
+      },
+      {
+        "stdin": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40",
+        "expectedStdout": "20 21"
+      }
+    ]
   },
   "merge-overlapping-ranges": {
     "promptMarkdown": "A shared facility tracks reservations as blocks of time, represented by start and end hours. To optimize the schedule display, you need to consolidate any reservations that overlap or sit back-to-back into continuous uninterrupted blocks.\n\nGiven a list of time blocks where each is defined by `[start, end]`, combine all intersecting or adjacent blocks. Return the consolidated schedule ordered by the start time, and then by the end time.\n\n**Constraints**\n- There are at most 8 blocks provided.\n- An empty input yields an empty schedule.\n- `start` will always be less than or equal to `end`.\n\n**Example 1**\n```\ninput:\n5 7;1 3;2 4\noutput: 1 4;5 7\n```\nThe blocks `1 3` and `2 4` intersect and merge into a single `1 4` block.\n\n**Example 2**\n```\ninput:\n1 2;2 3\noutput: 1 3\n```\nThe block ending at 2 is adjacent to the block starting at 2, so they merge entirely.",

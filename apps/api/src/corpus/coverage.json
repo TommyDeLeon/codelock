@@ -2511,5 +2511,66 @@
     "batch": "gen-lc-w0-061",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "maximum-containers-on-a-ship": {
+    "ours": "maximum-parcels-on-a-plane",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "maximum-number-of-words-you-can-type": {
+    "ours": "decodable-alien-messages",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "maximum-students-on-a-single-bench": {
+    "ours": "most-crowded-docking-bay",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "merge-sorted-array": {
+    "ours": "merge-network-logs",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "maximum-number-of-pairs-in-array": {
+    "ours": "matching-gemstone-pairs",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "maximum-product-of-two-elements-in-an-array": {
+    "ours": "maximum-power-surge",
+    "batch": "gen-lc-w0-062",
+    "date": "2026-09-17"
+  },
+  "maximum-odd-binary-number": {
+    "ours": "maximum-power-activation-signal",
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17"
+  },
+  "maximum-product-of-two-digits": {
+    "ours": "highest-yield-reactor-pairs",
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17"
+  },
+  "maximum-score-after-splitting-a-string": {
+    "ours": "optimize-shield-zones",
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17"
+  },
+  "maximum-sum-with-exactly-k-elements": {
+    "ours": "maximum-crystal-mining-yield",
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17"
+  },
+  "maximum-repeating-substring": {
+    "ours": "consecutive-marker-blocks",
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17"
+  },
+  "maximum-population-year": {
+    "ours": null,
+    "batch": "gen-lc-w2-063",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
