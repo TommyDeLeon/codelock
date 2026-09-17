@@ -1871,31 +1871,13 @@
     "batch": "gen-lc-w3-055",
     "date": "2026-09-16"
   },
-  "find-anagram-mappings": {
-    "ours": null,
-    "batch": "gen-lc-w3-055",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "find-if-path-exists-in-graph": {
     "ours": null,
     "batch": "gen-lc-w3-055",
     "date": "2026-09-16",
     "reason": "rejected"
   },
-  "find-the-town-judge": {
-    "ours": null,
-    "batch": "gen-lc-w3-055",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
   "find-words-containing-character": {
-    "ours": null,
-    "batch": "gen-lc-w3-055",
-    "date": "2026-09-16",
-    "reason": "rejected"
-  },
-  "finding-3-digit-even-numbers": {
     "ours": null,
     "batch": "gen-lc-w3-055",
     "date": "2026-09-16",
@@ -2209,6 +2191,74 @@
   "last-visited-integers": {
     "ours": "history-playback-system",
     "batch": "gen-lc-w2-059",
+    "date": "2026-09-17"
+  },
+  "majority-frequency-characters": {
+    "ours": "highest-frequency-signal-pulse",
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17"
+  },
+  "make-array-elements-equal-to-zero": {
+    "ours": "emp-shield-blasts",
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17"
+  },
+  "maximum-count-of-positive-integer-and-negative-integer": {
+    "ours": "max-temperature-trend-count",
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17"
+  },
+  "maximum-difference-between-adjacent-elements-in-a-circular-array": {
+    "ours": "maximum-turret-range-gap",
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17"
+  },
+  "maximum-length-substring-with-two-occurrences": {
+    "ours": "longest-valid-gene-sequence",
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17"
+  },
+  "maximize-sum-of-at-most-k-distinct-elements": {
+    "ours": null,
+    "batch": "gen-lc-w4-060",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "invalid-tweets": {
+    "ours": "filter-lengthy-transmissions",
+    "batch": "gen-lc-w0-058",
+    "date": "2026-09-17"
+  },
+  "inversion-of-object": {
+    "ours": "invert-encryption-permutation",
+    "batch": "gen-lc-w0-058",
+    "date": "2026-09-17"
+  },
+  "increasing-decreasing-string": {
+    "ours": null,
+    "batch": "gen-lc-w0-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "intersection-of-two-arrays-ii": {
+    "ours": null,
+    "batch": "gen-lc-w0-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "loan-types": {
+    "ours": "distinct-device-models",
+    "batch": "gen-lc-w2-060",
+    "date": "2026-09-17"
+  },
+  "longest-subsequence-with-limited-sum": {
+    "ours": "maximize-loaded-crates",
+    "batch": "gen-lc-w2-060",
+    "date": "2026-09-17"
+  },
+  "longest-strictly-increasing-or-strictly-decreasing-subarray": {
+    "ours": "altitude-trend-analysis",
+    "batch": "gen-lc-w2-060",
     "date": "2026-09-17"
   }
 }

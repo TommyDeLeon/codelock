@@ -1,7 +1,8 @@
 /**
  * Rewritten statements and editorials for hand-authored problems, keyed by
- * slug. Generated and extended by `scripts/upgrade-statements.ts`; applied
- * by `upgrade.ts`. Do not edit by hand — rerun the script.
+ * slug. Generated and extended by `scripts/upgrade-statements.ts` and
+ * `scripts/refresh-tests.ts`; applied by `upgrade.ts`. Do not edit by
+ * hand — rerun the scripts.
  */
 export interface StatementUpgrade {
   promptMarkdown: string;
@@ -1641,12 +1642,77 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "largest-solid-one-square": {
+    "promptMarkdown": "A non-empty grid contains only `0` and `1`. Return the area of the largest square made only from `1` cells.\n\n**Example**\n\n```\ninput:  1 0 1;1 1 1;1 1 1\noutput: 4\n```",
+    "editorialMarkdown": "## 2-D DP: square side lengths\n\nMake a table whose cell `dp[r][c]` is the side length of the largest all-one square ending at this cell. The recurrence works because every allowed final move or choice reaches this cell from smaller subproblems that have already been solved; combining those complete alternatives therefore describes every valid answer here. Fill in dependency order so no cell reads unfinished information.\n\nThe quiet mistake is taking the largest neighbouring value instead of the smallest, allowing a missing corner to disappear. It often passes a central example while corrupting a boundary or the first transition, so establish the base row and column before the main loops.\n\nTime is O(rows × columns), bounded by the two table dimensions, and space is O(rows × columns).",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17",
+    "tests": [
+      {
+        "stdin": "1 1;1 0",
+        "expectedStdout": "1",
+        "isSample": true
+      },
+      {
+        "stdin": "0 1 1;0 1 1",
+        "expectedStdout": "4",
+        "isSample": true
+      },
+      {
+        "stdin": "0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 0",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "0 0 0;0 0 0;0 0 0",
+        "expectedStdout": "0"
+      },
+      {
+        "stdin": "1 1;1 1;1 1",
+        "expectedStdout": "4"
+      },
+      {
+        "stdin": "1 0 1 0;0 1 0 1;1 0 1 0;0 1 0 1",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "0 0 0 0 0;0 1 1 1 0;0 1 1 1 0;0 1 1 1 0;0 0 0 0 0",
+        "expectedStdout": "9"
+      },
+      {
+        "stdin": "1;0;1;1;0",
+        "expectedStdout": "1"
+      },
+      {
+        "stdin": "1 1 1 1 1 1;1 1 1 1 1 1;1 1 1 1 1 1;1 1 1 1 1 1;1 1 1 1 1 1;1 1 1 1 1 1",
+        "expectedStdout": "36"
+      }
+    ]
+  },
+  "largest-sum-of-k-consecutive": {
+    "promptMarkdown": "The first line is a list of numbers. The second line is a number `k`.\n\nReturn the largest sum you can get by adding up `k` neighbouring values.\nThe `k` values must be contiguous — a block, not a selection.\n\n**Constraints**\n- `1 <= k <= length of list <= 10^5`\n- List values may be negative.\n\n**Example 1**\n```\ninput:\n1 2 3 4 5\n2\noutput: 9\n```\nThe blocks of two are `1+2`, `2+3`, `3+4`, `4+5`; the last is the biggest at `9`.\n\n**Example 2**\n```\ninput:\n-3 -1 -4 -2\n2\noutput: -4\n```\nValues may be negative, and there is no option to take fewer than `k` values, so `-4` — the block `-3 -1` — is the best available.\n\n**Follow-up:** Can you find the largest sum in O(n) time?",
+    "editorialMarkdown": "The intended approach uses a sliding window (specifically a fixed-width window) to maintain the sum of the current block. First, sum the initial block of size `k`. Then, to move the window one step right, add the new value entering on the right and subtract the oldest value leaving on the left.\n\nThe quiet mistake is forgetting to remove the outgoing element, instead just silently computing prefix sums. On an all-positive list, the largest prefix sum is the whole list, which is often close enough to the right answer to look plausible. Also, watch the seeding: starting `best` at `0` rather than at the first block sum breaks the all-negative case. The time complexity is O(n) and the space complexity is O(1).",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "last-digit": {
     "promptMarkdown": "Given a non-negative integer, return its last digit.\n\n**Constraints**\n- The input is an integer greater than or equal to `0`.\n\n**Example 1**\n```\ninput:\n1234\noutput: 4\n```\nThe last digit of 1234 is 4.\n\n**Example 2**\n```\ninput:\n0\noutput: 0\n```\nThe last digit of 0 is 0.\n\n**Follow-up:** Can you solve this in O(1) time and O(1) space without converting the number to a string?",
     "editorialMarkdown": "The intended approach is to use the modulo operator to extract the final digit of the integer. The pattern's name is basic arithmetic manipulation. The time complexity is O(1) and the space complexity is O(1). The one trap most solvers hit is converting the number to a string and reading the last character, which works but takes the data out of the numeric domain and requires extra time and space overhead. Taking the remainder by 10 mathematically isolates the lowest place value in base 10, completely avoiding the need for type conversions.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "last-n-of-the-chain": {
+    "promptMarkdown": "You are given a chain of nodes and a number `n`. Return the final `n` nodes of the chain — everything from the node that is `n` positions from the end onwards.\n\n`n = 1` means just the last node, `n = 2` the last two, and so on.\n\nYou cannot index into a chain, and you should not need two passes.\n\n**Constraints**\n- `1 <= length of chain <= 10^5`\n- `1 <= n <= length of chain`\n- Node values are integers.\n\n**Example 1**\n```\ninput:\n1 2 3 4 5\n2\noutput: 4 5\n```\nThe second node from the end holds 4, so the last two nodes are 4 5.\n\n**Example 2**\n```\ninput:\n10 20 30\n3\noutput: 10 20 30\n```\nWhen `n` equals the length, the entire chain is returned.\n\n**Follow-up:** Can you find the nodes in O(n) time and O(1) space with just one pass?",
+    "editorialMarkdown": "The intended approach uses two pointers held a fixed distance apart to find the node without knowing the length upfront. Advance a `lead` pointer by `n` steps first, then move both `lead` and a `trail` pointer from the start at the same speed until `lead` reaches the end of the chain. This pattern is the fixed-gap two-pointers technique.\n\nThe quiet mistake is an off-by-one error, especially when `n` equals the length. If you advance `lead` `n` times and then write the second loop as `while lead.next != null`, that specific case dereferences null and crashes. Both time and space complexities are O(n) and O(1) respectively.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
   },
   "last-remaining-stone-weight": {
     "promptMarkdown": "A line of stone weights, separated by spaces.\n\nRepeat this while two or more stones remain: take the two heaviest, and\n\n- if they weigh the same, both are destroyed;\n- otherwise both are destroyed and a new stone of the difference is added.\n\nPrint the weight of the stone that is left. Print `0` if nothing is left.\n\n**Example**\n\n```\ninput:  2 7 4 1 8 1\noutput: 1\n```\n\n`8` and `7` leave `1`, so the stones are `2 4 1 1 1`. Then `4` and `2` leave\n`2`, giving `2 1 1 1`. Then `2` and `1` leave `1`, giving `1 1 1`. Then two\n`1`s cancel, leaving `1`.\n\nGuarantees: there is at least one stone and every weight is at least 1.\n\nThe named edge cases: a single stone is already the answer and is printed\nunchanged. Two equal stones — `3 3` — destroy each other, and the answer is\n`0`.",
@@ -1759,6 +1825,13 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "load-highest-value-units": {
+    "promptMarkdown": "Load at most a given number of units into a truck to maximize total value. The first line is pairs `count value`, one pair per item type; the second line is truck capacity. You may take any number from zero through `count` of each type.\n\n**Constraints**\n- `1 <= number of pairs <= 100`\n- Counts, values, and capacity are non-negative.\n- Capacity may be up to `10^9`.\n\n**Example 1**\n```\ninput:\n3 4 2 7 5 2\n5\noutput: 26\n```\nTake both units worth 7 and three units worth 4 to maximize value.\n\n**Example 2**\n```\ninput:\n1 10 2 5\n2\noutput: 15\n```\nTake one unit worth 10 and one unit worth 5.\n\n**Follow-up:** Can you maximize the total value in O(k log k) time where k is the number of item types?",
+    "editorialMarkdown": "The intended approach uses a greedy strategy: take the highest value per unit first. Sort the item types by their value per unit in descending order, then take as many as the capacity allows from each type until the truck is full. This pattern is the fractional knapsack greedy approach. Time complexity is O(k log k) for sorting `k` types, and space complexity is O(k).\n\nThe quiet mistake is sorting by the total value of a type (`count * value`) instead of the value per unit. A large pile of cheap units can then wrongly outrank one valuable unit, which often passes a friendly first example but fails more complex test cases.",
+    "promoteSamples": [],
+    "model": "gemini-3.1-pro-low",
+    "date": "2026-09-17"
+  },
   "lonely-number-among-pairs": {
     "promptMarkdown": "A warehouse tracks badge IDs for its equipment. Every piece of equipment is supposed to have exactly one backup with the same ID, forming a matched pair. One item, however, was never paired and has a unique ID. Given the full list of IDs, find the ID of the unpaired item.\n\nThe input is a single line of space-separated non-negative integers representing badge IDs.\n\n**Constraints**\n\n- `1 <= number of IDs <= 10001` (always odd)\n- `0 <= each ID <= 2^30`\n- Exactly one ID appears an odd number of times (once); all others appear exactly twice\n- The unpaired ID may be `0`\n\n**Example 1**\n\n```\ninput:\n6 1 6 9 1\noutput: 9\n```\n\nIDs `6` and `1` each appear twice (paired); `9` appears once and is the unpaired badge.\n\n**Example 2**\n\n```\ninput:\n4 4 12\noutput: 12\n```\n\nID `4` appears twice; `12` is the lone unpaired badge.\n\n**Example 3**\n\n```\ninput:\n0\noutput: 0\n```\n\nA single badge with ID `0` has no pair; the answer is `0`.\n\n**Follow-up:** Can you solve this in O(n) time and O(1) extra space without any hash map or sort?",
     "editorialMarkdown": "## XOR cancellation\n\nXOR has two properties that make it ideal here: `x ^ x = 0` (a value XORed with itself vanishes) and `x ^ 0 = x` (XOR with zero is the identity). XOR is also commutative and associative, so the order of operations does not matter.\n\nXOR every ID in the list together in a single pass. Each paired ID appears exactly twice, so its two contributions cancel to zero. The one unpaired ID appears exactly once and has nothing to cancel against, so it is the only value left standing in the accumulator. Return that accumulator.\n\nSorting the list and scanning for an element that differs from its neighbour also works, but costs O(n log n) time and, for the XOR approach, is unnecessary. A frequency map (dictionary or counter) also works but uses O(n) extra space, which XOR avoids entirely.\n\nThe pattern is **XOR bit-manipulation for identity detection**. It exploits the algebraic structure of XOR rather than any counting or ordering structure.\n\nTime complexity: O(n) — one pass through the list. Space complexity: O(1) — only a single accumulator variable is needed.",
@@ -1827,6 +1900,7 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17",
+    "skipped": "review: closely follows [LeetCode 146, LRU Cache](https://leetcode.com/problems/lru-cache/description/): the opening, positive-capacity initialization, and get/put desc",
     "tests": [
       {
         "stdin": "5\nLRUCache 2\nput 10 100\nput 20 200\nget 10\nget 30",
