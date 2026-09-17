@@ -2353,5 +2353,36 @@
     "batch": "gen-lc-w4-061",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "length-of-last-word": {
+    "ours": "final-command-length",
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17"
+  },
+  "lexicographically-smallest-palindrome": {
+    "ours": "symmetric-signal-repair",
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17"
+  },
+  "limit-occurrences-in-sorted-array": {
+    "ours": "restrict-inventory-batches",
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17"
+  },
+  "linked-list-cycle": {
+    "ours": "patrol-route-loop",
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17"
+  },
+  "largest-subarray-length-k": {
+    "ours": "highest-voltage-window",
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17"
+  },
+  "license-key-formatting": {
+    "ours": null,
+    "batch": "gen-lc-w0-060",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
