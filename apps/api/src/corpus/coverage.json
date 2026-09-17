@@ -2727,5 +2727,37 @@
     "ours": "identify-cloned-android-model",
     "batch": "gen-lc-w4-064",
     "date": "2026-09-17"
+  },
+  "fix-product-name-format": {
+    "ours": "clean-spaceship-registry",
+    "batch": "gen-lc-w1-101",
+    "date": "2026-09-17"
+  },
+  "flip-square-submatrix-vertically": {
+    "ours": "invert-holographic-projection",
+    "batch": "gen-lc-w1-101",
+    "date": "2026-09-17"
+  },
+  "game-play-analysis-ii": {
+    "ours": "first-deployment-sector",
+    "batch": "gen-lc-w1-101",
+    "date": "2026-09-17"
+  },
+  "group-sold-products-by-the-date": {
+    "ours": "daily-cargo-manifest",
+    "batch": "gen-lc-w1-101",
+    "date": "2026-09-17"
+  },
+  "greatest-english-letter-in-upper-and-lower-case": {
+    "ours": null,
+    "batch": "gen-lc-w1-101",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "largest-unique-number": {
+    "ours": null,
+    "batch": "gen-lc-w3-101",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
