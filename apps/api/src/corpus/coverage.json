@@ -2260,5 +2260,36 @@
     "ours": "altitude-trend-analysis",
     "batch": "gen-lc-w2-060",
     "date": "2026-09-17"
+  },
+  "high-five": {
+    "ours": "spaceship-thruster-tests",
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17"
+  },
+  "isomorphic-strings": {
+    "ours": "alien-language-cipher",
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17"
+  },
+  "jewels-and-stones": {
+    "ours": "rare-minerals-extracted",
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17"
+  },
+  "k-items-with-the-maximum-sum": {
+    "ours": "token-selection-strategy",
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17"
+  },
+  "kth-distinct-string-in-an-array": {
+    "ours": "kth-unique-artifact-id",
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17"
+  },
+  "kth-missing-positive-number": {
+    "ours": null,
+    "batch": "gen-lc-w0-059",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }
