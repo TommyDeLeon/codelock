@@ -1992,5 +1992,162 @@
     "batch": "gen-lc-w0-055",
     "date": "2026-09-16",
     "reason": "rejected"
+  },
+  "form-a-chemical-bond": {
+    "ours": "form-adventuring-parties",
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17"
+  },
+  "friend-requests-i-overall-acceptance-rate": {
+    "ours": "guild-join-rate",
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17"
+  },
+  "friendly-movies-streamed-last-month": {
+    "ours": "critical-servers-in-window",
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17"
+  },
+  "furthest-point-from-origin": {
+    "ours": "scout-robot-max-distance",
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17"
+  },
+  "flipping-an-image": {
+    "ours": null,
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "fruits-into-baskets-ii": {
+    "ours": null,
+    "batch": "gen-lc-w2-057",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "how-many-numbers-are-smaller-than-the-current-number": {
+    "ours": "count-lower-power-generators",
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17"
+  },
+  "image-smoother": {
+    "ours": "smooth-terrain-altitude",
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17"
+  },
+  "intersection-of-three-sorted-arrays": {
+    "ours": "common-security-clearances",
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17"
+  },
+  "largest-3-same-digit-number-in-string": {
+    "ours": "highest-security-triplet",
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17"
+  },
+  "largest-number-after-digit-swaps-by-parity": {
+    "ours": "maximize-sensor-reading",
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17"
+  },
+  "kids-with-the-greatest-number-of-candies": {
+    "ours": null,
+    "batch": "gen-lc-w4-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "find-target-indices-after-sorting-array": {
+    "ours": "identify-priority-tickets",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "find-the-encrypted-string": {
+    "ours": "decode-circular-transmission",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "find-the-winning-player-in-coin-game": {
+    "ours": "space-merchant-trade-war",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "find-users-with-valid-e-mails": {
+    "ours": "filter-valid-registration-codes",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "find-valid-emails": {
+    "ours": "identify-secure-network-addresses",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "find-the-k-th-character-in-string-game-i": {
+    "ours": "kth-magical-incantation-symbol",
+    "batch": "gen-lc-w0-056",
+    "date": "2026-09-17"
+  },
+  "goal-parser-interpretation": {
+    "ours": "alien-message-decoder",
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17"
+  },
+  "how-many-apples-can-you-put-into-the-basket": {
+    "ours": "cargo-ship-loading",
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17"
+  },
+  "game-play-analysis-i": {
+    "ours": null,
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "gcd-of-odd-and-even-sums": {
+    "ours": null,
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "immediate-food-delivery-i": {
+    "ours": null,
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "increasing-order-search-tree": {
+    "ours": null,
+    "batch": "gen-lc-w2-058",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "largest-odd-number-in-string": {
+    "ours": "largest-prime-sector-suffix",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
+  },
+  "largest-positive-integer-that-exists-with-its-negative": {
+    "ours": "highest-reversed-trade",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
+  },
+  "largest-substring-between-two-equal-characters": {
+    "ours": "maximum-sensor-event-gap",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
+  },
+  "last-stone-weight": {
+    "ours": "particle-annihilation-energy",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
+  },
+  "lexicographically-smallest-string-after-a-swap": {
+    "ours": "optimal-engine-firing-sequence",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
+  },
+  "longest-even-odd-subarray-with-threshold": {
+    "ours": "valid-encrypted-transmission-segment",
+    "batch": "gen-lc-w4-059",
+    "date": "2026-09-17"
   }
 }
