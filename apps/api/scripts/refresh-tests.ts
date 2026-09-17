@@ -207,10 +207,8 @@ function withLock<T>(fn: () => T): T {
  */
 function readCurrent(): Record<string, StatementUpgrade> {
   const text = readFileSync(upgradesPath, 'utf8');
-  const start = text.indexOf('> = {
-') + 5;
-  const end = text.lastIndexOf('
-};');
+  const start = text.indexOf('> = {' + String.fromCharCode(10)) + 5;
+  const end = text.lastIndexOf(String.fromCharCode(10) + '};');
   const body = text.slice(start, end).trim().replace(/,\s*$/, '');
   return JSON.parse(`{${body}}`) as Record<string, StatementUpgrade>;
 }
