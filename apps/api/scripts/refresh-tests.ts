@@ -268,7 +268,10 @@ async function main() {
   for (const p of batch) {
     const prop = proposals.find((x) => x.slug === p.slug);
     const old = new Set(p.tests.map((t) => normalise(t.stdin)));
-    const inputs = [...new Set((prop?.inputs ?? []).map((s) => s.replace(/\r/g, '')))].filter(
+    // Gemini sometimes returns a literal backslash-n where a line break was
+    // meant; no wire-format input contains a backslash, so unescape it.
+    const unescape = (s: string) => s.replace(/\r/g, '').replace(/\\n/g, '\n');
+    const inputs = [...new Set((prop?.inputs ?? []).map(unescape))].filter(
       (s) => !old.has(normalise(s)),
     );
     if (inputs.length < 8) {
