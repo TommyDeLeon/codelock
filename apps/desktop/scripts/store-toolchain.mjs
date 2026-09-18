@@ -20,7 +20,7 @@
  * The real cache is never modified. The SDK is free and already on GitHub's
  * windows-latest runners; without it this exits 1 naming the requirement.
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync, statSync, symlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -78,8 +78,24 @@ export function prepareStoreToolchain(outDir) {
   mkdirSync(cacheDir, { recursive: true });
   for (const entry of readdirSync(realCache)) {
     if (entry === 'winCodeSign') continue;
+    // Entries come from a directory listing, so this cannot trigger today;
+    // it is here so a poisoned cache on a shared runner cannot aim a junction
+    // outside cacheDir.
+    if (entry.includes('..') || path.isAbsolute(entry) || /[\\/]/.test(entry)) continue;
+    const source = path.join(realCache, entry);
     const link = path.join(cacheDir, entry);
-    if (!existsSync(link)) symlinkSync(path.join(realCache, entry), link, 'junction');
+    // existsSync follows the junction, so a link whose target was cleaned up
+    // reads as absent and symlinkSync would then throw EEXIST. lstat sees the
+    // entry itself; a stale one is removed and remade.
+    if (lstatSync(link, { throwIfNoEntry: false })) {
+      if (existsSync(link)) continue;
+      rmSync(link, { recursive: true, force: true });
+    }
+    if (statSync(source).isDirectory()) {
+      symlinkSync(source, link, 'junction');
+    } else {
+      cpSync(source, link);
+    }
   }
 
   if (!existsSync(target)) {
@@ -99,7 +115,8 @@ export function prepareStoreToolchain(outDir) {
     if (arch === 'arm64') {
       // See the header: no arm64 tools ship in the bundle. The x64 signtool
       // is copied as well because electron-builder signs from the same dir.
-      cpSync(path.join(target, 'windows-10', 'x64'), dir, { recursive: true, force: false });
+      // force: true so a half-finished earlier run cannot leave stale files.
+      cpSync(path.join(target, 'windows-10', 'x64'), dir, { recursive: true, force: true });
     }
     for (const tool of TOOLS) {
       cpSync(path.join(sdkTools, tool), path.join(dir, tool), { force: true });

@@ -31,13 +31,29 @@ describe('unlock token signing', () => {
     const token = tokens.signUnlockTokenWith(signer, 'u1', 's1');
     assert.equal(headerOf(token).alg, 'RS256');
 
-    // What the desktop shell does: verify with the public key alone.
+    // What the desktop shell does (apps/desktop/src/unlock-verifier.ts, which
+    // has no test runner): verify the signature with the public key alone,
+    // then check the claims it gates on. Kept in step with that file by hand.
     const publicPem = tokens.unlockPublicKeyPem(privatePem);
     const [h, p, s] = token.split('.') as [string, string, string];
     const ok = createVerify('RSA-SHA256')
       .update(`${h}.${p}`)
       .verify(createPublicKey(publicPem), Buffer.from(s, 'base64url'));
     assert.equal(ok, true);
+    const claims = JSON.parse(Buffer.from(p, 'base64url').toString()) as Record<string, unknown>;
+    assert.equal(claims.typ, 'unlock');
+    assert.equal(claims.aud, 'codelock-lockscreen');
+    assert.equal(claims.iss, 'codelock');
+    assert.equal(claims.sub, 'u1');
+    assert.equal(claims.sid, 's1');
+    assert.equal(typeof claims.exp, 'number');
+    assert.ok((claims.exp as number) * 1000 > Date.now());
+  });
+
+  it('rejects an RSA key shorter than 2048 bits', () => {
+    const { privateKey: weak } = generateKeyPairSync('rsa', { modulusLength: 1024 });
+    const weakPem = weak.export({ type: 'pkcs8', format: 'pem' }).toString();
+    assert.throws(() => tokens.unlockSigner({ secret, privateKeyPem: weakPem }), /2048/);
   });
 
   it('accepts a PEM whose newlines arrived as the two characters \\n', () => {

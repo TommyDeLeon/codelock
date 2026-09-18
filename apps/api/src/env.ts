@@ -1,5 +1,5 @@
-import { createPrivateKey } from 'node:crypto';
 import { z } from 'zod';
+import { assertUnlockPrivateKey } from './lib/unlockSigner.js';
 
 /**
  * Fail fast on boot rather than at the first request that touches a missing
@@ -91,8 +91,7 @@ if (raw.NODE_ENV === 'production') {
 // is the one request in this product that must not fail.
 if (raw.JWT_UNLOCK_PRIVATE_KEY) {
   try {
-    const key = createPrivateKey(raw.JWT_UNLOCK_PRIVATE_KEY.split('\\n').join('\n'));
-    if (key.asymmetricKeyType !== 'rsa') throw new Error('not an RSA key');
+    assertUnlockPrivateKey(raw.JWT_UNLOCK_PRIVATE_KEY);
   } catch (err) {
     console.error(
       `JWT_UNLOCK_PRIVATE_KEY is not a usable RSA private key: ${(err as Error).message}`,

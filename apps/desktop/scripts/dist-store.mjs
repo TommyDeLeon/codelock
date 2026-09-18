@@ -92,6 +92,25 @@ const args = [
   `-c.appx.publisherDisplayName=${publisherDisplayName}`,
 ];
 
+// What actually ships is dist/build-defaults.json, written by write-defaults.mjs
+// under CODELOCK_BUILD_TARGET=store. Re-read it rather than trust that the
+// right predecessor ran: someone invoking this script by hand after a plain
+// `npm run build` must not get a package with the HS256 secret inside.
+let baked;
+try {
+  baked = JSON.parse(readFileSync(path.join(appDir, 'dist', 'build-defaults.json'), 'utf8'));
+} catch {
+  console.error('Store build blocked: dist/build-defaults.json is missing. Run `npm run dist:store`, not this script alone.');
+  process.exit(1);
+}
+if (baked.unlockSecret || !baked.unlockPublicKey || baked.backendCommand) {
+  console.error(
+    'Store build blocked: dist/build-defaults.json was not written for a Store build' +
+      ' (secret present, public key missing, or backend command set). Run `npm run dist:store`.',
+  );
+  process.exit(1);
+}
+
 // electron-builder's own makeappx cannot run on current Windows; see
 // store-toolchain.mjs. The prepared cache lives under release/ so a clean
 // checkout has nothing to reset.

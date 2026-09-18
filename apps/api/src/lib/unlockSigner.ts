@@ -46,12 +46,28 @@ export function unlockPublicKeyPem(privateKeyPem: string): string {
   return crypto.createPublicKey(privateKey).export({ type: 'spki', format: 'pem' }).toString();
 }
 
+/** Minimum RSA modulus. 2048 is what gen-unlock-keys.mjs produces. */
+export const MIN_RSA_BITS = 2048;
+
+/**
+ * Parse and vet the private key, or throw with a message naming the problem.
+ * Used at boot (env.ts) and when the signer is built, so both agree.
+ */
+export function assertUnlockPrivateKey(pem: string): crypto.KeyObject {
+  const privateKey = crypto.createPrivateKey(normalisePem(pem));
+  if (privateKey.asymmetricKeyType !== 'rsa') {
+    throw new Error('JWT_UNLOCK_PRIVATE_KEY must be an RSA private key (RS256)');
+  }
+  const bits = privateKey.asymmetricKeyDetails?.modulusLength ?? 0;
+  if (bits < MIN_RSA_BITS) {
+    throw new Error(`JWT_UNLOCK_PRIVATE_KEY is ${bits}-bit RSA; at least ${MIN_RSA_BITS} bits required`);
+  }
+  return privateKey;
+}
+
 export function unlockSigner(keys: UnlockSigningKeys): UnlockSigner {
   if (keys.privateKeyPem) {
-    const privateKey = crypto.createPrivateKey(normalisePem(keys.privateKeyPem));
-    if (privateKey.asymmetricKeyType !== 'rsa') {
-      throw new Error('JWT_UNLOCK_PRIVATE_KEY must be an RSA private key (RS256)');
-    }
+    const privateKey = assertUnlockPrivateKey(keys.privateKeyPem);
     return { alg: 'RS256', signKey: privateKey, verifyKey: crypto.createPublicKey(privateKey) };
   }
   return { alg: 'HS256', signKey: keys.secret, verifyKey: keys.secret };
