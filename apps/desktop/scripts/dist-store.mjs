@@ -19,12 +19,14 @@
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { prepareStoreToolchain } from './store-toolchain.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const appDir = path.join(here, '..');
+const require = createRequire(import.meta.url);
 
 const REQUIRED = {
   CODELOCK_STORE_IDENTITY_NAME: 'Package/Identity/Name',
@@ -46,6 +48,16 @@ if (missing.length > 0) {
 const identityName = process.env.CODELOCK_STORE_IDENTITY_NAME.trim();
 const publisher = process.env.CODELOCK_STORE_PUBLISHER.trim();
 const publisherDisplayName = process.env.CODELOCK_STORE_PUBLISHER_DISPLAY_NAME.trim();
+
+// Package/Identity/Name: 3-50 characters of [A-Za-z0-9.-] (the Store's own
+// rule, also enforced by electron-builder). Checked here so the failure names
+// the variable rather than a manifest line.
+if (!/^[A-Za-z0-9.-]{3,50}$/.test(identityName)) {
+  console.error(
+    `Store build blocked: CODELOCK_STORE_IDENTITY_NAME must be 3-50 characters of letters, digits, . or -, got "${identityName}".`,
+  );
+  process.exit(1);
+}
 
 // The Store's Publisher is a CN=<GUID> the account was issued; anything else
 // is a typo that would only surface as an upload rejection.
@@ -94,10 +106,13 @@ try {
 console.log(`Store package: ${identityName} ${version}.0 by ${publisherDisplayName}`);
 console.log(`AppX tools: ${toolchain.sdkTools} via ${toolchain.cacheDir}`);
 
-const result = spawnSync('npx', ['electron-builder', ...args], {
+// electron-builder's CLI is run directly under this node, not through npx and
+// a shell: the identity values are user-supplied strings, and a shell would
+// interpret any metacharacter in them.
+const cli = require.resolve('electron-builder/cli.js');
+const result = spawnSync(process.execPath, [cli, ...args], {
   cwd: appDir,
   stdio: 'inherit',
-  shell: process.platform === 'win32',
   env: { ...process.env, ELECTRON_BUILDER_CACHE: toolchain.cacheDir },
 });
 process.exit(result.status ?? 1);
