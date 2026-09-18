@@ -20,6 +20,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "calibrate": "npm run calibrate -w @codelock/api",
     "dist:desktop": "npm run dist -w @codelock/desktop",
+    "release:store": "npm run dist -w @codelock/desktop && npm run dist:store -w @codelock/desktop",
     "dev:judge": "npm run dev -w @codelock/judge",
     "dev:expire": "npm run dev:expire -w @codelock/api",
     "db:reset": "npm run db:migrate -w @codelock/api && npm run db:seed -w @codelock/api",

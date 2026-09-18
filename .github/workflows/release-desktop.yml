@@ -49,7 +49,17 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # Build defaults are baked by scripts/write-defaults.mjs during *this*
+      # step, from CODELOCK_BUILD_* variables. They used to be set on the
+      # electron-builder step below under different names, so every release
+      # shipped localhost defaults and no unlock key. Only the public key
+      # travels: the API's private half never leaves the server.
       - run: npm run build --workspace @codelock/desktop
+        env:
+          CODELOCK_BUILD_WEB_URL: ${{ vars.CODELOCK_WEB_URL }}
+          CODELOCK_BUILD_API_URL: ${{ vars.CODELOCK_API_URL }}
+          CODELOCK_BUILD_UNLOCK_PUBLIC_KEY: ${{ vars.CODELOCK_BUILD_UNLOCK_PUBLIC_KEY }}
 
       # The publish target is passed here rather than committed to
       # electron-builder.yml: it is derived from the repository being built, so
@@ -69,10 +79,6 @@ jobs:
         working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # The public half of the API's unlock key is baked in at build time.
-          # Only the public key ships — users cannot forge unlock tokens from it.
-          CODELOCK_UNLOCK_PUBLIC_KEY: ${{ secrets.CODELOCK_UNLOCK_PUBLIC_KEY }}
-          CODELOCK_WEB_URL: ${{ vars.CODELOCK_WEB_URL }}
           # Code signing. Builds succeed without these but warn on first launch:
           # SmartScreen on Windows, Gatekeeper on macOS.
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -129,6 +135,38 @@ jobs:
             apps/desktop/release/*.yml
             apps/desktop/release/*.blockmap
           if-no-files-found: warn
+
+  # Microsoft Store package. Same version, same source tree, built only when
+  # the Partner Center identity is present as repository *variables* (they are
+  # public manifest values, not secrets). Never published from here: the
+  # .appx is an artifact for the owner to upload in Partner Center by hand.
+  # The Windows SDK the toolchain needs ships on windows-latest; whether the
+  # image's copy is found by scripts/store-toolchain.mjs is unverified until
+  # this job first runs.
+  store:
+    needs: verify
+    if: vars.CODELOCK_STORE_IDENTITY_NAME != ''
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run dist:store --workspace @codelock/desktop
+        env:
+          CODELOCK_BUILD_WEB_URL: ${{ vars.CODELOCK_WEB_URL }}
+          CODELOCK_BUILD_API_URL: ${{ vars.CODELOCK_API_URL }}
+          CODELOCK_BUILD_UNLOCK_PUBLIC_KEY: ${{ vars.CODELOCK_BUILD_UNLOCK_PUBLIC_KEY }}
+          CODELOCK_STORE_IDENTITY_NAME: ${{ vars.CODELOCK_STORE_IDENTITY_NAME }}
+          CODELOCK_STORE_PUBLISHER: ${{ vars.CODELOCK_STORE_PUBLISHER }}
+          CODELOCK_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.CODELOCK_STORE_PUBLISHER_DISPLAY_NAME }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codelock-store
+          path: apps/desktop/release/*.appx
+          if-no-files-found: error
 
   publish:
     needs: build
