@@ -72,6 +72,7 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-codelock}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-codelock}?schema=public
       JWT_UNLOCK_SECRET: ${JWT_UNLOCK_SECRET:?set in .env}
+      JWT_UNLOCK_PRIVATE_KEY: ${JWT_UNLOCK_PRIVATE_KEY:-}
       JUDGE0_URL: http://judge:2358
       CORS_ORIGINS: https://${APP_DOMAIN}
       PERF_TOLERANCE: ${PERF_TOLERANCE:-1.35}

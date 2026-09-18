@@ -1,3 +1,4 @@
+import { createPrivateKey } from 'node:crypto';
 import { z } from 'zod';
 
 /**
@@ -14,6 +15,10 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
 
   JWT_UNLOCK_SECRET: z.string().min(32),
+  /// RSA private key (PEM; `\n` escapes allowed). When set, unlock tokens are
+  /// RS256 and only the public key ships in distributed desktop builds. See
+  /// lib/tokens.ts and apps/desktop/scripts/write-defaults.mjs.
+  JWT_UNLOCK_PRIVATE_KEY: z.string().trim().min(1).optional(),
 
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
 
@@ -78,6 +83,20 @@ const raw = parsed.data;
 if (raw.NODE_ENV === 'production') {
   if (raw.JWT_UNLOCK_SECRET.startsWith('change-me')) {
     console.error('Refusing to boot with placeholder JWT secrets.');
+    process.exit(1);
+  }
+}
+
+// A key that does not parse would otherwise surface at the first unlock, which
+// is the one request in this product that must not fail.
+if (raw.JWT_UNLOCK_PRIVATE_KEY) {
+  try {
+    const key = createPrivateKey(raw.JWT_UNLOCK_PRIVATE_KEY.split('\\n').join('\n'));
+    if (key.asymmetricKeyType !== 'rsa') throw new Error('not an RSA key');
+  } catch (err) {
+    console.error(
+      `JWT_UNLOCK_PRIVATE_KEY is not a usable RSA private key: ${(err as Error).message}`,
+    );
     process.exit(1);
   }
 }
