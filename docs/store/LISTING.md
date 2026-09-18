@@ -99,8 +99,11 @@ electron-builder generates from `build/icon.png`.
 
 - Notes for certification: use the draft in CERTIFICATION-NOTES.md, choosing
   the "testable without a server" sentence unless a test server exists.
-- Restricted capabilities: none beyond `runFullTrust` (auto-declared for
-  Desktop Bridge apps; no justification form required for it).
+- Restricted capabilities: `runFullTrust` only. Partner Center flags it on
+  upload ("require approval before you can use them") — observed 2026-09-19.
+  If Submission options shows a Restricted capabilities box, paste the
+  justification from CERTIFICATION-NOTES.md ("Restricted capability
+  justification").
 
 ## Blockers before this listing can be submitted
 

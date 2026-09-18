@@ -84,6 +84,17 @@ configured, over whatever scheme that URL uses — the default is
 > across reboots; user-disableable in Settings > Apps > Startup. No drivers,
 > services, or bundled third-party software.
 
+## Restricted capability justification (runFullTrust)
+
+Partner Center warns on upload that `runFullTrust` "require[s] approval".
+Text for the Submission options → Restricted capabilities box:
+
+> CodeLock is an Electron desktop application packaged with the Desktop
+> Bridge. runFullTrust is required to run the Win32 executable
+> (Windows.FullTrustApplication entry point): it draws an always-on-top window
+> across all displays, shows a tray icon, and reads/writes its own AppData. It
+> uses no accessibility or undocumented APIs and installs no other software.
+
 ## Known gaps (not certification failures, but true)
 
 - The startup task launches `CodeLock.exe` with no arguments, so the
