@@ -47,6 +47,13 @@ export function isAutoStartEnabled(): boolean {
  */
 export function setAutoStart(enabled: boolean): void {
   if (!app.isPackaged) return;
+  // A Store package cannot register itself this way: the HKCU Run key this
+  // writes is virtualised inside the package and never read at logon. The
+  // package manifest declares a windows.startupTask instead
+  // (electron-builder.yml, appx.addAutoLaunchExtension), which Windows owns and
+  // the user can switch off in Settings > Apps > Startup. Writing the key
+  // anyway would be harmless but would also be a lie about what happens.
+  if (process.windowsStore) return;
   app.setLoginItemSettings({
     openAtLogin: enabled,
     openAsHidden: enabled,

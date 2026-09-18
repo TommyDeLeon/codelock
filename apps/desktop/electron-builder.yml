@@ -48,6 +48,39 @@ win:
   # .github/workflows/release-desktop.yml, so an unsigned local build does not
   # need it. See README.md, "Desktop packaging and trusted install".
 
+# --- Microsoft Store ------------------------------------------------------
+# Not in `win.target` above: a plain `npm run dist` stays NSIS-only. The Store
+# package is built by scripts/dist-store.mjs, which selects the appx target on
+# the command line and supplies the three identity values Partner Center
+# issued (identityName, publisher, publisherDisplayName). Those are deliberately
+# not written here: they are per-account, they cannot be guessed, and an
+# `${env.X}` macro left undefined makes every build fail, not just the Store
+# one. What is static lives below.
+appx:
+  # Application/@Id. Not derived from identityName: that has a period in it,
+  # and the derived form would change if the reserved name ever did.
+  applicationId: CodeLock
+  # Registers the windows.startupTask extension. Inside a package, the HKCU
+  # Run key that app.setLoginItemSettings writes is virtualised and never read
+  # at logon, so this is the only way "launch at login" works for a Store
+  # install. The user enables it in Settings > Apps > Startup; the app itself
+  # cannot force it, which is what Store policy 10.2.8 wants.
+  addAutoLaunchExtension: true
+  # Store packages update through the Store. electron-updater is switched off
+  # at runtime too (src/updater.ts); this stops the build writing app-update.yml.
+  electronUpdaterAware: false
+  backgroundColor: '#111111'
+  showNameOnTiles: true
+  languages: [en-US]
+  # electron-builder's default MinVersion is a pre-release Windows 10 build.
+  # 1903 (18362) is where packaged apps gained the AppData behaviour the
+  # NSIS-to-Store migration relies on; see docs/store/RESEARCH.md section 6.
+  minVersion: 10.0.18362.0
+  maxVersionTested: 10.0.26100.0
+  # Store submissions must not be signed by us; the Store re-signs after
+  # certification. electron-builder leaves the package unsigned when no
+  # certificate is configured, which is the intended state.
+
 nsis:
   oneClick: false
   perMachine: false

@@ -32,6 +32,28 @@ const defaults = {
   backendCommand: process.env.CODELOCK_BUILD_BACKEND_COMMAND || '',
 };
 
+// A distributed package is one anybody can unpack. The HS256 secret inside it
+// would let anybody mint unlock tokens, so a Store build refuses to carry it
+// and insists on the public key. This is the build's job, not the release
+// checklist's: a checklist can be skipped, an exit code cannot.
+const distributed = process.env.CODELOCK_BUILD_TARGET === 'store';
+if (distributed) {
+  const problems = [];
+  if (defaults.unlockSecret) {
+    problems.push('CODELOCK_BUILD_UNLOCK_SECRET is set. A distributed build must not carry the HS256 secret.');
+  }
+  if (!defaults.unlockPublicKey) {
+    problems.push('CODELOCK_BUILD_UNLOCK_PUBLIC_KEY is empty. Generate a pair: node scripts/gen-unlock-keys.mjs');
+  }
+  if (defaults.backendCommand) {
+    problems.push('CODELOCK_BUILD_BACKEND_COMMAND is set. A Store package must not run a command from its build.');
+  }
+  if (problems.length > 0) {
+    console.error(`Refusing to write build defaults for a Store build:\n  - ${problems.join('\n  - ')}`);
+    process.exit(1);
+  }
+}
+
 mkdirSync(dist, { recursive: true });
 writeFileSync(path.join(dist, 'build-defaults.json'), `${JSON.stringify(defaults, null, 2)}\n`);
 

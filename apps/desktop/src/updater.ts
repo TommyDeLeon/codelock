@@ -29,10 +29,25 @@ type IsLocked = () => boolean;
 
 let pendingInstall = false;
 
+/**
+ * True when this process was installed from the Microsoft Store.
+ *
+ * Electron sets `process.windowsStore` only inside an AppX/MSIX package. Such a
+ * package updates through the Store, on the Store's schedule, and its install
+ * directory is read-only — electron-updater would download an NSIS installer
+ * from GitHub Releases and fail to run it. So the Store build never checks.
+ * The corollary is stated plainly: the defer-while-locked rule above cannot be
+ * applied to Store updates, because their timing is not ours to control.
+ */
+export function isStoreInstall(): boolean {
+  return process.windowsStore === true;
+}
+
 export function initUpdater(isLocked: IsLocked): void {
   // Nothing to update in development, and pointing a dev build at the release
   // feed would try to "upgrade" it to the last published version.
   if (!app.isPackaged) return;
+  if (isStoreInstall()) return;
 
   autoUpdater.autoDownload = true;
   // We decide when to restart, not the library.
