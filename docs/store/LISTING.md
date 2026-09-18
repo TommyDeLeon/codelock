@@ -88,9 +88,12 @@ Partner Center requires at least one desktop screenshot (recommended
 
 | File | Captured | Shows | Status |
 |---|---|---|---|
-| `docs/store/screenshots/01-dashboard.png` | 2026-09-19, from the Developer-Mode-registered 1.0.0 package, 1440×900 | Dashboard: session picker, stats, run log, tier/streak panel (dark theme, real local data) | Captured. The window edges include a sliver of neighbouring windows; **re-capture with the window maximised before upload.** |
-| `02-lock-screen.png` | — | The lock screen with a problem open | **Not captured** — needs a live lock (would cover the operator's screen). Take during the Phase 4 manual lock test. |
-| `03-settings.png` | — | Settings screen (server address, timer default) | **Not captured.** |
+| `docs/store/screenshots/01-dashboard.png` | 2026-09-19, packaged 1.0.0 (Developer-Mode registration), maximised, 1920×1024 | Dashboard: session picker, stats, run log, tier/streak panel | ready |
+| `02-lock-screen.png` | 2026-09-19, real lock (5-min session armed via the local API, fired, released with a 10-s Escape hold), 1920×1080 | Lock screen: problem "Capitalise Each Word", editor, console, Escape hint | ready |
+| `03-settings.png` | same run, 1920×1024 | Settings: lock hours, default length, repeat sessions, after-solve options | ready |
+| `04-learn-progress.png` | same run, 1920×1024 | Learn & Progress: recommended lesson, patterns, foundations | ready — **this tab comes from the owner's uncommitted learn work**; the uploaded package was built from the working tree and includes it, so that work must be committed before/with the submission |
+
+Upload order in Partner Center: 02 (lock screen — the product), 01, 04, 03.
 
 No trailer. No promotional art beyond the required 300×300 logo, which
 electron-builder generates from `build/icon.png`.
@@ -110,7 +113,7 @@ electron-builder generates from `build/icon.png`.
 | Item | Status |
 |---|---|
 | Privacy URL live | **blocked** until `docs/store/PRIVACY.md` is on `main` |
-| Screenshot 01 re-captured maximised; 02/03 captured | **open** |
+| Screenshots | done (4 captured) |
 | Real RS256 key pair generated and public key baked (`RELEASE-GUIDE.md`) | **open** — the packages built so far used a throwaway key for build testing only |
 | Category and licence decision | **owner** |
 | WACK run | **unverified** |
