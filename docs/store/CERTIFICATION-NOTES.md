@@ -92,3 +92,29 @@ configured, over whatever scheme that URL uses — the default is
   Phase 4 reboot test; harmless for certification.
 - WACK has not been run in this session (needs an elevated prompt); the
   command is in RELEASE-GUIDE.md.
+
+## Phase 3 behaviour review against the policies (2026-09-19)
+
+Read against `src/main.ts` (`takeScreenFor`, `will-quit`, `classifyStartup`),
+`src/updater.ts`, `src/backend.ts`, and the observed Developer-Mode
+registration in DATA-PATHS.md.
+
+| Scenario | What the code does | Policy view |
+|---|---|---|
+| Server unreachable when a timer fires (offline) | `takeScreenFor` asks the server to confirm the lock first; on anything but an explicit refusal it does **not** take the screen and retries every 15 s. The machine stays usable. | 10.2 / 10.4.2: fails open, never traps the user; no crash |
+| Server unreachable while locked | The lock stays; the renderer shows the outage banner; Escape-hold (10 s) still releases. | 10.2: documented way out always exists |
+| Process killed while locked | `will-quit` relaunches; lock re-engages from `lock-state.json` only after the server re-confirms. | 10.2.8: no OS setting is touched; user can still Ctrl+Alt+Del / sign out |
+| Reboot while locked | On next launch the interruption is recorded and the lock re-engages via the same server-confirm path. In a Store install this depends on the startup task being enabled (user-controllable). | 10.2.8 |
+| Store pushes an update while locked | Not controllable by the app. The Store replaces the package; on next launch the lock restores from disk as above. Stated plainly in the listing and the release guide. | 10.2.5 (Store-installed, Store-updated) |
+| Uninstall while locked | Windows removes the package and its redirected state; nothing can run. The real `%APPDATA%\CodeLock\` from an NSIS install is left, so an NSIS reinstall would restore a still-live lock — acceptable, and the same as today's NSIS behaviour. | 10.2.7: clean uninstall, observed |
+| Uninstall while idle | Standard. Observed: package dir removed, no residue in `%LOCALAPPDATA%\Packages\`. | 10.2.7 |
+| Two identities at once (NSIS + Store) | Both can run; single-instance lock is per identity. Listing tells users to remove the direct-download version. Not a certification issue. | 10.1.1 (disclosed) |
+
+Migration `20260918120000_learn` (uncommitted, owner's work) was reviewed by
+the database reviewer: additive, transaction-safe on Postgres 16, applies
+cleanly on empty and migrated databases, no change to any table an existing
+desktop client touches. Not modified.
+
+Sanitizer over the unpacked package: PASS. Only the RSA public key is inside
+`build-defaults.json`; no private key, secret, `.env`, or developer path.
+Source maps were shipping and are now excluded (`electron-builder.yml`).

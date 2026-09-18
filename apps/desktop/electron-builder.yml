@@ -14,6 +14,9 @@ icon: build/icon.png
 
 files:
   - dist/**/*
+  # Source maps carry nothing secret (checked: relative paths only) but they
+  # are not needed at runtime and every shipped byte is one to certify.
+  - '!dist/**/*.map'
   # The bundled dashboard and settings screens, served over app://.
   - dist-renderer/**/*
   # The tray icon is read at runtime, so it has to travel inside the asar.
