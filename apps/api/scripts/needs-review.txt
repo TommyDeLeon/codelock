@@ -1,1 +1,4 @@
 cancel-one-overlapping-chain (original): reference solution returns len-1 regardless of intervals; test '1 2;2 3' -> 1 contradicts 'touching allowed'. Needs tests/solution repair, then a statement rewrite.
+delete-later-middle-node, decode-message-with-guarded-zeroes (tests): sample tests still carry well-known example data ('1 2 3 4'; '226', '06'); candidates for refresh-tests.ts.
+equal-size-asteroids-survive (tests): sample tests '5 10 -5' and '8 -8' are well-known example data; candidate for refresh-tests.ts.
+fewest-hops-with-free-finish (tests): sample '2 3 1 1 4' is well-known example data; candidate for refresh-tests.ts.
