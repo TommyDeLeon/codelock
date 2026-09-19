@@ -804,6 +804,43 @@ export interface SkillProgressView {
   assisted: number;
 }
 
+/** How a growth rate compares with the editorial's stated standard. */
+export type ComplexityVerdict = 'matches' | 'slower' | 'faster' | 'unknown';
+
+/**
+ * GET /progress/complexity/:submissionId — how a passing solution scales, and
+ * the standard approach to practise.
+ *
+ * `yours` is a static estimate from the submitted code, never a measurement:
+ * it carries its reasons and a confidence so it can be checked. `standard` is
+ * what the problem's editorial states, or null where it states nothing
+ * readable. Available only after the lock is over, because the standard
+ * solution is the answer.
+ */
+export interface ComplexityFeedback {
+  language: Language;
+  yours: {
+    time: string;
+    space: string;
+    confidence: 'medium' | 'low';
+    reasons: string[];
+  };
+  standard: { time: string | null; space: string | null };
+  verdict: { time: ComplexityVerdict; space: ComplexityVerdict };
+  /** One plain sentence comparing the two. */
+  summary: string;
+  standardSolution: {
+    language: Language;
+    code: string;
+    /** The editorial's name for the approach, e.g. "Sliding Window". */
+    approach: string | null;
+    /** Set when the solution shown is not in the learner's language, and why. */
+    note: string | null;
+  } | null;
+  editorialMarkdown: string | null;
+  editorialUrl: string | null;
+}
+
 export interface Accomplishment {
   kind: AccomplishmentKind;
   headline: string;

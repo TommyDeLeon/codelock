@@ -1,6 +1,7 @@
 import { apiFailure, type ApiFailure } from '@codelock/shared';
 import type {
   Accomplishment,
+  ComplexityFeedback,
   FeedbackInput,
   HintRequestInput,
   HintView,
@@ -390,6 +391,11 @@ export const api = {
     accomplishment: (submissionId: string) =>
       request<{ accomplishment: Accomplishment | null; pending: boolean }>(
         `/v1/progress/accomplishment/${encodeURIComponent(submissionId)}`,
+      ),
+    /** How a passing solution scales, and the standard approach. 409 while its lock is up. */
+    complexity: (submissionId: string) =>
+      request<{ complexity: ComplexityFeedback }>(
+        `/v1/progress/complexity/${encodeURIComponent(submissionId)}`,
       ),
   },
 

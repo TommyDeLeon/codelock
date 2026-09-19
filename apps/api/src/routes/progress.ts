@@ -9,6 +9,7 @@ import { loadSkillSnapshot } from '../services/skillState.js';
 import { STATE_LABELS } from '../services/tutor/accomplishment.js';
 import { describeFrontier, loadFrontierLocks, nearestInterview } from '../services/frontier.js';
 import { ALL_PROBLEMS } from '../corpus/problems/index.js';
+import { buildFeedback, type ComplexityLanguage } from '../services/complexity.js';
 
 export const progressRouter = Router();
 progressRouter.use(withLocalUser);
@@ -156,5 +157,58 @@ progressRouter.get(
     });
     const accomplishment = (event?.detail as { accomplishment?: unknown } | null)?.accomplishment ?? null;
     res.json({ accomplishment, pending: event === null });
+  }),
+);
+
+/**
+ * GET /progress/complexity/:submissionId — how this solution scales, and the
+ * standard approach to practise.
+ *
+ * Two gates, both about not handing over an answer:
+ * - the submission must have passed every test (ACCEPTED, or ACCEPTED_TOO_SLOW
+ *   where the slow run is exactly what this explains), and
+ * - if it belonged to a lock, that lock must be over. A correct-but-slow run
+ *   leaves the lock up, and the standard solution would then be the way out.
+ */
+progressRouter.get(
+  '/complexity/:submissionId',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const submissionId = String(req.params.submissionId ?? '');
+    if (!/^[0-9a-f-]{36}$/i.test(submissionId)) throw ApiError.badRequest('Invalid submission');
+
+    const submission = await prisma.submission.findUnique({
+      where: { id: submissionId },
+      select: {
+        userId: true,
+        status: true,
+        language: true,
+        sourceCode: true,
+        lockSession: { select: { state: true } },
+        problem: {
+          select: { editorialMarkdown: true, editorialUrl: true, referenceSolution: true },
+        },
+      },
+    });
+    // Same answer for missing and someone else's, so ids cannot be probed.
+    if (!submission || submission.userId !== user.id) throw ApiError.notFound('Submission not found');
+    if (submission.status !== 'ACCEPTED' && submission.status !== 'ACCEPTED_TOO_SLOW') {
+      throw ApiError.conflict('Complexity feedback is available once a solution passes every test');
+    }
+    const state = submission.lockSession?.state;
+    if (state === 'ARMED' || state === 'LOCKED') {
+      throw ApiError.conflict('Complexity feedback is available once the lock is over');
+    }
+
+    const feedback = buildFeedback({
+      language: submission.language as ComplexityLanguage,
+      sourceCode: submission.sourceCode,
+      editorialMarkdown: submission.problem.editorialMarkdown,
+      editorialUrl: submission.problem.editorialUrl,
+      referenceSolution: (submission.problem.referenceSolution ?? {}) as Partial<
+        Record<ComplexityLanguage, string>
+      >,
+    });
+    res.json({ complexity: feedback });
   }),
 );

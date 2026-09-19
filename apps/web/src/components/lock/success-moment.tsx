@@ -6,6 +6,7 @@ import type { Accomplishment, FeedbackFeeling } from '@codelock/shared';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ComplexityPanel } from './complexity-panel';
 
 /**
  * The moment after a solve.
@@ -248,6 +249,8 @@ export function SuccessMoment({
             </ul>
           </section>
         )}
+
+        {submissionId && <ComplexityPanel submissionId={submissionId} />}
 
         <div className="mt-8">
           <Button size="lg" variant="outline" onClick={onFinish} autoFocus>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Accomplishment } from '@codelock/shared';
 import { api } from './api';
+import { ComplexityPanel } from './complexity';
 
 /**
  * The moment after a solve, inside the desktop app.
@@ -378,6 +379,8 @@ export function Celebration() {
           {a.helpSummary}
           {a.variation ? ` If you want more later: ${a.variation.title}.` : ''}
         </p>
+
+        <ComplexityPanel submissionId={item.submissionId} />
 
         <button
           ref={finishRef}

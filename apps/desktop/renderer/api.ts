@@ -14,6 +14,7 @@ import type {
   StatsSummary,
   TimerConfig,
   DifficultyFocusInput,
+  ComplexityFeedback,
 } from '@codelock/shared';
 
 /**
@@ -196,6 +197,16 @@ export const api = {
   accomplishment: (submissionId: string) =>
     request<{ accomplishment: Accomplishment | null; pending: boolean }>(
       `/v1/progress/accomplishment/${submissionId}`,
+    ),
+
+  /**
+   * How a passing solution scales, and the standard approach. The server
+   * refuses (409) while its lock is still up, since the standard solution is
+   * the answer.
+   */
+  complexity: (submissionId: string) =>
+    request<{ complexity: ComplexityFeedback }>(
+      `/v1/progress/complexity/${encodeURIComponent(submissionId)}`,
     ),
 
   profile: () => request<{ profile: { preferredLanguage: Language } }>('/v1/settings/profile'),
