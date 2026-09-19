@@ -37,6 +37,16 @@ export const timerConfigSchema = z.object({
   { message: 'activeFromMinute must be before activeToMinute', path: ['activeFromMinute'] },
 );
 
+/**
+ * PATCH /settings/difficulty. Two shapes only, so an incoherent pair (a mode
+ * with no focus, or a focus left behind under AUTOMATIC) cannot be expressed.
+ * Strict, so a stray field is a 400 rather than silently ignored.
+ */
+export const difficultyFocusSchema = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('AUTOMATIC') }).strict(),
+  z.object({ mode: z.literal('MANUAL'), difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']) }).strict(),
+]);
+
 export const armSessionSchema = z.object({
   deviceId: z.string().uuid().optional(),
   /// One-off override, e.g. "just 30 minutes this time".
@@ -146,3 +156,67 @@ export const feedbackSchema = z.object({
   strategy: z.string().max(40).optional(),
   note: z.string().trim().max(500).optional(),
 });
+
+// ---------------------------------------------------------------------------
+// Learn
+// ---------------------------------------------------------------------------
+// None of these carries a lockSessionId, and that is the point: a lesson's
+// practice and hints reach the grader and the hint builder with no session
+// at all, so a stale or leaked session id on the client cannot turn a
+// practice solve into a release.
+
+const lessonIdParam = z.string().regex(/^[a-z0-9-]{3,64}$/);
+
+export const learnQuerySchema = z.object({
+  language: languageEnum.optional(),
+});
+
+export const lessonParamSchema = z.object({ id: lessonIdParam });
+
+export const lessonStartSchema = z.object({
+  language: languageEnum,
+});
+
+export const lessonDraftSchema = z.object({
+  version: z.number().int().min(1),
+  step: z.number().int().min(0).max(5).optional(),
+  /** Unsent answers by check id. Bounded so a draft cannot become a dump. */
+  draft: z.record(z.string().max(64), z.string().max(64 * 1024)).optional(),
+});
+
+export const lessonCheckSchema = z.object({
+  attemptId: z.string().uuid(),
+  /** Accepted for older clients; a check is keyed by attemptId, not by row version. */
+  version: z.number().int().min(1).optional(),
+  kind: z.enum(['prediction', 'task']),
+  checkId: z.string().max(64),
+  /** For a prediction: the chosen option index. */
+  answer: z.number().int().min(0).max(16).optional(),
+  /** For a task: the whole program. */
+  sourceCode: z.string().max(64 * 1024).optional(),
+});
+
+export const lessonFinishSchema = z.object({
+  version: z.number().int().min(1),
+});
+
+export const lessonPlacementSchema = z.object({
+  foundations: z.literal('known'),
+});
+
+export const lessonCorrectionSchema = z.object({
+  lessonId: lessonIdParam,
+  correction: z.enum(['known', 'too_hard']),
+});
+
+export const lessonPracticeSchema = z.object({
+  language: languageEnum,
+});
+
+export const learnPracticeSubmitSchema = z.object({
+  problemId: z.string().uuid(),
+  language: languageEnum,
+  sourceCode: z.string().min(1).max(64 * 1024),
+});
+
+export const learnPracticeHintSchema = tutorHintSchema.omit({ lockSessionId: true });

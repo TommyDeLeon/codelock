@@ -30,6 +30,7 @@ import {
 } from './diagnose.js';
 import { define, listWord, termsIn } from './glossary.js';
 import { starterPack, type StarterPack } from './starter.js';
+import { constructsText, techniquesFor } from './techniques.js';
 
 /**
  * Turn a diagnosis into one clear next step, at the level of help asked for.
@@ -284,6 +285,7 @@ function lessonFor(d: Diagnosis, input: LadderInput, pack: StarterPack | null): 
           explain: example,
           tryThis:
             pack?.firstQuestion ??
+            techniquesFor(problem.patternTags)[0]?.question ??
             'Work that example out on paper first. What is the very first thing you look at, and what do you do with it?',
         },
         contrast: {
@@ -1030,18 +1032,35 @@ export function buildHint(input: LadderInput): HintView {
       body = [input.prerequisiteNote, strategy === 'concept' ? lesson.concept : lesson.analogy]
         .filter(Boolean)
         .join('\n\n');
+      // The idea, and then the lines: the constructs the problem's technique
+      // tags name, in this language. Knowing the idea and not the syntax was
+      // the owner's exact complaint, and the idea alone left it standing.
+      const constructs = constructsText(techniquesFor(problem.patternTags), language);
+      if (constructs) {
+        code = { label: `The pieces in ${LANGUAGE_NAMES[language]}`, text: constructs, language };
+      }
       parts = {
         notice: top.line && top.blocking ? `This is about ${lowerLineRef(top)}.` : null,
         explain: null,
-        tryThis: top.blocking ? 'With that idea in mind, look at your code again. What would you change first?' : null,
+        tryThis: top.blocking
+          ? 'With that idea in mind, look at your code again. What would you change first?'
+          : constructs
+            ? 'These are the pieces, not the answer. Put them in the order the outline needs.'
+            : null,
       };
       break;
     }
     case 'outline': {
-      const outline = pack?.outline ?? lesson.outline;
+      const technique = techniquesFor(problem.patternTags);
+      const techniqueOutline = technique.length > 0 ? technique.map((t) => t.outline).join('\n\n') : null;
+      const outline = pack?.outline ?? lesson.outline ?? techniqueOutline;
       if (outline) {
         code = { label: 'Outline with one gap', text: outline, language: 'pseudocode' };
-        body = pack?.gapNote ?? 'Fill in the blank marked ___. Everything else is the plan in plain words.';
+        body =
+          pack?.gapNote ??
+          (outline === techniqueOutline
+            ? `Fill in each blank marked ___. This is the shape of ${technique.map((t) => t.tag.replace('-', ' ')).join(' and ')}, which is what this problem is tagged with; the constructs for ${LANGUAGE_NAMES[language]} are one level down.`
+            : 'Fill in the blank marked ___. Everything else is the plan in plain words.');
       } else {
         body = `There is no reviewed outline for ${problem.title} yet, so here is the idea it would be built on instead.\n\n${lesson.concept}`;
       }

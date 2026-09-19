@@ -1,10 +1,19 @@
 import type {
   Accomplishment,
+  GradeResult,
+  HintView,
+  Language,
+  LearnView,
+  LessonCheckResultView,
+  LessonPracticeView,
+  LessonSessionView,
+  LessonView,
   ProgressView,
   LockSessionView,
   SessionReviewView,
   StatsSummary,
   TimerConfig,
+  DifficultyFocusInput,
 } from '@codelock/shared';
 
 /**
@@ -30,12 +39,33 @@ export async function loadConfig(): Promise<void> {
   if (config) {
     apiUrl = config.apiUrl;
     webUrl = config.webUrl;
+    return;
   }
+  // No bridge means the renderer is open in a plain browser from `vite`,
+  // which only happens while developing. `?api=http://127.0.0.1:4001` points
+  // it at a dev API on another port; only a loopback origin is accepted.
+  const override = new URLSearchParams(window.location.search).get('api');
+  if (override && /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(override)) apiUrl = override;
 }
 
 export const webAppUrl = (): string => webUrl;
 
-export class ApiError extends Error {}
+/**
+ * A failed request. `status` is 0 when the server could not be reached at
+ * all, so a screen can tell "CodeLock is down" from "the judge is down" (502)
+ * from "this lesson moved on" (409) without parsing the message.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number = 0,
+    readonly code: string = 'UNREACHABLE',
+    readonly body: unknown = null,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -56,8 +86,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
-    throw new ApiError(body?.error?.message ?? `Request failed with ${res.status}`);
+    const body = (await res.json().catch(() => null)) as { error?: { message?: string; code?: string } } | null;
+    throw new ApiError(body?.error?.message ?? `Request failed with ${res.status}`, res.status, body?.error?.code ?? 'HTTP_ERROR', body);
   }
 
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
@@ -115,6 +145,16 @@ export const api = {
       body: JSON.stringify(patch),
     }),
 
+  /**
+   * Automatic (default) or a manual focus on one band. Server-validated and
+   * applied from the next armed session; a live session keeps its level.
+   */
+  saveDifficultyFocus: (focus: DifficultyFocusInput) =>
+    request<{ timerConfig: TimerConfig }>('/v1/settings/difficulty', {
+      method: 'PUT',
+      body: JSON.stringify(focus),
+    }),
+
   /** The learning log: what you met, what you tried, and how it went. */
   log: (params: { limit?: number; kind?: string[] } = {}) => {
     const q = new URLSearchParams();
@@ -151,6 +191,83 @@ export const api = {
     request<{ sinceDays: number | null; summary: LogSummary }>(
       `/v1/log/summary${sinceDays ? `?sinceDays=${sinceDays}` : ''}`,
     ),
+
+  /** The success moment for one solve, lock or practice. `pending` while it is being written. */
+  accomplishment: (submissionId: string) =>
+    request<{ accomplishment: Accomplishment | null; pending: boolean }>(
+      `/v1/progress/accomplishment/${submissionId}`,
+    ),
+
+  profile: () => request<{ profile: { preferredLanguage: Language } }>('/v1/settings/profile'),
+
+  /**
+   * Learn. Reads change nothing on the server; every write below is an
+   * explicit step, and each write carries the session `version` it was
+   * built against so a stale one is refused rather than honoured.
+   */
+  learn: {
+    view: (language: Language) => request<LearnView>(`/v1/learn?language=${language}`),
+    lesson: (id: string, language: Language) =>
+      request<{ lesson: LessonView; session: LessonSessionView | null }>(`/v1/learn/lessons/${id}?language=${language}`),
+    start: (id: string, language: Language) =>
+      request<{ session: LessonSessionView }>(`/v1/learn/lessons/${id}/start`, {
+        method: 'POST',
+        body: JSON.stringify({ language }),
+      }),
+    draft: (id: string, body: { version: number; step?: number; draft?: Record<string, string> }) =>
+      request<{ session: LessonSessionView }>(`/v1/learn/lessons/${id}/draft`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    check: (
+      id: string,
+      body: {
+        attemptId: string;
+        version: number;
+        kind: 'prediction' | 'task';
+        checkId: string;
+        answer?: number;
+        sourceCode?: string;
+      },
+    ) =>
+      request<{ result: LessonCheckResultView; duplicate: boolean; session: LessonSessionView }>(
+        `/v1/learn/lessons/${id}/checks`,
+        { method: 'POST', body: JSON.stringify(body), signal: AbortSignal.timeout(70_000) },
+      ),
+    practice: (id: string, language: Language) =>
+      request<LessonPracticeView>(`/v1/learn/lessons/${id}/practice`, {
+        method: 'POST',
+        body: JSON.stringify({ language }),
+      }),
+    finish: (id: string, version: number) =>
+      request<{ session: LessonSessionView }>(`/v1/learn/lessons/${id}/finish`, {
+        method: 'POST',
+        body: JSON.stringify({ version }),
+      }),
+    placement: () =>
+      request<{ ok: true; marked: number }>('/v1/learn/placement', {
+        method: 'POST',
+        body: JSON.stringify({ foundations: 'known' }),
+      }),
+    correction: (lessonId: string, correction: 'known' | 'too_hard') =>
+      request<{ ok: true }>('/v1/learn/correction', {
+        method: 'POST',
+        body: JSON.stringify({ lessonId, correction }),
+      }),
+    /** Practice grading and hints with no lock session, by construction. */
+    submit: (body: { problemId: string; language: Language; sourceCode: string }) =>
+      request<GradeResult>('/v1/learn/practice/submit', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(70_000),
+      }),
+    hint: (body: { problemId: string; language: Language; sourceCode: string; request: 'next' | 'level'; level?: number }) =>
+      request<HintView>('/v1/learn/practice/hint', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+      }),
+  },
 };
 
 export interface LearningEventView {

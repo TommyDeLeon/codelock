@@ -33,3 +33,4 @@ apps/api/.slugs-todo.txt
 
 # Public problem index used as a coverage map; not ours to redistribute.
 data/leetcode-index.json
+brag-output/

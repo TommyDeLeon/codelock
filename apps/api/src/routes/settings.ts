@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
-import { profileSchema, registerDeviceSchema, timerConfigSchema } from '../validation/schemas.js';
+import {
+  difficultyFocusSchema,
+  profileSchema,
+  registerDeviceSchema,
+  timerConfigSchema,
+} from '../validation/schemas.js';
 
 export const settingsRouter = Router();
 settingsRouter.use(withLocalUser);
@@ -72,6 +77,32 @@ settingsRouter.patch(
       where: { userId: user.id },
       create: { userId: user.id, ...body },
       update: body,
+    });
+    res.json({ timerConfig: config });
+  }),
+);
+
+/**
+ * PUT /settings/difficulty
+ *
+ * Automatic (the default) or a manual focus on one band. Stored on the timer
+ * config and read when the next session arms: an ARMED or LOCKED session keeps
+ * the difficulty it was armed with. UserProgress is never touched here, so the
+ * automatic tier and its streaks are exactly where they were on return.
+ */
+settingsRouter.put(
+  '/difficulty',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const body = difficultyFocusSchema.parse(req.body);
+    const data =
+      body.mode === 'MANUAL'
+        ? { difficultyMode: 'MANUAL' as const, focusDifficulty: body.difficulty }
+        : { difficultyMode: 'AUTOMATIC' as const, focusDifficulty: null };
+    const config = await prisma.timerConfig.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, ...data },
+      update: data,
     });
     res.json({ timerConfig: config });
   }),

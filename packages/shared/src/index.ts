@@ -80,6 +80,11 @@ export interface LockSessionView {
   id: string;
   state: LockState;
   difficulty: Difficulty;
+  /**
+   * Where `difficulty` came from, snapshotted at arm time. MANUAL sessions
+   * never move the automatic ladder. Optional for older servers.
+   */
+  difficultySource?: DifficultyMode;
   fireAt: string;
   /** Server clock at response time. Clients render countdowns from this. */
   serverNow: string;
@@ -134,7 +139,21 @@ export interface TimerConfig {
    * still applies, so it stops on its own at the end of the day.
    */
   autoRearm: boolean;
+  /**
+   * Difficulty focus. AUTOMATIC follows the adaptive ladder; MANUAL pins new
+   * locks to `focusDifficulty`. Changed through PUT /settings/difficulty and
+   * applied from the next armed session. Optional for older servers.
+   */
+  difficultyMode?: DifficultyMode;
+  focusDifficulty?: Difficulty | null;
 }
+
+export type DifficultyMode = 'AUTOMATIC' | 'MANUAL';
+
+/** Body of PUT /settings/difficulty. */
+export type DifficultyFocusInput =
+  | { mode: 'AUTOMATIC' }
+  | { mode: 'MANUAL'; difficulty: Difficulty };
 
 export interface AuthUser {
   id: string;
@@ -846,4 +865,171 @@ export interface FeedbackInput {
   hintLevel?: HintLevel;
   strategy?: string;
   note?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Learn
+// ---------------------------------------------------------------------------
+// The desktop's Learn subview. Every field here is new and optional to the
+// rest of the contract: an older client never asks for it, and an older
+// server never sends it. Nothing in this section carries an answer key or a
+// reference solution; those stay on the server.
+
+export type LearnReasonCode =
+  | 'resumed'
+  | 'blocker'
+  | 'problem'
+  | 'pattern'
+  | 'prerequisite'
+  | 'frontier'
+  | 'review'
+  | 'consolidation'
+  | 'content_gap'
+  | 'history_unavailable';
+
+export type LearnConfidence = 'confirmed' | 'likely' | 'possible';
+
+export interface LearnSourceView {
+  publisher: string;
+  title: string;
+  url: string;
+  section: string;
+  runtime: string;
+  reviewedOn: string;
+}
+
+export interface LearnLessonSummary {
+  id: string;
+  skill: string;
+  skillLabel: string;
+  title: string;
+  objective: string;
+  prerequisites: string[];
+  /** The learner's state on this lesson's skill, in the progress page's words. */
+  skillState: string;
+  skillStateLabel: string;
+  /** Null for a foundation lesson; the pattern family for a lesson beyond them. */
+  family?: string | null;
+}
+
+export interface LearnRecommendationView {
+  lesson: LearnLessonSummary | null;
+  reasonCode: LearnReasonCode;
+  /** Plain words about what was observed. Never a verdict about the learner. */
+  reason: string;
+  confidence: LearnConfidence;
+  language: Language;
+  contentVersion: string;
+  variantAvailable: boolean;
+  fluencyNote: string | null;
+}
+
+export interface LearnResourceView {
+  family: string;
+  title: string;
+  summary: string;
+  coverage: 'resources_only';
+  resources: LearnSourceView[];
+}
+
+export interface LessonCheckResultView {
+  attemptId: string;
+  checkId: string;
+  kind: 'prediction' | 'task';
+  correct: boolean;
+  /** Shown after answering, whichever answer was given. */
+  explanation: string | null;
+  /** For a task: what the program printed, and any compiler or runtime message. */
+  stdout: string | null;
+  stderr: string | null;
+  at: string;
+}
+
+export interface LessonSessionView {
+  id: string;
+  lessonId: string;
+  language: Language;
+  contentVersion: string;
+  /** Which step is open. 0 = idea, 1 = example, 2 = prediction, 3 = task, 4 = practice, 5 = done. */
+  step: number;
+  status: 'active' | 'finished';
+  /** Optimistic-concurrency token. Every write sends the version it read. */
+  version: number;
+  draft: Record<string, string>;
+  checks: Record<string, LessonCheckResultView>;
+  updatedAt: string;
+}
+
+export interface LearnView {
+  language: Language;
+  contentVersion: string;
+  /** 'unavailable' means the history could not be read; it is not the same as 'empty'. */
+  history: 'available' | 'empty' | 'unavailable';
+  primary: LearnRecommendationView;
+  review: LearnRecommendationView | null;
+  topics: LearnLessonSummary[];
+  resources: LearnResourceView[];
+  active: LessonSessionView | null;
+}
+
+export interface LessonTraceStepView {
+  label: string;
+  text: string;
+}
+
+/** A prerequisite the learner has not met, explained in place. */
+export interface LessonPrimerView {
+  skill: string;
+  label: string;
+  title: string;
+  explanation: string;
+  smaller: { description: string; trace: LessonTraceStepView[] };
+  /** The lesson to open for the full version; returns to the same position. */
+  lessonId: string;
+}
+
+export interface LessonView {
+  id: string;
+  skill: string;
+  skillLabel: string;
+  title: string;
+  objective: string;
+  prerequisites: string[];
+  /**
+   * The depth inferred from the learner's evidence on this skill: 'beginner'
+   * shows the full explanation first, 'concise' the refresher first, and
+   * 'bridge' the refresher with the syntax card emphasised because the
+   * concept is known but not in this language. Any of them can be overridden.
+   */
+  depth?: 'beginner' | 'concise' | 'bridge';
+  explanation: string;
+  /** Present on servers with the teach-first pass. */
+  refresher?: string;
+  /** Words in the explanation with plain definitions, for "explain this term". */
+  terms?: Array<{ term: string; definition: string }>;
+  /** Prerequisites the evidence says are unmet, explained in place. */
+  primers?: LessonPrimerView[];
+  alternate: string;
+  trace: LessonTraceStepView[];
+  smaller: { description: string; trace: LessonTraceStepView[] };
+  check: { id: string; question: string; options: string[] };
+  language: Language;
+  variant: {
+    example: { code: string; stdout: string };
+    note: string | null;
+    task: { prompt: string; starter: string; stdout: string };
+    sources: LearnSourceView[];
+    /** The constructs this lesson's techniques need in this language, as one code block. */
+    syntax?: string | null;
+  };
+  sources: LearnSourceView[];
+  contentVersion: string;
+}
+
+export interface LessonPracticeView {
+  problem: PublicProblem;
+  /** Why this problem, in the selector's own words. */
+  fit: string;
+  /** How a solve here is recorded, said up front. */
+  note: string;
 }

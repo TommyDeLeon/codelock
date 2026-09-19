@@ -1,4 +1,4 @@
-import { Language, LockState, SubmissionStatus } from '@prisma/client';
+import { DifficultyMode, Language, LockState, SubmissionStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { env } from '../env.js';
 import { ApiError } from '../lib/errors.js';
@@ -433,6 +433,9 @@ export async function gradeSubmission(params: {
     // current, not stale: the release above required the same revision, and
     // `adjusted` only ever changes in the statement that changes the revision.
     adjusted: session.adjusted,
+    // The session's own snapshot, not the current preference: a focus chosen
+    // or cleared after this lock armed must not change how it is read.
+    manualFocus: session.difficultySource === DifficultyMode.MANUAL,
   });
 
   // Now, and not inside releaseLock: the recurring timer arms the next block at
@@ -499,18 +502,28 @@ export async function recordFailure(
   userId: string,
   problemAvgSeconds: number,
   /**
-   * Whether the learner changed problems during the session being given up on,
-   * read from the session row. A failure on a problem they chose is counted but
-   * must not demote, or "this is too hard" would cost a demotion for having
-   * said so.
+   * Named, not positional: two adjacent booleans are easy to swap, and either
+   * one swapped would demote a learner who should have been held.
    */
-  adjusted = false,
+  session: {
+    /**
+     * Whether the learner changed problems during the session being given up
+     * on, read from the session row. A failure on a problem they chose is
+     * counted but must not demote, or "this is too hard" would cost a
+     * demotion for having said so.
+     */
+    adjusted: boolean;
+    /** Whether the session was armed under a manual focus, from its snapshot. */
+    manualFocus: boolean;
+  },
 ): Promise<ProgressUpdate> {
+  const { adjusted, manualFocus } = session;
   return advanceProgress(userId, {
     solved: false,
     problemAvgSeconds,
     firstTry: false,
     adjusted,
+    manualFocus,
   });
 }
 

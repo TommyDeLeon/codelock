@@ -1,4 +1,4 @@
-import { Difficulty, type UserProgress } from '@prisma/client';
+import { Difficulty, DifficultyMode, type UserProgress } from '@prisma/client';
 
 /**
  * Adaptive difficulty.
@@ -55,6 +55,34 @@ export interface SessionOutcome {
    * the mechanism this product rules out.
    */
   adjusted?: boolean;
+  /**
+   * True when the session was armed under a manual difficulty focus, read
+   * from the session's own snapshot rather than the current preference.
+   *
+   * Treated like `adjusted`: counted in the totals, never read by the ladder.
+   * The learner picked the band, so a solve there is not evidence the
+   * automatic tier should move, and a failure at a level they chose to try
+   * must not cost them the tier they had earned.
+   */
+  manualFocus?: boolean;
+}
+
+/**
+ * The difficulty a newly armed lock should use. Pure, so the one rule that
+ * decides it is testable without a database.
+ *
+ * A MANUAL mode with no focus cannot be stored (the API and a CHECK
+ * constraint both refuse it), but if one ever arrives it falls back to the
+ * automatic tier rather than guessing.
+ */
+export function resolveDifficulty(
+  automatic: Difficulty | null | undefined,
+  preference: { difficultyMode: DifficultyMode; focusDifficulty: Difficulty | null } | null | undefined,
+): { difficulty: Difficulty; source: DifficultyMode } {
+  if (preference?.difficultyMode === DifficultyMode.MANUAL && preference.focusDifficulty) {
+    return { difficulty: preference.focusDifficulty, source: DifficultyMode.MANUAL };
+  }
+  return { difficulty: automatic ?? Difficulty.EASY, source: DifficultyMode.AUTOMATIC };
 }
 
 export interface ProgressUpdate {
@@ -79,6 +107,15 @@ export interface ProgressUpdate {
  */
 export function applyOutcome(progress: UserProgress, outcome: SessionOutcome): ProgressUpdate {
   const now = new Date();
+
+  if (outcome.manualFocus && !outcome.adjusted) {
+    return {
+      ...held(progress, outcome),
+      reason: outcome.solved
+        ? 'Solved during a focus session. It counts toward your totals; your automatic level stays where it was.'
+        : 'Focus sessions never lower your automatic level.',
+    };
+  }
 
   if (outcome.adjusted) {
     return {
@@ -144,6 +181,21 @@ export function applyOutcome(progress: UserProgress, outcome: SessionOutcome): P
       : wasFast
         ? `Fast solve ${fastStreak}/${PROMOTE_AFTER_FAST_SOLVES} at ${progress.currentDifficulty.toLowerCase()}.`
         : `Solved, but over the ${Math.round(outcome.problemAvgSeconds / 60)} min average — streak reset.`,
+  };
+}
+
+/** Totals move, nothing the ladder reads does. */
+function held(progress: UserProgress, outcome: SessionOutcome): ProgressUpdate {
+  return {
+    currentDifficulty: progress.currentDifficulty,
+    consecutiveFastSolves: progress.consecutiveFastSolves,
+    consecutiveFailures: progress.consecutiveFailures,
+    totalSolved: progress.totalSolved + (outcome.solved ? 1 : 0),
+    totalFailed: progress.totalFailed + (outcome.solved ? 0 : 1),
+    emaSolveSeconds: progress.emaSolveSeconds,
+    firstTryRate: progress.firstTryRate,
+    transition: 'held',
+    reason: '',
   };
 }
 

@@ -548,7 +548,10 @@ export function DashboardScreen() {
       <aside style={{ display: 'grid', gap: 24, alignContent: 'start' }}>
         {stats ? (
           <>
-            <TierLadder progress={stats.progress} />
+            <TierLadder
+              progress={stats.progress}
+              focus={timer?.difficultyMode === 'MANUAL' ? (timer.focusDifficulty ?? null) : null}
+            />
             <div className="rule" style={{ paddingTop: 20 }}>
               <StreakPips progress={stats.progress} />
             </div>

@@ -3,7 +3,7 @@ import type { OAuthProviderName } from '@codelock/shared';
 import { openExternal } from './bridge';
 import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
-import { ProgressScreen } from './screens/progress';
+import { LearnProgressScreen } from './screens/progress';
 import { LockMark } from './lock-mark';
 import { ProviderMark } from './provider-mark';
 import {
@@ -15,6 +15,13 @@ import {
 } from './theme';
 
 type Tab = 'dashboard' | 'progress' | 'settings';
+
+/** The Progress tab grew a Learn subview; its id stays so nothing else moves. */
+const TAB_LABELS: Record<Tab, string> = {
+  dashboard: 'Dashboard',
+  progress: 'Learn & Progress',
+  settings: 'Settings',
+};
 
 /**
  * Light, dark, or whatever the machine is doing.
@@ -128,7 +135,7 @@ export function App() {
               aria-current={tab === name ? 'page' : undefined}
               style={{ textTransform: 'capitalize' }}
             >
-              {name}
+              {TAB_LABELS[name]}
             </button>
           ))}
         </div>
@@ -142,7 +149,7 @@ export function App() {
         {tab === 'dashboard' ? (
           <DashboardScreen />
         ) : tab === 'progress' ? (
-          <ProgressScreen />
+          <LearnProgressScreen />
         ) : (
           <SettingsScreen />
         )}

@@ -1,6 +1,58 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AccomplishmentKind, ProgressView } from '@codelock/shared';
 import { api, ApiError } from '../api';
+import { LearnScreen } from './learn';
+
+type Subview = 'learn' | 'progress';
+
+const SUBVIEW_KEY = 'codelock.learnProgress.subview';
+
+/**
+ * Learn & Progress: the same evidence, read two ways.
+ *
+ * Learn answers "what next, and why"; Progress keeps the record of what the
+ * solves have shown. One tab with two subviews rather than two tabs, because
+ * a learner choosing between them at the top level would be choosing between
+ * a question and its answer. Which one is open is remembered per machine.
+ */
+export function LearnProgressScreen() {
+  const [subview, setSubview] = useState<Subview>(() => {
+    try {
+      return window.localStorage.getItem(SUBVIEW_KEY) === 'progress' ? 'progress' : 'learn';
+    } catch {
+      return 'learn';
+    }
+  });
+  const choose = (next: Subview) => {
+    setSubview(next);
+    try {
+      window.localStorage.setItem(SUBVIEW_KEY, next);
+    } catch {
+      // Applies for this session even if it cannot be saved.
+    }
+  };
+  return (
+    <div style={{ display: 'grid', gap: 20 }}>
+      <div role="group" aria-label="Learn or Progress" style={{ display: 'flex', gap: 4 }}>
+        {(['learn', 'progress'] as const).map((name) => (
+          <button
+            key={name}
+            type="button"
+            className="btn btn-chip"
+            aria-pressed={subview === name}
+            onClick={() => choose(name)}
+            style={{ textTransform: 'capitalize' }}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      <div aria-live="polite">
+        {subview === 'learn' ? <LearnScreen /> : <ProgressScreen />}
+      </div>
+    </div>
+  );
+}
 
 /**
  * What you can do, saved.

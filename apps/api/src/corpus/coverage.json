@@ -3152,5 +3152,34 @@
     "batch": "gen-lc-w0-142",
     "date": "2026-09-17",
     "reason": "rejected"
+  },
+  "number-of-students-doing-homework-at-a-given-time": {
+    "ours": "active-satellites-count",
+    "batch": "gen-lc-w2-143",
+    "date": "2026-09-17"
+  },
+  "number-of-lines-to-write-string": {
+    "ours": null,
+    "batch": "gen-lc-w2-143",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "path-crossing": {
+    "ours": null,
+    "batch": "gen-lc-w2-143",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "path-sum": {
+    "ours": null,
+    "batch": "gen-lc-w2-143",
+    "date": "2026-09-17",
+    "reason": "rejected"
+  },
+  "patients-with-a-condition": {
+    "ours": null,
+    "batch": "gen-lc-w2-143",
+    "date": "2026-09-17",
+    "reason": "rejected"
   }
 }

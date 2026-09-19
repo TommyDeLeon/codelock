@@ -20,6 +20,13 @@ enum Difficulty {
   HARD
 }
 
+/// Where a lock's difficulty came from. AUTOMATIC reads the adaptive ladder
+/// (UserProgress.currentDifficulty); MANUAL is a focus the learner chose.
+enum DifficultyMode {
+  AUTOMATIC
+  MANUAL
+}
+
 /// How far into the curriculum a problem sits.
 ///
 /// Not the same axis as `Difficulty`, and the difference matters: an EASY
@@ -146,6 +153,7 @@ model User {
   unlockAudits  UnlockAudit[]
   learningEvents LearningEvent[]
   retrievalSchedules RetrievalSchedule[]
+  lessonSessions LessonSession[]
 
   @@map("users")
 }
@@ -198,6 +206,13 @@ model TimerConfig {
   autoRearm          Boolean  @default(true)
   /// How many "skip this one" escapes per day. 0 disables the escape hatch.
   dailySkipAllowance Int      @default(1)
+  /// Difficulty focus. AUTOMATIC (the default) follows the adaptive ladder;
+  /// MANUAL pins new locks to focusDifficulty. Never rewrites UserProgress —
+  /// the automatic tier and its streaks are kept intact for when the learner
+  /// returns to AUTOMATIC. A CHECK constraint keeps the pair coherent: a focus
+  /// is set exactly when the mode is MANUAL.
+  difficultyMode     DifficultyMode @default(AUTOMATIC)
+  focusDifficulty    Difficulty?
   updatedAt          DateTime @updatedAt
 
   @@map("timer_configs")
@@ -428,6 +443,10 @@ model LockSession {
   /// row can. The difficulty ladder counts an adjusted session but does not
   /// read it, so saying a problem was too hard can never cost a demotion.
   adjusted        Boolean    @default(false)
+  /// Snapshot, at arm time, of where `difficulty` came from. A MANUAL session
+  /// is counted in the totals but never moves the automatic ladder, and the
+  /// snapshot means a later preference change cannot reinterpret it.
+  difficultySource DifficultyMode @default(AUTOMATIC)
   /// Set when state = BYPASSED: "skip_allowance" | "low_energy_activity" | "admin" | "emergency".
   escapeReason    String?
   /// SHA-256 of the issued unlock token. The raw JWT is returned exactly once.
@@ -594,6 +613,13 @@ enum LearningEventKind {
   ACCOMPLISHMENT
   /// Optional, dismissible answers: whether a hint helped, how a solve felt.
   FEEDBACK
+  /// A step in a Learn lesson: started, resumed, a check answered, practice
+  /// begun, finished, or a correction ("I know this", "too hard").
+  ///
+  /// One kind with `detail.action`, for the reason SESSION_FLOW is one kind.
+  /// Participation only: nothing in the skill snapshot reads these rows, so a
+  /// lesson can be read a hundred times without a skill moving.
+  LESSON
 }
 
 /// One step the learner actually took.
@@ -704,4 +730,50 @@ model RetrievalSchedule {
   /// round — there is never a query for "everyone due at time T".
   @@index([userId, nextDueAt])
   @@map("retrieval_schedules")
+}
+
+// ---------------------------------------------------------------------------
+// Learn
+// ---------------------------------------------------------------------------
+
+/// Where one learner is in one lesson.
+///
+/// Resumption state and a deduplication ledger, not evidence. The skill
+/// snapshot is derived from submissions and help events and never reads this
+/// table, so a row here can say "finished" without any skill having moved.
+///
+/// One row per learner and lesson. Starting a lesson again after finishing
+/// reopens the same row rather than creating a second, so "how many times
+/// was this opened" is a count of LESSON events, not of rows.
+model LessonSession {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Catalog id, e.g. "loops-running-total". Not a foreign key: the catalog
+  /// is a TypeScript module, and a lesson that is later removed must not
+  /// take its history with it.
+  lessonId       String
+  language       Language
+  /// The catalog version the session was started against.
+  contentVersion String
+  /// 0 idea · 1 example · 2 prediction · 3 task · 4 practice · 5 done.
+  step           Int      @default(0)
+  /// "active" | "finished".
+  status         String   @default("active")
+  /// Optimistic-concurrency token. Every write carries the version it read
+  /// and is refused when the row has moved on, so a request that lands
+  /// after a restart cannot overwrite newer work.
+  version        Int      @default(1)
+  /// Unsent answers, keyed by check id. Kept so a restart loses nothing.
+  draft          Json     @default("{}")
+  /// Graded check results keyed by the client's attemptId. A retry with the
+  /// same attemptId returns the stored result and grades nothing.
+  checks         Json     @default("{}")
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId, status, updatedAt])
+  @@map("lesson_sessions")
 }

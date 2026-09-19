@@ -1,4 +1,4 @@
-import { SubmissionStatus } from '@prisma/client';
+import { SubmissionStatus, type Language } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -76,21 +76,52 @@ export interface SolveRecord {
  *
  * Keyed on problem and session, not problem alone: coming back to the same
  * problem a week later is genuine further practice and should count again.
- * A practice solve has no session, so each of those counts once per replay,
- * which is the closest available reading of the evidence.
+ * A practice solve has no session, so its sitting is a window instead: a
+ * sessionless solve of the same problem within `PRACTICE_SITTING_MS` of the
+ * first solve in the group belongs to that group. Resubmitting the same
+ * accepted answer twice in one sitting is one solving occasion, and used to
+ * count as two, which was enough on its own to promote every skill the
+ * problem needs. A window rather than a calendar day, so a sitting that
+ * straddles midnight is still one sitting. The window is the same one help
+ * attribution already uses for practice.
  *
  * The earliest of a group is kept, because that is the attempt whose help
  * record describes the work.
  */
 export function dedupeEpisodes(solves: readonly SolveRecord[]): SolveRecord[] {
   const earliest = new Map<string, SolveRecord>();
+  const practice = new Map<string, SolveRecord[]>();
   for (const solve of solves) {
-    const key = `${solve.problemId}::${solve.sessionId ?? solve.solvedAt.toISOString()}`;
-    const seen = earliest.get(key);
-    if (!seen || solve.solvedAt < seen.solvedAt) earliest.set(key, solve);
+    if (solve.sessionId) {
+      const key = `${solve.problemId}::${solve.sessionId}`;
+      const seen = earliest.get(key);
+      if (!seen || solve.solvedAt < seen.solvedAt) earliest.set(key, solve);
+    } else {
+      const list = practice.get(solve.problemId);
+      if (list) list.push(solve);
+      else practice.set(solve.problemId, [solve]);
+    }
   }
-  return [...earliest.values()];
+  const out = [...earliest.values()];
+  for (const list of practice.values()) {
+    list.sort((a, b) => a.solvedAt.getTime() - b.solvedAt.getTime());
+    let groupStart = -Infinity;
+    for (const solve of list) {
+      if (solve.solvedAt.getTime() - groupStart > PRACTICE_SITTING_MS) {
+        groupStart = solve.solvedAt.getTime();
+        out.push(solve);
+      }
+    }
+  }
+  return out;
 }
+
+/**
+ * Sessionless solves of one problem this close to the first of their group
+ * are one sitting. Equal to the practice help window on purpose: help and
+ * work are bounded by the same idea of "the same sitting".
+ */
+export const PRACTICE_SITTING_MS = 12 * 60 * 60 * 1000;
 
 /**
  * Replay solves into a snapshot. Pure, so the rule is testable with no
@@ -137,6 +168,22 @@ export function replaySkillSnapshot(solves: readonly SolveRecord[], now: Date): 
  * cannot be opened, and no learning feature is worth that.
  */
 export async function loadSkillSnapshot(userId: string, now = new Date()): Promise<SkillSnapshot> {
+  return (await loadSkillSnapshotStatus(userId, now)).snapshot;
+}
+
+/**
+ * The same snapshot, with `available` saying whether it was actually read.
+ *
+ * `loadSkillSnapshot` collapses a failed read into a beginner, and for the
+ * selection path that is right: a lock must always open. A learning page is
+ * different — telling someone with thirty solves to "start with values"
+ * because the database blinked presents an outage as an empty history. This
+ * variant lets that caller say "unavailable" instead, and still never throws.
+ */
+export async function loadSkillSnapshotStatus(
+  userId: string,
+  now = new Date(),
+): Promise<{ snapshot: SkillSnapshot; available: boolean }> {
   try {
     const solved = await prisma.submission.findMany({
       where: {
@@ -160,13 +207,13 @@ export async function loadSkillSnapshot(userId: string, now = new Date()): Promi
         },
       },
     });
-    if (solved.length === 0) return emptySkillSnapshot();
+    if (solved.length === 0) return { snapshot: emptySkillSnapshot(), available: true };
 
     const solves = await attributeHelp(userId, solved);
-    return replaySkillSnapshot(solves, now);
+    return { snapshot: replaySkillSnapshot(solves, now), available: true };
   } catch (err) {
     logger.warn({ err, userId }, 'skill snapshot unavailable; treating as a new learner');
-    return emptySkillSnapshot();
+    return { snapshot: emptySkillSnapshot(), available: false };
   }
 }
 
@@ -281,6 +328,8 @@ export interface SolveHistoryRecord extends SolveRecord {
   slug: string;
   title: string;
   patternTags: string[];
+  /** The language the accepted submission was written in. */
+  language: Language;
 }
 
 /**
@@ -300,6 +349,7 @@ export async function loadSolveRecords(userId: string, before?: Date): Promise<S
       createdAt: true,
       problemId: true,
       lockSessionId: true,
+      language: true,
       problem: {
         select: {
           slug: true,
@@ -318,5 +368,6 @@ export async function loadSolveRecords(userId: string, before?: Date): Promise<S
     slug: rows[i]!.problem.slug,
     title: rows[i]!.problem.title,
     patternTags: rows[i]!.problem.patternTags,
+    language: rows[i]!.language,
   }));
 }

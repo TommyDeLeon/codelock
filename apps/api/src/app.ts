@@ -19,6 +19,7 @@ import { runRouter } from './routes/run.js';
 import { settingsRouter } from './routes/settings.js';
 import { statsRouter } from './routes/stats.js';
 import { demoRouter } from './routes/demo.js';
+import { learnRouter } from './routes/learn.js';
 
 /**
  * The origin the Electron shell's bundled renderer is served from.
@@ -124,6 +125,7 @@ export function createApp(): Express {
   app.use('/v1/log', logRouter);
   app.use('/v1/tutor', tutorRouter);
   app.use('/v1/progress', progressRouter);
+  app.use('/v1/learn', learnRouter);
   // Unauthenticated on purpose, and the only such route that runs code. Its own
   // limits live in the router; see the note there for why that is safe.
   app.use('/v1/demo', demoRouter);

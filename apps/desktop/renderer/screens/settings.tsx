@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { TimerConfig } from '@codelock/shared';
+import type { Difficulty, DifficultyFocusInput, TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { openExternal } from '../bridge';
 import {
@@ -261,6 +261,9 @@ export function SettingsScreen() {
         )}
       </section>
 
+      {/* --- difficulty focus ------------------------------------------- */}
+      <DifficultyFocusSettings timer={timer} onSaved={setTimer} />
+
       {/* --- after a solve ----------------------------------------------- */}
       <CelebrationSettings />
 
@@ -337,3 +340,157 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
+
+const FOCUS_OPTIONS: {
+  value: 'AUTOMATIC' | Difficulty;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: 'AUTOMATIC',
+    label: 'Automatic (recommended)',
+    hint: 'Moves between easy, medium and hard as you go. 3 fast solves step up; 2 failed sessions ease back down.',
+  },
+  { value: 'EASY', label: 'Focus on easy', hint: 'Every new session asks for an easy problem.' },
+  { value: 'MEDIUM', label: 'Focus on medium', hint: 'Every new session asks for a medium problem.' },
+  { value: 'HARD', label: 'Focus on hard', hint: 'Every new session asks for a hard problem.' },
+];
+
+/**
+ * Automatic, or a deliberate focus on one band.
+ *
+ * Native radios in a fieldset, so arrow keys, focus rings and the group label
+ * come from the platform. Saved on change; a failed save puts the previous
+ * choice back and says so. The copy is careful about two things: a chosen
+ * focus is not a promotion, and nothing here changes a session already under
+ * way.
+ */
+function DifficultyFocusSettings({
+  timer,
+  onSaved,
+}: {
+  timer: TimerConfig;
+  onSaved: (config: TimerConfig) => void;
+}) {
+  // An older server sends neither field: that is Automatic.
+  const saved: 'AUTOMATIC' | Difficulty =
+    timer.difficultyMode === 'MANUAL' && timer.focusDifficulty ? timer.focusDifficulty : 'AUTOMATIC';
+  const [choice, setChoice] = useState(saved);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [liveSession, setLiveSession] = useState(false);
+
+  useEffect(() => setChoice(saved), [saved]);
+
+  useEffect(() => {
+    api
+      .activeLock()
+      .then((r) => setLiveSession(r.session !== null))
+      .catch(() => setLiveSession(false));
+  }, []);
+
+  async function pick(next: 'AUTOMATIC' | Difficulty) {
+    if (next === choice || saving) return;
+    const previous = choice;
+    setChoice(next);
+    setSaving(true);
+    setError(null);
+    setNote(null);
+    const body: DifficultyFocusInput =
+      next === 'AUTOMATIC' ? { mode: 'AUTOMATIC' } : { mode: 'MANUAL', difficulty: next };
+    try {
+      const { timerConfig } = await api.saveDifficultyFocus(body);
+      onSaved(timerConfig);
+      setNote(
+        liveSession
+          ? 'Saved. Your current session keeps its level; this applies from the next one.'
+          : 'Saved. This applies from your next session.',
+      );
+    } catch (err) {
+      setChoice(previous);
+      // Keyboard focus followed the arrow key to the choice that failed. Put it
+      // back on the restored one, so focus and selection agree again.
+      document.getElementById(`difficulty-focus-${previous.toLowerCase()}`)?.focus();
+      setError(
+        err instanceof ApiError
+          ? `Could not save: ${err.message.replace(/\.+$/, '')}. Your previous choice is still in place.`
+          : 'Could not save. Your previous choice is still in place.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rule" style={{ paddingTop: 20 }}>
+      <fieldset
+        aria-describedby="difficulty-focus-help"
+        aria-busy={saving}
+        style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
+      >
+        <legend style={{ fontSize: 15, fontWeight: 600, margin: '0 0 6px', padding: 0 }}>
+          Difficulty
+        </legend>
+        <p
+          id="difficulty-focus-help"
+          style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--muted)', maxWidth: 560 }}
+        >
+          Automatic is the default. Choosing a focus asks for that level instead, while your
+          automatic level and its streak wait unchanged: focus sessions count toward your totals
+          but never move the automatic level up or down. You can switch back at any time.
+          {liveSession && ' A session already running keeps the level it started with.'}
+        </p>
+
+        <div style={{ display: 'grid', gap: 8, maxWidth: 560 }}>
+          {FOCUS_OPTIONS.map((option) => {
+            const id = `difficulty-focus-${option.value.toLowerCase()}`;
+            return (
+              <label
+                key={option.value}
+                htmlFor={id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr',
+                  gap: '2px 10px',
+                  alignItems: 'start',
+                  cursor: saving ? 'progress' : 'pointer',
+                }}
+              >
+                <input
+                  id={id}
+                  type="radio"
+                  name="difficulty-focus"
+                  value={option.value}
+                  checked={choice === option.value}
+                  onChange={() => void pick(option.value)}
+                  aria-describedby={`${id}-hint`}
+                  style={{ marginTop: 3 }}
+                />
+                <span style={{ fontSize: 13.5, color: 'var(--fg)' }}>{option.label}</span>
+                <span
+                  id={`${id}-hint`}
+                  style={{ gridColumn: 2, fontSize: 12, color: 'var(--faint)' }}
+                >
+                  {option.hint}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <p
+        role={error ? 'alert' : 'status'}
+        style={{
+          margin: '10px 0 0',
+          minHeight: '1.4em',
+          fontSize: 12.5,
+          color: error ? 'var(--danger)' : 'var(--muted)',
+        }}
+      >
+        {saving ? 'Saving…' : (error ?? note ?? '')}
+      </p>
+    </section>
+  );
+}

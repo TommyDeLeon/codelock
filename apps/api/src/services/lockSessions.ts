@@ -14,6 +14,7 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { signUnlockToken, sha256 } from '../lib/tokens.js';
 import { pickProblem } from './problemSelector.js';
+import { resolveDifficulty } from './difficulty.js';
 import { recordStep } from './learningLog.js';
 import {
   availableFamiliesForTiers,
@@ -68,13 +69,20 @@ export async function armSession(params: {
   }
 
   const minutes = params.durationMinutesOverride ?? config.durationMinutes;
+  // Resolved once, from the config row read above, and snapshotted on the
+  // session with its source. Grading reads the snapshot, so changing the
+  // preference later affects the next arm and never this one. The focus only
+  // sets the requested band: the progression gate and the selector's
+  // fallbacks still apply when the lock engages.
+  const effective = resolveDifficulty(progress?.currentDifficulty, config);
   let session: LockSession;
   try {
     session = await prisma.lockSession.create({
       data: {
         userId,
         deviceId: deviceId ?? null,
-        difficulty: progress?.currentDifficulty ?? Difficulty.EASY,
+        difficulty: effective.difficulty,
+        difficultySource: effective.source,
         fireAt: new Date(Date.now() + minutes * 60_000),
       },
     });
@@ -91,7 +99,11 @@ export async function armSession(params: {
     }
     throw err;
   }
-  void recordStep(userId, { kind: 'TIMER_ARMED', sessionId: session.id, detail: { minutes } });
+  void recordStep(userId, {
+    kind: 'TIMER_ARMED',
+    sessionId: session.id,
+    detail: { minutes, difficulty: effective.difficulty, difficultySource: effective.source },
+  });
   return toView(session, null);
 }
 
@@ -586,23 +598,8 @@ async function loadProblem(problemId: string | null): Promise<Problem | null> {
   return prisma.problem.findUnique({ where: { id: problemId } });
 }
 
-export async function toPublicProblem(problem: Problem): Promise<PublicProblem> {
-  const samples = await prisma.testCase.findMany({
-    where: { problemId: problem.id, isSample: true },
-    orderBy: { ordinal: 'asc' },
-    select: { ordinal: true, stdin: true, expectedStdout: true },
-  });
-  return {
-    id: problem.id,
-    slug: problem.slug,
-    title: problem.title,
-    difficulty: problem.difficulty,
-    promptMarkdown: problem.promptMarkdown,
-    starterCode: problem.starterCode as PublicProblem['starterCode'],
-    sampleCases: samples,
-    avgSolveSeconds: problem.avgSolveSeconds,
-  };
-}
+import { toPublicProblem } from './publicProblem.js';
+export { toPublicProblem };
 
 /**
  * States in which the answer may be shown.
@@ -708,6 +705,7 @@ async function toView(session: LockSession, problem: Problem | null): Promise<Lo
     id: session.id,
     state: session.state,
     difficulty: session.difficulty,
+    difficultySource: session.difficultySource,
     fireAt: session.fireAt.toISOString(),
     serverNow: new Date(now).toISOString(),
     pausedAt: session.pausedAt?.toISOString() ?? null,

@@ -1,4 +1,9 @@
-import { DIFFICULTIES, type StatsSummary, type UserProgress } from '@codelock/shared';
+import {
+  DIFFICULTIES,
+  type Difficulty,
+  type StatsSummary,
+  type UserProgress,
+} from '@codelock/shared';
 
 /**
  * The game layer.
@@ -13,12 +18,24 @@ import { DIFFICULTIES, type StatsSummary, type UserProgress } from '@codelock/sh
  * not been earned yet.
  */
 
-export function TierLadder({ progress }: { progress: UserProgress }) {
+/**
+ * The automatic tier: earned, and only ever moved by the ladder. A manual
+ * focus is shown beside it in words and never drawn on the ladder, so a
+ * chosen level cannot read as a promotion.
+ */
+export function TierLadder({
+  progress,
+  focus = null,
+}: {
+  progress: UserProgress;
+  /** The saved manual focus, or null in Automatic. */
+  focus?: Difficulty | null;
+}) {
   const index = DIFFICULTIES.indexOf(progress.currentDifficulty);
 
   return (
     <section>
-      <p className="eyebrow">Tier</p>
+      <p className="eyebrow">{focus ? 'Automatic tier (paused)' : 'Automatic tier'}</p>
       <ol
         aria-label="Difficulty ladder"
         style={{
@@ -55,6 +72,13 @@ export function TierLadder({ progress }: { progress: UserProgress }) {
           </li>
         ))}
       </ol>
+      {focus && (
+        <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--muted)' }}>
+          Manual focus: <span style={{ color: 'var(--fg)' }}>{focus.toLowerCase()}</span>. New
+          sessions ask for {focus.toLowerCase()} problems. Your automatic tier stays at{' '}
+          {progress.currentDifficulty.toLowerCase()} until you switch back in Settings.
+        </p>
+      )}
     </section>
   );
 }
@@ -107,7 +131,7 @@ export function StreakPips({ progress }: { progress: UserProgress }) {
       <p style={{ margin: '8px 0 0', fontSize: 12.5, color: 'var(--faint)' }}>
         {consecutiveFailures > 0
           ? `${consecutiveFailures} of ${demoteAfterFailures} failed sessions toward easing back down.`
-          : 'A solve inside the problem’s average time counts as fast. One slow solve resets the streak.'}
+          : 'A solve inside the problem’s average time counts as fast. One slow solve resets the streak. A session where you changed problems is held: it neither adds nor resets.'}
       </p>
     </section>
   );

@@ -166,6 +166,15 @@ describe('one solving occasion counts once', () => {
     assert.equal(replaySkillSnapshot([monday, friday], NOW).values.state, 'demonstrated');
   });
 
+  it('collapses sessionless resubmissions within a sitting, across midnight, and keeps a later sitting', () => {
+    const late = solve({ problemId: 'p1', sessionId: null, solvedAt: new Date('2026-09-10T23:59:00Z') });
+    const justAfter = solve({ problemId: 'p1', sessionId: null, solvedAt: new Date('2026-09-11T00:01:00Z') });
+    const nextWeek = solve({ problemId: 'p1', sessionId: null, solvedAt: new Date('2026-09-17T10:00:00Z') });
+    const kept = dedupeEpisodes([nextWeek, justAfter, late]);
+    assert.equal(kept.length, 2);
+    assert.ok(kept.some((s) => s.solvedAt.getTime() === late.solvedAt.getTime()), 'the earliest of the sitting is kept');
+  });
+
   it('does not collapse different problems in one session', () => {
     const a = solve({ problemId: 'p1', sessionId: 's1', solvedAt: daysAgo(2) });
     const b = solve({ problemId: 'p2', sessionId: 's1', solvedAt: daysAgo(1) });
