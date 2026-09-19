@@ -1,2 +1,1 @@
-gen-lc-w1-053: admitted without statement review (both readers unavailable): exclusive-catalog-entries compatible-locker-pairs 
-gen-lc-w3-053: admitted without statement review (both readers unavailable): balance-beam-integers boost-to-target merged-log-prefix coverage-gap-scores template-scan-offset 
+cancel-one-overlapping-chain (original): reference solution returns len-1 regardless of intervals; test '1 2;2 3' -> 1 contradicts 'touching allowed'. Needs tests/solution repair, then a statement rewrite.

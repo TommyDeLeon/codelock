@@ -229,7 +229,22 @@ function withLock<T>(fn: () => T): T {
   }
 }
 
-const anchors = nextAnchors();
+/**
+ * `--drafts <file.json>` takes drafts written elsewhere (an array or
+ * `{ problems }`) instead of asking a model; they go through the same local
+ * checks, judge, emit and coverage steps. There is no model repair round and
+ * only admitted anchors are recorded, so a failed draft can be fixed and run
+ * again. `--brief-out <file>` writes the drafting brief and exits.
+ */
+const draftsPath = process.argv.includes('--drafts') ? arg('drafts') : null;
+const suppliedDrafts: Draft[] | null = draftsPath
+  ? ((raw) => (Array.isArray(raw) ? raw : raw.problems) as Draft[])(JSON.parse(readFileSync(draftsPath, 'utf8')))
+  : null;
+
+const anchors =
+  suppliedDrafts && anchorsPath
+    ? readAnchors(anchorsPath).filter((a) => suppliedDrafts.some((d) => d.anchor === a.slug))
+    : nextAnchors();
 
 // ---------------------------------------------------------------------------
 // What the model is told
@@ -291,7 +306,7 @@ Difficulty means what it means in interviews: EASY is Two-Sum level (one hash ma
 Hard rules:
 1. ORIGINAL. Do not reproduce LeetCode, HackerRank, Codeforces or textbook problem text or titles. Invent your own scenario and wording for each. Never mention those sites.
 2. FORMAT like a serious interview problem: a clear statement; a "**Constraints**" section with explicit bounds; three worked "**Example**" blocks with input, output and a one-line explanation; and a "**Follow-up**" line about time or space complexity where meaningful. Markdown, no HTML.
-3. The editorialMarkdown explains the intended approach, names the pattern, states the complexity, and names the one trap most solvers hit.
+3. The editorialMarkdown explains the intended approach, names the pattern, names the one trap most solvers hit, and ends with exactly one line of the form "Time complexity is O(N). Space complexity is O(1)." (the final bounds, not intermediate steps).
 4. Each problem uses one signatureId from this list and its parameters exactly: ${functionSignatures.map((s) => s.id).join(', ')}
 5. Tests: at least 8 per problem, first 2 marked isSample true and matching the first two examples. Include: an empty or minimal input, a single element, negatives where the type allows, duplicates, and the largest size that is still readable (≤ 40 values). Expected output must be exactly what a correct solution prints in the wire format.
 6. Six reference solutions (JAVASCRIPT, TYPESCRIPT, PYTHON, JAVA, CPP, GO) that all pass every test. They will be executed; a single failure rejects the problem.
@@ -317,6 +332,12 @@ ${JSON.stringify(
 )}
 
 Return JSON only, matching the schema.`;
+
+if (process.argv.includes('--brief-out')) {
+  writeFileSync(arg('brief-out'), prompt);
+  console.log(JSON.stringify(anchors));
+  process.exit(0);
+}
 
 const schema = {
   type: 'object',
@@ -450,6 +471,7 @@ function draftWith(which: string): Draft[] {
 const draftFallback = flag('draft-fallback');
 
 function draftWithGemini(): Draft[] {
+  if (suppliedDrafts) return suppliedDrafts;
   try {
     return draftWith(model);
   } catch (err) {
@@ -466,7 +488,7 @@ function draftWithGemini(): Draft[] {
  * repair earns nothing until it passes.
  */
 function repairWithGemini(rejected: Array<{ draft: Draft; why: string[] }>): Draft[] {
-  if (rejected.length === 0) return [];
+  if (rejected.length === 0 || suppliedDrafts) return [];
   const dir = mkdtempSync(join(tmpdir(), 'codelock-repair-'));
   const schemaPath = join(dir, 'schema.json');
   const briefPath = join(dir, 'brief.md');
@@ -580,6 +602,11 @@ function localReject(d: Draft, seen: Set<string>): string | null {
   }
   if (!/\*\*Constraints\*\*/.test(d.promptMarkdown)) return 'no Constraints section';
   if ((d.promptMarkdown.match(/\*\*Example/g) ?? []).length < 3) return 'fewer than three examples';
+  // Complexity feedback reads the editorial's closing sentences.
+  const tail = d.editorialMarkdown.trim().split('\n').pop() ?? '';
+  if (!/Time complexity is O\([^)]*\)\.\s*Space complexity is O\([^)]*\)\.$/.test(tail.trim())) {
+    return 'editorial must end "Time complexity is O(..). Space complexity is O(..)."';
+  }
   if (d.tests.length < 8) return `only ${d.tests.length} tests`;
   if (d.tests.filter((t) => t.isSample).length < 2) return 'fewer than two sample tests';
   const badTag = d.patternTags.find((t) => !knownTags.includes(t));
@@ -887,7 +914,7 @@ function recordCoverage(accepted: Draft[]): void {
   const coverage = readCoverage();
   const date = new Date().toISOString().slice(0, 10);
   for (const d of accepted) if (d.anchor) coverage[d.anchor] = { ours: d.slug, batch: out, date };
-  for (const a of anchors) {
+  for (const a of suppliedDrafts ? [] : anchors) {
     if (!coverage[a.slug]) coverage[a.slug] = { ours: null, batch: out, date, reason: 'rejected' };
   }
   writeFileSync(coveragePath, JSON.stringify(coverage, null, 2) + '\n');

@@ -1694,9 +1694,10 @@
     "date": "2026-09-16"
   },
   "find-the-difference-of-two-arrays": {
-    "ours": "exclusive-catalog-entries",
+    "ours": null,
     "batch": "gen-lc-w1-053",
-    "date": "2026-09-16"
+    "date": "2026-09-16",
+    "reason": "review: output ambiguous"
   },
   "find-the-number-of-good-pairs-i": {
     "ours": "compatible-locker-pairs",
@@ -1704,14 +1705,16 @@
     "date": "2026-09-16"
   },
   "find-n-unique-integers-sum-up-to-zero": {
-    "ours": "balance-beam-integers",
+    "ours": null,
     "batch": "gen-lc-w3-053",
-    "date": "2026-09-16"
+    "date": "2026-09-16",
+    "reason": "review: follows a well-known problem too closely"
   },
   "find-the-maximum-achievable-number": {
-    "ours": "boost-to-target",
+    "ours": null,
     "batch": "gen-lc-w3-053",
-    "date": "2026-09-16"
+    "date": "2026-09-16",
+    "reason": "review: follows a well-known problem too closely"
   },
   "find-the-shortest-superstring-ii": {
     "ours": "merged-log-prefix",
@@ -1719,14 +1722,16 @@
     "date": "2026-09-16"
   },
   "find-the-distinct-difference-array": {
-    "ours": "coverage-gap-scores",
+    "ours": null,
     "batch": "gen-lc-w3-053",
-    "date": "2026-09-16"
+    "date": "2026-09-16",
+    "reason": "review: follows a well-known problem too closely"
   },
   "find-the-index-of-the-first-occurrence-in-a-string": {
-    "ours": "template-scan-offset",
+    "ours": null,
     "batch": "gen-lc-w3-053",
-    "date": "2026-09-16"
+    "date": "2026-09-16",
+    "reason": "review: follows a well-known problem too closely"
   },
   "find-the-least-frequent-digit": {
     "ours": null,

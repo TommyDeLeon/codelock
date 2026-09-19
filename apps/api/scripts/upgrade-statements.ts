@@ -101,7 +101,7 @@ promptMarkdown format (Markdown, no HTML, no LaTeX):
   followed by a one-line explanation. When the expected output has several lines (operation-log problems), write "output:" on its own line and then the output lines exactly as given. Use the two sample tests as Examples 1 and 2; you may use the third listed test as Example 3.
 - A "**Follow-up:**" line about time or space complexity where meaningful.
 
-editorialMarkdown: the intended approach, the pattern's name, time and space complexity written in plain text like O(n log n) (no $ signs), and the one trap most solvers hit. Real paragraphs, not one line.
+editorialMarkdown: the intended approach, the pattern's name, and the one trap most solvers hit, in real paragraphs, ending with exactly one line of the form "Time complexity is O(N). Space complexity is O(1)." (final bounds, plain text, no $ signs).
 ${WIRE_FORMAT}
 ${problems
   .map(
@@ -180,6 +180,7 @@ function askJson(which: string, brief: string, timeout: string): Rewrite[] {
 
 /** A second attempt for flagged problems, with the reviewer's note attached to each. */
 function draftWithNotes(problems: ProblemDefinition[], notes: Map<string, string>): Rewrite[] {
+  if (rewritesPath) return [];
   const brief =
     briefFor(problems) +
     `\n\nA reviewer flagged the previous attempt at each of these. Address the note directly; if it says the wording follows a known problem, change the scenario and the sentences, not just words. If it names an ambiguity, resolve it explicitly in the statement and constraints (in the way the reference solution behaves). If it says an example explanation is wrong, correct the explanation to match the actual output.\n\n` +
@@ -199,7 +200,22 @@ function draftWithNotes(problems: ProblemDefinition[], notes: Map<string, string
 /** Drafting stays with Gemini; a quota error is surfaced so the loop can wait for the reset. `--draft-fallback` opts into the second pool instead. */
 const draftFallback = flag('draft-fallback');
 
+/**
+ * `--rewrites <file.json>` supplies rewrites written elsewhere (array or
+ * `{ problems }`), and `--review-file <file>` the reviewer's slug lines for
+ * them; flagged slugs are then recorded as skipped (the one rewrite with the
+ * note happened before the file was written). `--brief-out <file>` writes the
+ * brief for the next batch and exits.
+ */
+const rewritesPath = process.argv.includes('--rewrites') ? arg('rewrites', '') : '';
+const reviewFile = process.argv.includes('--review-file') ? arg('review-file', '') : '';
+const draftedBy = arg('drafted-by', 'claude-opus-5');
+
 function draft(problems: ProblemDefinition[]): { rewrites: Rewrite[]; by: string } {
+  if (rewritesPath) {
+    const raw = JSON.parse(readFileSync(rewritesPath, 'utf8')) as Rewrite[] | { problems: Rewrite[] };
+    return { rewrites: Array.isArray(raw) ? raw : raw.problems, by: draftedBy };
+  }
   const brief = briefFor(problems);
   console.log(`  asking ${model} to rewrite ${problems.length} statements ...`);
   try {
@@ -279,6 +295,11 @@ function reject(p: ProblemDefinition, r: Rewrite): string | null {
   }
   if ((r.promptMarkdown.match(/\*\*Example/g) ?? []).length < 2) return 'fewer than two examples';
   if (r.editorialMarkdown.length < 200) return 'editorial too short';
+  // Complexity feedback reads the editorial's closing sentences.
+  const tail = r.editorialMarkdown.trim().split('\n').pop()!.trim();
+  if (!/Time complexity is O\([^)]*\)\.\s*Space complexity is O\([^)]*\)\.$/.test(tail)) {
+    return 'editorial must end "Time complexity is O(..). Space complexity is O(..)."';
+  }
   const ex = checkExamples(p, r.promptMarkdown);
   if (!ex.ok) return ex.why;
   return null;
@@ -354,6 +375,14 @@ function modelReview(text: string): string {
 /** Slugs the reviewer flagged, with its note. Codex on a rate-limit error is recorded as SKIPPED and Claude reviews instead. */
 function review(items: Array<{ p: ProblemDefinition; r: Rewrite }>): { flagged: Map<string, string>; by: string } {
   const text = reviewText(items);
+  if (reviewFile) {
+    const flagged = new Map<string, string>();
+    for (const line of readFileSync(reviewFile, 'utf8').split('\n')) {
+      const m = /^\s*([a-z0-9-]+):\s*(.+)$/.exec(line);
+      if (m && !/^ok/i.test(m[2]!) && items.some((it) => it.p.slug === m[1])) flagged.set(m[1]!, m[2]!);
+    }
+    return { flagged, by: 'claude-subagent' };
+  }
   // Codex and a second model read side by side; a flag from either counts.
   const first = codexReview(text);
   const second = modelReview(text);
@@ -460,6 +489,11 @@ ${body}
 // ---------------------------------------------------------------------------
 
 function main() {
+  if (process.argv.includes('--brief-out')) {
+    writeFileSync(arg('brief-out', ''), briefFor(batch));
+    console.log(JSON.stringify(batch.map((p) => p.slug)));
+    return;
+  }
   if (batch.length === 0) {
     console.log('  every hand-authored problem is upgraded; nothing to do');
     console.log(JSON.stringify({ mode: 'upgrade', pending: 0, accepted: 0, rejected: 0 }));
