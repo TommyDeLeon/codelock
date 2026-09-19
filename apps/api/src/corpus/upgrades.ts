@@ -2167,6 +2167,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-opus-5",
     "date": "2026-09-19"
   },
+  "first-word-from-each-anagram-group": {
+    "promptMarkdown": "A spelling-bee app wants one representative word per family of rearrangements. Two words are in the same family when one is a rearrangement of the other (same letters, same counts). Given the list `words`, return the **first** word of each family, in the order the families first appear in the list.\n\n**Constraints**\n- `1 <= words.length <= 10^4`\n- `1 <= words[i].length <= 100`\n- Words contain lowercase English letters only.\n\n**Example 1**\n```\ninput:\nabc bca xyz zyx def\noutput: abc xyz def\n```\n*Explanation: abc starts the first family, xyz the second, and def the third; bca and zyx are later members.*\n\n**Example 2**\n```\ninput:\nab ba abc cab bca\noutput: ab abc\n```\n*Explanation: ab and abc have different letter counts, so they head different families.*\n\n**Example 3**\n```\ninput:\na a a\noutput: a\n```\n*Explanation: repeated identical words are one family.*\n\n**Follow-up:** Can you build each word's key without sorting its letters?",
+    "editorialMarkdown": "## First occurrence of each canonical key\n\nGive every word a key shared by all its rearrangements, such as its 26 letter counts. Scan the list once, keeping a set of keys already seen. When a word's key is new, record it and append the word to the answer; otherwise skip the word. The scan order is exactly the first-appearance order required.\n\nThe pattern is grouping by a canonical form, but only the first member of each group is kept, so no lists of members are needed. Let C be the total number of characters.\n\nThe trap is grouping everything into a map and then printing the groups by iterating the map. Hash maps do not keep insertion order in every language, so the families can come out in the wrong order.\n\nTime complexity is O(C). Space complexity is O(n).",
+    "promoteSamples": [
+      "ab ba abc cab bca",
+      "a a a"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "fixed-size-subsets-under-spread": {
+    "promptMarkdown": "A coach picks teams of exactly `k` players from the skill ratings `a`. A team is **tight** when its highest rating minus its lowest rating is at most `k` (the same number as the team size). Count the tight teams. Players at different positions are different players.\n\n**Constraints**\n- `1 <= a.length <= 10`\n- `1 <= k <= a.length`\n- `-100 <= a[i] <= 100`, all distinct\n\n**Example 1**\n```\ninput:\n1 3 4 8\n2\noutput: 2\n```\n*Explanation: {1, 3} has spread 2 and {3, 4} has spread 1; every other pair is spread more than 2.*\n\n**Example 2**\n```\ninput:\n9 1 5\n1\noutput: 3\n```\n*Explanation: a one-player team has spread 0, so every player forms a tight team.*\n\n**Example 3**\n```\ninput:\n-2 -1 0\n2\noutput: 3\n```\n*Explanation: the three pairs have spreads 1, 2 and 1, all at most 2.*\n\n**Follow-up:** After sorting, can you count the teams with a sliding window and binomial coefficients instead of searching?",
+    "editorialMarkdown": "## Choose-or-skip with running extremes\n\nWalk the players in order and, for each one, either leave them out or add them to the team, carrying the team size and its current minimum and maximum rating. When the size reaches `k`, count the team if `max - min <= k`, and stop extending it. Reaching the end with fewer than `k` players counts nothing. Each team is produced once, because players are considered in a fixed order.\n\nFor the follow-up, sort the ratings; a team is tight exactly when its lowest and highest members are within `k`, so for each lowest member count the ways to choose the other `k - 1` from the window above it.\n\nThe trap is reading the size limit and the spread limit as different numbers, or comparing the spread against the number chosen so far instead of the fixed `k`.\n\nTime complexity is O(2^n). Space complexity is O(n).",
+    "promoteSamples": [
+      "-2 -1 0\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "fizzbuzz-list": {
     "promptMarkdown": "Given a number `n`, return the list of words for `1` through `n`:\n- a multiple of both 3 and 5 becomes `FizzBuzz`\n- a multiple of 3 becomes `Fizz`\n- a multiple of 5 becomes `Buzz`\n- anything else becomes the number itself\n\n**Constraints**\n- `0 <= n <= 10^5`\n\n**Example 1**\n```\ninput:\n2\noutput: 1 2\n```\nA straightforward sequence of two numbers without any multiples of 3 or 5.\n\n**Example 2**\n```\ninput:\n4\noutput: 1 2 Fizz 4\n```\nThe number 3 is a multiple of 3, so it becomes `Fizz`.\n\n**Example 3**\n```\ninput:\n0\noutput: \n```\nWhen n is 0, the output is an empty list, represented by an empty line.\n\n**Follow-up:** Can you solve this in O(n) time and O(n) space complexity?",
     "editorialMarkdown": "The intended approach is to check divisibility conditions in order. This pattern is standard conditional logic. The entire difficulty is the overlap at 15. Check divisible by 3 and 5 first. If you check divisible by 3 first, then 15 matches it, you append Fizz, and you never reach the FizzBuzz case. The one trap most solvers hit is checking the more general conditions before the most specific overlapping condition. Time complexity is O(n) and space complexity is O(n) to store the result list.",
@@ -2219,6 +2238,35 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       }
     ]
   },
+  "folded-phrase-palindrome": {
+    "promptMarkdown": "A word-puzzle site checks whether a phrase reads the same forwards and backwards. Ignore every character that is not an English letter (spaces, digits, punctuation), and treat uppercase and lowercase as the same letter. Return `true` if the remaining letters form a palindrome, and `false` otherwise. A phrase with no letters at all counts as a palindrome.\n\n**Constraints**\n- `1 <= phrase.length <= 10^5`\n- `phrase` contains printable ASCII characters.\n\n**Example 1**\n```\ninput:\nNever odd, or even!\noutput: true\n```\n*Explanation: the letters are neveroddoreven, which reads the same both ways.*\n\n**Example 2**\n```\ninput:\n!!!\noutput: true\n```\n*Explanation: there are no letters, and an empty sequence is a palindrome.*\n\n**Example 3**\n```\ninput:\na\noutput: true\n```\n*Explanation: a single letter is a palindrome.*\n\n**Follow-up:** Can you check it with O(1) extra space, without building a filtered copy?",
+    "editorialMarkdown": "## Two pointers that skip non-letters\n\nPlace one pointer at each end of the phrase. Move the left pointer right past any non-letter and the right pointer left past any non-letter. Compare the two letters after lowercasing them; if they differ, return `false`. Otherwise step both pointers inward and repeat until they meet.\n\nThis avoids building a filtered copy, so only a few indices are stored.\n\nThe trap is comparing before skipping: a comma or space on one side then gets compared with a letter on the other. Treating digits as letters is another slip, because this task ignores every non-letter.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "!!!",
+      "a"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "frequency-closest-to-average": {
+    "promptMarkdown": "A survey collects answer codes `a`. Each distinct code has a frequency (how many times it appears). The **typical frequency** is the average of those frequencies: the list length divided by the number of distinct codes. Return the code whose frequency is closest to the typical frequency; if several codes are equally close, return the smallest code.\n\nTo avoid rounding, compare exactly: with `n` answers and `d` distinct codes, minimise `|frequency × d − n|`.\n\n**Constraints**\n- `1 <= a.length <= 10^4`\n- `-10^9 <= a[i] <= 10^9`\n\n**Example 1**\n```\ninput:\n1 1 2 3 4\noutput: 2\n```\n*Explanation: 5 answers over 4 codes gives an average of 1.25; codes 2, 3 and 4 (frequency 1) are closer than 1 (frequency 2), and 2 is the smallest of them.*\n\n**Example 2**\n```\ninput:\n4 4 5 5 6\noutput: 4\n```\n*Explanation: the average is 5/3; frequency 2 is 1/3 away and frequency 1 is 2/3 away, so 4 and 5 tie and 4 is smaller.*\n\n**Example 3**\n```\ninput:\n9\noutput: 9\n```\n*Explanation: the only code is closest by default.*\n\n**Follow-up:** Why is cross-multiplying safer than computing the average as a floating-point number?",
+    "editorialMarkdown": "## Count, then pick by an exact distance key\n\nCount each code's frequency with a hash map. Let `n` be the list length and `d` the number of distinct codes. For each code compute the distance `|freq × d − n|`, which is `d` times the true distance to the average, so it ranks codes the same way without any division. Keep the code with the smallest distance, breaking ties by the smaller code.\n\nNo heap is required: one pass over the frequency table finds the minimum.\n\nThe trap is integer-dividing `n / d` first. For a non-integer average such as 5/3, the truncated value 1 makes frequency 1 look exact and selects the wrong code in Example 2. Cross-multiplying keeps the comparison exact.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 1 2 3 4",
+      "9"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "gcd-of-a-number-chain": {
+    "promptMarkdown": "A carpenter has boards of positive integer lengths `a` and wants to cut all of them into pieces of one common length with no waste. Return the largest piece length that divides every board length exactly.\n\n**Constraints**\n- `1 <= a.length <= 10^5`\n- `1 <= a[i] <= 10^6`\n\n**Example 1**\n```\ninput:\n24 36 60\noutput: 12\n```\n*Explanation: 12 divides 24, 36 and 60, and no larger length divides all three.*\n\n**Example 2**\n```\ninput:\n17 19\noutput: 1\n```\n*Explanation: the two lengths share no factor above 1.*\n\n**Example 3**\n```\ninput:\n7\noutput: 7\n```\n*Explanation: a single board can be left whole.*\n\n**Follow-up:** Can you stop early once the running answer becomes 1?",
+    "editorialMarkdown": "## Fold Euclid's algorithm across the list\n\nThe greatest common divisor of a list can be built left to right: `gcd(a0, a1, ..., ak) = gcd(gcd(a0, ..., a(k-1)), ak)`. Start with the first length and combine each next length using Euclid's algorithm: repeatedly replace `(g, x)` with `(x, g mod x)` until `x` is 0, leaving `g`.\n\nOnce the running value reaches 1 it can never grow again, so the loop may stop early.\n\nThe trap is guessing from the smallest length. It is only the answer when it divides all the others; in general you need the full GCD. Let M be the largest length.\n\nTime complexity is O(n log M). Space complexity is O(1).",
+    "promoteSamples": [
+      "17 19"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "graph-bfs-ascending-order": {
     "promptMarkdown": "Design a directed adjacency-list graph and implement both breadth-first and depth-first search traversals. You must build the adjacency structure yourself without wrapping a built-in graph implementation.\n\nImplement the `Graph` class:\n- `Graph(int n)` Initializes a directed graph with `n` vertices, numbered `0` to `n - 1`.\n- `void addEdge(int u, int v)` Adds a directed edge from vertex `u` to vertex `v`. If the edge already exists, do nothing.\n- `int[] neighbors(int u)` Returns a list of outgoing neighbors for vertex `u` in ascending vertex order.\n- `int[] bfs(int source)` Returns a list of reachable vertices in breadth-first discovery order, starting with the `source` vertex. When multiple neighbors are discovered, they must be visited in ascending vertex order regardless of the order edges were added.\n- `int[] dfs(int source)` Returns a list of reachable vertices in depth-first preorder discovery, starting with the `source` vertex. Like BFS, neighbors must be explored in ascending vertex order.\n\nFor the operation log, the constructor and void methods should output `null`. Methods that return a list should output the space-separated elements on a single line (an empty list outputs an empty line).\n\n**Constraints**\n- `1 <= Number of operations <= 1000`\n- `1 <= n <= 1000`\n- `0 <= u, v, source < n`\n\n**Example 1**\n```\ninput:\n9\nGraph 6\naddEdge 0 2\naddEdge 0 1\naddEdge 1 4\naddEdge 2 3\naddEdge 2 5\nbfs 0\nneighbors 0\ndfs 0\noutput:\nnull\nnull\nnull\nnull\nnull\nnull\n0 1 2 4 3 5\n1 2\n0 1 4 2 3 5\n```\nNodes are explored starting from 0. Note how neighbors are always visited in ascending order (e.g., 0 visits 1 then 2).\n\n**Example 2**\n```\ninput:\n4\nGraph 4\nbfs 2\nneighbors 2\ndfs 2\noutput:\nnull\n2\n\n2\n```\nA graph with no edges, showing that traversals from isolated vertices return just the source itself, and `neighbors` returns an empty list.\n\n**Example 3**\n```\ninput:\n8\nGraph 5\naddEdge 0 1\naddEdge 0 2\naddEdge 1 3\naddEdge 2 3\naddEdge 3 4\nbfs 0\nbfs 4\noutput:\nnull\nnull\nnull\nnull\nnull\nnull\n0 1 2 3 4\n4\n```\nA graph with converging paths. Notice that BFS does not visit vertex 3 twice.\n\n**Follow-up:** What data structure guarantees that your BFS correctly processes nodes layer by layer?",
     "editorialMarkdown": "## Graph traversal with sorted adjacency lists\n\nThe intended approach uses an array of lists to represent the graph. Storing neighbors in ascending order inside `addEdge` (or sorting them on-demand) guarantees that both BFS and DFS visit outgoing edges deterministically. BFS uses a queue to process the frontier layer by layer, while DFS uses recursion (or a stack) to plunge deep into paths. Marking vertices as `seen` prevents infinite loops and redundant work.\n\nA very common trap in BFS is marking a vertex as visited only when it is popped from the queue, rather than when it is enqueued. If you wait until a vertex is dequeued to mark it, a graph with diamond-shaped paths can cause the same vertex to be pushed onto the queue multiple times, leading to duplicate output and degraded performance. For DFS, the trap is forgetting that recursion implicitly uses the call stack, which can overflow if the graph has extremely long paths.\n\nBoth `bfs` and `dfs` run in O(V + E) time, as each reachable vertex and edge is processed exactly once. Maintaining the sorted adjacency lists takes O(E log E) time overall if sorted efficiently. The space complexity is O(V + E) to store the graph and the visited structures.",
@@ -2241,6 +2289,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "gray-code-list-for-width": {
+    "promptMarkdown": "A rotary encoder with `n` sensor bits reports positions so that moving to the next position flips exactly one bit. The standard sequence for width `n` lists `2^n` values, where the value at index `i` is `i XOR (i >> 1)`, for `i = 0, 1, ..., 2^n - 1`.\n\nReturn that sequence in index order.\n\n**Constraints**\n- `0 <= n <= 16`\n\n**Example 1**\n```\ninput:\n1\noutput: 0 1\n```\n*Explanation: 0 XOR 0 = 0 and 1 XOR 0 = 1.*\n\n**Example 2**\n```\ninput:\n3\noutput: 0 1 3 2 6 7 5 4\n```\n*Explanation: for example index 5 is 101, and 101 XOR 010 = 111 = 7; each neighbour differs in one bit.*\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\n*Explanation: with no bits there is exactly one position, 0.*\n\n**Follow-up:** Can you also build the sequence by reflecting the width `n - 1` list?",
+    "editorialMarkdown": "## Direct formula per index\n\nFor each index `i` from 0 to `2^n - 1`, output `i XOR (i >> 1)`. Shifting right by one and XOR-ing marks exactly the positions where adjacent bits of `i` differ, and consecutive indices change those marks in a single bit, which is why neighbours in the output differ in one bit.\n\nThe same list can be built by reflection: take the width `n - 1` list, then append it reversed with the top bit set.\n\nThe trap is returning a valid one-bit-change cycle in a different order. Many sequences have that property, but the task fixes the standard one, so the order matters. Let N be `2^n`, the number of values.\n\nTime complexity is O(N). Space complexity is O(N).",
+    "promoteSamples": [
+      "1",
+      "3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "gray-step-sequence-check": {
+    "promptMarkdown": "A position encoder is supposed to change **exactly one bit** between consecutive readings. Given the recorded readings `a` (non-negative integers, in order), return `true` if every pair of neighbouring readings differs in exactly one bit, and `false` otherwise. A single reading has no neighbours and passes.\n\n**Constraints**\n- `1 <= a.length <= 10^5`\n- `0 <= a[i] < 2^30`\n\n**Example 1**\n```\ninput:\n0 1 3 2\noutput: true\n```\n*Explanation: 0→1 flips bit 0, 1→3 flips bit 1, and 3→2 flips bit 0.*\n\n**Example 2**\n```\ninput:\n0 3\noutput: false\n```\n*Explanation: 0 and 3 (binary 11) differ in two bits.*\n\n**Example 3**\n```\ninput:\n1 1\noutput: false\n```\n*Explanation: identical neighbours differ in zero bits, not one.*\n\n**Follow-up:** Can you test \"exactly one bit\" with a constant number of bit operations?",
+    "editorialMarkdown": "## XOR, then a power-of-two test\n\nFor neighbours `x` and `y`, `d = x XOR y` has a 1 exactly where they differ. They differ in exactly one bit when `d` is a power of two: `d != 0` and `d & (d - 1) == 0`, since subtracting 1 clears the lowest set bit and nothing else remains. Check every neighbouring pair and return `false` at the first failure.\n\nThe trap is the zero case. `0 & (0 - 1)` is also 0, so a test that only checks `d & (d - 1) == 0` accepts repeated readings like `1 1`. The explicit `d != 0` guard rejects them.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "greatest-common-divisor": {
     "promptMarkdown": "Return the greatest non-negative integer that divides both non-negative inputs without a remainder.\n\nIf one input is zero, return the other input: for example, `gcd(0, 7)` is `7`.\n\n**Constraints**\n- Both inputs are non-negative integers between `0` and `1,000,000`.\n- The two inputs are never both zero.\n\n**Example 1**\n\n```\ninput:\n54\n24\noutput: 6\n```\n6 is the largest integer dividing both 54 and 24.\n\n**Example 2**\n\n```\ninput:\n0\n7\noutput: 7\n```\nSince one input is zero, the answer is the other input.\n\n**Example 3**\n\n```\ninput:\n1\n1\noutput: 1\n```\nThe largest integer dividing both 1 and 1 is 1.\n\n**Follow-up:** Can you solve this efficiently without checking every smaller number?",
@@ -2318,6 +2385,35 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
         "expectedStdout": "0"
       }
     ]
+  },
+  "half-open-painted-union-length": {
+    "promptMarkdown": "Painters each cover a stretch of a fence, given as half-open ranges `[start, end)` in the rows of a matrix. Return the total length of fence that is painted at least once. Ranges may overlap, nest, or just touch; a painted stretch is counted once no matter how many painters covered it.\n\n**Constraints**\n- `1 <= ranges.length <= 10^4`\n- `0 <= start < end <= 10^6`\n\n**Example 1**\n```\ninput:\n1 10;2 3;4 5\noutput: 9\n```\n*Explanation: the two short ranges lie inside [1, 10), so only 9 units are painted.*\n\n**Example 2**\n```\ninput:\n1 2;2 5\noutput: 4\n```\n*Explanation: the ranges touch at 2 and together cover [1, 5).*\n\n**Example 3**\n```\ninput:\n5 9\noutput: 4\n```\n*Explanation: a single range of length 4.*\n\n**Follow-up:** Can you compute it after one sort and one scan?",
+    "editorialMarkdown": "## Sort and merge into blocks\n\nSort the ranges by start. Keep the current merged block `[s, e)`. For each next range, if it starts before `e` it overlaps the block, so extend `e` to the larger end; otherwise the block is finished: add `e - s` to the total and start a new block from this range. After the scan, add the last block.\n\nEvery painted unit belongs to exactly one merged block, so summing block lengths counts it once.\n\nThe trap is adding every range's length and subtracting pairwise overlaps. With three or more overlapping ranges, such as nested ones, the corrections go wrong. Merging first avoids that entirely.\n\nTime complexity is O(n log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 10;2 3;4 5",
+      "5 9"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "half-open-peak-room-demand": {
+    "promptMarkdown": "An EV charging station logs each car's stay as a half-open time range `[arrive, leave)`, one row per car. Each car occupies one charging bay for its whole stay, and a car leaving at time `t` frees its bay before a car arriving at time `t` plugs in. Return the largest number of bays in use at the same moment.\n\n**Constraints**\n- `1 <= cars <= 10^4`\n- `0 <= arrive < leave <= 10^6`\n\n**Example 1**\n```\ninput:\n1 5;2 4;3 6\noutput: 3\n```\n*Explanation: during [3, 4) all three cars are charging.*\n\n**Example 2**\n```\ninput:\n1 2;2 3\noutput: 1\n```\n*Explanation: the first car leaves at time 2 exactly as the second arrives, so one bay is enough.*\n\n**Example 3**\n```\ninput:\n1 9\noutput: 1\n```\n*Explanation: a single car uses one bay.*\n\n**Follow-up:** Can you find the peak using two sorted lists of times?",
+    "editorialMarkdown": "## Sweep sorted starts against sorted ends\n\nSort all arrival times and, separately, all leaving times. Walk through the arrivals in order with a pointer into the leaving times. Before counting an arrival at time `x`, advance that pointer past every leaving time `<= x`: those cars have freed their bays. The bays in use are the arrivals seen so far minus the departures passed, and the maximum of that count over all arrivals is the answer.\n\nThe pattern is a sweep line over events; a min-heap of end times gives the same result.\n\nThe trap is the tie at a shared time. Using `< x` instead of `<= x` treats a car leaving at `x` as still charging, which counts one extra bay on back-to-back stays like Example 2.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 5;2 4;3 6",
+      "1 9"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "half-open-ranges-stay-separate-at-touch": {
+    "promptMarkdown": "A calendar tool combines busy periods given as half-open ranges `[start, end)`, one row per period. Merge the periods that **overlap**, meaning they share some time. Two periods that only touch, like `[1, 3)` and `[3, 5)`, share no time and stay as separate rows. Return the merged periods sorted by start (and then by end).\n\n**Constraints**\n- `1 <= periods.length <= 10^4`\n- `0 <= start < end <= 10^6`\n\n**Example 1**\n```\ninput:\n1 3;3 5;4 7\noutput: 1 3;3 7\n```\n*Explanation: [1, 3) only touches [3, 5); [3, 5) and [4, 7) overlap and merge into [3, 7).*\n\n**Example 2**\n```\ninput:\n5 7;1 2\noutput: 1 2;5 7\n```\n*Explanation: nothing overlaps, and the output is sorted by start.*\n\n**Example 3**\n```\ninput:\n1 4;2 3\noutput: 1 4\n```\n*Explanation: [2, 3) lies inside [1, 4).*\n\n**Follow-up:** Which single comparison changes if the periods were closed instead of half-open?",
+    "editorialMarkdown": "## Sort, then merge on strict overlap\n\nSort the periods by start (then end). Keep the output list; for each period, if it starts **strictly before** the end of the last output period, the two share time, so extend that period's end to the larger of the two ends. Otherwise append the period as a new row. Sorting also produces the required output order.\n\nThe pattern is the classic interval merge, with the boundary rule chosen for half-open ranges.\n\nThe trap is the comparison. Copying the closed-interval rule `start <= lastEnd` merges touching periods such as `[1, 3)` and `[3, 5)`, which this task keeps apart. Use `start < lastEnd`.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 4;2 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "has-a-cycle": {
     "promptMarkdown": "You are given a list of next-pointers written as indices. Position `i` points at position `a[i]`, and the value `-1` means \"nothing follows\".\n\nStart at position `0` and keep following the pointers. Decide whether you ever arrive at a position you have already stood on. Print `true` if you do and `false` if the trail runs off the end at some `-1`.\n\nA single position pointing at itself (`0`) is a cycle, and a single position holding `-1` is not.\n\n**Constraints**\n- The list has between `1` and `100,000` elements.\n- Every value is either `-1` or a valid index into the list `0 <= a[i] < length`.\n\n**Example 1**\n\n```\ninput:\n1 2 3 1\noutput: true\n```\nThe trail is `0 -> 1 -> 2 -> 3 -> 1`, and position `1` comes round again.\n\n**Example 2**\n\n```\ninput:\n1 2 3 -1\noutput: false\n```\nThe trail ends at the `-1`.\n\n**Example 3**\n\n```\ninput:\n0\noutput: true\n```\nPosition 0 points to itself, forming a cycle.\n\n**Follow-up:** Can you solve it in constant extra space without maintaining a set of visited positions?",
@@ -2497,6 +2593,24 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       }
     ]
   },
+  "integer-cube-root-floor": {
+    "promptMarkdown": "A storage planner packs goods into cube-shaped crates with whole-number side lengths. Given a volume `n`, return the largest side length `r` whose cube `r³` is at most `n`.\n\n**Constraints**\n- `0 <= n <= 999,999`\n\n**Example 1**\n```\ninput:\n30\noutput: 3\n```\n*Explanation: 3³ = 27 fits and 4³ = 64 does not.*\n\n**Example 2**\n```\ninput:\n64\noutput: 4\n```\n*Explanation: 64 is an exact cube.*\n\n**Example 3**\n```\ninput:\n999999\noutput: 99\n```\n*Explanation: 99³ = 970299 fits, while 100³ = 1000000 is just too large.*\n\n**Follow-up:** Can you find `r` without floating-point cube roots?",
+    "editorialMarkdown": "## Binary search on the answer\n\nThe predicate `r³ <= n` is true for small `r` and false from some point on, so search for the last true value. Keep an inclusive window `[lo, hi]` from 0 to `n` and a variable `ans`. If `mid³ <= n`, record `ans = mid` and search right with `lo = mid + 1`; otherwise search left with `hi = mid - 1`. When the window is empty, `ans` is the answer.\n\nThe cube of a candidate can exceed the 32-bit range even though `n` is small, so compute it in 64-bit arithmetic (or narrow `hi` to 100 first).\n\nThe trap is returning the last `mid` probed instead of the last **feasible** one; the final probe is often one too large. Floating-point `cbrt` can also land just below an exact cube.\n\nTime complexity is O(log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "999999"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "integer-fourth-root-floor": {
+    "promptMarkdown": "A signal is amplified by the same whole-number factor at each of four stages, so a factor of `r` multiplies it by `r⁴` overall. Given a limit `n`, return the largest factor `r >= 0` with `r⁴ <= n`.\n\n**Constraints**\n- `0 <= n <= 2,000,000,000`\n\n**Example 1**\n```\ninput:\n80\noutput: 2\n```\n*Explanation: 2⁴ = 16 fits, and 3⁴ = 81 is just above 80.*\n\n**Example 2**\n```\ninput:\n81\noutput: 3\n```\n*Explanation: 81 is exactly 3⁴.*\n\n**Example 3**\n```\ninput:\n2000000000\noutput: 211\n```\n*Explanation: 211⁴ = 1,982,119,441 fits, while 212⁴ = 2,019,963,136 does not.*\n\n**Follow-up:** How do you compare `r⁴` with `n` without overflowing 32-bit integers?",
+    "editorialMarkdown": "## Binary search with overflow-safe powers\n\nWhether `r⁴ <= n` is monotone in `r`: once it fails, every larger `r` fails too. Binary search for the last value that passes, keeping the best feasible `r` seen. A small upper bound such as 50,000 is enough, since `50000⁴` is far above the limit.\n\nThe comparison is where bugs hide. `r⁴` for candidates near the top of the search range overflows 32-bit integers and can wrap to a small or negative value that looks feasible. Compute it in 64-bit arithmetic, or compare step by step (`r² <= n / r²`). Floating-point fourth roots can also round across an exact power.\n\nThe trap is exactly that 32-bit product: the search then returns a huge wrong factor for large `n`.\n\nTime complexity is O(log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "2000000000"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "integer-square-root": {
     "promptMarkdown": "Return the greatest non-negative integer whose square is at most `n`. \n\nDo not use fractional arithmetic or floating point functions. For a perfect square such as 81, return its exact root.\n\n**Constraints**\n- `n` is a non-negative integer between `0` and `1,000,000`.\n\n**Example 1**\n\n```\ninput:\n20\noutput: 4\n```\n`4 × 4` is at most 20, but `5 × 5` is larger.\n\n**Example 2**\n\n```\ninput:\n81\noutput: 9\n```\n`9 × 9` is exactly 81.\n\n**Example 3**\n\n```\ninput:\n0\noutput: 0\n```\n`0 × 0` is exactly 0.\n\n**Follow-up:** Can you compute the root without checking every number?",
     "editorialMarkdown": "The intended approach is a binary search for the last valid root. \n\nFor increasing non-negative candidates, the condition `mid × mid <= n` remains true up to the actual integer square root and becomes false afterward. You can binary search this monotonic boundary. If a midpoint's square is valid, save it as the current best answer and search higher (`lo = mid + 1`). If it is too large, search lower (`hi = mid - 1`). \n\nThe pattern's name is binary search for the answer. The time complexity is O(log n) and the space complexity is O(1).\n\nThe one trap most solvers hit is simply returning the final `mid` value, which might actually be the first value whose square is too large depending on loop termination conditions. Another trap is casting a floating-point square root to an integer, which silently violates the requirement to avoid fractional arithmetic.",
@@ -2530,6 +2644,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "is-perfect-square-by-bounds": {
+    "promptMarkdown": "A tiling app accepts a floor only if it can be covered by one square of whole-number side. Given the floor area `area`, return `true` if `area` equals `s × s` for some whole number `s >= 0`, and `false` otherwise.\n\n**Constraints**\n- `0 <= area <= 10^4`\n\n**Example 1**\n```\ninput:\n49\noutput: true\n```\n*Explanation: 7 × 7 = 49.*\n\n**Example 2**\n```\ninput:\n50\noutput: false\n```\n*Explanation: 7 × 7 = 49 is too small and 8 × 8 = 64 too large.*\n\n**Example 3**\n```\ninput:\n0\noutput: true\n```\n*Explanation: 0 × 0 = 0.*\n\n**Follow-up:** Can you decide it without any floating-point square root?",
+    "editorialMarkdown": "## Binary search for an exact side\n\nCandidate sides `0..area` have squares in increasing order, so binary search them. At `mid`, compare `mid * mid` with `area`: equal means `true`; smaller means the side must be larger, so `lo = mid + 1`; larger means `hi = mid - 1`. If the window empties without a match, return `false`.\n\nThe search uses only integer multiplication, so it has none of the rounding problems of `sqrt`, and in larger variants the product should be computed in 64-bit arithmetic. Let A be the value of `area`.\n\nThe trap is trusting `sqrt(area)` and checking whether it is a whole number. Floating-point roots of large perfect squares can come out as 6.999999... or 7.000001, which gives the wrong answer after truncation.\n\nTime complexity is O(log A). Space complexity is O(1).",
+    "promoteSamples": [
+      "0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "is-power-of-two-by-bits": {
     "promptMarkdown": "You are validating hardware configurations for a distributed memory system. A given memory block size `n` is only considered valid if it is exactly a power of two. Determine whether the block size meets this strict architectural requirement, evaluating to `true` if it does and `false` if it does not.\n\n**Constraints**\n- `0 <= n <= 2^31 - 1`\n\n**Example 1**\n```\ninput:\n32\noutput: true\n```\nA block size of 32 is valid because it is exactly 2 raised to the power of 5.\n\n**Example 2**\n```\ninput:\n12\noutput: false\n```\nA block size of 12 is invalid because it cannot be expressed as a power of two.\n\n**Example 3**\n```\ninput:\n0\noutput: false\n```\nA block size of 0 is not a positive power of two and is therefore invalid.\n\n**Follow-up:** Can you determine the memory block's validity in O(1) time using bitwise operations?",
@@ -2585,6 +2708,26 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "jump-with-exact-landing": {
+    "promptMarkdown": "A ferry hops between floating platforms numbered `0` to `n-1`, starting on platform `0`. From platform `i` it can move forward any whole number of platforms from `1` up to `a[i]` (a value of `0` means it is stuck there). The ferry must **land exactly** on the last platform, which is always possible whenever that platform is within a platform's range, since shorter hops are allowed.\n\nReturn `true` if the ferry can reach platform `n-1`, and `false` otherwise.\n\n**Constraints**\n- `1 <= a.length <= 20`\n- `0 <= a[i] <= 20`\n\n**Example 1**\n```\ninput:\n1 0 0\noutput: false\n```\n*Explanation: the ferry reaches platform 1, where it is stuck.*\n\n**Example 2**\n```\ninput:\n0\noutput: true\n```\n*Explanation: the ferry already sits on the last platform.*\n\n**Follow-up:** Can you decide it in one left-to-right pass?",
+    "editorialMarkdown": "## Greedy furthest reach\n\nScan the platforms from left to right, keeping `far`, the furthest platform reachable so far. If the scan reaches a platform `i > far`, nothing can get there, so return `false`. Otherwise update `far = max(far, i + a[i])`, and return `true` as soon as `far >= n - 1`.\n\nBecause any hop length from 1 to `a[i]` is allowed, every platform up to `far` is reachable, so reaching `far >= n - 1` means the ferry can stop exactly on the last platform rather than overshoot it.\n\nThe trap is simulating single greedy hops (always the longest), which can leap past a platform whose range was needed. Tracking the furthest reach over all visited platforms avoids that.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 0 0",
+      "0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "k-closest-values-to-target": {
+    "promptMarkdown": "A thermostat keeps a list of recorded temperatures and wants the `k` readings nearest to a set point. The first input line is a two-row matrix: the first row holds the readings and the second row holds the single set point `t`. The second line is `k`.\n\nReturn the `k` readings with the smallest distance `|reading - t|`, ordered by distance, and by smaller reading when distances are equal. Equal readings are separate entries.\n\n**Constraints**\n- `1 <= readings <= 10^4`\n- `1 <= k <=` number of readings\n- `-10^4 <= reading, t <= 10^4`\n\n**Example 1**\n```\ninput:\n-3 1 2 -1 5;1\n3\noutput: 1 2 -1\n```\n*Explanation: distances from 1 are 4, 0, 1, 2 and 4; the three smallest belong to 1, 2 and -1.*\n\n**Example 2**\n```\ninput:\n5 5 -5;0\n2\noutput: -5 5\n```\n*Explanation: all three readings are 5 away; the tie is broken by value, so -5 comes first, then one 5.*\n\n**Example 3**\n```\ninput:\n-2 -1 0;-1\n2\noutput: -1 -2\n```\n*Explanation: -1 is 0 away; -2 and 0 are both 1 away, and -2 is smaller.*\n\n**Follow-up:** Can you do it in O(n log k) time with a heap?",
+    "editorialMarkdown": "## Rank by (distance, value)\n\nEvery reading has the key `(|reading - t|, reading)`. The answer is the first `k` readings in increasing key order. Sorting all readings by that key and taking the first `k` works; for the follow-up, keep a max-heap of size `k` on the same key, evicting the worst keeper whenever a better reading arrives, then output the heap in key order.\n\nThe trap is measuring distance from 0, or sorting by raw value, which would put -3 ahead of 2 in Example 1. Compute the distance to the set point first and only use the value to break ties.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "5 5 -5;0\n2",
+      "-2 -1 0;-1\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "k-closest-values-to-zero": {
     "promptMarkdown": "Given a space-separated list of integers on the first line and an integer `k` on the second line, find the `k` values in the list that are closest to zero.\n\nPrint the values ordered by their distance from zero, starting with the closest. If two values have the same distance (e.g., `-5` and `5`), the smaller value must come first. Each duplicate value in the input is treated as a separate candidate.\n\n**Constraints**\n- The list has at least one number.\n- `1 <= k <= length of list`.\n\n**Example 1**\n```\ninput:\n-3 1 2 -1 5\n3\noutput: -1 1 2\n```\n`-1` and `1` are distance 1, and `-1` comes first. `2` is distance 2.\n\n**Example 2**\n```\ninput:\n5 5 -5\n2\noutput: -5 5\n```\n`-5` and `5` are both distance 5, and the smaller value `-5` sorts first.\n\n**Follow-up:**\nCan you solve this in O(n log k) time?",
     "editorialMarkdown": "This problem requires maintaining a heap of size `k` over a compound key. It is an application of the top-k pattern.\n\nYou maintain a heap of size `k` to track the closest elements seen so far. Since you want the *closest* values, the heap must be a max-heap oriented around \"distance\", so the element at the top is the *furthest* from zero (the worst keeper, and the one you'd evict when the heap size exceeds `k`). The sorting key must also account for the tie-breaker: if distances are equal, the larger value is considered \"worse\" and should be evicted first. So, the worst element has the largest absolute value, or in case of a tie, the largest actual value. Once all elements are processed, you pop the elements out of the heap (which yields them worst-first) and reverse the result to output the nearest first.\n\nThe time complexity is O(n log k) for scanning and O(k log k) to drain, with O(k) space for the heap.\n\nThe quiet mistake solvers make is only comparing the absolute distances and letting equal distances break ties arbitrarily. Since `-3` and `3` have the same absolute value, a standard comparator will treat them as indistinguishable. Depending on arrival order or internal language mechanics, the output might be inconsistent and violate the requirement to sort the smaller value first. Writing a compound comparator explicitly avoids this.",
@@ -2592,12 +2735,43 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "k-least-frequent-values": {
+    "promptMarkdown": "A music app tracks which song IDs were played, in the list `a`. It wants the `k` **least** played distinct songs. Return their IDs ordered by play count from lowest to highest, and by smaller ID when counts are equal.\n\n**Constraints**\n- `1 <= a.length <= 100`\n- `-10^4 <= a[i] <= 10^4`\n- `1 <= k <=` number of distinct IDs\n\n**Example 1**\n```\ninput:\n4 4 5 5 6\n2\noutput: 6 4\n```\n*Explanation: 6 was played once; 4 and 5 twice each, and 4 is smaller.*\n\n**Example 2**\n```\ninput:\n-1 -1 -2 -3 -3\n2\noutput: -2 -3\n```\n*Explanation: -2 was played once; -1 and -3 twice each, and -3 is smaller.*\n\n**Example 3**\n```\ninput:\n8 8\n1\noutput: 8\n```\n*Explanation: there is only one distinct song.*\n\n**Follow-up:** Can you select the `k` songs with a heap of size `k`?",
+    "editorialMarkdown": "## Count, then rank by (count, id)\n\nBuild a hash map from each ID to its play count. Then order the distinct IDs by the key `(count, id)` and take the first `k`. Sorting the `d` distinct IDs is simple; with a max-heap of size `k` on the same key you evict the worst keeper whenever a better ID arrives, then output the keepers in key order.\n\nThe trap is the tie rule. A heap's internal array is not sorted, and equal counts must still come out by ascending ID, so the final keepers need an explicit sort by the full key. Reusing a most-frequent comparator is the other slip: it selects exactly the wrong end.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "4 4 5 5 6\n2",
+      "-1 -1 -2 -3 -3\n2",
+      "8 8\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "k-most-frequent-values": {
     "promptMarkdown": "Given a space-separated list of integers on the first line and an integer `k` on the second line, find the `k` values that occur most frequently in the list.\n\nOutput the values ordered by highest frequency first. If two values have the exact same frequency, order them by the smaller value first. Ensure the output elements are space-separated.\n\n**Constraints**\n- The list contains at least one number.\n- `1 <= k <= number of distinct values in the list`.\n\n**Example 1**\n```\ninput:\n9 9 8 8 8 7\n3\noutput: 8 9 7\n```\n`8` occurs three times, `9` twice, and `7` once.\n\n**Example 2**\n```\ninput:\n4 4 5 5 6\n2\noutput: 4 5\n```\n`4` and `5` both occur twice. Since they tie on frequency, `4` comes before `5`.\n\n**Follow-up:**\nCan you solve this with O(d log k) time for selection, where d is the number of distinct values?",
     "editorialMarkdown": "This problem requires two phases: counting frequencies and then finding the top `k` using a heap.\n\nFirst, iterate through the input and build a frequency map, tracking how many times each distinct value appears. Next, you need the top `k` elements based on frequency and value. Since you are keeping the *best* `k`, you maintain a min-heap of size `k`, where the top element is the *worst* of your keepers (the one with the lowest frequency, or if tied, the largest value). By popping the heap when it exceeds size `k`, you discard the weakest candidates. Finally, drain the heap and reverse the result, because popping yields the worst of the top `k` first.\n\nThe time complexity is O(n) to count and O(d log k) to select using the heap, where `d` is the number of distinct elements. Space is O(d + k).\n\nA trap most solvers fall into is creating a comparator that only evaluates frequency. If multiple values share the same frequency, their relative ordering in the heap becomes dependent on the unpredictable iteration order of the frequency hash map. The tests demand strict ordering by smaller value for ties, so a compound comparator `(frequency, -value)` is necessary to ensure consistent and correct results.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "k-smallest-from-sorted-groups": {
+    "promptMarkdown": "Several sensors each report readings sorted in ascending order; each sensor's readings are one row of a matrix, and rows can have different lengths. Return the `k` smallest readings across all sensors, in ascending order. Equal readings are separate entries.\n\n**Constraints**\n- `1 <= rows <= 100`\n- `1 <=` row length `<= 100`, each row sorted ascending\n- `-10^6 <=` reading `<= 10^6`\n- `1 <= k <=` total number of readings\n\n**Example 1**\n```\ninput:\n-3 2;0 1 9\n3\noutput: -3 0 1\n```\n*Explanation: the three smallest readings overall are -3, then 0 and 1 from the second row.*\n\n**Example 2**\n```\ninput:\n1 1;1 2\n3\noutput: 1 1 1\n```\n*Explanation: all three 1s come before 2.*\n\n**Example 3**\n```\ninput:\n5;1 2\n1\noutput: 1\n```\n*Explanation: only the single smallest reading is requested.*\n\n**Follow-up:** Can you stop after `k` readings instead of merging everything?",
+    "editorialMarkdown": "## K-way merge that stops early\n\nPut the first reading of each row into a min-heap, remembering its row and column. Pop the smallest entry, output it, and push the next reading from the same row if it has one. After `k` pops, stop: the remaining readings cannot be among the `k` smallest.\n\nBecause each row is sorted, a row's unread readings are never smaller than its current front, so one heap entry per row is enough.\n\nThe trap is advancing every row whose front equals the minimum at once, which drops duplicate readings such as the three 1s in Example 2. Concatenating and sorting everything also works but ignores the row order the input provides. Let r be the number of rows.\n\nTime complexity is O(r + k log r). Space complexity is O(r).",
+    "promoteSamples": [
+      "1 1;1 2\n3",
+      "5;1 2\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "k-smallest-values-descending": {
+    "promptMarkdown": "A race organiser has the finishing times `a` (in seconds; a list may contain equal times and negative offsets). Return the `k` smallest times, listed from **largest to smallest** among them. Equal times are separate entries.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `1 <= k <= a.length`\n- `-10^9 <= a[i] <= 10^9`\n\n**Example 1**\n```\ninput:\n5 1 4 2 3\n3\noutput: 3 2 1\n```\n*Explanation: the three smallest times are 1, 2 and 3, printed largest first.*\n\n**Example 2**\n```\ninput:\n4 4 1 4\n3\noutput: 4 4 1\n```\n*Explanation: the three smallest are 1, 4 and 4; duplicates keep their own places.*\n\n**Example 3**\n```\ninput:\n-1 -5 -3\n2\noutput: -3 -5\n```\n*Explanation: -5 and -3 are the two smallest, printed as -3 then -5.*\n\n**Follow-up:** Can you do it in O(n log k) time with a heap of size `k`?",
+    "editorialMarkdown": "## Max-heap of the k smallest\n\nKeep a max-heap holding the `k` smallest times seen so far. Push each time; whenever the heap grows past `k`, pop its top, which is the largest keeper and therefore the one that no longer belongs. After the scan the heap holds exactly the `k` smallest times, and popping it produces them from largest to smallest, the order required.\n\nThe trap is the output order. Code written for the usual ascending answer often reverses the drained heap, or sorts ascending, and prints `1 2 3` instead of `3 2 1`. Removing duplicates is the other slip.\n\nTime complexity is O(n log k). Space complexity is O(k).",
+    "promoteSamples": [
+      "4 4 1 4\n3",
+      "-1 -5 -3\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "k-smallest-values-sorted": {
     "promptMarkdown": "Given a space-separated list of integers on the first line and an integer `k` on the second line, find the `k` smallest values. Output them separated by spaces in ascending order. Duplicates in the input count as separate values.\n\n**Constraints**\n- The list has at least one number.\n- `1 <= k <= length of list`.\n\n**Example 1**\n```\ninput:\n5 1 4 2 3\n3\noutput: 1 2 3\n```\nThe 3 smallest values are 1, 2, and 3.\n\n**Example 2**\n```\ninput:\n4 4 4 1\n2\noutput: 1 4\n```\nThe two smallest values are 1 and 4.\n\n**Follow-up:**\nCan you solve this in O(n log k) time instead of O(n log n)?",
@@ -2608,6 +2782,53 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "keep-at-most-two-sorted": {
+    "promptMarkdown": "An inventory feed lists part numbers `a` in non-decreasing order. To save space, the warehouse keeps **at most two** entries of each part number. Return the list after dropping every extra copy beyond the first two, still in non-decreasing order.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `a` is sorted in non-decreasing order.\n\n**Example 1**\n```\ninput:\n-2 -2 -1 -1 -1 0\noutput: -2 -2 -1 -1 0\n```\n*Explanation: -1 appears three times, so one copy is dropped; -2 and 0 are kept as they are.*\n\n**Example 2**\n```\ninput:\n0 0 0 0\noutput: 0 0\n```\n*Explanation: only the first two zeros are kept.*\n\n**Example 3**\n```\ninput:\n5\noutput: 5\n```\n*Explanation: a single entry is kept.*\n\n**Follow-up:** Can you do it in place with O(1) extra space?",
+    "editorialMarkdown": "## Write pointer compared two places back\n\nScan the list with a read pointer and keep a write pointer marking the end of the kept prefix. A value may be kept if fewer than two values have been written, or if it differs from the value written **two** positions earlier, `a[write - 2]`. Since equal values are adjacent in sorted input, that comparison lets exactly the first two copies of each value through. Copy an accepted value to `a[write]` and advance `write`; the answer is the first `write` entries.\n\nThe trap is comparing with the previous written value, `a[write - 1]`. That is the keep-one rule and drops the second copy. Reading `a[write - 2]` before two values exist is the other slip; guard it with the `write < 2` check.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "-2 -2 -1 -1 -1 0",
+      "5"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "keep-first-n-of-chain": {
+    "promptMarkdown": "A photo slideshow is stored as a singly linked list of photo IDs. The viewer only wants the first `k` photos. Return the list cut after its `k`-th node, so that node becomes the new tail.\n\n**Constraints**\n- `1 <= number of photos <= 1000`\n- `1 <= k <=` number of photos\n- `-10^4 <= photo ID <= 10^4`\n\n**Example 1**\n```\ninput:\n5 6 7 8\n2\noutput: 5 6\n```\n*Explanation: the list is cut after the second photo.*\n\n**Example 2**\n```\ninput:\n1 2 3\n3\noutput: 1 2 3\n```\n*Explanation: keeping every photo leaves the list unchanged.*\n\n**Example 3**\n```\ninput:\n-1 -2\n1\noutput: -1\n```\n*Explanation: only the head is kept.*\n\n**Follow-up:** Can you do it with a single walk and no extra list?",
+    "editorialMarkdown": "## Walk to the k-th node and cut\n\nStart at the head and step forward `k - 1` times; you are now on the `k`-th node. Set its `next` to null, which detaches everything after it, and return the original head.\n\nThe pattern is a counted pointer walk. No dummy node is needed because the head always survives when `k >= 1`.\n\nThe trap is an off-by-one in the walk. Stepping `k` times lands on the node after the one you want, keeping `k + 1` photos, or fails when `k` equals the list length.\n\nTime complexity is O(k). Space complexity is O(1).",
+    "promoteSamples": [
+      "-1 -2\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "keep-first-occurrence-of-each-value": {
+    "promptMarkdown": "A browser history is stored as a singly linked list of site IDs, most recent first. Clean it so that each site appears only once, keeping its **first** occurrence and removing every later one. The order of the kept nodes must not change.\n\n**Constraints**\n- `1 <= number of nodes <= 1000`\n- `-10^4 <= site ID <= 10^4`\n\n**Example 1**\n```\ninput:\n3 1 3 2 1\noutput: 3 1 2\n```\n*Explanation: the second 3 and the second 1 are removed.*\n\n**Example 2**\n```\ninput:\n5 5 5\noutput: 5\n```\n*Explanation: only the first 5 is kept.*\n\n**Example 3**\n```\ninput:\n1 2 3\noutput: 1 2 3\n```\n*Explanation: there are no repeats, so nothing changes.*\n\n**Follow-up:** How would you solve it with O(1) extra space, and what would it cost in time?",
+    "editorialMarkdown": "## Filter with a seen set\n\nWalk the list with a hash set of IDs already kept. Link each node whose ID is new onto the end of the output (a dummy head makes the first link uniform) and add its ID to the set; skip nodes whose ID was already seen. When the walk ends, set the output tail's `next` to null so skipped nodes do not trail behind.\n\nThe list is unsorted, so repeats can be far apart, which is why a set is needed; without one you would compare every node against all earlier ones in quadratic time.\n\nThe trap is forgetting to terminate the tail. If the last original node was a duplicate, the kept tail still points at it and the output grows a removed node.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 2 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "kth-largest-distinct-value": {
+    "promptMarkdown": "A high-score table records scores `a`, and several players can share a score. Return the `k`-th largest **different** score: repeated scores count as one when ranking.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `1 <= k <=` number of distinct scores\n\n**Example 1**\n```\ninput:\n5 5 4 3 3 1\n2\noutput: 4\n```\n*Explanation: the different scores from the top are 5, 4, 3, 1; the second is 4.*\n\n**Example 2**\n```\ninput:\n4 4 4 2\n2\noutput: 2\n```\n*Explanation: the three 4s count once, so 2 is second.*\n\n**Example 3**\n```\ninput:\n-1 -1 -3 -2\n3\noutput: -3\n```\n*Explanation: the different scores are -1, -2, -3, so the third is -3.*\n\n**Follow-up:** Can you do it with a heap that never holds more than `k` scores?",
+    "editorialMarkdown": "## Deduplicate, then select\n\nPut the scores in a set to remove repeats. Then keep a min-heap of at most `k` distinct scores: push each distinct score and pop the smallest whenever the heap exceeds `k`. At the end the heap's minimum is the `k`-th largest distinct score. Sorting the distinct scores in descending order and indexing `k - 1` gives the same result more simply.\n\nThe trap is ranking positions instead of values. Without removing repeats, `5 5 4 ...` with `k = 2` returns 5, because the second copy of 5 takes second place. Let d be the number of distinct scores.\n\nTime complexity is O(n + d log k). Space complexity is O(d).",
+    "promoteSamples": [
+      "4 4 4 2\n2",
+      "-1 -1 -3 -2\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "kth-largest-even-value": {
+    "promptMarkdown": "A card game deals a hand of numbers `a`. Only the **even** cards count toward a combo. Return the `k`-th largest even card in the hand, counting equal cards separately. If the hand has fewer than `k` even cards, return `-1`.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `k >= 1`\n\n**Example 1**\n```\ninput:\n9 6 2 6 5\n2\noutput: 6\n```\n*Explanation: the even cards are 6, 6 and 2; the two 6s are first and second.*\n\n**Example 2**\n```\ninput:\n-2 -8 4\n2\noutput: -2\n```\n*Explanation: the even cards in descending order are 4, -2, -8.*\n\n**Example 3**\n```\ninput:\n1 3 5\n1\noutput: -1\n```\n*Explanation: there are no even cards.*\n\n**Follow-up:** Can you do it in O(n log k) time with a heap?",
+    "editorialMarkdown": "## Filter, then select the k-th largest\n\nDiscard the odd cards; `x % 2 == 0` also recognises negative even numbers. If fewer than `k` even cards remain, return `-1`. Otherwise keep a min-heap of the `k` largest even cards seen (pop the smallest whenever it holds more than `k`); its top is the answer. Sorting the even cards in descending order and taking index `k - 1` is an equally valid approach.\n\nThe trap is removing duplicates. Equal cards are separate here, so `6 6 2` has 6 as both the first and second largest. Testing evenness with `x % 2 == 1` for odd numbers is another slip, because in several languages a negative odd number leaves remainder -1.\n\nTime complexity is O(n log k). Space complexity is O(k).",
+    "promoteSamples": [
+      "-2 -8 4\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "kth-largest-value": {
     "promptMarkdown": "A leaderboard tracks player scores, and you need to find where the cut-off rank falls. Given a list of scores and a rank `k`, return the score at position `k` when all scores are sorted from highest to lowest. Positions are counted by order, not by distinct value: if the top three scores are all the same number, the 3rd-largest is that number.\n\nLine 1 is the list of scores, space-separated. Line 2 is the integer `k`.\n\n**Constraints**\n- 1 ≤ length of list ≤ 10^4\n- 1 ≤ k ≤ length of list\n- Score values fit in a 32-bit signed integer and may be negative or repeated.\n\n**Example 1**\n```\ninput:\n3 2 1 5 6 4\n2\noutput: 5\n```\nSorted descending: `6 5 4 3 2 1`. The 2nd position is `5`.\n\n**Example 2**\n```\ninput:\n1\n1\noutput: 1\n```\nA single score is both the largest and the smallest — and the 1st.\n\n**Example 3**\n```\ninput:\n5 5 5 5\n3\noutput: 5\n```\nAll four scores are equal, so every rank from 1 to 4 maps to `5`.\n\n**Follow-up:** Can you achieve O(n log k) time and O(k) space, beating the O(n log n) sort when k is small?",
     "editorialMarkdown": "## Heap of size k\n\nThe straightforward approach is to sort descending and return the element at index k - 1. That costs O(n log n) and is correct, but it computes the relative order of every pair of elements when you only need one boundary value.\n\nA more targeted approach maintains a min-heap of size k holding the k largest values seen so far. For each incoming value, push it onto the heap. If the heap now holds more than k elements, pop — evicting the smallest of the current top-k candidates. After processing all values, the heap contains exactly the k largest, and its minimum (the heap's top) is the k-th largest overall.\n\nThe counter-intuitive part: for the k **largest** you use a **min**-heap. The invariant you need to maintain cheaply is \"drop the least valuable keeper,\" so the element that must be accessible in O(1) is the weakest member of your kept set. A max-heap would expose the biggest value — the one you never want to discard.\n\n```\nh = min-heap\nfor v in scores:\n    h.push(v)\n    if h.size() > k: h.pop()   # drops the current minimum\nreturn h.top()\n```\n\nThe quiet trap is deduplicating — treating repeated values as one entry because \"they're the same score.\" That answers the k-th largest *distinct* value, not the k-th position. On inputs with no repeats the two answers match, so hand-written tests pass and the repeated-maximum case does not.\n\nTime complexity is O(n log k): each of the n values performs at most one push and one pop on a heap of height log k. Space is O(k). When k is much smaller than n this decisively beats sorting; when k equals n it is the same total work.",
@@ -2617,12 +2838,61 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
   },
+  "kth-smallest-absolute-distance": {
+    "promptMarkdown": "A calibration tool lists measurement errors `a` (positive, negative or zero). Rank them by how close they are to zero, meaning by absolute value, and when two errors are equally close put the smaller (more negative) one first. Equal errors take separate ranks. Return the error at rank `k` (1-based).\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `1 <= k <= a.length`\n\n**Example 1**\n```\ninput:\n-4 2 -2 1\n3\noutput: 2\n```\n*Explanation: the ranking is 1, -2, 2, -4; the third is 2.*\n\n**Example 2**\n```\ninput:\n-1 1\n2\noutput: 1\n```\n*Explanation: -1 and 1 are equally close, so -1 ranks first and 1 second.*\n\n**Example 3**\n```\ninput:\n3 3 2\n3\noutput: 3\n```\n*Explanation: the ranking is 2, 3, 3; duplicates occupy separate ranks.*\n\n**Follow-up:** Can you find it without fully sorting the list?",
+    "editorialMarkdown": "## Rank by the key (|x|, x)\n\nThe ordering is completely described by the pair `(abs(x), x)`: first by distance from zero, then by value for ties. Sort by that key and return the element at index `k - 1`, or push everything into a min-heap on the key and pop `k` times. A size-`k` max-heap on the same key avoids the full sort.\n\nThe trap is sorting by absolute value alone. Then `-2` and `2` have no defined order, and depending on the language's sort the answer at that rank can come out as either. Including the value in the key makes the order unique.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "-1 1\n2",
+      "3 3 2\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "kth-union-value-with-packed-rank": {
+    "promptMarkdown": "Two branch offices each keep a sorted list of sale amounts. The first input line is office A's list, in non-decreasing order. The second line is a request: its **first** number is a rank `k` (1-based), and the remaining numbers are office B's list, also in non-decreasing order.\n\nReturn a list containing one number: the `k`-th smallest amount across both offices combined, counting equal amounts separately.\n\n**Constraints**\n- Both lists are non-empty, with at most 1000 amounts each.\n- `0 <=` every amount `< 1,000,000`\n- `1 <= k <=` total number of amounts\n\n**Example 1**\n```\ninput:\n1 7\n4 2 3 8\noutput: 7\n```\n*Explanation: k is 4 and office B's list is 2 3 8; the combined order is 1 2 3 7 8, so the fourth amount is 7.*\n\n**Example 2**\n```\ninput:\n2 2\n3 1 2 9\noutput: 2\n```\n*Explanation: k is 3 and the combined order is 1 2 2 2 9; the third amount is 2.*\n\n**Example 3**\n```\ninput:\n5\n1 1 9\noutput: 1\n```\n*Explanation: k is 1 and office B's list is 1 9, so the smallest amount is 1.*\n\n**Follow-up:** Can you find it in time logarithmic in the shorter list, without merging?",
+    "editorialMarkdown": "## Binary search a split point\n\nSplit off `k` amounts in total: `i` from the shorter list `x` and `j = k - i` from the other list `y`. The split is correct when the largest amount taken from each list is no bigger than the smallest amount left in the other: `x[i-1] <= y[j]` and `y[j-1] <= x[i]` (treat missing neighbours as minus or plus infinity). Then the answer is `max(x[i-1], y[j-1])`. If `x[i-1] > y[j]`, too many were taken from `x`, so search smaller `i`; otherwise search larger `i`. Keep `i` within `max(0, k - |y|)` and `min(k, |x|)` so `j` stays valid.\n\nThe trap is the input layout: the first number on the second line is the rank, not an amount. Treating it as part of office B's list shifts every answer. Let m be the length of the shorter list.\n\nTime complexity is O(log m). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 7\n4 2 3 8",
+      "5\n1 1 9"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "largest-anagram-group-size": {
+    "promptMarkdown": "A crossword helper groups words that are rearrangements of each other (same letters, same counts). Given the list `words`, return the size of the largest group. Repeated identical words count separately, and a word with no partner forms a group of size 1.\n\n**Constraints**\n- `1 <= words.length <= 1000`\n- `1 <= words[i].length <= 20`\n- Words contain lowercase English letters only.\n\n**Example 1**\n```\ninput:\narc car rat tar art\noutput: 3\n```\n*Explanation: rat, tar and art share letters; arc and car form a group of 2.*\n\n**Example 2**\n```\ninput:\naab aba baa aba\noutput: 4\n```\n*Explanation: all four words, including the repeated aba, belong to one group.*\n\n**Example 3**\n```\ninput:\na b c\noutput: 1\n```\n*Explanation: every word stands alone.*\n\n**Follow-up:** Can you track the answer without storing the groups themselves?",
+    "editorialMarkdown": "## Canonical key with a running maximum\n\nGive each word a key that every rearrangement shares, such as its 26 letter counts or its sorted letters. Keep a hash map from key to how many words have it. After incrementing a word's key, compare the new count with the best seen so far. No lists of words are needed, only counts.\n\nThe trap is using a weaker key. Word length puts `arc` and `rat` together, and a set of letters merges words like `ab` and `aab`. The key must capture each letter's count. Let C be the total number of characters.\n\nTime complexity is O(C). Space complexity is O(n).",
+    "promoteSamples": [
+      "aab aba baa aba",
+      "a b c"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "largest-contiguous-product": {
+    "promptMarkdown": "A trader tracks daily multipliers `a` (positive, negative or zero). Choosing a streak of consecutive days multiplies their values together. Return the largest product of any non-empty streak.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10 <= a[i] <= 10`\n- The answer and every streak product fit in a 32-bit signed integer.\n\n**Example 1**\n```\ninput:\n-2 3 -4\noutput: 24\n```\n*Explanation: the whole streak multiplies to 24, because the two negatives cancel.*\n\n**Example 2**\n```\ninput:\n-5\noutput: -5\n```\n*Explanation: the only streak is the single day.*\n\n**Follow-up:** Can you solve it in one pass with O(1) extra space?",
+    "editorialMarkdown": "## Track the largest and smallest product ending here\n\nFor each day keep two values: `hi`, the largest product of a streak ending on that day, and `lo`, the smallest. A new value `x` can start a fresh streak or extend either of those, so `hi = max(x, hi·x, lo·x)` and `lo = min(x, hi·x, lo·x)`, computed from the previous values at the same time. The answer is the largest `hi` seen.\n\nThe minimum matters because a negative `x` turns the most negative product into the most positive one, as in Example 1.\n\nThe trap is keeping only the maximum, as in the maximum-sum version. That throws away the negative product that becomes the best after the next negative number. Overwriting `hi` before computing `lo` is the other slip.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "-2 3 -4",
+      "-5"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
   "largest-contiguous-sum": {
     "promptMarkdown": "Return the largest sum of a non-empty contiguous run of numbers.\n\nThe list has at least one number and may contain negatives. If every number is negative, return the least negative single number.\n\n**Constraints**\n- `1 <= length of list <= 10^5`\n- Numbers can be positive, negative, or zero.\n\n**Example 1**\n```\ninput:\n-2 1 -3 4 -1 2 1 -5 4\noutput: 6\n```\nThe best unbroken run is `4 -1 2 1`, which sums to 6.\n\n**Example 2**\n```\ninput:\n1\noutput: 1\n```\nA single positive number is the only possible run.\n\n**Follow-up:** Can you find the largest sum in O(n) time and O(1) extra space?",
     "editorialMarkdown": "The intended approach tracks the best run ending at the current position, deciding whether to extend the previous run or start fresh from the current number. This pattern is Kadane's algorithm, a classic 1D dynamic programming strategy. The one trap most solvers hit is initializing the answer to zero instead of the first element, which causes the algorithm to incorrectly return zero for a list of entirely negative numbers instead of the least negative number. The time complexity is O(n) and the space complexity is O(1).",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "largest-distance-from-origin": {
+    "promptMarkdown": "A drone logs signed positions `a` along a straight track, with 0 as its base. Return the `k` positions farthest from the base. List them by distance from the base, largest first, and when two positions are the same distance put the smaller (more negative) one first. Equal positions are separate entries.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `1 <= k <= a.length`\n\n**Example 1**\n```\ninput:\n-5 3 5 -2\n3\noutput: -5 5 3\n```\n*Explanation: -5 and 5 are both 5 away, so -5 comes first; 3 is next.*\n\n**Example 2**\n```\ninput:\n1 -1\n2\noutput: -1 1\n```\n*Explanation: both are 1 away, so the smaller comes first.*\n\n**Example 3**\n```\ninput:\n-2 -2\n2\noutput: -2 -2\n```\n*Explanation: duplicates are listed separately.*\n\n**Follow-up:** Can you select the `k` positions with a heap of size `k`?",
+    "editorialMarkdown": "## Rank by the key (-|x|, x)\n\nThe required order is fully described by sorting on the pair `(-abs(x), x)`: larger distance first, then smaller value. Sort by that key and return the first `k` positions. For the follow-up, keep a heap of size `k` whose top is the worst keeper under the same key, then output the keepers in key order.\n\nThe trap is the tie-break direction. Sorting by distance and then by value descending (the natural \"largest first\" instinct) puts 5 before -5, which contradicts the rule.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "-2 -2\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "largest-grid-island": {
     "promptMarkdown": "You are monitoring a thermal sensor array spread across a 2D grid. The sensors report a `1` if they detect an elevated thermal signature, and a `0` if the temperature is normal. \n\nDetermine the size of the largest contiguous thermal anomaly. An anomaly is defined as a group of `1`s that are connected either horizontally or vertically. If the grid contains no elevated thermal signatures at all, the maximum size is `0`.\n\nThe input grid is provided row by row, with rows separated by semicolons and values within a row separated by spaces.\n\n**Constraints**\n- `1 <= number of rows <= 50`\n- `1 <= number of columns <= 50`\n- The grid contains only `0`s and `1`s.\n\n**Example 1**\n```\ninput:\n1 1 0;0 1 0;1 0 1\noutput: 3\n```\nThe largest connected group of `1`s is in the top left, containing 3 thermal signatures. The single `1`s at the bottom left and bottom right are isolated or diagonally adjacent, which does not count as connected.\n\n**Example 2**\n```\ninput:\n0 0;0 0\noutput: 0\n```\nThere are no elevated thermal signatures detected anywhere in the grid, so the maximum contiguous size is 0.\n\n**Example 3**\n```\ninput:\n1 1;1 1\noutput: 4\n```\nAll cells in the grid report an elevated thermal signature, making one large anomaly of size 4.\n\n**Follow-up:** Can you optimize your space complexity to avoid recursion depth issues?",
@@ -2632,6 +2902,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
+  },
+  "largest-half-open-idle-gap": {
+    "promptMarkdown": "A server logs busy periods as half-open ranges `[start, end)`, one row per period; periods may overlap or nest and are not sorted. Between the first moment the server is busy and the last, return the length of the longest stretch during which it is idle. If there is no idle stretch, return `0`.\n\n**Constraints**\n- `1 <= periods.length <= 1000`\n- `0 <= start < end <= 10^6`\n\n**Example 1**\n```\ninput:\n1 10;2 3;12 13\noutput: 2\n```\n*Explanation: [2, 3) lies inside [1, 10), so the only idle stretch is [10, 12).*\n\n**Example 2**\n```\ninput:\n1 3;5 7;6 9\noutput: 2\n```\n*Explanation: the server is idle during [3, 5); [5, 7) and [6, 9) overlap.*\n\n**Example 3**\n```\ninput:\n1 2;2 3\noutput: 0\n```\n*Explanation: the periods touch at 2, so there is no idle time between them.*\n\n**Follow-up:** Can you find it with one sort and one scan?",
+    "editorialMarkdown": "## Merge busy blocks and measure the seams\n\nSort the periods by start. Keep `end`, the furthest end of the merged busy block so far. For each next period, if it starts at or after `end`, the server was idle for `start - end`; record that as a candidate and set `end` to this period's end. Otherwise the period overlaps the block, so extend `end` to the larger end.\n\nOnly gaps between merged blocks are idle time; periods nested inside a block never create a gap.\n\nThe trap is comparing each period with the previous row instead of the merged end. In Example 1 the nested `[2, 3)` would make the gap look like 12 - 3 = 9 instead of 2.\n\nTime complexity is O(n log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 10;2 3;12 13"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
+  },
+  "largest-label-from-pieces": {
+    "promptMarkdown": "A sign maker has number stickers, given as strings of digits, and must place **all** of them side by side to form the largest possible number. Return that number as a string. If the result consists only of zeros, return `\"0\"`.\n\n**Constraints**\n- `1 <= stickers.length <= 10`\n- `1 <= stickers[i].length <= 9`\n- Each sticker is a non-negative integer written without leading zeros.\n\n**Example 1**\n```\ninput:\n12 121\noutput: 12121\n```\n*Explanation: 12 then 121 gives 12121, which beats 121 then 12, giving 12112.*\n\n**Example 2**\n```\ninput:\n0 0\noutput: 0\n```\n*Explanation: 00 is written as 0.*\n\n**Example 3**\n```\ninput:\n10\noutput: 10\n```\n*Explanation: a single sticker is used as is.*\n\n**Follow-up:** Why does comparing `x + y` with `y + x` give a consistent ordering?",
+    "editorialMarkdown": "## Sort by pairwise concatenation\n\nSort the stickers with a custom comparison: `x` goes before `y` when the string `x + y` is larger than `y + x`. Join the sorted stickers. If the result starts with `0`, every sticker was zero, so return `\"0\"`.\n\nThe greedy works by an exchange argument: if two neighbouring stickers were in the wrong order under this rule, swapping them makes the number larger, so the best arrangement has no such pair. The comparison is transitive, so sorting by it is well defined.\n\nThe trap is sorting numerically or plainly as strings. Plain string order puts 121 before 12 and produces 12112, and numeric order fails even more often. Let L be the longest sticker length; each comparison builds strings of up to 2L characters.\n\nTime complexity is O(n log n · L). Space complexity is O(n · L).",
+    "promoteSamples": [
+      "12 121",
+      "10"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-19"
   },
   "largest-non-adjacent-sum": {
     "promptMarkdown": "Choose numbers from a given list to maximize their total sum, under the strict rule that you may never choose two adjacent positions. Return the largest possible sum you can achieve. You are allowed to choose no numbers at all, resulting in a sum of 0.\n\n**Constraints**\n- `0 <= length of list <= 10^5`\n- List values can be positive, negative, or zero.\n\n**Example 1**\n```\ninput:\n2 7 9 3 1\noutput: 12\n```\nTaking 2, 9, and 1 yields the maximum sum of 12.\n\n**Example 2**\n```\ninput:\n2 1 1 2\noutput: 4\n```\nTaking the first 2 and the last 2 gives a sum of 4.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nFor an empty list, choosing nothing gives a sum of 0.\n\n**Follow-up:** Can you calculate the largest sum in O(n) time and O(1) space?",

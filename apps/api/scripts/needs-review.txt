@@ -2,3 +2,8 @@ cancel-one-overlapping-chain (original): reference solution returns len-1 regard
 delete-later-middle-node, decode-message-with-guarded-zeroes (tests): sample tests still carry well-known example data ('1 2 3 4'; '226', '06'); candidates for refresh-tests.ts.
 equal-size-asteroids-survive (tests): sample tests '5 10 -5' and '8 -8' are well-known example data; candidate for refresh-tests.ts.
 fewest-hops-with-free-finish (tests): sample '2 3 1 1 4' is well-known example data; candidate for refresh-tests.ts.
+folded-phrase-palindrome, gray-code-list-for-width, first-word-from-each-anagram-group (tests): sample tests carry well-known example data; candidates for refresh-tests.ts.
+jump-with-exact-landing (tests): samples '2 3 1 1 4' / '3 2 1 0 4' are well-known example data; candidate for refresh-tests.ts. k-least-frequent-values: Java comparator compares boxed Integer counts with != and uses x-y tie-break (overflow); constraints tightened to n<=100 in the statement, but the reference should be fixed.
+Claude-drafted upgrades 2026-09-20 (model claude-opus-5 in upgrades.ts), batches 1-11: constraints (often 10^5) were not checked against the six references' actual complexity/int width; a Codex pass should confirm no reference would TLE/overflow at the stated bounds.
+keep-at-most-two-sorted (tests): sample '1 1 1 2 2 3' is well-known example data; candidate for refresh-tests.ts.
+largest-contiguous-product, largest-label-from-pieces (tests): samples '2 3 -2 4', '-2 0 -1' and '3 30 34' are well-known example data; candidates for refresh-tests.ts.
