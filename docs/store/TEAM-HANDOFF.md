@@ -90,9 +90,9 @@ appId/product name, NSIS/macOS/Linux targets.
 | CI `store` job | ✅ | **untested** (needs a tag + variables) | — | — | — |
 | WACK | — | **unverified** | — | — | — |
 | Listing text, age-rating inputs | ✅ | — | — | — | — |
-| Screenshots | 1 of 3 (re-capture needed) | — | — | — | — |
-| Privacy URL | file prepared | — | needs push | — | — |
-| Partner Center submission | — | — | **not started** | — | — |
+| Screenshots (4) | ✅ | — | ✅ | — | — |
+| Privacy URL (`docs/store/PRIVACY.md` on `main`) | ✅ | — | ✅ pushed | — | — |
+| Partner Center submission (Submission 1, 2026-09-18, hold: publish manually) | ✅ | — | ✅ in certification | pending | — |
 
 ## Blockers and remaining human steps (in order)
 
