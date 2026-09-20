@@ -7,3 +7,7 @@ jump-with-exact-landing (tests): samples '2 3 1 1 4' / '3 2 1 0 4' are well-know
 Claude-drafted upgrades 2026-09-20 (model claude-opus-5 in upgrades.ts), batches 1-11: constraints (often 10^5) were not checked against the six references' actual complexity/int width; a Codex pass should confirm no reference would TLE/overflow at the stated bounds.
 keep-at-most-two-sorted (tests): sample '1 1 1 2 2 3' is well-known example data; candidate for refresh-tests.ts.
 largest-contiguous-product, largest-label-from-pieces (tests): samples '2 3 -2 4', '-2 0 -1' and '3 30 34' are well-known example data; candidates for refresh-tests.ts.
+largest-rectangle-uneven-shelves, largest-non-neighbor-sum-on-ring (tests): samples '2 1 5 6 2 3', '2 3 2', '1 2 3 1' are well-known example data; candidates for refresh-tests.ts.
+largest-router-separation, largest-sum-of-at-least-k (tests): samples '1 2 4 8 9'/3 (aggressive cows) and '1 12 -5 -6 50 3' are well-known example data; candidates for refresh-tests.ts.
+lexicographically-smallest-unique-note (tests): samples 'cbacdcbc' and 'bcabc' are well-known example data; candidate for refresh-tests.ts.
+longest-letter-run-after-budgeted-relabels (tests): sample 'AABABBA'/1 is well-known example data; candidate for refresh-tests.ts.

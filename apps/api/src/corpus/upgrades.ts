@@ -2922,6 +2922,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-opus-5",
     "date": "2026-09-19"
   },
+  "largest-most-frequent-value": {
+    "promptMarkdown": "A polling booth records ballot numbers in the list `a`. Return the number that appears most often. If several numbers tie for most appearances, return the **largest** of them.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n4 1 4 1 2\noutput: 4\n```\n*Explanation: 4 and 1 both appear twice; 4 is larger.*\n\n**Example 2**\n```\ninput:\n-2 -1 -1 -2\noutput: -1\n```\n*Explanation: both appear twice, and -1 is the larger number.*\n\n**Example 3**\n```\ninput:\n5 4 3\noutput: 5\n```\n*Explanation: every number appears once, so the largest wins the tie.*\n\n**Follow-up:** Can you answer in one pass over the counts?",
+    "editorialMarkdown": "## Frequency map with an explicit tie rule\n\nCount every number in a hash map. Then walk the map entries, keeping the best number seen: replace it when the candidate's count is higher, or when the counts are equal and the candidate is larger. That comparison, `(count, value)` in descending order, is the whole rule.\n\nThe trap is keeping the first number that reaches the maximum count. That silently follows the map's or list's ordering, which makes Example 3 depend on luck rather than the stated rule. Let d be the number of distinct values.\n\nTime complexity is O(n). Space complexity is O(d).",
+    "promoteSamples": [
+      "-2 -1 -1 -2",
+      "5 4 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-network-component": {
+    "promptMarkdown": "A sensor mesh has nodes `0` to `n-1` joined by two-way links. The matrix's first row is `[n]`; every following row `[u, v]` is a link between nodes `u` and `v`. A group is a set of nodes that can all reach one another through links.\n\nReturn the number of nodes in the largest group. A node with no links is a group of size 1.\n\n**Constraints**\n- `1 <= n <= 6`\n- `0 <=` number of links `<= 10`\n- `0 <= u, v < n`, `u != v`\n\n**Example 1**\n```\ninput:\n5;0 1;1 2;3 4\noutput: 3\n```\n*Explanation: nodes 0, 1 and 2 form a group of 3; 3 and 4 form one of 2.*\n\n**Example 2**\n```\ninput:\n5;0 1;2 3\noutput: 2\n```\n*Explanation: two groups of 2, and node 4 alone.*\n\n**Example 3**\n```\ninput:\n4\noutput: 1\n```\n*Explanation: with no links every node is its own group of 1.*\n\n**Follow-up:** Can you get the same answer with a union-find structure?",
+    "editorialMarkdown": "## Depth-first search that returns sizes\n\nBuild an adjacency list with **both** directions of each link. Then start a depth-first search from every node that has not been visited yet; mark nodes as you enter them and have the search return 1 plus the sizes returned by its unvisited neighbours. That value is the size of the group containing the start node. Keep the largest such value.\n\nUnion-find gives the same answer: union each link's ends, then take the largest set size.\n\nThe trap is counting the searches instead of their sizes, which answers \"how many groups\" rather than \"how big is the biggest\". Adding only one direction of each link is the other slip: it splits groups apart. Let E be the number of links.\n\nTime complexity is O(n + E). Space complexity is O(n + E).",
+    "promoteSamples": [
+      "5;0 1;2 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "largest-non-adjacent-sum": {
     "promptMarkdown": "Choose numbers from a given list to maximize their total sum, under the strict rule that you may never choose two adjacent positions. Return the largest possible sum you can achieve. You are allowed to choose no numbers at all, resulting in a sum of 0.\n\n**Constraints**\n- `0 <= length of list <= 10^5`\n- List values can be positive, negative, or zero.\n\n**Example 1**\n```\ninput:\n2 7 9 3 1\noutput: 12\n```\nTaking 2, 9, and 1 yields the maximum sum of 12.\n\n**Example 2**\n```\ninput:\n2 1 1 2\noutput: 4\n```\nTaking the first 2 and the last 2 gives a sum of 4.\n\n**Example 3**\n```\ninput:\n\noutput: 0\n```\nFor an empty list, choosing nothing gives a sum of 0.\n\n**Follow-up:** Can you calculate the largest sum in O(n) time and O(1) space?",
     "editorialMarkdown": "The intended approach uses 1D dynamic programming. This pattern is known as House Robber or take-it-or-leave-it DP. After reading a number, there are exactly two useful outcomes to track: the best sum that skips the current number, and the best sum that takes it. Taking the current number must extend the best answer from two positions earlier, while skipping it keeps the best answer from the immediately previous position. Time complexity is O(n), bounded by the length of the list, and space complexity is O(1) because you only need to store the previous two maximums.\n\nThe one trap most solvers hit is accidentally adding adjacent values when a series of positive numbers seems appealing, violating the core rule. Another quiet mistake is failing to handle negative values properly; initializing the remembered totals at zero ensures that choosing nothing remains a valid and optimal choice when all options are negative.",
@@ -2931,6 +2950,16 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
   },
+  "largest-non-neighbor-sum-on-ring": {
+    "promptMarkdown": "Prize tokens are laid out in a circle, one per position, with values `a` that may be negative. You may take any set of tokens as long as **no two taken tokens are next to each other**; because the layout is a circle, the first and last positions are neighbours. You may also take nothing, which scores 0.\n\nReturn the largest total you can take. With a single position, you may take that one token (or nothing).\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n5\noutput: 5\n```\n*Explanation: the single token is worth taking.*\n\n**Example 2**\n```\ninput:\n-2 -1 -3\noutput: 0\n```\n*Explanation: every token loses points, so take nothing.*\n\n**Follow-up:** Can you solve it with two linear passes and O(1) extra space?",
+    "editorialMarkdown": "## Two line problems instead of one ring\n\nOn a straight row, the best total follows `best_i = max(best_(i-1), best_(i-2) + a[i])`, with an empty selection always allowed, so the running values never drop below 0.\n\nThe circle only adds one restriction: the first and last positions cannot both be taken. So solve the row twice, once on positions `0..n-2` and once on `1..n-1`, and take the larger result. Every legal ring selection leaves out at least one of the two ends, so it appears in one of those two runs. A ring of one position is handled separately as `max(0, a[0])`.\n\nThe trap is running the row recurrence once over the whole circle, which can take both ends at the same time. Starting the running values at negative infinity is the other slip: taking nothing must stay available, which is what makes Example 2 return 0.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "5",
+      "-2 -1 -3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "largest-number": {
     "promptMarkdown": "Given an array of integers, find and return the largest integer in the array.\n\n**Constraints**\n- The array will contain at least one integer.\n- The integers can be negative, zero, or positive.\n\n**Example 1**\n```\ninput:\n3 9 2 7\noutput: 9\n```\n9 is the largest number in the array.\n\n**Example 2**\n```\ninput:\n-5 -2 -9\noutput: -2\n```\nAmong negative numbers, -2 is the largest.\n\n**Example 3**\n```\ninput:\n4\noutput: 4\n```\nFor a single-element array, that element is the largest.\n\n**Follow-up:** Can you solve this in O(n) time using O(1) space?",
     "editorialMarkdown": "The standard approach involves maintaining a \"running best\" variable. You initialize this variable with the first element of the array. Then, iterate through the rest of the array elements. For each element, compare it against the running best. If the current element is strictly greater, update the running best to this new value.\n\nThe time complexity is O(n) and the space complexity is O(1). The trap most solvers hit is initializing the running best variable to 0. While this works for arrays with positive numbers, it completely fails if the array contains only negative numbers, as 0 will be erroneously returned despite never being in the array. Starting with the first element of the array ensures the baseline comparison is a valid data point.",
@@ -2939,6 +2968,54 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "largest-rectangle-of-open-cells": {
+    "promptMarkdown": "A warehouse floor is a grid where `1` marks an open cell and `0` a blocked one. Return the area of the largest axis-aligned rectangle made only of open cells. If no cell is open, return `0`.\n\n**Constraints**\n- `1 <= rows, columns <= 30`\n- Every cell is `0` or `1`.\n\n**Example 1**\n```\ninput:\n1 1;1 1\noutput: 4\n```\n*Explanation: the whole 2 × 2 grid is open.*\n\n**Example 2**\n```\ninput:\n1 0;1 0\noutput: 2\n```\n*Explanation: the first column gives a 2 × 1 rectangle; the second column is blocked.*\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\n*Explanation: the only cell is blocked.*\n\n**Follow-up:** Can you reduce each row to a histogram problem and solve it with a stack?",
+    "editorialMarkdown": "## Row by row as histograms\n\nKeep one height per column: after processing a row, `height[j]` is the number of open cells running upwards from that row in column `j`, reset to 0 whenever the cell is blocked. The largest rectangle whose bottom edge lies on this row is the largest rectangle in that histogram.\n\nA simple way to measure it: for each right edge `j`, walk left while keeping the smallest height seen; the rectangle with that left edge has area `minHeight × width`. Take the best over all rows and edges. A monotonic stack does the same scan in linear time per row.\n\nThe trap is not resetting a blocked column's height to 0, which lets a rectangle grow straight through a blocked cell. Let r and c be the row and column counts.\n\nTime complexity is O(r · c²). Space complexity is O(c).",
+    "promoteSamples": [
+      "1 0;1 0",
+      "0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-rectangle-uneven-shelves": {
+    "promptMarkdown": "A workshop wall has a row of shelves, each one unit wide, with heights `a`. A poster must be a rectangle spanning some consecutive shelves, and it can only be as tall as the shortest shelf it spans. Return the largest poster area.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `1 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n3 3 3\noutput: 9\n```\n*Explanation: all three shelves are height 3, so the poster is 3 × 3.*\n\n**Example 2**\n```\ninput:\n2 4\noutput: 4\n```\n*Explanation: spanning both shelves gives 2 × 2 = 4, the same as the single shelf of height 4.*\n\n**Example 3**\n```\ninput:\n5\noutput: 5\n```\n*Explanation: one shelf of height 5 and width 1.*\n\n**Follow-up:** Can you find the answer in one pass with a stack?",
+    "editorialMarkdown": "## Monotonic stack of increasing heights\n\nScan the shelves, keeping a stack of indices whose heights increase. When the current height is lower than the height at the top of the stack, that shelf can go no further right: pop it, and its poster spans from just after the new stack top up to just before the current index, so the width is `i - newTop - 1` and the area is `poppedHeight × width`. Push the current index and continue. Finish by processing a sentinel height of 0, which flushes everything still on the stack.\n\nEach index is pushed and popped once, so the whole scan is linear.\n\nThe trap is skipping the sentinel, which leaves a rising run at the end unmeasured, as in Example 1. Computing the width before popping is the other slip; the left boundary is the stack top **after** the pop.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "3 3 3",
+      "5"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-region-perimeter": {
+    "promptMarkdown": "A map grid marks land with `1` and water with `0`. Cells touching edge to edge (up, down, left, right) belong to the same region. A region's border length is the number of cell sides that face water or the edge of the grid.\n\nReturn the largest border length among all regions, or `0` when there is no land.\n\n**Constraints**\n- `1 <= rows, columns <= 6`\n- Every cell is `0` or `1`.\n\n**Example 1**\n```\ninput:\n1 1;1 0\noutput: 8\n```\n*Explanation: the three land cells form one region whose border is 8 sides long.*\n\n**Example 2**\n```\ninput:\n1 0 1;1 0 1\noutput: 6\n```\n*Explanation: two separate regions of two cells each, with a border of 6 sides.*\n\n**Example 3**\n```\ninput:\n1 1 1;1 0 1;1 1 1\noutput: 16\n```\n*Explanation: the ring of land has 12 outer sides and 4 more facing the hole in the middle.*\n\n**Follow-up:** Can you count the border during the same traversal that finds the region?",
+    "editorialMarkdown": "## Flood fill that adds up exposed sides\n\nStart a depth-first search from each unvisited land cell, marking cells as visited so each region is traversed once. Write the search so that stepping outside the grid or onto water returns 1 (that side is exposed), stepping onto an already visited cell of this region returns 0, and stepping onto new land marks it and returns the sum of its four directions. The value returned from a starting cell is that region's border length; keep the largest.\n\nThe trap is returning the region's **area**. The two agree for a single cell but diverge immediately, as Example 3 shows. Forgetting the hole's inner sides is the other slip; it falls out naturally when water always contributes 1. Let r and c be the row and column counts.\n\nTime complexity is O(r · c). Space complexity is O(r · c).",
+    "promoteSamples": [
+      "1 1 1;1 0 1;1 1 1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-router-separation": {
+    "promptMarkdown": "A campus has possible mast sites at distinct positions `a`, given in increasing order along a straight road. Exactly `k` signal boxes must be installed, each at a different site. To limit interference, the installation is judged by the **smallest** distance between two neighbouring chosen sites, and that smallest distance should be as large as possible.\n\nReturn the largest achievable smallest distance.\n\n**Constraints**\n- `2 <= a.length <= 1000`\n- `2 <= k <= a.length`\n- `0 <= a[i] <= 10^6`, strictly increasing\n\n**Example 1**\n```\ninput:\n3 4\n2\noutput: 1\n```\n*Explanation: both sites must be used, and they are 1 apart.*\n\n**Example 2**\n```\ninput:\n1 5 10\n2\noutput: 9\n```\n*Explanation: with two boxes, use the extreme sites 1 and 10.*\n\n**Example 3**\n```\ninput:\n0 10 20\n3\noutput: 10\n```\n*Explanation: all three sites must be used, and their neighbouring distances are both 10.*\n\n**Follow-up:** Why is a feasible spacing still feasible when it is made smaller?",
+    "editorialMarkdown": "## Binary search on the answer, greedy check\n\nIf a spacing `g` can be achieved, so can any smaller spacing, so feasibility is monotone and can be binary searched. To test `g`, place a box on the first site and then walk the sites, placing a box at the first site at least `g` beyond the previous box. This greedy places the most boxes possible for that spacing, so `g` is feasible exactly when it places at least `k` boxes.\n\nSearch `g` between 0 and `a[last] - a[0]`, keeping the largest feasible value.\n\nThe trap is the midpoint when searching for a maximum: use `mid = (lo + hi + 1) / 2` with `lo = mid` on success, otherwise the loop can spin forever on a two-value window.\n\nLet M be the distance between the extreme sites.\n\nTime complexity is O(n log M). Space complexity is O(1).",
+    "promoteSamples": [
+      "3 4\n2",
+      "0 10 20\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-safe-fuel-reserve": {
+    "promptMarkdown": "A delivery van drives a fixed route of stops. The list `a` alternates, for each stop in order, the fuel it can pick up there and the fuel needed to drive from that stop to the next: `gain_0 cost_0 gain_1 cost_1 ...`. The tank starts empty and holds at most `cap` units; fuel picked up above `cap` is spilled and lost.\n\nAt each stop the van refuels (up to the cap) and then pays that stop's cost. Return the fuel left after the last leg, or `-1` if at any point the tank cannot cover the next cost.\n\n**Constraints**\n- `2 <= a.length <= 20`, and `a.length` is even\n- `0 <= gain_i, cost_i <= 100`\n- `1 <= cap <= 100`\n\n**Example 1**\n```\ninput:\n4 1 4 3 1 2\n5\noutput: 1\n```\n*Explanation: 4 - 1 = 3 after the first leg; then 3 + 4 = 7 is capped to 5 and the leg costs 3, leaving 2; then 2 + 1 = 3 and the last leg costs 2, leaving 1.*\n\n**Example 2**\n```\ninput:\n10 1\n3\noutput: 2\n```\n*Explanation: picking up 10 fills the tank to 3 (7 is spilled), and the leg costs 1.*\n\n**Example 3**\n```\ninput:\n2 3\n5\noutput: -1\n```\n*Explanation: 2 units cannot pay a cost of 3.*\n\n**Follow-up:** Why can't you decide this from the total of the gains and costs?",
+    "editorialMarkdown": "## Simulate the tank, clamping at each pickup\n\nKeep one number: the fuel currently in the tank. At each stop set `fuel = min(cap, fuel + gain) - cost`. If `fuel` goes below 0, the van is stranded, so return `-1`. After the last stop, `fuel` is the reserve.\n\nThe clamp must happen **when fuel is added**, because that is when the excess spills. Totals cannot answer the question: fuel spilled early is gone, so a route whose gains exceed its costs overall can still strand the van.\n\nThe trap is clamping at the end of the loop, or only checking the cap after subtracting the cost. Either one quietly banks fuel the tank could never hold and reports a reserve that is too large.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "10 1\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "largest-solid-one-square": {
     "promptMarkdown": "A non-empty grid contains only `0` and `1`. Return the area of the largest square made only from `1` cells.\n\nThe grid rows are separated by semicolons and columns by spaces.\n\n**Constraints**\n- `1 <= number of rows, columns <= 300`\n- Grid cells are either `0` or `1`.\n\n**Example 1**\n```\ninput:\n1 1;1 0\noutput: 1\n```\nThe largest square of ones has an area of 1.\n\n**Example 2**\n```\ninput:\n0 1 1;0 1 1\noutput: 4\n```\nA 2x2 square of ones can be formed, giving an area of 4.\n\n**Follow-up:** Can you find the area in O(n * m) time where n and m are the grid dimensions?",
@@ -2991,12 +3068,40 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       }
     ]
   },
+  "largest-square-side-under-budget": {
+    "promptMarkdown": "A gardener has enough turf to cover `area` square metres and wants to lay one square lawn with a whole-number side. Return the largest side whose area is **at most** `area`.\n\n**Constraints**\n- `0 <= area <= 10^4`\n\n**Example 1**\n```\ninput:\n30\noutput: 5\n```\n*Explanation: 5 × 5 = 25 fits; 6 × 6 = 36 is too much turf.*\n\n**Example 2**\n```\ninput:\n49\noutput: 7\n```\n*Explanation: 49 is exactly 7 × 7.*\n\n**Example 3**\n```\ninput:\n2\noutput: 1\n```\n*Explanation: 1 × 1 fits and 2 × 2 = 4 does not.*\n\n**Follow-up:** Can you find the side without floating-point square roots?",
+    "editorialMarkdown": "## Binary search for the last feasible side\n\nThe predicate `side × side <= area` is true for small sides and false afterwards, so binary search for the last true one. Keep an inclusive window `[lo, hi]` from 0 to `area` and a variable `best`: when `mid × mid <= area`, record `best = mid` and search right with `lo = mid + 1`; otherwise search left with `hi = mid - 1`.\n\nThis is the integer floor of the square root, computed without any rounding.\n\nThe trap is returning the last `mid` tried instead of the last feasible one; the final probe often fails the test. Trusting `floor(sqrt(area))` is the other slip: for a perfect square the floating-point root can come out just under the exact value, returning 6 instead of 7 in Example 2. Let A be the value of `area`.\n\nTime complexity is O(log A). Space complexity is O(1).",
+    "promoteSamples": [
+      "2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "largest-sum-of-at-least-k": {
+    "promptMarkdown": "A shop reviews daily profits `a` (a loss is negative) and wants the best stretch of **at least** `k` consecutive days. Longer stretches are allowed; shorter ones are not.\n\nReturn the largest total profit of such a stretch.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `1 <= k <= a.length`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n5 -2 3\n2\noutput: 6\n```\n*Explanation: all three days total 6, which beats the two-day stretches 3 and 1.*\n\n**Example 2**\n```\ninput:\n4 -1 -1 4\n3\noutput: 6\n```\n*Explanation: the whole list totals 6; the two three-day stretches total 2.*\n\n**Example 3**\n```\ninput:\n-3 -1 -2\n2\noutput: -3\n```\n*Explanation: every stretch loses money; the least bad is the last two days.*\n\n**Follow-up:** Can you do it in one pass after building prefix sums?",
+    "editorialMarkdown": "## Prefix sums with a lagging minimum\n\nBuild prefix sums `P`, where `P[j]` is the total of the first `j` days, so the stretch from day `i` to day `j-1` totals `P[j] - P[i]`. A stretch ending at `j` is long enough exactly when `i <= j - k`.\n\nWalk `j` from `k` to `n`. Before using it, fold `P[j - k]` into a running minimum of the eligible starts, then compare `P[j] - minimum` with the best so far. Each start becomes eligible exactly once, so the scan is linear.\n\nThe trap is folding `P[j - k]` in **after** taking the difference, which admits stretches shorter than `k`. Seeding the answer at 0 is the other slip: with every day negative the answer must be negative, as in Example 3.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "5 -2 3\n2",
+      "4 -1 -1 4\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "largest-sum-of-k-consecutive": {
     "promptMarkdown": "The first line is a list of numbers. The second line is a number `k`.\n\nReturn the largest sum you can get by adding up `k` neighbouring values.\nThe `k` values must be contiguous — a block, not a selection.\n\n**Constraints**\n- `1 <= k <= length of list <= 10^5`\n- List values may be negative.\n\n**Example 1**\n```\ninput:\n1 2 3 4 5\n2\noutput: 9\n```\nThe blocks of two are `1+2`, `2+3`, `3+4`, `4+5`; the last is the biggest at `9`.\n\n**Example 2**\n```\ninput:\n-3 -1 -4 -2\n2\noutput: -4\n```\nValues may be negative, and there is no option to take fewer than `k` values, so `-4` — the block `-3 -1` — is the best available.\n\n**Follow-up:** Can you find the largest sum in O(n) time?",
     "editorialMarkdown": "The intended approach uses a sliding window (specifically a fixed-width window) to maintain the sum of the current block. First, sum the initial block of size `k`. Then, to move the window one step right, add the new value entering on the right and subtract the oldest value leaving on the left.\n\nThe quiet mistake is forgetting to remove the outgoing element, instead just silently computing prefix sums. On an all-positive list, the largest prefix sum is the whole list, which is often close enough to the right answer to look plausible. Also, watch the seeding: starting `best` at `0` rather than at the first block sum breaks the all-negative case. The time complexity is O(n) and the space complexity is O(1).",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
+  },
+  "largest-undirected-degree": {
+    "promptMarkdown": "A telephone exchange links stations `0` to `n-1` with two-way cables. The matrix's first row is `[n]`; every following row `[u, v]` is a cable between stations `u` and `v`. Return the largest number of cables touching any single station, or `0` when there are no cables.\n\n**Constraints**\n- `1 <= n <= 10^4`\n- `0 <=` number of cables `<= 10^4`\n- `0 <= u, v < n`, `u != v`\n\n**Example 1**\n```\ninput:\n4;0 1;0 2;0 3\noutput: 3\n```\n*Explanation: station 0 touches three cables; the others touch one each.*\n\n**Example 2**\n```\ninput:\n3;0 1;1 2\noutput: 2\n```\n*Explanation: station 1 sits between the other two.*\n\n**Example 3**\n```\ninput:\n3\noutput: 0\n```\n*Explanation: there are no cables at all.*\n\n**Follow-up:** Can you find it without building an adjacency list?",
+    "editorialMarkdown": "## Count degrees in one array\n\nKeep an array of `n` counters. For each cable row, increment the counter for **both** ends, since a cable is two-way. The answer is the largest counter; with no cables every counter stays 0.\n\nThere is no need to build an adjacency list or traverse anything: the degree of a station is a property of the edge rows alone.\n\nThe trap is incrementing only the first end, which undercounts every station that appears only as the second end of its cables. Skipping the first row, which holds `n` rather than a cable, is the other thing to get right. Let E be the number of cables.\n\nTime complexity is O(n + E). Space complexity is O(n).",
+    "promoteSamples": [
+      "3;0 1;1 2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "last-digit": {
     "promptMarkdown": "Given a non-negative integer, return its last digit.\n\n**Constraints**\n- The input is an integer greater than or equal to `0`.\n\n**Example 1**\n```\ninput:\n1234\noutput: 4\n```\nThe last digit of 1234 is 4.\n\n**Example 2**\n```\ninput:\n0\noutput: 0\n```\nThe last digit of 0 is 0.\n\n**Follow-up:** Can you solve this in O(1) time and O(1) space without converting the number to a string?",
@@ -3005,12 +3110,31 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "last-insert-position-sorted": {
+    "promptMarkdown": "A sorted waiting list holds priority numbers `a` in non-decreasing order, and several people may share a priority. A new person with priority `x` joins **behind** everyone with the same priority. Return the index at which they would be inserted: the position just after the last value equal to `x`, or the position that keeps the list sorted when `x` is absent. If `x` is larger than every value, return the list length.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `0 <= a[i], x < 10^6`\n- `a` is sorted in non-decreasing order.\n\n**Example 1**\n```\ninput:\n1 3 3 3 8\n3\noutput: 4\n```\n*Explanation: the three 3s occupy indices 1 to 3, so the newcomer goes to index 4.*\n\n**Example 2**\n```\ninput:\n4 6\n1\noutput: 0\n```\n*Explanation: priority 1 comes before everyone.*\n\n**Example 3**\n```\ninput:\n4 6\n9\noutput: 2\n```\n*Explanation: priority 9 goes to the end, at the list length.*\n\n**Follow-up:** Which comparison turns this into the position **before** the equal values?",
+    "editorialMarkdown": "## Upper-bound binary search\n\nLook for the first index whose value is **strictly greater** than `x`; that index is where the newcomer belongs. The predicate \"value > x\" is false across the run of equal values and true afterwards, so it flips exactly once.\n\nUse a half-open window `[lo, hi)` starting at `[0, n)`, which allows the answer `n`. If `a[mid] <= x`, that position cannot be the answer, so `lo = mid + 1`; otherwise `hi = mid`. When the window closes, `lo` is the answer.\n\nThe trap is testing `a[mid] < x`, which is the lower bound and lands **before** the run of equal values, returning 1 instead of 4 in Example 1. Setting `hi = mid - 1` is the other slip, since `mid` may be the first greater position.\n\nTime complexity is O(log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "4 6\n1",
+      "4 6\n9"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "last-n-of-the-chain": {
     "promptMarkdown": "You are given a chain of nodes and a number `n`. Return the final `n` nodes of the chain — everything from the node that is `n` positions from the end onwards.\n\n`n = 1` means just the last node, `n = 2` the last two, and so on.\n\nYou cannot index into a chain, and you should not need two passes.\n\n**Constraints**\n- `1 <= length of chain <= 10^5`\n- `1 <= n <= length of chain`\n- Node values are integers.\n\n**Example 1**\n```\ninput:\n1 2 3 4 5\n2\noutput: 4 5\n```\nThe second node from the end holds 4, so the last two nodes are 4 5.\n\n**Example 2**\n```\ninput:\n10 20 30\n3\noutput: 10 20 30\n```\nWhen `n` equals the length, the entire chain is returned.\n\n**Follow-up:** Can you find the nodes in O(n) time and O(1) space with just one pass?",
     "editorialMarkdown": "The intended approach uses two pointers held a fixed distance apart to find the node without knowing the length upfront. Advance a `lead` pointer by `n` steps first, then move both `lead` and a `trail` pointer from the start at the same speed until `lead` reaches the end of the chain. This pattern is the fixed-gap two-pointers technique.\n\nThe quiet mistake is an off-by-one error, especially when `n` equals the length. If you advance `lead` `n` times and then write the second loop as `while lead.next != null`, that specific case dereferences null and crashes. Both time and space complexities are O(n) and O(1) respectively.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
+  },
+  "last-position-no-more-than-target": {
+    "promptMarkdown": "A shelf holds boxes whose weights `a` are listed in non-decreasing order. A forklift can lift up to `limit` kilograms. Return the index of the **last** box it can lift, that is, the last index whose weight is at most `limit`. If no box is light enough, return `-1`.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^6 <= a[i], limit <= 10^6`\n- `a` is sorted in non-decreasing order.\n\n**Example 1**\n```\ninput:\n1 3 3 8\n3\noutput: 2\n```\n*Explanation: weights 1, 3 and 3 are liftable; the last of them is at index 2.*\n\n**Example 2**\n```\ninput:\n2 4 6\n5\noutput: 1\n```\n*Explanation: 2 and 4 can be lifted, 6 cannot.*\n\n**Example 3**\n```\ninput:\n5\n1\noutput: -1\n```\n*Explanation: the only box is too heavy.*\n\n**Follow-up:** Can you find it in O(log n) time?",
+    "editorialMarkdown": "## Upper bound, minus one\n\nThe test `a[i] <= limit` is true for a prefix of the list and false afterwards, so find the **first** index where it fails and step back one. Use a half-open window `[lo, hi)` starting at `[0, n)`: if `a[mid] <= limit`, the failure is further right, so `lo = mid + 1`; otherwise `hi = mid`. When the window closes, `lo` is the first failing index, and the answer is `lo - 1`.\n\nThat subtraction also handles the empty case: if even the first box is too heavy, `lo` is 0 and the answer is `-1` without a special branch.\n\nThe trap is searching for equality with `limit`. The limit need not appear in the list at all, as in Example 2, and with duplicates an equality search can stop in the middle of the run instead of at its end.\n\nTime complexity is O(log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "5\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "last-remaining-stone-weight": {
     "promptMarkdown": "You have a collection of stones, each with a positive integer weight given as a space-separated list. Repeatedly perform the following operation while at least two stones remain:\n\n1. Take the two heaviest stones.\n2. If they have equal weight, both are destroyed.\n3. If their weights differ, both are destroyed and a new stone with weight equal to the difference is added.\n\nReturn the weight of the last remaining stone, or `0` if no stones remain.\n\n**Constraints**\n- 1 ≤ n ≤ 20 stones\n- Each stone weight is a positive integer (at least 1)\n\n**Example 1**\n```\ninput:\n1 5 1\noutput: 3\n```\nSmash 5 and 1: difference is 4. Stones: `1 4`. Smash 4 and 1: difference is 3. Last stone: `3`.\n\n**Example 2**\n```\ninput:\n6 2 8\noutput: 0\n```\nSmash 8 and 6: difference is 2. Stones: `2 2`. Smash 2 and 2: both destroyed. No stones remain; return `0`.\n\n**Example 3**\n```\ninput:\n42\noutput: 42\n```\nOnly one stone; it is already the answer.\n\n**Follow-up:** What data structure lets you repeatedly extract the maximum and re-insert a value in O(log n) time?",
@@ -3063,6 +3187,52 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       }
     ]
   },
+  "latest-deadline-task-reward": {
+    "promptMarkdown": "A workshop has jobs to run, one per hour slot, with slots numbered `1, 2, 3, ...`. The list `a` alternates each job's deadline and its reward: `deadline_0 reward_0 deadline_1 reward_1 ...`. A job placed in slot `t` earns its reward only if `t` is at most its deadline, and each slot holds one job. Jobs may be left undone.\n\nReturn the greatest total reward.\n\n**Constraints**\n- `2 <= a.length <= 20`, and `a.length` is even (so at most 10 jobs)\n- `1 <= deadline_i <= 10`\n- `0 <= reward_i <= 1000`\n\n**Example 1**\n```\ninput:\n1 4 2 3 1 10\noutput: 13\n```\n*Explanation: the reward-10 job takes slot 1, the reward-3 job takes slot 2, and the reward-4 job (deadline 1) misses out.*\n\n**Example 2**\n```\ninput:\n1 5 1 8\noutput: 8\n```\n*Explanation: both jobs need slot 1, so only the better one runs.*\n\n**Example 3**\n```\ninput:\n3 7\noutput: 7\n```\n*Explanation: the single job fits comfortably before its deadline.*\n\n**Follow-up:** Why place each job in the latest slot it can use rather than the earliest?",
+    "editorialMarkdown": "## Highest reward first, latest legal slot\n\nSort the jobs by reward, largest first. For each one, look for a free slot at or before its deadline, starting from the deadline and walking down; take the first free slot found and add the reward. If none is free, skip the job.\n\nTaking the **latest** legal slot is the point: earlier slots are the only ones a tight-deadline job can use, so leaving them free never costs anything. And taking jobs by reward is safe by an exchange argument: swapping a lower-reward job out for a higher-reward one that fits never lowers the total.\n\nThe trap is filling the earliest free slot, which can block a later job whose deadline is 1, as in Example 1.\n\nTime complexity is O(n²). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 4 2 3 1 10",
+      "3 7"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "least-common-multiple-with-cap": {
+    "promptMarkdown": "Two machines repeat their cycles every `a` and `b` minutes, starting together. Return the number of minutes until they next start a cycle at the same moment, which is the least common multiple of `a` and `b`. If that value is greater than `1,000,000,000`, return `-1` instead.\n\n**Constraints**\n- `1 <= a, b <= 1,000,000`\n\n**Example 1**\n```\ninput:\n12\n18\noutput: 36\n```\n*Explanation: 36 is the first minute that is a multiple of both 12 and 18.*\n\n**Example 2**\n```\ninput:\n7\n13\noutput: 91\n```\n*Explanation: the cycles share no factor, so the answer is their product.*\n\n**Example 3**\n```\ninput:\n1000000\n999983\noutput: -1\n```\n*Explanation: these are coprime, so the true value is about 10^12, above the limit.*\n\n**Follow-up:** Why divide before multiplying?",
+    "editorialMarkdown": "## Divide by the GCD, then multiply\n\nCompute `g = gcd(a, b)` with Euclid's algorithm, repeatedly replacing `(x, y)` with `(y, x mod y)`. Then the least common multiple is `(a / g) * b`, which counts the shared prime factors once. Compare the result with the cap and return `-1` when it is larger; in Java, C++ and Go the product needs a 64-bit type, since it can reach about 10^12.\n\nThe trap is computing `a * b` first and dividing afterwards. That intermediate overflows 32-bit arithmetic even when the true answer is small, and the wrapped value can slip under the cap. Returning the capped value instead of `-1` is the other slip.\n\nLet m be the smaller of a and b.\n\nTime complexity is O(log m). Space complexity is O(1).",
+    "promoteSamples": [
+      "1000000\n999983"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "least-frequent-with-value-cap": {
+    "promptMarkdown": "A shop logs the sizes of items sold in the list `a`, and a single number `k` that serves two purposes: only sizes **at most `k`** are of interest, and at most `k` sizes should be reported.\n\nAmong the sizes that are at most `k`, return the `k` distinct sizes sold least often, ordered by how often they were sold (fewest first) and then by smaller size. If fewer than `k` distinct sizes qualify, return all of them; if none do, return an empty list.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n- `1 <= k <= 100`\n\n**Example 1**\n```\ninput:\n5 5 2 2 2 1 7\n5\noutput: 1 5 2\n```\n*Explanation: 7 is above the cap; of the rest, 1 was sold once, 5 twice and 2 three times.*\n\n**Example 2**\n```\ninput:\n-1 -1 -2\n1\noutput: -2\n```\n*Explanation: both sizes are at most 1, and only one may be reported: -2 was sold once, -1 twice.*\n\n**Example 3**\n```\ninput:\n8 9\n3\noutput: \n```\n*Explanation: every size is above the cap, so nothing qualifies.*\n\n**Follow-up:** Why must the filter come before the counting?",
+    "editorialMarkdown": "## Filter first, then count, then rank\n\nWalk the log and count only the sizes that are at most `k`, so sizes above the cap never enter the table. Then order the surviving sizes by the key `(count, size)` and take the first `k`. A min-heap on the same key, popped `k` times, gives the same order.\n\nDoing the filter first matters: a very common size above the cap would otherwise sit in the table and can displace a genuine answer at the selection boundary.\n\nThe trap is treating `k` as only a count or only a cap. It is both, which is why Example 2 reports one size rather than two. Let d be the number of distinct sizes that pass the cap.\n\nTime complexity is O(n + d log d). Space complexity is O(d).",
+    "promoteSamples": [
+      "-1 -1 -2\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "left-edge-of-plateau-peak": {
+    "promptMarkdown": "A hiking trail's heights are listed in `a`. A position is a **summit** when it is at least as high as each of its existing neighbours (the first and last positions have only one neighbour each). A summit may be flat: several neighbouring positions can share the summit height.\n\nReturn the index where the summit begins: the left edge of its flat top. The trail always has exactly one summit, so the answer is unique.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `0 <= a[i] < 10^6`\n\n**Example 1**\n```\ninput:\n1 4 4 2\noutput: 1\n```\n*Explanation: the summit height 4 covers indices 1 and 2; its left edge is 1.*\n\n**Example 2**\n```\ninput:\n1 2 3\noutput: 2\n```\n*Explanation: the trail only climbs, so the last position is the summit.*\n\n**Example 3**\n```\ninput:\n3 3 3\noutput: 0\n```\n*Explanation: the whole trail is one flat summit, beginning at index 0.*\n\n**Follow-up:** Why does comparing with the next position alone guarantee a summit is found?",
+    "editorialMarkdown": "## Binary search on the uphill test\n\nKeep a window `[lo, hi]` known to contain a summit. Compare `a[mid]` with `a[mid + 1]`. If `a[mid] < a[mid + 1]`, the trail is still climbing, so a summit lies strictly to the right: `lo = mid + 1`. Otherwise `mid` is at least as high as its right neighbour, so a summit lies at `mid` or to its left: `hi = mid`. When `lo == hi`, that index is the answer.\n\nBecause equal heights take the second branch, the window keeps sliding left across a flat top, which is why the result is the plateau's left edge.\n\nThe trap is treating equality as climbing, which drifts right across `4 4` and returns index 2 in Example 1. Writing an inclusive loop with `hi = mid` is the other slip: the window can stop shrinking and loop forever.\n\nTime complexity is O(log n). Space complexity is O(1).",
+    "promoteSamples": [
+      "3 3 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "length-of-reached-loop": {
+    "promptMarkdown": "A treasure hunt gives each location a pointer to the next one: from location `i` you go to `a[i]`, and a value of `-1` means the trail stops there. Starting at location `0`, the hunt either ends at a `-1` or falls into a loop it can never leave.\n\nReturn the number of locations in that loop, or `0` if the trail ends. A location pointing at itself is a loop of one.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- Each `a[i]` is `-1` or a valid index `0 <= a[i] < a.length`.\n\n**Example 1**\n```\ninput:\n1 2 3 1\noutput: 3\n```\n*Explanation: the walk is 0 → 1 → 2 → 3 → 1, so the loop is 1, 2, 3.*\n\n**Example 2**\n```\ninput:\n0\noutput: 1\n```\n*Explanation: location 0 points at itself.*\n\n**Example 3**\n```\ninput:\n1 2 -1\noutput: 0\n```\n*Explanation: the trail runs 0 → 1 → 2 and stops.*\n\n**Follow-up:** Can you do it without recording the locations you have visited?",
+    "editorialMarkdown": "## Floyd's cycle detection, then one lap\n\nRun two walkers from location 0: the slow one takes one step per round, the fast one two. If either steps onto `-1`, the trail ends, so return 0. If there is a loop, the fast walker laps the slow one and they meet at some location inside it.\n\nFrom that meeting point, walk one pointer around until it returns to the meeting point, counting the steps. That count is the loop's length, and it is correct wherever inside the loop the two met.\n\nThe trap is checking for `-1` only on one of the fast walker's two steps; the trail can end on the first of them. Counting steps from location 0 instead of from the meeting point is the other slip: that includes the tail leading into the loop.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "length-of-string": {
     "promptMarkdown": "Given a string, determine the number of characters it contains. Note that spaces are considered valid characters.\n\n**Constraints**\n- The string length is between `0` and `10^5`.\n\n**Example 1**\n```\ninput:\nhello\noutput: 5\n```\nThe word \"hello\" consists of 5 characters.\n\n**Example 2**\n```\ninput:\n\noutput: 0\n```\nAn empty string contains 0 characters.\n\n**Example 3**\n```\ninput:\na\noutput: 1\n```\nA single character string has a length of 1.\n\n**Follow-up:** What is the time complexity of finding a string's length in your chosen programming language?",
     "editorialMarkdown": "The intended approach is to simply use the built-in length property or function provided by your language. This demonstrates the pattern of utilizing Built-in Methods.\n\nThe one trap most solvers hit is overthinking the problem and trying to manually iterate through the string to count characters, or mishandling whitespace characters. A space is a standard character and contributes to the total length.\n\nThe time complexity is typically O(1) in most modern languages because the length is stored as metadata with the string. If a language requires traversing the string to find a null terminator (like C), the time complexity would be O(n). The space complexity is O(1) as no additional memory is required.",
@@ -3081,6 +3251,16 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
   },
+  "lexicographically-smallest-unique-note": {
+    "promptMarkdown": "A label printer must shorten a tag `s` so that each distinct letter of `s` appears **exactly once**, while keeping the letters in their original relative order. Among all such shortenings, return the one that comes first alphabetically.\n\n**Constraints**\n- `1 <= s.length <= 1000`\n- `s` contains lowercase English letters only.\n\n**Example 1**\n```\ninput:\naaaa\noutput: a\n```\n*Explanation: only one copy of the single distinct letter may stay.*\n\n**Example 2**\n```\ninput:\ndcba\noutput: dcba\n```\n*Explanation: every letter already appears once, and no reordering is allowed.*\n\n**Follow-up:** Can you build the answer in one pass with a stack?",
+    "editorialMarkdown": "## Greedy stack using last occurrences\n\nFirst record the last position of every letter. Scan the tag, keeping the answer so far on a stack and a set of letters already on it. Skip a letter that is already on the stack. Otherwise, while the stack's top letter is **larger** than the current letter and appears again later, pop it (removing it from the set): a later copy can supply it, and dropping it now makes the answer alphabetically smaller. Then push the current letter.\n\nThe stack keeps the original order, so the result is always a subsequence of the tag.\n\nThe trap is popping a larger letter that does **not** appear again; the answer would then miss a required letter. The last-occurrence table is what makes that check possible.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "aaaa",
+      "dcba"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "lfu-cache-eviction-order": {
     "promptMarkdown": "Design and implement a capacity-bounded LFU cache yourself; do not use your language's built-in capacity-bounded lfu cache type.\n\nImplement `LFUCache(capacity)` and expose its eviction order through `get`. `get` returns `-1` for missing keys and promotes frequency. On a full insert, evict the lowest frequency; among equal frequencies, the older use loses first. A `put` on an existing key updates it and counts as use.\n\n**Operation log**\n\nThe first operation is the constructor. Print `null` for it and for every void method. Every other operation prints its return value. A missing key read by `get` returns `-1`.\n\n**Constraints:**\n- `0 <= capacity <= 10^4`\n- `0 <= key <= 10^5`\n- `0 <= value <= 10^5`\n- At most `2 * 10^5` calls will be made to `get` and `put`.\n\n**Example 1**\n```\ninput:\n8\nLFUCache 2\nput 1 10\nput 2 20\nget 1\nput 3 30\nget 2\nget 1\nget 3\noutput:\nnull\nnull\nnull\n10\nnull\n-1\n10\n30\n```\nKey 2 is evicted because its frequency is 1, while key 1's frequency is 2.\n\n**Example 2**\n```\ninput:\n8\nLFUCache 2\nput 1 1\nput 2 2\nget 1\nget 2\nput 3 3\nget 1\nget 3\noutput:\nnull\nnull\nnull\n1\n2\nnull\n-1\n3\n```\nKey 1 and key 2 both have a frequency of 2, but key 1 is evicted because it is the older use among the tie.\n\n**Follow-up:** Can you implement both operations in O(1) amortised time complexity?",
     "editorialMarkdown": "## Evict by a two-part priority\n\nThe intended approach is to treat each key’s priority as `(frequency, last-use time)`. Lower frequency is worse; for equal frequency, older time is worse. This explains why a get changes later eviction order even when no value changes. Hash maps with frequency groups maintain this ordering efficiently.\n\nThe one trap most solvers hit is using insertion order for ties after a key was read, or confusing an empty bucket or slot with proof that a key was never present. Collisions and deletion make that assumption dangerous: preserve the search path and update the stored count only when a key is actually inserted or removed.\n\nTime complexity for get and put are O(1) amortised in a frequency-list implementation. Space complexity is O(capacity).",
@@ -3094,6 +3274,16 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "limited-coin-fill-value": {
+    "promptMarkdown": "A cash drawer has bins of coins. The list `a` alternates, for each bin, the value of one coin and how many coins that bin holds: `value_0 count_0 value_1 count_1 ...`. You may take at most `target` coins in total, choosing freely across bins but never more than a bin holds.\n\nReturn the largest total value you can take.\n\n**Constraints**\n- `2 <= a.length <= 20`, and `a.length` is even (so at most 10 bins)\n- `0 <= value_i <= 1000`\n- `0 <= count_i <= 1000`\n- `0 <= target <= 1000`\n\n**Example 1**\n```\ninput:\n5 1 3 4 8 1\n4\noutput: 19\n```\n*Explanation: take the 8, the 5 and two 3s: 8 + 5 + 3 + 3 = 19.*\n\n**Example 2**\n```\ninput:\n9 1 8 1\n5\noutput: 17\n```\n*Explanation: only two coins exist, so take both.*\n\n**Example 3**\n```\ninput:\n0 4\n3\noutput: 0\n```\n*Explanation: the only coins are worth nothing.*\n\n**Follow-up:** Why does taking the most valuable coin available always stay optimal here?",
+    "editorialMarkdown": "## Greedy by coin value\n\nEvery coin costs exactly one of the `target` slots, so the slots are interchangeable and the best plan simply fills them with the most valuable coins available. Sort the bins by coin value, highest first, and take from each in turn: from a bin with `count` coins take `min(count, slots left)` and add `value` for each. Stop when the slots run out or the bins are empty.\n\nThe exchange argument: swapping any chosen coin for an unchosen more valuable one never lowers the total, so no lower-value coin is ever preferred.\n\nThe trap is reading the pairs the wrong way round and sorting by count, or walking the bins in input order, which misses a valuable bin further along.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "9 1 8 1\n5",
+      "0 4\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "linked-list-index-access": {
     "promptMarkdown": "Design and implement a singly linked list data structure from scratch. You must not use any built-in linked list libraries.\n\nYour implementation should support the following operations:\n- `LinkedList()`: Initializes the empty linked list.\n- `addFirst(value)`: Adds a node with the given value to the front of the list.\n- `addLast(value)`: Adds a node with the given value to the end of the list.\n- `removeFirst()`: Removes and returns the value of the first node. If the list is empty, return `-1`.\n- `get(index)`: Returns the value of the node at the zero-based `index`. If the index is negative or out of bounds, return `-1`. Removing a node at the front will shift the indices of all subsequent nodes down by one.\n\nThe operation log records the execution. The constructor and void methods should output `null`. Methods that return a value should output that value.\n\n**Constraints**\n- `value` will be a non-negative integer.\n- `index` will be an integer.\n- At most 1000 calls will be made in total across all operations.\n\n**Example 1**\n```\ninput:\n9\nLinkedList\naddLast 10\naddLast 20\naddLast 30\nget 0\nget 2\nremoveFirst\nget 0\nget 2\noutput:\nnull\nnull\nnull\nnull\n10\n30\n10\n20\n-1\n```\nThe first element is removed, shifting the remaining elements so the old index 1 becomes index 0.\n\n**Example 2**\n```\ninput:\n5\nLinkedList\naddFirst 7\nget -1\nget 1\nget 0\noutput:\nnull\nnull\n-1\n-1\n7\n```\nNegative and out-of-bounds indices correctly return `-1`.\n\n**Follow-up:** Can you ensure `addFirst` and `addLast` execute in O(1) time?",
@@ -3123,6 +3313,24 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
   },
+  "lit-bits-through-small-limit": {
+    "promptMarkdown": "A counter displays every whole number from `0` to `n` in binary, one after another. Return the total number of `1` bits shown across all of those numbers.\n\n**Constraints**\n- `0 <= n <= 10^5`\n\n**Example 1**\n```\ninput:\n5\noutput: 7\n```\n*Explanation: 0, 1, 10, 11, 100, 101 contain 0 + 1 + 1 + 2 + 1 + 2 = 7 one bits.*\n\n**Example 2**\n```\ninput:\n3\noutput: 4\n```\n*Explanation: 0, 1, 10, 11 contain 0 + 1 + 1 + 2 = 4.*\n\n**Example 3**\n```\ninput:\n0\noutput: 0\n```\n*Explanation: zero has no 1 bits.*\n\n**Follow-up:** Can you get each number's count in O(1) from a smaller number's count?",
+    "editorialMarkdown": "## Count each number, or build them up\n\nThe direct approach counts the bits of every number from 0 to `n`, peeling the low bit with `x & 1` and shifting right. That is `O(n log n)` overall and fits these bounds comfortably.\n\nThe faster route reuses earlier answers: dropping the lowest bit of `i` gives the smaller number `i >> 1`, so `bits[i] = bits[i >> 1] + (i & 1)`. Filling that table from 0 to `n` and summing it gives the answer with one addition per number.\n\nThe trap is stopping at `n - 1`, since the range includes `n` itself, or writing a shift that never terminates for 0. Keep to non-negative arithmetic so every language agrees.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "load-best-units-with-two-cap": {
+    "promptMarkdown": "A courier loads a van from pallets of goods. The list `a` alternates, for each pallet, how many units it holds and the value of one unit: `count_0 value_0 count_1 value_1 ...`. To spread the risk, **at most two units may be taken from any one pallet**, and the van holds at most `capacity` units in total.\n\nReturn the largest total value the van can carry.\n\n**Constraints**\n- `2 <= a.length <= 16`, and `a.length` is even (so at most 8 pallets)\n- `0 <= count_i <= 100`\n- `0 <= value_i <= 1000`\n- `0 <= capacity <= 100`\n\n**Example 1**\n```\ninput:\n3 4 2 7\n3\noutput: 18\n```\n*Explanation: the second pallet holds only two units of 7, and the capacity of 3 leaves room for just one unit of 4: 7 + 7 + 4 = 18.*\n\n**Example 2**\n```\ninput:\n1 9 5 2\n4\noutput: 13\n```\n*Explanation: the first pallet holds only one unit (9), and at most two units of value 2 may join it.*\n\n**Example 3**\n```\ninput:\n2 5\n0\noutput: 0\n```\n*Explanation: the van has no capacity.*\n\n**Follow-up:** How does the answer change if the per-pallet limit were three?",
+    "editorialMarkdown": "## Expand each pallet to at most two units, then take the best\n\nThe per-pallet limit is easiest to apply up front: from a pallet holding `count` units of value `v`, at most `min(count, 2)` units can ever be loaded, so add that many copies of `v` to a list of available units. Sort that list in descending value and add up the first `capacity` of them.\n\nAfter the expansion the choice is unconstrained again, so the plain greedy is correct: every unit costs the same single slot, and swapping in a more valuable unit never hurts.\n\nThe trap is applying the greedy to whole pallets and taking every unit of the best one, which breaks the two-unit rule. Reading the pairs as value-then-count is the other slip.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "2 5\n0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "load-highest-value-units": {
     "promptMarkdown": "Load at most a given number of units into a truck to maximize total value. The first line is pairs `count value`, one pair per item type; the second line is truck capacity. You may take any number from zero through `count` of each type.\n\n**Constraints**\n- `1 <= number of pairs <= 100`\n- Counts, values, and capacity are non-negative.\n- Capacity may be up to `10^9`.\n\n**Example 1**\n```\ninput:\n3 4 2 7 5 2\n5\noutput: 26\n```\nTake both units worth 7 and three units worth 4 to maximize value.\n\n**Example 2**\n```\ninput:\n1 10 2 5\n2\noutput: 15\n```\nTake one unit worth 10 and one unit worth 5.\n\n**Follow-up:** Can you maximize the total value in O(k log k) time where k is the number of item types?",
     "editorialMarkdown": "The intended approach uses a greedy strategy: take the highest value per unit first. Sort the item types by their value per unit in descending order, then take as many as the capacity allows from each type until the truck is full. This pattern is the fractional knapsack greedy approach. Time complexity is O(k log k) for sorting `k` types, and space complexity is O(k).\n\nThe quiet mistake is sorting by the total value of a type (`count * value`) instead of the value per unit. A large pile of cheap units can then wrongly outrank one valuable unit, which often passes a friendly first example but fails more complex test cases.",
@@ -3145,6 +3353,25 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
+  },
+  "longest-closed-letter-piece": {
+    "promptMarkdown": "A ribbon of lowercase letters `s` is cut into consecutive pieces so that **all copies of a letter stay in one piece**, cutting as often as possible. Return the length of the longest piece produced by those cuts.\n\n**Constraints**\n- `1 <= s.length <= 1000`\n- `s` contains lowercase English letters only.\n\n**Example 1**\n```\ninput:\nabaccbdeffed\noutput: 6\n```\n*Explanation: the cuts give abaccb and deffed, each 6 long.*\n\n**Example 2**\n```\ninput:\nabc\noutput: 1\n```\n*Explanation: no letter repeats, so every piece is one letter long.*\n\n**Example 3**\n```\ninput:\neccbbbbdec\noutput: 10\n```\n*Explanation: e and c both reappear near the end, so no cut is possible.*\n\n**Follow-up:** Can you find the cuts in one pass after recording last occurrences?",
+    "editorialMarkdown": "## Cut at the running last occurrence\n\nRecord the last index of every letter. Then scan with `start`, the beginning of the current piece, and `end`, the furthest last-occurrence of any letter seen inside it. Each character may push `end` further right. When the scan index reaches `end`, every letter of the piece has finished, so cut there: the piece length is `end - start + 1`, and the next piece starts at `end + 1`. Keep the largest length.\n\nCutting as soon as it is legal produces the maximal number of pieces, and each one is as short as it can be, which is what the rule asks for.\n\nThe trap is closing the piece at the current letter's own last occurrence. An earlier letter in the same piece may reach further, as the `a` does in `abaccb`.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "eccbbbbdec"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "longest-common-substring-length": {
+    "promptMarkdown": "Two DNA fragments are given as strings `a` and `b`. Return the length of the longest run of characters that appears **contiguously** in both. If they share no character, return `0`.\n\n**Constraints**\n- `1 <= a.length, b.length <= 300`\n- Both strings contain lowercase English letters only.\n\n**Example 1**\n```\ninput:\nab\nab\noutput: 2\n```\n*Explanation: the whole of both strings matches.*\n\n**Example 2**\n```\ninput:\nabc\ndef\noutput: 0\n```\n*Explanation: no character is shared.*\n\n**Example 3**\n```\ninput:\nx\nx\noutput: 1\n```\n*Explanation: a single shared character.*\n\n**Follow-up:** Can you keep only one row of the table at a time?",
+    "editorialMarkdown": "## Table of matching suffix lengths\n\nLet `dp[i][j]` be the length of the longest run that ends exactly at `a[i-1]` and `b[j-1]`. When those characters match, the run extends the one before them: `dp[i][j] = dp[i-1][j-1] + 1`. When they differ, the run is broken, so `dp[i][j] = 0`. The answer is the largest value anywhere in the table.\n\nEach row reads only the row above it, so two rows of storage are enough.\n\nThe trap is reusing the longest-common-**subsequence** recurrence, which carries `max(dp[i-1][j], dp[i][j-1])` across a mismatch. That allows gaps, which contiguous runs do not have. Reading the answer from the last cell instead of the maximum is the other slip. Let p and q be the two string lengths.\n\nTime complexity is O(p · q). Space complexity is O(p · q).",
+    "promoteSamples": [
+      "abc\ndef",
+      "x\nx"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "longest-consecutive-run": {
     "promptMarkdown": "Find the length of the longest run of consecutive integer values in a given list. The numbers may appear in any order, and the run does not have to be contiguous in the list — only the values themselves must be consecutive.\n\nIf the list is empty, the longest run has a length of 0. Duplicate values are only counted once towards a run.\n\n**Constraints**\n- The list length is between 0 and 10^5 inclusive.\n- List elements are standard 32-bit signed integers.\n\n**Example 1**\n```\ninput:\n10 9 12 11\noutput: 4\n```\nThe values 9, 10, 11, and 12 are all present, forming a consecutive run of length 4.\n\n**Example 2**\n```\ninput:\n7 8\noutput: 2\n```\nThe values 7 and 8 form a consecutive run of length 2.\n\n**Example 3**\n```\ninput:\n5 5\noutput: 1\n```\nDuplicates are only counted once, so the longest run is just the single value 5.\n\n**Follow-up:** Can you solve this in O(n) time?",
@@ -3212,6 +3439,26 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
   },
+  "longest-integer-run-with-k-kinds": {
+    "promptMarkdown": "A vending machine logs the product codes it dispenses, in order, as the list `a`. A maintenance report covers a stretch of consecutive dispenses that involves **at most `k` different codes**. Return the length of the longest such stretch.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `1 <= k <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n4 4 2 2 3 2\n2\noutput: 4\n```\n*Explanation: 4 4 2 2 uses codes 4 and 2; adding 3 would make three codes.*\n\n**Example 2**\n```\ninput:\n1 2 1 3 4\n3\noutput: 4\n```\n*Explanation: 1 2 1 3 uses three codes.*\n\n**Example 3**\n```\ninput:\n-1 -1 -1\n2\noutput: 3\n```\n*Explanation: equal codes count as one kind, so the whole log qualifies.*\n\n**Follow-up:** Can you find it in one pass over the log?",
+    "editorialMarkdown": "## Sliding window with a frequency map\n\nMove a right pointer across the log, counting each code in a hash map. The number of **keys** in the map is how many different codes the window holds. While that exceeds `k`, remove the code at the left pointer: decrease its count and, when the count hits zero, delete the key. Then record the window length.\n\nEach dispense enters and leaves the window once, so the scan is linear.\n\nThe trap is leaving zero-count keys in the map. The key count then overstates the number of kinds and the window shrinks too far. Let d be the number of distinct codes.\n\nTime complexity is O(n). Space complexity is O(d).",
+    "promoteSamples": [
+      "1 2 1 3 4\n3",
+      "-1 -1 -1\n2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "longest-letter-run-after-budgeted-relabels": {
+    "promptMarkdown": "A banner is a row of uppercase letters `s`. You may repaint at most `k` of its letters, each into any uppercase letter you like. Return the greatest length of a stretch of consecutive letters that can be made all the same.\n\n**Constraints**\n- `1 <= s.length <= 1000`\n- `0 <= k <= 1000`\n- `s` contains uppercase English letters only.\n\n**Example 1**\n```\ninput:\nABCD\n2\noutput: 3\n```\n*Explanation: repaint two letters of any three neighbouring letters.*\n\n**Example 2**\n```\ninput:\nAAAA\n0\noutput: 4\n```\n*Explanation: the banner is already uniform.*\n\n**Example 3**\n```\ninput:\nZ\n5\noutput: 1\n```\n*Explanation: there is only one letter to work with.*\n\n**Follow-up:** Why is it enough to track only the most common letter in the window?",
+    "editorialMarkdown": "## Sliding window against the most common letter\n\nInside any stretch, the cheapest way to make it uniform is to keep whichever letter appears most often and repaint the rest, costing `length - maxCount` repaints. Move a right pointer, counting letters in a 26-entry table and keeping `maxCount`, the largest count seen. While `length - maxCount` exceeds `k`, advance the left pointer and drop its letter from the table. Record the window length as you go.\n\nThe trap is charging the repaints against the wrong letter, for example the window's first letter rather than its most common one, which reports a shorter answer.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "ABCD\n2",
+      "Z\n5"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "longest-mirrored-run-length": {
     "promptMarkdown": "A security token is a string of characters. A mirrored run is any contiguous substring that reads the same forwards and backwards (a palindrome). Given the token string, return the length of its longest mirrored run.\n\nThe input is a single non-empty string of lowercase letters.\n\n**Constraints**\n- 1 ≤ length of string ≤ 1000\n- All characters are lowercase English letters.\n- A single character is always a mirrored run of length 1.\n\n**Example 1**\n```\ninput:\ncabanab\noutput: 5\n```\nThe substring `banab` (positions 2–6) reads the same forwards and backwards.\n\n**Example 2**\n```\ninput:\nracecar\noutput: 7\n```\nThe entire string `racecar` is a palindrome.\n\n**Example 3**\n```\ninput:\na\noutput: 1\n```\nA single character is trivially a mirrored run of length 1.\n\n**Follow-up:** Can you solve this in O(n) time using Manacher's algorithm?",
     "editorialMarkdown": "## 2-D DP: expanding palindromic intervals\n\nDefine a boolean table `dp[i][j]` that is `true` when the substring from index `i` to index `j` (inclusive) is a palindrome. The recurrence is:\n\n- `dp[i][i] = true` for all `i` (single character).\n- `dp[i][i+1] = (s[i] == s[i+1])` for all valid `i` (two-character pair).\n- For length 3 and above: `dp[i][j] = (s[i] == s[j]) and dp[i+1][j-1]`.\n\nThe recurrence works because a longer string is a palindrome exactly when its outer characters match and its inner substring is also a palindrome — a strictly smaller subproblem. The inner result `dp[i+1][j-1]` must already be computed when `dp[i][j]` is evaluated, which dictates the fill order: process intervals in increasing order of length (or equivalently, fill the table diagonally from shorter to longer).\n\nWhile filling, track the maximum `j - i + 1` seen at any `true` cell — that is the answer.\n\nThe quiet trap is filling the table in a naive row-by-row or column-by-column order that reads `dp[i+1][j-1]` before it has been computed, silently producing `false` for a cell that should be `true`. The base cases (length 1 and length 2) must be handled before the main recurrence, and the main loop must iterate over increasing interval lengths or equivalent diagonal indices to guarantee that every inner cell is ready.\n\nTime complexity is O(n²): filling an n × n table with O(1) work per cell. Space complexity is O(n²) for the table. Both can be reduced — a centre-expansion approach achieves O(n²) time with O(1) space; Manacher's algorithm achieves O(n) time and O(n) space.",
@@ -3220,6 +3467,43 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     ],
     "model": "claude-sonnet-4-6",
     "date": "2026-09-16"
+  },
+  "longest-nearly-consecutive-run": {
+    "promptMarkdown": "A collector has ticket numbers `a`, possibly with repeats and in any order. A run is a set of consecutive numbers, and the collector may **invent at most one** missing number to bridge a single gap. Return the greatest number of **listed** tickets such a run can contain; the invented number is not counted, and repeated tickets count once.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n1 2 4 5\noutput: 4\n```\n*Explanation: inventing 3 joins 1 2 and 4 5, giving four listed tickets.*\n\n**Example 2**\n```\ninput:\n10 12 14\noutput: 2\n```\n*Explanation: inventing 11 reaches 10 and 12, but 13 would be a second invented number.*\n\n**Example 3**\n```\ninput:\n7 7 7\noutput: 1\n```\n*Explanation: the repeats are one ticket number.*\n\n**Follow-up:** Why start the walk only at numbers whose predecessor is missing?",
+    "editorialMarkdown": "## Walk each run start, allowing one gap\n\nPut the tickets in a hash set, which removes repeats and makes membership O(1). Only start a walk at a value whose predecessor is **not** in the set; every run is then walked exactly once, which keeps the whole scan linear rather than quadratic.\n\nFrom a start, step upwards: count the value when it is present; when it is missing, skip it once and carry on with the gap used up; when a second value is missing, stop. Keep the largest count.\n\nThe trap is returning the span from first to last value, which includes the invented number, giving 5 instead of 4 in Example 1. Starting a walk at a value that has a predecessor is the other slip: it repeats work and can report a shorter run.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "7 7 7"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "longest-non-increasing-pick": {
+    "promptMarkdown": "A skier records altitudes `a` along a route. A valid descent keeps the positions in their original order, and each chosen altitude must be **no higher** than the one before it; equal altitudes are allowed. Positions need not be next to each other.\n\nReturn the greatest number of positions a valid descent can use.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n5 4 4 2 3 1\noutput: 5\n```\n*Explanation: 5, 4, 4, 2, 1 never rises.*\n\n**Example 2**\n```\ninput:\n1 1 1\noutput: 3\n```\n*Explanation: equal altitudes may all be taken.*\n\n**Example 3**\n```\ninput:\n1 2 3\noutput: 1\n```\n*Explanation: the route only climbs, so one position is the most possible.*\n\n**Follow-up:** Can you do better than quadratic time?",
+    "editorialMarkdown": "## DP on the last chosen position\n\nLet `dp[i]` be the length of the longest valid descent that ends at position `i`; it starts at 1, since the position alone is a descent. For every earlier position `j < i` whose altitude is **at least** `a[i]`, the descent ending at `j` can be extended, so `dp[i] = max(dp[i], dp[j] + 1)`. The answer is the largest `dp[i]`.\n\nThe pattern is the longest-subsequence recurrence with the comparison flipped; a patience-sorting variant gets it to O(n log n).\n\nThe trap is the comparison. Requiring a strict decrease drops the equal altitudes, returning 4 instead of 5 in Example 1, and using the increasing test solves the opposite problem.\n\nTime complexity is O(n²). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 2 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "longest-palindrome-token-tiebreak": {
+    "promptMarkdown": "A poetry tool scans a list of lowercase words and looks for mirror words: words that read the same forwards and backwards. Return the longest mirror word. If several are equally long, return the one that appears **earliest** in the list. At least one mirror word is always present; a one-letter word is a mirror word.\n\n**Constraints**\n- `1 <= words.length <= 1000`\n- `1 <= words[i].length <= 100`\n- Words contain lowercase English letters only.\n\n**Example 1**\n```\ninput:\ncat level noon dog\noutput: level\n```\n*Explanation: level and noon are both mirror words of length 5; level comes first.*\n\n**Example 2**\n```\ninput:\nnoon racecar level\noutput: racecar\n```\n*Explanation: racecar is longer than the others.*\n\n**Example 3**\n```\ninput:\na bb c\noutput: bb\n```\n*Explanation: a and c are mirror words too, but bb is longer.*\n\n**Follow-up:** Can you test each word without building its reverse?",
+    "editorialMarkdown": "## Keep the best, replace only on a strict gain\n\nScan the words in order. A word is a mirror word when it equals its reverse, which two pointers moving inward can also check in place. Keep the best word found so far and replace it **only** when a new mirror word is strictly longer.\n\nStrictness is what implements the tie rule: on equal lengths the earlier word stays, because the later one never replaces it.\n\nThe trap is comparing with `>=`, which keeps the **last** longest mirror word and returns noon instead of level in Example 1. Let C be the total number of characters.\n\nTime complexity is O(C). Space complexity is O(1).",
+    "promoteSamples": [
+      "noon racecar level"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "longest-positive-sum-under-cap": {
+    "promptMarkdown": "A drone carries parcels whose weights `a` are all positive, listed in loading order. Only a stretch of consecutive parcels can be taken, and their total weight must be **at most** `cap`. Return the greatest number of parcels such a stretch can hold, or `0` if even one parcel is too heavy.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `1 <= a[i] <= 10^4`\n- `0 <= cap <= 10^6`\n\n**Example 1**\n```\ninput:\n2 1 3 2\n5\noutput: 2\n```\n*Explanation: 2 1 weighs 3 and 1 3 weighs 4; adding any third parcel goes over 5.*\n\n**Example 2**\n```\ninput:\n1 1 1\n3\noutput: 3\n```\n*Explanation: all three parcels weigh exactly the cap.*\n\n**Example 3**\n```\ninput:\n7\n3\noutput: 0\n```\n*Explanation: the single parcel is heavier than the cap.*\n\n**Follow-up:** Why does this window approach need the weights to be positive?",
+    "editorialMarkdown": "## Shrinking sliding window\n\nMove a right pointer, adding each weight to a running total. While the total exceeds `cap`, remove the weight at the left pointer and advance it. After the shrink the window is legal, so record its length; if the window became empty, its length is 0, which handles a single over-weight parcel.\n\nPositive weights are what make this work: removing a parcel always lowers the total, so shrinking from the left eventually restores legality and never skips a valid answer. With negative weights that monotonicity is lost and the window approach fails.\n\nThe trap is recording the length before shrinking, which counts a stretch that is over the cap.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "1 1 1\n3",
+      "7\n3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "longest-rising-subsequence": {
     "promptMarkdown": "You are tasked with analyzing a sequence of numbers to find the longest strictly increasing subsequence.\n\nA subsequence is formed by picking elements from the original list while maintaining their relative order, but you are allowed to skip elements. The selected values must be strictly increasing; equal values cannot be part of the same valid sequence.\n\nIf the input list is empty, return `0`.\n\n**Constraints**\n- `0 <= length of list <= 2500`\n- Values can be any valid integer.\n\n**Example 1**\n```\ninput:\n10 9 2 5 3 7 101 18\noutput: 4\n```\nOne longest valid sequence is `2 3 7 101`, which has length 4.\n\n**Example 2**\n```\ninput:\n0 1 0 3 2 3\noutput: 4\n```\nThe sequence `0 1 2 3` is strictly increasing and has length 4.\n\n**Follow-up:** Can you improve the time complexity to O(n log n)?",
