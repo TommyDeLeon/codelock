@@ -11,3 +11,7 @@ largest-rectangle-uneven-shelves, largest-non-neighbor-sum-on-ring (tests): samp
 largest-router-separation, largest-sum-of-at-least-k (tests): samples '1 2 4 8 9'/3 (aggressive cows) and '1 12 -5 -6 50 3' are well-known example data; candidates for refresh-tests.ts.
 lexicographically-smallest-unique-note (tests): samples 'cbacdcbc' and 'bcabc' are well-known example data; candidate for refresh-tests.ts.
 longest-letter-run-after-budgeted-relabels (tests): sample 'AABABBA'/1 is well-known example data; candidate for refresh-tests.ts.
+longest-run-with-at-most-k-distinct, longest-target-sum-slice (tests): samples 'eceba'/2, 'aabacbebebe'/3 and '1 -1 5 -2 3'/3 are well-known example data; candidates for refresh-tests.ts.
+longest-value-band-within-spread, maximum-width-capped-water-with-floor (tests): samples '10 1 2 4 7 2'/5 and '1 8 6 2 5' are well-known example data; candidates for refresh-tests.ts.
+min-of-each-window, minimum-anagram-replacements (tests): samples '1 3 -1 -3 5 3 6 7'/3 and 'anagram'/'mangaar' are well-known example data; candidates for refresh-tests.ts.
+minimum-bracket-insertions: the reference never pops on a kind mismatch, so it does not compute the true minimum insertions (e.g. '([)' -> 3, optimum 1); the statement now describes the reference's left-to-right repair rule operationally, but the problem would be better with a corrected solution. minimum-crate-ship-capacity (tests): sample '3 2 2 4 1 4'/3 is well-known example data; candidate for refresh-tests.ts.
