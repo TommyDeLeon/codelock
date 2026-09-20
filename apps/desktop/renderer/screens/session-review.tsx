@@ -162,9 +162,73 @@ export function SessionReviewPanel({
               </pre>
             </section>
           )}
+
+          {/* The worked solution, on the same rule as the editorial: only once
+              the session has ended. Reading one is how most people learn a
+              pattern they could not find on their own. */}
+          {Object.keys(review.referenceSolution ?? {}).length > 0 && (
+            <SolutionSection solutions={review.referenceSolution} />
+          )}
         </>
       )}
     </div>
+  );
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  JAVASCRIPT: 'JavaScript',
+  TYPESCRIPT: 'TypeScript',
+  PYTHON: 'Python',
+  JAVA: 'Java',
+  CPP: 'C++',
+  GO: 'Go',
+};
+
+/** The worked solution, with a chip per language the corpus carries. */
+function SolutionSection({ solutions }: { solutions: Partial<Record<string, string>> }) {
+  const languages = Object.keys(solutions);
+  const [language, setLanguage] = useState<string>(languages[0] ?? '');
+  const code = solutions[language];
+
+  return (
+    <section className="rule" style={{ marginTop: 24, paddingTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <p className="eyebrow" style={{ margin: 0 }}>
+          A worked solution
+        </p>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          {languages.map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              className="btn btn-chip"
+              aria-pressed={lang === language}
+              onClick={() => setLanguage(lang)}
+              style={{
+                borderColor: lang === language ? 'var(--accent)' : 'var(--border)',
+                color: lang === language ? 'var(--accent)' : 'var(--muted)',
+              }}
+            >
+              {LANGUAGE_LABELS[lang] ?? lang}
+            </button>
+          ))}
+        </div>
+      </div>
+      <pre
+        className="mono"
+        style={{
+          margin: 0,
+          padding: 12,
+          fontSize: 12.5,
+          lineHeight: 1.6,
+          overflowX: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-xs)',
+        }}
+      >
+        {code}
+      </pre>
+    </section>
   );
 }
 

@@ -73,9 +73,24 @@ export function SteppedAwayMoment({
     };
   }, [sessionId]);
 
+  /**
+   * Escape closes it, but not the Escape that got here.
+   *
+   * Stepping away means holding Escape for ten seconds. The shell drops the
+   * lock mid-hold and this panel opens underneath a key that is still down, so
+   * a plain Escape handler dismissed it instantly — and marked it seen, which
+   * is worse than not showing it at all.
+   *
+   * Two guards: auto-repeat never closes anything, and a short settling window
+   * ignores the tail of that hold. A deliberate press a second later still
+   * works, which is the behaviour anyone expects from a dialog.
+   */
   useEffect(() => {
+    const openedAt = Date.now();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape' || event.repeat) return;
+      if (Date.now() - openedAt < 1200) return;
+      onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
