@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LockSessionView, StatsSummary, TimerConfig } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { SessionReviewPanel } from './session-review';
+import { SteppedAwayMoment } from './stepped-away';
 import { Celebration } from '../celebration';
 import { bridge } from '../bridge';
 import { PersonalBests, RankReadout, StreakPips, TierLadder } from '../game';
@@ -45,6 +46,16 @@ export function DashboardScreen() {
   const [confirmLockNow, setConfirmLockNow] = useState(false);
   // Which past session is open for review, if any. Null is the dashboard.
   const [reviewing, setReviewing] = useState<string | null>(null);
+  /**
+   * The session whose "stepped away" moment is showing.
+   *
+   * The shell sends the learner here the moment a session ends that way, so
+   * the dashboard is where the closing word has to happen — the lock screen is
+   * already gone by then. Shown once per session: acknowledged ids are
+   * remembered locally, because a panel that reappears every time the
+   * dashboard mounts stops being kind very quickly.
+   */
+  const [steppedAway, setSteppedAway] = useState<string | null>(null);
 
   // Distinguishes "the server says there is no session" from "we could not ask".
   const asked = useRef(false);
@@ -57,6 +68,12 @@ export function DashboardScreen() {
         api.timer(),
       ]);
       setStats(summary);
+      // The most recent ending, if it was a session the learner stepped away
+      // from and has not already been shown. `recent` is newest first.
+      const latest = summary.locks.recent[0];
+      if (latest?.state === 'ABANDONED' && !wasAcknowledged(latest.id)) {
+        setSteppedAway(latest.id);
+      }
       setSession(active.session);
       setRemaining(active.session?.secondsRemaining ?? null);
       setTimer(config.timerConfig);
@@ -476,7 +493,7 @@ export function DashboardScreen() {
                   <li key={lock.id} className="rule">
                     {/* A real button, so the row is reachable by Tab and
                         announced as something that can be opened — the whole
-                        point is that "abandoned" stops being the end of the
+                        point is that "stepped away" stops being the end of the
                         story. */}
                     <button
                       type="button"
@@ -542,6 +559,16 @@ export function DashboardScreen() {
 
       {reviewing && (
         <SessionReviewPanel sessionId={reviewing} onClose={() => setReviewing(null)} />
+      )}
+
+      {steppedAway && !reviewing && (
+        <SteppedAwayMoment
+          sessionId={steppedAway}
+          onClose={() => {
+            acknowledge(steppedAway);
+            setSteppedAway(null);
+          }}
+        />
       )}
 
       {/* --- the game layer ---------------------------------------------- */}
@@ -710,9 +737,40 @@ export function DashboardScreen() {
   }
 }
 
+/**
+ * Sessions whose closing word has already been shown.
+ *
+ * Local on purpose: which panels someone has dismissed is not worth a server
+ * round trip, and a browser that has forgotten it shows one extra panel rather
+ * than losing anything. Any storage failure means "not shown yet", which fails
+ * toward being helpful.
+ */
+const ACKNOWLEDGED_KEY = 'codelock.steppedAwaySeen';
+
+function wasAcknowledged(sessionId: string): boolean {
+  try {
+    return (window.localStorage.getItem(ACKNOWLEDGED_KEY) ?? '').split(',').includes(sessionId);
+  } catch {
+    return false;
+  }
+}
+
+function acknowledge(sessionId: string): void {
+  try {
+    const seen = (window.localStorage.getItem(ACKNOWLEDGED_KEY) ?? '')
+      .split(',')
+      .filter(Boolean);
+    if (!seen.includes(sessionId)) seen.push(sessionId);
+    // Keep the list short; only the newest sessions can still be pending.
+    window.localStorage.setItem(ACKNOWLEDGED_KEY, seen.slice(-40).join(','));
+  } catch {
+    /* Private mode or blocked storage: the panel may show once more. */
+  }
+}
+
 const OUTCOME: Record<string, string> = {
   UNLOCKED: 'solved',
-  ABANDONED: 'abandoned',
+  ABANDONED: 'stepped away',
   EXPIRED: 'expired',
   LOCKED: 'locked',
   ARMED: 'armed',

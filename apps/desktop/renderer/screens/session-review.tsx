@@ -5,7 +5,7 @@ import { api, ApiError } from '../api';
 /**
  * One session, read back.
  *
- * The dashboard's run log could say "abandoned" and nothing more, which is the
+ * The dashboard's run log could say "stepped away" and nothing more, which is
  * least useful true statement available: you know the night went badly and
  * nothing about why. This opens the same row into what actually happened —
  * armed, engaged, each attempt with the judge's verdict and the code you sent,
@@ -33,7 +33,7 @@ const STEP_LABELS: Record<string, string> = {
 const OUTCOMES: Record<string, string> = {
   UNLOCKED: 'cleared',
   BYPASSED: 'skipped',
-  ABANDONED: 'abandoned',
+  ABANDONED: 'stepped away',
   LOCKED: 'in progress',
   ARMED: 'counting down',
 };

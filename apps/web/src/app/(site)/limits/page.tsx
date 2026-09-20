@@ -143,7 +143,7 @@ const DESKTOP: Row[] = [
     // Matrix D21.
     attempt: 'Hold Escape for ten seconds',
     verdict: 'intended',
-    note: 'The documented kill switch. Resolves the session as abandoned, which counts as a failure.',
+    note: 'The documented kill switch. Ends the session as stepped away, which counts as a failure.',
   },
 ];
 

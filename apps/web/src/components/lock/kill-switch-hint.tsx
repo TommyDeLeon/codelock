@@ -51,7 +51,7 @@ export function KillSwitchHint() {
               aria-valuenow={Math.round((progress?.fraction ?? 0) * 100)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Hold to abandon"
+              aria-label="Hold to step away"
               className="h-1 w-16 overflow-hidden rounded-xs bg-danger/20"
             >
               <span
@@ -59,11 +59,11 @@ export function KillSwitchHint() {
                 style={{ width: `${(progress?.fraction ?? 0) * 100}%` }}
               />
             </span>
-            <span>Keep holding — abandoning in {seconds}s</span>
+            <span>Keep holding — stepping away in {seconds}s</span>
           </>
         ) : (
           <span>
-            Stuck? Hold <kbd className="font-medium text-muted">Esc</kbd> for 10 seconds to abandon.
+            Stuck? Hold <kbd className="font-medium text-muted">Esc</kbd> for 10 seconds to step away.
             It counts as a failed session.
           </span>
         )}

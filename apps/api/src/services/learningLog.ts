@@ -411,6 +411,7 @@ export async function sessionReview(userId: string, sessionId: string) {
           patternTags: true,
           // Solution-bearing. Read here, returned only once resolved.
           editorialMarkdown: true,
+          referenceSolution: true,
         },
       })
     : null;
@@ -450,6 +451,15 @@ export async function sessionReview(userId: string, sessionId: string) {
       : null,
     /** Null until the session ends. See the docblock. */
     editorial: resolved ? (problem?.editorialMarkdown ?? null) : null,
+    /**
+     * A worked solution per language, on the same rule as the editorial: only
+     * once the session has ended. A learner who steps away has stopped, and
+     * stopping without ever seeing how it is done teaches nothing — the
+     * review is where the answer becomes available.
+     */
+    referenceSolution: resolved
+      ? ((problem?.referenceSolution ?? {}) as Record<string, string>)
+      : {},
     steps,
     /**
      * True when the session left no attributable steps — it ran before the log
@@ -466,8 +476,8 @@ export async function sessionReview(userId: string, sessionId: string) {
     withheld: resolved
       ? []
       : [
-          'The editorial is hidden until this session ends. It names the pattern, ' +
-            'which is most of the answer.',
+          'The editorial and the worked solution are hidden until this session ' +
+            'ends. They name the pattern, which is most of the answer.',
         ],
   };
 }

@@ -625,6 +625,12 @@ export interface SessionReviewView {
     patternTags: string[];
   } | null;
   editorial: string | null;
+  /**
+   * A worked solution per language, populated on the same rule as `editorial`:
+   * empty while the session runs, filled once it has ended. Keyed by
+   * `Language`, and not every language is always present.
+   */
+  referenceSolution: Partial<Record<Language, string>>;
   steps: SessionReviewStep[];
   /** No attributable steps: the session predates session-scoped logging. */
   partial: boolean;

@@ -4808,6 +4808,63 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-17"
   },
+  "point-inside-closed-rectangle": {
+    "promptMarkdown": "A floor plan stores a rectangular room and a sensor position in a matrix. The first row is `x1 y1 x2 y2`, the room's lower-left and upper-right corners with `x1 <= x2` and `y1 <= y2`; the second row is the sensor's `x y`.\n\nReturn `true` if the sensor is inside the room or exactly on its boundary, and `false` otherwise.\n\n**Constraints**\n- The matrix has exactly 2 rows: 4 values then 2 values.\n- `-10^4 <=` every coordinate `<= 10^4`\n\n**Example 1**\n```\ninput:\n0 0 5 3;5 1\noutput: true\n```\n*Explanation: the sensor sits on the right edge, which counts as inside.*\n\n**Example 2**\n```\ninput:\n0 0 5 3;6 1\noutput: false\n```\n*Explanation: x = 6 is past the room's right edge.*\n\n**Example 3**\n```\ninput:\n-2 -2 2 2;-2 -2\noutput: true\n```\n*Explanation: a corner belongs to the room.*\n\n**Follow-up:** How would the test change for an open room, where edges do not count?",
+    "editorialMarkdown": "## Two independent interval tests\n\nAn axis-aligned room is the product of an x-interval and a y-interval, so the sensor is inside exactly when `x1 <= x <= x2` **and** `y1 <= y <= y2`. Both comparisons are inclusive, which is what puts edges and corners inside.\n\nFor an open room the same test uses strict inequalities on all four bounds.\n\nThe trap is using `<`, which quietly drops every boundary point and turns Example 1 into `false`. Checking only one axis is the other slip: a sensor far above the room would pass the x test alone.\n\nTime complexity is O(1). Space complexity is O(1).",
+    "promoteSamples": [
+      "-2 -2 2 2;-2 -2"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "postfix-peak-stack-depth": {
+    "promptMarkdown": "A calculator evaluates a well-formed postfix expression given as a list of tokens: each token is an integer or one of `+`, `-`, `*`, `/`. A number is pushed onto a stack; an operator removes two values and pushes one result.\n\nWithout evaluating the expression, return the largest number of values the stack ever holds.\n\n**Constraints**\n- `1 <= tokens.length <= 1000`\n- The expression is well formed.\n- `-10^4 <=` each number `<= 10^4`\n\n**Example 1**\n```\ninput:\n2 3 4 * +\noutput: 3\n```\n*Explanation: the stack holds 1, 2, 3, then 2, then 1 value; the peak is 3.*\n\n**Example 2**\n```\ninput:\n5 6 7 8 + + +\noutput: 4\n```\n*Explanation: all four numbers are pushed before the first operator.*\n\n**Example 3**\n```\ninput:\n-7\noutput: 1\n```\n*Explanation: a single number is pushed and nothing removes it.*\n\n**Follow-up:** Why is no arithmetic needed to answer this?",
+    "editorialMarkdown": "## Track the depth, not the values\n\nThe stack's size changes in a fixed way: a number adds 1, and an operator removes 2 and pushes 1, a net change of -1. So keep a running depth, update it per token, and record the largest depth seen, which can only occur just after a number is pushed.\n\nNo values are needed, so no arithmetic, and no stack has to be built.\n\nThe trap is subtracting 2 for an operator and forgetting that it pushes its result, which reports depths that are too small from the first operator onwards. Treating a negative number such as `-7` as an operator because it starts with `-` is the other slip: operators are exactly the one-character tokens.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "5 6 7 8 + + +",
+      "-7"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "postfix-signed-total": {
+    "promptMarkdown": "A till evaluates a well-formed postfix expression written as one line of space-separated tokens. Each token is an integer, possibly negative, or one of `+`, `-`, `*`. In postfix, an operator comes **after** its two operands: `8 -3 -` means `8 - (-3)`.\n\nReturn the value of the expression.\n\n**Constraints**\n- `1 <= s.length <= 1000`\n- The expression is well formed.\n- Every intermediate value fits in a 32-bit signed integer.\n\n**Example 1**\n```\ninput:\n8 -3 - 2 *\noutput: 22\n```\n*Explanation: 8 - (-3) = 11, then 11 * 2 = 22.*\n\n**Example 2**\n```\ninput:\n9 2 - 4 *\noutput: 28\n```\n*Explanation: 9 - 2 = 7, then 7 * 4 = 28.*\n\n**Example 3**\n```\ninput:\n-7\noutput: -7\n```\n*Explanation: a single number is a complete expression.*\n\n**Follow-up:** Why does postfix need no parentheses or precedence rules?",
+    "editorialMarkdown": "## Operand stack, popped right then left\n\nSplit the line on spaces and read the tokens in order. Push every number. When an operator arrives, pop the **right** operand first and the **left** operand second, apply the operator, and push the result. The single value left at the end is the answer.\n\nPostfix fixes the order of operations by position, which is why no parentheses or precedence rules are needed.\n\nThe trap is popping in the wrong order. Addition and multiplication survive the mistake, but subtraction silently reverses: Example 2's first step becomes 2 - 9 = -7, and the final answer -28. Treating `-3` as the operator `-` is the other slip: an operator token is exactly one character long.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "9 2 - 4 *",
+      "-7"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "power-of-four-lights": {
+    "promptMarkdown": "A display lights one lamp per binary digit of a number. Return `true` when `n` is a power of four (1, 4, 16, 64, ...), and `false` otherwise. Zero and negative numbers are not powers of four.\n\n**Constraints**\n- `-2^31 <= n <= 2^31 - 1`\n\n**Example 1**\n```\ninput:\n64\noutput: true\n```\n*Explanation: 64 = 4³.*\n\n**Example 2**\n```\ninput:\n8\noutput: false\n```\n*Explanation: 8 is a power of two but not of four.*\n\n**Example 3**\n```\ninput:\n0\noutput: false\n```\n*Explanation: zero is not a power of four.*\n\n**Follow-up:** Can you decide it with a constant number of bit operations?",
+    "editorialMarkdown": "## One lit bit, at an even position\n\nA power of four is a power of two whose single lit bit sits at an even position (0, 2, 4, ...). So the test has three parts: `n > 0`, exactly one lit bit (`n & (n - 1) == 0`), and that bit at an even position, which the mask `0x55555555` checks, since it holds ones exactly at even positions below 32.\n\nThe trap is stopping after the power-of-two test, which wrongly accepts 2, 8 and 32. Forgetting the `n > 0` guard is the other slip: 0 passes `n & (n - 1) == 0` on its own.\n\nTime complexity is O(1). Space complexity is O(1).",
+    "promoteSamples": [
+      "0"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "previous-greater-distance": {
+    "promptMarkdown": "A ski slope has markers with heights `a`. For each marker, a skier looks back for the nearest earlier marker that is **strictly taller**. Return, for each position, how many positions back that marker is, or `-1` when no earlier marker is taller. Equal heights do not count as taller.\n\n**Constraints**\n- `1 <= a.length <= 20`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n6 3 5 2 4\noutput: -1 1 2 1 2\n```\n*Explanation: for the 5 the nearest taller earlier marker is the 6, two positions back.*\n\n**Example 2**\n```\ninput:\n4 4 4\noutput: -1 -1 -1\n```\n*Explanation: equal heights are not taller.*\n\n**Example 3**\n```\ninput:\n1 2 3 4\noutput: -1 -1 -1 -1\n```\n*Explanation: the slope only rises, so nothing earlier is taller.*\n\n**Follow-up:** Can you answer every position in one pass?",
+    "editorialMarkdown": "## Monotonic stack of decreasing heights\n\nScan left to right holding a stack of **indices** whose heights decrease from bottom to top. Before handling position `i`, pop every index whose height is less than or equal to `a[i]`: those markers can never be the nearest taller marker for `i` or for anything after it. If the stack is not empty, its top is the nearest earlier taller marker, so the answer is `i - top`; otherwise it is `-1`. Then push `i`.\n\nStoring indices rather than heights is what lets you report a distance.\n\nThe trap is popping only strictly smaller heights, which leaves equal heights on the stack and answers the \"taller or equal\" question instead, breaking Example 2.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "1 2 3 4"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "prime-total-below-limit": {
+    "promptMarkdown": "A lottery uses only prime ticket numbers. Return how many primes are **strictly less than** `n`.\n\n**Constraints**\n- `0 <= n <= 10^6`\n\n**Example 1**\n```\ninput:\n20\noutput: 8\n```\n*Explanation: 2, 3, 5, 7, 11, 13, 17 and 19.*\n\n**Example 2**\n```\ninput:\n3\noutput: 1\n```\n*Explanation: only 2 is below 3.*\n\n**Example 3**\n```\ninput:\n2\noutput: 0\n```\n*Explanation: there is no prime below 2.*\n\n**Follow-up:** Why can the marking of each prime's multiples start at its square?",
+    "editorialMarkdown": "## Sieve of Eratosthenes\n\nKeep a boolean array for the numbers below `n`, all initially assumed prime. Walk `p` upwards from 2: when `p` is still unmarked it is prime, so count it and mark its multiples as composite, starting at `p * p`. Any smaller multiple of `p`, such as `2p` or `3p`, already has a smaller prime factor and was marked earlier, which is why the marking can start at the square.\n\nThe total marking work is `n` times the sum of the reciprocals of the primes below it, which grows like log log n.\n\nThe trap is the strict boundary: `n` itself is never counted, so `n = 2` answers 0. Handling `n = 0` or `n = 1` without an empty-array crash is the other thing to get right.\n\nTime complexity is O(n log log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "20",
+      "3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "priority-queue-changing-priorities": {
     "promptMarkdown": "Implement a priority queue yourself; do not wrap a built-in priority queue implementation.\n\nThe same value may be pushed more than once with different priorities. Each `push(value, priority)` creates a separate queue entry; do not search for or mutate an older entry. Lower priority wins and equal priorities use insertion order. Empty `pop` and `peek` return `-1`.\n\n**Constraints**\n- The number of operations is up to 1000.\n- Values and priorities are valid integers.\n\n**Example 1**\n```\ninput:\n9\nPriorityQueue\npush 5 9\npush 5 1\npush 8 2\npop\npop\npop\nsize\npeek\noutput:\nnull\nnull\nnull\nnull\n5\n8\n5\n0\n-1\n```\nDuplicate values are pushed and popped correctly according to their independent priorities.\n\n**Example 2**\n```\ninput:\n4\nPriorityQueue\npeek\npop\nsize\noutput:\nnull\n-1\n-1\n0\n```\nEmpty queue operations safely return -1.\n\n**Follow-up:** Can you maintain the queue using O(log n) time per push and pop?",
     "editorialMarkdown": "## Entries, not mutable labels\n\nThe fixed interface has no decrease-key method, so each push is an independent scheduled entry. A heap stores the complete comparison key for that entry, including its priority at insertion time. This cleanly supports changing priorities across pushes without accidentally deleting history.\n\nThe trap most solvers hit is using a map keyed by value, which overwrites an older push and changes the required number of pops when duplicate values occur.\n\nEvery push or pop is O(log n) time, while peek and size are O(1) time. The heap stores one record per push, taking O(n) space.",
@@ -4835,6 +4892,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "priority-window-total": {
+    "promptMarkdown": "A dispatcher must complete **exactly** `k` jobs today. Each job has a priority score in `a`, which may be negative (a job that costs more than it earns). The dispatcher picks the `k` jobs with the highest scores.\n\nReturn the total score of those `k` jobs.\n\n**Constraints**\n- `1 <= k <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n4 -2 7 1\n3\noutput: 12\n```\n*Explanation: the three highest scores are 7, 4 and 1.*\n\n**Example 2**\n```\ninput:\n-5 -1 -3\n2\noutput: -4\n```\n*Explanation: exactly two jobs must run, so the two least bad ones are chosen.*\n\n**Example 3**\n```\ninput:\n9\n1\noutput: 9\n```\n*Explanation: the only job is the one to run.*\n\n**Follow-up:** Can you find the total with a heap of size `k` instead of sorting?",
+    "editorialMarkdown": "## Take the k highest scores\n\nSort the scores in descending order and add up the first `k`. With a heap, keep a min-heap of the `k` best scores seen: push each score and pop the smallest whenever the heap grows past `k`; the heap's contents are then exactly the jobs to run.\n\nEqual scores are interchangeable, since only the total is returned.\n\nThe trap is stopping early when the next score is negative, the habit from \"take only profitable work\". The count is fixed at `k`, so Example 2 must include loss-making jobs.\n\nTime complexity is O(n log n). Space complexity is O(n).",
+    "promoteSamples": [
+      "9\n1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "product-except-self": {
     "promptMarkdown": "Given a list of integers, produce an output list of the same length where each output element is the product of every input element **except** the one at that position.\n\n**You may not use division.**\n\nThe list has at least two elements and may contain zeros and negative numbers.\n\n**Constraints**\n- 2 ≤ n ≤ 20\n- Elements may be negative, zero, or positive integers\n\n**Example 1**\n```\ninput:\n2 4 6\noutput: 24 12 8\n```\nPosition 0: `4 × 6 = 24`. Position 1: `2 × 6 = 12`. Position 2: `2 × 4 = 8`.\n\n**Example 2**\n```\ninput:\n5 0 2\noutput: 0 10 0\n```\nAny position whose product includes the `0` gives `0`. Position 1 (the zero itself): `5 × 2 = 10`.\n\n**Example 3**\n```\ninput:\n10 20\noutput: 20 10\n```\nTwo elements: each output is simply the other element.\n\n**Follow-up:** Can you achieve O(n) time and O(1) extra space (not counting the output array)?",
@@ -4891,12 +4957,51 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
       }
     ]
   },
+  "product-except-self-modulo-thousand": {
+    "promptMarkdown": "A checksum routine reads the list `a`. For each position it multiplies every **other** value together and keeps the result modulo 1000, as a number from `0` to `999`. Division may not be used.\n\nReturn the list of those checksums, in the original order. A list with a single value has no other values, so its checksum is 1.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10^4 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 12 8 6\n```\n*Explanation: 3 × 4, 2 × 4 and 2 × 3.*\n\n**Example 2**\n```\ninput:\n-2 3 -4\noutput: 988 8 994\n```\n*Explanation: 3 × -4 = -12, which is 988 modulo 1000; -2 × -4 = 8; -2 × 3 = -6, which is 994.*\n\n**Example 3**\n```\ninput:\n1 0 3\noutput: 0 3 0\n```\n*Explanation: only the position holding the 0 escapes being multiplied by it.*\n\n**Follow-up:** Why is division a poor tool here even before the modulo is applied?",
+    "editorialMarkdown": "## Prefix product, then a suffix pass\n\nFirst walk left to right, writing into each position the running product of everything **before** it, reduced modulo 1000. Then walk right to left with a second running product of everything **after** each position, multiplying it into the stored value and reducing again. Each position ends up holding the product of the other values.\n\nDivision would fail outright when the list contains a zero, and modulo arithmetic has no ordinary division at all.\n\nThe trap is the sign. In Java, C++, Go and JavaScript the `%` operator keeps the sign of the left operand, so `-12 % 1000` is `-12`; add 1000 and reduce again so every output lands in 0 to 999.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "-2 3 -4",
+      "1 0 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
   "product-of-list": {
     "promptMarkdown": "Given a list of integers, compute and return the product of all the numbers in the list. If the list is empty, return `1`.\n\n**Constraints**\n- The list length is between `0` and `100`.\n- The elements are small enough that the final product fits within a standard integer type.\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 24\n```\nThe product is 2 * 3 * 4 = 24.\n\n**Example 2**\n```\ninput:\n\noutput: 1\n```\nThe product of an empty list is 1.\n\n**Follow-up:** Can you compute the product in O(n) time and O(1) extra space?",
     "editorialMarkdown": "The standard approach is to initialize an accumulator variable and multiply it by each element in the list as you iterate through it. This is a classic Accumulator pattern.\n\nThe one trap most solvers hit is initializing the accumulator to `0` instead of `1`. Because `1` is the multiplicative identity, initializing to `0` will cause all subsequent multiplications to yield `0`, leading to an incorrect result for any input. Furthermore, returning `1` for an empty list gracefully aligns with this identity.\n\nThe time complexity is O(n), where n is the number of elements in the list, since we must visit each element once. The space complexity is O(1) because we only need a single variable to store the running product.",
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "products-before-each-position": {
+    "promptMarkdown": "A ledger tracks running multipliers `a`. For each position, return the product of every value **strictly before** it. The first position has no earlier values, so its answer is 1. Division may not be used.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `-10 <= a[i] <= 10`\n- Every prefix product fits in a 32-bit signed integer.\n\n**Example 1**\n```\ninput:\n2 3 4\noutput: 1 2 6\n```\n*Explanation: nothing, then 2, then 2 × 3.*\n\n**Example 2**\n```\ninput:\n-2 3 -4\noutput: 1 -2 -6\n```\n*Explanation: signs carry through unchanged.*\n\n**Example 3**\n```\ninput:\n1 0 3\noutput: 1 1 0\n```\n*Explanation: from the third position onwards every prefix contains the 0.*\n\n**Follow-up:** What would you add to turn this into the product of all the *other* values?",
+    "editorialMarkdown": "## One running product, written before updating\n\nKeep a running product starting at 1. At each position, **first** append the current running product to the answer, then multiply the running product by the value at that position. Writing before multiplying is what excludes the current value, and starting at 1 gives the empty prefix its identity value.\n\nTo get the product of all other values instead, run the same idea backwards afterwards and multiply the two passes together.\n\nThe trap is multiplying first and then writing, which includes the current value and shifts every answer by one position. Dividing a total product by the current value is the other slip: it breaks as soon as a zero appears.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "-2 3 -4",
+      "1 0 3"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "profit-with-cooldown-rebuy": {
+    "promptMarkdown": "A trader sees daily prices `a` and may buy and sell as often as they like, holding at most one unit at a time. After **selling**, they must wait one full day before buying again. Buying and selling on the same day is not allowed.\n\nReturn the greatest total profit, or `0` when no trade helps.\n\n**Constraints**\n- `1 <= a.length <= 1000`\n- `0 <= a[i] <= 10^4`\n\n**Example 1**\n```\ninput:\n2 1 4 5 2 9 7\noutput: 10\n```\n*Explanation: buy at 1 and sell at 4 for 3, rest through the 5, then buy at 2 and sell at 9 for 7, totalling 10.*\n\n**Example 2**\n```\ninput:\n7 6 4\noutput: 0\n```\n*Explanation: prices only fall, so no trade is worth making.*\n\n**Example 3**\n```\ninput:\n1\noutput: 0\n```\n*Explanation: one day gives no chance to buy and sell.*\n\n**Follow-up:** How many states per day does the cooldown rule require?",
+    "editorialMarkdown": "## Three states per day\n\nTrack three running bests after each day: `hold`, the best total while holding a unit; `sold`, the best total on a day a sale just happened; and `rest`, the best total while holding nothing and free to buy.\n\nThe transitions follow the rules: `hold = max(hold, rest - price)` (keep holding, or buy from a free day); `sold = oldHold + price` (sell what was held); `rest = max(rest, oldSold)` (stay free, or become free the day after a sale). The answer is the larger of `sold` and `rest` at the end.\n\nCompute the new values from **yesterday's** values, so save the old ones before overwriting.\n\nThe trap is buying out of the just-sold state, which skips the compulsory rest day. Tracking a single running minimum price is the other slip: it fits one trade, not a sequence with cooldowns.\n\nTime complexity is O(n). Space complexity is O(1).",
+    "promoteSamples": [
+      "2 1 4 5 2 9 7",
+      "1"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
+  },
+  "queens-with-one-forbidden-column": {
+    "promptMarkdown": "On an `n × n` board, place `n` queens so that no two share a row, a column or a diagonal. In addition, column `k` is **closed on every row**: no queen may stand in it.\n\nReturn the number of valid placements. If `k` is not a column of the board, return 0.\n\n**Constraints**\n- `1 <= n <= 8`\n- `k` is any integer; the board's columns are numbered `0` to `n - 1`.\n\n**Example 1**\n```\ninput:\n4\n1\noutput: 0\n```\n*Explanation: n queens on an n-column board use every column exactly once, so closing a column leaves nothing.*\n\n**Example 2**\n```\ninput:\n1\n0\noutput: 0\n```\n*Explanation: the single queen's only column is closed.*\n\n**Example 3**\n```\ninput:\n4\n4\noutput: 0\n```\n*Explanation: column 4 is off the board, so the answer is 0.*\n\n**Follow-up:** For which boards and closed columns could the answer ever be non-zero?",
+    "editorialMarkdown": "## Row-by-row search that skips one column\n\nPlace one queen per row, keeping boolean arrays for used columns and for the two diagonal families (`row - col` and `row + col`). For each row, try every column that is free on all three and is **not** the closed column; recurse to the next row and unmark on the way back. Reaching row `n` counts one placement.\n\nThe search is the usual one, but there is a counting argument behind these answers: `n` queens on `n` columns, with no two sharing a column, must occupy every column, so closing any real column makes the count 0. An out-of-range `k` closes nothing, but those boards are also rejected here by the validity check.\n\nThe trap is applying the closure only to the first row. The column is closed on every row, so the check belongs inside the per-row loop.\n\nTime complexity is O(n!). Space complexity is O(n).",
+    "promoteSamples": [
+      "4\n4"
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "queue-fifo-basics": {
     "promptMarkdown": "Implement a queue yourself; do not use your language's built-in queue type.\n\nBuild `Queue`. `enqueue(x)` joins the back, `dequeue()` removes the front, and `peek()` reads the front. Items leave in first-in, first-out order. `isEmpty()` returns boolean, and `size()` returns integer. Empty `dequeue` and `peek` return `-1`.\n\n**Constraints**\n- A maximum of 1000 queue operations will be performed.\n- All values `x` are integers.\n\n**Example 1**\n```\ninput:\n7\nQueue\nenqueue 3\nenqueue 8\npeek\ndequeue\npeek\nsize\noutput:\nnull\nnull\nnull\n3\n3\n8\n1\n```\nValues leave in exactly the same order they entered.\n\n**Example 2**\n```\ninput:\n4\nQueue\nisEmpty\nenqueue 1\nisEmpty\noutput:\nnull\ntrue\nnull\nfalse\n```\nTesting the empty state of the queue.\n\n**Follow-up:** Could you implement all methods in amortized O(1) time?",
@@ -4919,6 +5024,15 @@ export const UPGRADES: Record<string, StatementUpgrade> = {
     "promoteSamples": [],
     "model": "gemini-3.1-pro-low",
     "date": "2026-09-16"
+  },
+  "quoted-bracket-check": {
+    "promptMarkdown": "A parser reads a line `s` containing brackets `()[]{}`, double quotes and other characters. Brackets **inside** a quoted section are ordinary text and are ignored; quotes toggle in and out of a quoted section and are never escaped.\n\nReturn `true` when every bracket outside quotes is properly nested and closed, and every quoted section is closed as well; otherwise return `false`. An empty line is valid.\n\n**Constraints**\n- `0 <= s.length <= 1000`\n- `s` contains printable ASCII characters.\n\n**Example 1**\n```\ninput:\n(\"[not a bracket]\")\noutput: true\n```\n*Explanation: the inner brackets sit inside quotes, so only the outer parentheses count.*\n\n**Example 2**\n```\ninput:\n([)]\noutput: false\n```\n*Explanation: the brackets cross instead of nesting.*\n\n**Example 3**\n```\ninput:\n(\noutput: false\n```\n*Explanation: the parenthesis is never closed.*\n\n**Follow-up:** How would an escape character such as `\\\"` change the scan?",
+    "editorialMarkdown": "## Stack plus a quote flag\n\nScan once, keeping a boolean that says whether you are inside quotes and a stack of unclosed opening brackets. A double quote flips the boolean. While inside quotes, every other character is skipped. Outside quotes, push an opening bracket; on a closing bracket, fail unless the stack's top is its exact partner, and pop it.\n\nAt the end the line is valid only when the stack is empty **and** the quote flag is off, which is what rejects an unterminated quoted section.\n\nThe trap is letting quoted brackets reach the stack, which wrongly rejects text such as `\"}\"`. Forgetting the final quote-flag check is the other slip.\n\nTime complexity is O(n). Space complexity is O(n).",
+    "promoteSamples": [
+      "("
+    ],
+    "model": "claude-opus-5",
+    "date": "2026-09-20"
   },
   "range-from-one": {
     "promptMarkdown": "Given an integer `n`, return a list containing all the numbers from `1` up to and including `n` in ascending order. If `n` is `0`, return an empty list.\n\n**Constraints**\n- `0 <= n <= 10^4`\n\n**Example 1**\n```\ninput:\n4\noutput: 1 2 3 4\n```\nThe list contains integers from 1 up to 4, inclusive.\n\n**Example 2**\n```\ninput:\n0\noutput: \n```\nSince n is 0, the resulting list is empty.\n\n**Follow-up:** What is the space complexity of your solution?",

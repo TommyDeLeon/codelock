@@ -60,6 +60,7 @@ import { SIGNATURES, driversFor } from '../src/corpus/signatures.js';
 import { LANGUAGES, type Lang } from '../src/corpus/types.js';
 import { skillsRequiredBy } from '../src/services/skills.js';
 import { failureDetail, isJudgeUp, normalise, runBatch, unb64, type Run } from './judge-client.js';
+import { libraryUses } from './audit-libraries.js';
 
 // ---------------------------------------------------------------------------
 // Arguments
@@ -310,6 +311,7 @@ Hard rules:
 4. Each problem uses one signatureId from this list and its parameters exactly: ${functionSignatures.map((s) => s.id).join(', ')}
 5. Tests: at least 8 per problem, first 2 marked isSample true and matching the first two examples. Include: an empty or minimal input, a single element, negatives where the type allows, duplicates, and the largest size that is still readable (≤ 40 values). Expected output must be exactly what a correct solution prints in the wire format.
 6. Six reference solutions (JAVASCRIPT, TYPESCRIPT, PYTHON, JAVA, CPP, GO) that all pass every test. They will be executed; a single failure rejects the problem.
+6a. WRITE THE LOGIC BY HAND. A reference solution must not call a library to do the part the problem is about: no sorting helpers (sorted, .sort, Arrays.sort, std::sort, sort.Slice), no heaps or priority queues, no binary-search helpers, no regular expressions, no itertools/collections/Counter/deque, no Java streams, no <algorithm> one-liners, no math helpers beyond + - * / %. Write the sort, the heap, the counting loop yourself. Plain arrays, lists, maps, sets, string indexing and arithmetic are fine. A learner reads these to understand the algorithm, not to learn which function name hides it.
 7. patternTags: 2–4 tags from this vocabulary only: ${knownTags.join(', ')}. Tags common in this family: ${familyTags.join(', ') || '(none yet)'}.
 8. slug: kebab-case, unique, not in the used list. title: unique, not a known LeetCode title.
 9. avgSolveSeconds: an honest estimate for a learner who knows the pattern (300–1500).
@@ -615,6 +617,11 @@ function localReject(d: Draft, seen: Set<string>): string | null {
   for (const lang of LANGUAGES) {
     const src = d.referenceSolution[lang];
     if (!src || !src.includes('solve')) return `missing ${lang} solution`;
+    // The corpus teaches logic, so a reference solution may not hand the
+    // algorithm to a library: no sorting, heaps, regexes or stdlib helpers
+    // that do the step the problem is about.
+    const borrowed = libraryUses(lang, src);
+    if (borrowed.length > 0) return `${lang} solution uses ${borrowed.join(', ')}`;
   }
   return null;
 }
