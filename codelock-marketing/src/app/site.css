@@ -155,13 +155,21 @@
    this figure entirely and lands behind the section's background, which paints
    straight over it — the plate was drawn and hidden, a second time, by a
    different cause from the first. */
-.marketing-site .lock-spread .reportage { position: relative; isolation: isolate; }
+.marketing-site .lock-spread .reportage {
+  position: relative;
+  isolation: isolate;
+  /* One width for the scene, read by both the capture and its plate. They were
+     sized separately (plate to the figure, capture past it) and their edges
+     disagreed: the plate stopped short on the right and poked out through the
+     capture's faded left margin, which read as two layers colliding. */
+  --scene-w: min(114%, calc(100vw - var(--site-gutter)));
+}
 
 .marketing-site .lock-spread .capture-link {
   position: relative;
   /* Past the right edge: the scene is a crop of something larger. Clamped so
      it never pushes a horizontal scrollbar onto the page. */
-  width: min(114%, calc(100vw - var(--site-gutter)));
+  width: var(--scene-w);
   border-radius: var(--radius-md, 12px);
   /* The outer 4% dissolves. Everything legible sits inside the other 92%. */
   /* One declaration per line: the palette check reads line by line, and a
@@ -188,7 +196,11 @@
 .marketing-site .lock-spread .reportage::before {
   content: '';
   position: absolute;
-  inset: -16px 3% auto 3%;
+  /* Inset past the capture's 4% edge fade, so the plate only ever shows
+     above opaque screen and never through a transparent margin. */
+  top: -14px;
+  left: calc(var(--scene-w) * 0.06);
+  width: calc(var(--scene-w) * 0.88);
   height: 38px;
   border: 1px solid var(--color-border);
   border-bottom: 0;
