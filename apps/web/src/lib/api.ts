@@ -205,6 +205,12 @@ async function request<T>(
   try {
     res = await fetch(`${BASE}${path}`, {
       ...init,
+      // Never a cached answer. This is a private API whose responses are
+      // state, not content: a theme changed on the dashboard came back
+      // stale on the lock screen because the browser had the previous
+      // settings read in cache and the response carried no cache headers
+      // to say otherwise.
+      cache: 'no-store',
       signal: AbortSignal.timeout(timeoutMs),
       headers: {
         'Content-Type': 'application/json',

@@ -145,8 +145,19 @@ async function main() {
   for (const { theme, suffix } of THEMES) {
     await setTheme(theme);
 
+    // A cold cache per pass. The first run of this produced a "light" and a
+    // "dark" capture of the lock screen with identical brightness, because the
+    // window had the previous /settings/timer response in cache and the lock
+    // surface therefore read the previous theme.
+    await win.webContents.session.clearCache();
+
     for (const surface of wanted) {
-      if (surface.needsLock && !(await lockIsUp())) {
+      // Set CAPTURE_ALLOW_UNLOCKED=1 to photograph the lock route with no
+      // session. The result is not a usable figure — it says "nothing is
+      // locked" — but it is themed, so it is enough to prove the theming works
+      // without taking anybody's screen to find out.
+      const allowUnlocked = process.env.CAPTURE_ALLOW_UNLOCKED === '1';
+      if (surface.needsLock && !allowUnlocked && !(await lockIsUp())) {
         skipped.push(`${surface.name}${suffix} — no LOCKED session`);
         continue;
       }
