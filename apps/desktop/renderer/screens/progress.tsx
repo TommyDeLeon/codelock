@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AccomplishmentKind, ProgressView } from '@codelock/shared';
 import { api, ApiError } from '../api';
 import { LearnScreen } from './learn';
+import { FamilyMap } from './family-map';
 
 type Subview = 'learn' | 'progress';
 
@@ -173,6 +174,10 @@ export function ProgressScreen() {
           </div>
         </section>
       )}
+
+      {/* Where you have been, before what you can do: the curriculum is the
+          coarser axis and the one that reads as a route. */}
+      <FamilyMap />
 
       <section>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Skill map</h2>

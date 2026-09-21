@@ -252,6 +252,11 @@ export interface GradeResult {
 
 export interface ProgressUpdate extends Omit<UserProgress, 'promoteAfterFastSolves' | 'demoteAfterFailures'> {
   transition: 'promoted' | 'demoted' | 'held';
+  /**
+   * The difficulty this update moved away from. Optional for older servers;
+   * `currentDifficulty` is where it landed.
+   */
+  previousDifficulty?: Difficulty;
   reason: string;
 }
 
@@ -919,6 +924,114 @@ export interface Accomplishment {
   events?: RewardEvent[];
   /** Which success moment to show. Older rows may lack this; treat as full. */
   surface?: RewardSurface;
+  /**
+   * Where this solve left the difficulty ladder.
+   *
+   * Recorded with the accomplishment rather than read live, for the same
+   * reason the rest of this object is: it describes the moment of the solve,
+   * and a later session must not rewrite it. Older rows lack it, and a
+   * `held` move is worth saying nothing about, so both read as absent.
+   */
+  ladder?: LadderMove | null;
+}
+
+/**
+ * The curriculum's pattern families, and what to call them on screen.
+ *
+ * The enum values are the database's; these are the words a learner reads.
+ * Defined here rather than in either front end so the family map, the lock
+ * screen and anything later all name a family the same way.
+ *
+ * Order is the order they are met, not alphabetical — the map reads as a route
+ * through the curriculum, and sorting it by name would hide that.
+ */
+export const PATTERN_FAMILIES = [
+  'FOUNDATIONS',
+  'ARRAYS_HASHING',
+  'TWO_POINTERS',
+  'SLIDING_WINDOW',
+  'STACK',
+  'BINARY_SEARCH',
+  'LINKED_LIST',
+  'TREES',
+  'TRIES',
+  'HEAP_PRIORITY_QUEUE',
+  'BACKTRACKING',
+  'GRAPHS',
+  'ADVANCED_GRAPHS',
+  'DP_1D',
+  'DP_2D',
+  'GREEDY',
+  'INTERVALS',
+  'MATH_GEOMETRY',
+  'BIT_MANIPULATION',
+] as const;
+
+export type PatternFamily = (typeof PATTERN_FAMILIES)[number];
+
+export const FAMILY_LABELS: Record<PatternFamily, string> = {
+  FOUNDATIONS: 'Foundations',
+  ARRAYS_HASHING: 'Arrays & hashing',
+  TWO_POINTERS: 'Two pointers',
+  SLIDING_WINDOW: 'Sliding window',
+  STACK: 'Stack',
+  BINARY_SEARCH: 'Binary search',
+  LINKED_LIST: 'Linked list',
+  TREES: 'Trees',
+  TRIES: 'Tries',
+  HEAP_PRIORITY_QUEUE: 'Heap & priority queue',
+  BACKTRACKING: 'Backtracking',
+  GRAPHS: 'Graphs',
+  ADVANCED_GRAPHS: 'Advanced graphs',
+  DP_1D: 'Dynamic programming, 1D',
+  DP_2D: 'Dynamic programming, 2D',
+  GREEDY: 'Greedy',
+  INTERVALS: 'Intervals',
+  MATH_GEOMETRY: 'Maths & geometry',
+  BIT_MANIPULATION: 'Bit manipulation',
+};
+
+/**
+ * One family's standing: how much of it the learner has met, and how their
+ * times sat against the bar while meeting it.
+ *
+ * `solved` counts distinct problems, never submissions — solving one problem
+ * six times is one problem met, and counting attempts would let a learner fill
+ * the map by repeating the easiest thing they know.
+ */
+export interface FamilyProgress {
+  family: PatternFamily;
+  label: string;
+  /** Whether the progression gate has opened this family yet. */
+  unlocked: boolean;
+  /** Distinct problems in this family with at least one correct solve. */
+  solved: number;
+  /** Active problems in the family. The denominator the map fills against. */
+  total: number;
+  /** ISO timestamp of the most recent solve here, or null. */
+  lastSolvedAt: string | null;
+  /**
+   * Median of runtime divided by budget across solves here, or null when
+   * nothing has been measured. Below 1 means comfortably inside the bar; above
+   * it means correct answers slower than the gate would allow today.
+   */
+  typicalRatio: number | null;
+}
+
+/**
+ * A move on the difficulty ladder, as the success screen says it.
+ *
+ * `held` is included so the type can describe every outcome, but the screens
+ * only render a move that actually happened: a line saying "you stayed where
+ * you were" after every ordinary solve is noise, and it would make the two
+ * moves that matter easy to miss.
+ */
+export interface LadderMove {
+  transition: 'promoted' | 'demoted' | 'held';
+  from: Difficulty;
+  to: Difficulty;
+  /** The ladder's own sentence, already written for a reader. */
+  reason: string;
 }
 
 /**

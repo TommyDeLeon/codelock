@@ -16,6 +16,7 @@ import type {
   DifficultyFocusInput,
   ComplexityFeedback,
   TimeBudgetOption,
+  FamilyProgress,
 } from '@codelock/shared';
 
 /**
@@ -183,6 +184,12 @@ export const api = {
 
   /** Skills and recent solves, with help and independent work kept apart. */
   progress: () => request<ProgressView>('/v1/progress'),
+
+  /**
+   * The curriculum map: every pattern family, how much of it has been met, and
+   * whether the progression gate has opened it yet.
+   */
+  families: () => request<{ families: FamilyProgress[] }>('/v1/progress/families'),
 
   /** The newest solve's success moment, so the dashboard can show it once. */
   latestAccomplishment: () =>

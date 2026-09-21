@@ -1,11 +1,23 @@
 import { Router } from 'express';
-import type { AccomplishmentKind, ProgressView } from '@codelock/shared';
+import {
+  FAMILY_LABELS,
+  PATTERN_FAMILIES,
+  type AccomplishmentKind,
+  type FamilyProgress,
+  type PatternFamily,
+  type ProgressView,
+} from '@codelock/shared';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { SKILLS, SKILL_LABELS } from '../services/skills.js';
 import { loadSkillSnapshot } from '../services/skillState.js';
+import {
+  availableFamiliesForTiers,
+  availableTiers,
+  loadProgressSnapshot,
+} from '../services/progression.js';
 import { STATE_LABELS } from '../services/tutor/accomplishment.js';
 import { describeFrontier, loadFrontierLocks, nearestInterview } from '../services/frontier.js';
 import { ALL_PROBLEMS } from '../corpus/problems/index.js';
@@ -17,6 +29,105 @@ progressRouter.use(withLocalUser);
 /** Absence long enough that the page says hello again, without any guilt. */
 const WELCOME_BACK_DAYS = 7;
 const KINDS: AccomplishmentKind[] = ['independent', 'assisted', 'worked_solution', 'recall', 'transfer'];
+
+/**
+ * GET /progress/families — the curriculum, and how much of it has been met.
+ *
+ * The skill map above answers "what can you do"; this answers "where have you
+ * been". They are different axes and the second is the one that reads as
+ * progress: a family fills in, and the gaps say what to study next.
+ *
+ * Distinct problems, never submissions. Solving the same problem six times is
+ * one problem met — counting attempts would let the map be filled by repeating
+ * the easiest thing in it, which is exactly the habit the corpus exists to
+ * break.
+ *
+ * Every family is returned, including the locked ones. A map with future
+ * families hidden cannot show a route; it only shows where you already are.
+ */
+progressRouter.get(
+  '/families',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+
+    const [snapshot, totals, solves] = await Promise.all([
+      loadProgressSnapshot(user.id),
+      prisma.problem.groupBy({
+        by: ['patternFamily'],
+        where: { isActive: true },
+        _count: { _all: true },
+      }),
+      // Correct-but-too-slow counts as met: the solution existed. The speed is
+      // reported separately, below, rather than deciding whether it happened.
+      prisma.submission.findMany({
+        where: {
+          userId: user.id,
+          status: { in: ['ACCEPTED', 'ACCEPTED_TOO_SLOW'] },
+        },
+        select: {
+          problemId: true,
+          runtimeMs: true,
+          gateMs: true,
+          createdAt: true,
+          problem: { select: { patternFamily: true } },
+        },
+      }),
+    ]);
+
+    const unlocked = new Set<string>(
+      availableFamiliesForTiers(snapshot, availableTiers(snapshot)),
+    );
+    const totalByFamily = new Map(totals.map((row) => [row.patternFamily, row._count._all]));
+
+    // One pass, because the volume is one person's history and a query per
+    // family would be nineteen round trips to say the same thing.
+    const seen = new Map<string, Set<string>>();
+    const ratios = new Map<string, number[]>();
+    const lastAt = new Map<string, number>();
+    for (const solve of solves) {
+      const family = solve.problem?.patternFamily;
+      if (!family) continue;
+      const problems = seen.get(family) ?? new Set<string>();
+      problems.add(solve.problemId);
+      seen.set(family, problems);
+
+      // A gate of zero would divide to Infinity, and a missing runtime means
+      // the solve predates timing. Neither is a measurement.
+      if (solve.runtimeMs !== null && solve.gateMs !== null && solve.gateMs > 0) {
+        const list = ratios.get(family) ?? [];
+        list.push(solve.runtimeMs / solve.gateMs);
+        ratios.set(family, list);
+      }
+
+      const at = solve.createdAt.getTime();
+      if (at > (lastAt.get(family) ?? 0)) lastAt.set(family, at);
+    }
+
+    const families: FamilyProgress[] = PATTERN_FAMILIES.map((family: PatternFamily) => {
+      const list = (ratios.get(family) ?? []).sort((a, b) => a - b);
+      return {
+        family,
+        label: FAMILY_LABELS[family],
+        unlocked: unlocked.has(family),
+        solved: seen.get(family)?.size ?? 0,
+        total: totalByFamily.get(family) ?? 0,
+        lastSolvedAt: lastAt.has(family) ? new Date(lastAt.get(family)!).toISOString() : null,
+        // Median rather than mean: one pathological first attempt at a hard
+        // problem would drag an average far enough to misdescribe the family.
+        typicalRatio: list.length === 0 ? null : Number(median(list).toFixed(2)),
+      };
+    });
+
+    res.json({ families });
+  }),
+);
+
+/** Middle value of an already-sorted list; the mean of the middle two if even. */
+function median(sorted: number[]): number {
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) return sorted[mid] as number;
+  return ((sorted[mid - 1] as number) + (sorted[mid] as number)) / 2;
+}
 
 /**
  * GET /progress — skills and recent accomplishments, for the desktop app.

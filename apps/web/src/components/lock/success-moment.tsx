@@ -78,6 +78,19 @@ function chime() {
   }
 }
 
+/**
+ * The ladder's bands, in the words the rest of the app uses.
+ *
+ * The move used to be a toast on the lock screen, which this screen replaces a
+ * moment later — so the one thing a learner most wants to see was the thing
+ * most easily missed. It is a line here instead, and it stays put.
+ */
+const DIFFICULTY_WORDS: Record<string, string> = {
+  EASY: 'Easy',
+  MEDIUM: 'Medium',
+  HARD: 'Hard',
+};
+
 const KIND_LABELS: Record<Accomplishment['kind'], string> = {
   independent: 'Solved on your own',
   assisted: 'Solved with help',
@@ -137,6 +150,17 @@ export function SuccessMoment({
           // default to motion and sound; it is dropped and the row treated as
           // full-by-omission only when the field is genuinely absent.
           (a.surface === undefined || a.surface === 'full' || a.surface === 'quiet') &&
+          // A ladder move is a claim about the learner's level, so a
+          // malformed one is dropped rather than half-rendered. Absent and
+          // null both mean nothing moved, which is the ordinary case.
+          (a.ladder === undefined ||
+            a.ladder === null ||
+            (typeof a.ladder.from === 'string' &&
+              typeof a.ladder.to === 'string' &&
+              typeof a.ladder.reason === 'string' &&
+              (a.ladder.transition === 'promoted' ||
+                a.ladder.transition === 'demoted' ||
+                a.ladder.transition === 'held'))) &&
           (a.events === undefined ||
             (Array.isArray(a.events) &&
               a.events.every((e) => !!e && typeof e.kind === 'string' && typeof e.note === 'string')));
@@ -220,6 +244,20 @@ export function SuccessMoment({
           {a ? a.headline : 'Your solution passed every test. Your progress is saved.'}
         </h1>
         {!a && loading && <p className="mt-2 text-[13px] text-muted">Working out what this solve showed…</p>}
+
+        {a?.ladder && a.ladder.transition !== 'held' && (
+          <p
+            className={cn(
+              'mt-4 inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-1.5 text-[13px] font-medium',
+              a.ladder.transition === 'promoted' ? 'text-success' : 'text-muted',
+            )}
+          >
+            <span aria-hidden>{a.ladder.transition === 'promoted' ? '↑' : '↓'}</span>
+            {DIFFICULTY_WORDS[a.ladder.from] ?? a.ladder.from} →{' '}
+            {DIFFICULTY_WORDS[a.ladder.to] ?? a.ladder.to}
+            <span className="font-normal text-muted">{a.ladder.reason}</span>
+          </p>
+        )}
 
         {a && details.length > 0 && (
           <ul aria-label="What this solve showed" className="mt-4 space-y-1.5 text-[15px] leading-relaxed">

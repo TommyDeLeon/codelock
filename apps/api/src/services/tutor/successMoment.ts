@@ -1,5 +1,5 @@
 import type { Problem } from '@prisma/client';
-import type { Accomplishment } from '@codelock/shared';
+import type { Accomplishment, LadderMove} from '@codelock/shared';
 import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import { recordStep } from '../learningLog.js';
@@ -26,6 +26,13 @@ export interface SuccessParams {
   problem: Problem & { testCases: Array<{ stdin: string; expectedStdout: string }> };
   sessionId: string | null;
   submission: { id: string; createdAt: Date };
+  /**
+   * Where this solve left the difficulty ladder, or null when it stayed put.
+   *
+   * Optional because the practice path has no ladder move to report: a
+   * submission outside a lock never advances anything.
+   */
+  ladder?: LadderMove | null;
 }
 
 /** Fire and forget. Never throws. */
@@ -122,6 +129,7 @@ export async function deriveSuccess(params: SuccessParams): Promise<Accomplishme
   }
 
   return deriveAccomplishment({
+    ladder: params.ladder ?? null,
     problem: {
       slug: problem.slug,
       title: problem.title,

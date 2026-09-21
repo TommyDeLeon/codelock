@@ -98,6 +98,15 @@ export interface ProgressUpdate {
   /** For the UI: "Promoted to Medium — 3 fast solves in a row." */
   transition: 'promoted' | 'demoted' | 'held';
   reason: string;
+  /**
+   * The difficulty this update moved away from.
+   *
+   * Set by the caller after the write, not by `applyOutcome`, which is pure
+   * and is given the previous row rather than returning it. The success screen
+   * names both ends of the move, and once the row is written the old value is
+   * gone.
+   */
+  previousDifficulty?: Difficulty;
 }
 
 /**

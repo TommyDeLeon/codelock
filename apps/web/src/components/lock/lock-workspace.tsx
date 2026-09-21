@@ -140,11 +140,12 @@ function Workspace({
       setResult(grade);
       setPane('results');
       if (grade.accepted && grade.unlockToken) {
-        if (grade.progress?.transition === 'promoted') {
-          toast.success(grade.progress.reason);
-        } else if (grade.progress?.transition === 'demoted') {
-          toast.info(grade.progress.reason);
-        }
+        // The ladder move is deliberately not a toast any more. It fired here,
+        // on a screen that the success moment replaces a moment later, so the
+        // single most motivating thing in the product was also the easiest to
+        // miss. It is written with the accomplishment now and rendered as a
+        // line that stays put — on the dashboard in the shell, on the success
+        // screen in a browser.
         // Clear the draft only once it can no longer be needed.
         window.localStorage.removeItem(draftKey);
         void onUnlocked(grade.unlockToken, grade);

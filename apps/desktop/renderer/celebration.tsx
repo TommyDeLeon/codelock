@@ -96,6 +96,20 @@ export function chime(): void {
   }
 }
 
+/**
+ * The ladder's bands, in the words the rest of the app uses.
+ *
+ * A move is worth a line of its own here rather than the toast it used to be.
+ * The toast fired on the lock screen, which this screen replaces a moment
+ * later — so the one thing a learner most wants to see was the thing most
+ * easily missed.
+ */
+const DIFFICULTY_WORDS: Record<string, string> = {
+  EASY: 'Easy',
+  MEDIUM: 'Medium',
+  HARD: 'Hard',
+};
+
 /** Saved data is only trusted when every part this screen renders has the right shape. */
 function isAccomplishment(value: unknown): value is Accomplishment {
   const a = value as Partial<Accomplishment> | null;
@@ -103,6 +117,16 @@ function isAccomplishment(value: unknown): value is Accomplishment {
   if (typeof a.headline !== 'string' || typeof a.helpSummary !== 'string') return false;
   if (typeof a.kind !== 'string' || !Object.prototype.hasOwnProperty.call(KIND_LABELS, a.kind)) return false;
   if (!Array.isArray(a.details) || !a.details.every((d) => typeof d === 'string')) return false;
+  // A ladder move is rendered as a claim about the learner's level, so a
+  // malformed one is dropped rather than half-rendered. Absent and null both
+  // mean "nothing moved", which is the common case and says nothing.
+  if (a.ladder !== undefined && a.ladder !== null) {
+    const l = a.ladder;
+    const moved = l.transition === 'promoted' || l.transition === 'demoted' || l.transition === 'held';
+    if (!moved || typeof l.from !== 'string' || typeof l.to !== 'string' || typeof l.reason !== 'string') {
+      return false;
+    }
+  }
   // Newer, optional fields. An unknown surface must not default to motion and sound.
   if (a.surface !== undefined && a.surface !== 'full' && a.surface !== 'quiet') return false;
   if (
@@ -337,6 +361,28 @@ export function Celebration() {
         >
           {a.headline}
         </h2>
+
+        {a.ladder && a.ladder.transition !== 'held' && (
+          <p
+            style={{
+              margin: '14px auto 0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 13,
+              fontWeight: 500,
+              border: '1px solid var(--border)',
+              borderRadius: 999,
+              padding: '5px 14px',
+              color: a.ladder.transition === 'promoted' ? 'var(--accent)' : 'var(--muted)',
+            }}
+          >
+            <span aria-hidden>{a.ladder.transition === 'promoted' ? '↑' : '↓'}</span>
+            {DIFFICULTY_WORDS[a.ladder.from] ?? a.ladder.from} →{' '}
+            {DIFFICULTY_WORDS[a.ladder.to] ?? a.ladder.to}
+            <span style={{ fontWeight: 400, color: 'var(--muted)' }}>{a.ladder.reason}</span>
+          </p>
+        )}
 
         {details.length > 0 && (
           <ul

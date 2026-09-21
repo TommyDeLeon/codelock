@@ -523,7 +523,26 @@ export async function gradeSubmission(params: {
   // Recorded after the response, never awaited: the unlock token must not wait
   // on a sentence about the solve. The success screen fetches it by
   // submission id.
-  recordSuccess({ userId, problem, sessionId: session.id, submission });
+  recordSuccess({
+    userId,
+    problem,
+    sessionId: session.id,
+    submission,
+    // The ladder move belongs to this solve, so it is written with the rest of
+    // what this solve showed rather than read live later. It used to surface
+    // only as a toast on the lock screen — which the success screen replaces a
+    // moment afterwards, so the one thing a learner most wants to see was the
+    // thing most easily missed.
+    ladder:
+      progress.transition === 'held'
+        ? null
+        : {
+            transition: progress.transition,
+            from: progress.previousDifficulty ?? progress.currentDifficulty,
+            to: progress.currentDifficulty,
+            reason: progress.reason,
+          },
+  });
 
   return { ...base, unlockToken, progress };
 }
@@ -576,6 +595,10 @@ async function advanceProgress(
   const update = applyOutcome(current, outcome);
   const { transition, reason, ...persisted } = update;
   await prisma.userProgress.update({ where: { userId }, data: persisted });
+
+  // Where it moved from, kept beside where it landed. The success screen names
+  // both, and after the write the previous value is gone.
+  update.previousDifficulty = current.currentDifficulty;
 
   // A move between difficulties is the clearest signal the log can carry, and
   // the reason matters more than the direction: "held" is not a non-event when

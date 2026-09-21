@@ -1,4 +1,4 @@
-import type { Accomplishment, AccomplishmentKind, SkillProgressView } from '@codelock/shared';
+import type { Accomplishment, AccomplishmentKind, SkillProgressView, LadderMove} from '@codelock/shared';
 import { SKILLS, SKILL_LABELS, skillsRequiredBy, type Skill, type SkillProblem, type SkillSnapshot } from '../skills.js';
 import { chooseSurface, deriveRewardEvents } from './reward.js';
 import { starterPack } from './starter.js';
@@ -47,6 +47,8 @@ export interface AccomplishmentInput {
   /** A similar problem picked by the caller when no reviewed one exists. */
   fallbackVariation: { slug: string; title: string } | null;
   feedbackDue: boolean;
+  /** Where the solve left the difficulty ladder, or null when it stayed put. */
+  ladder?: LadderMove | null;
 }
 
 /** Days before solving the same problem again counts as later recall. */
@@ -254,6 +256,7 @@ export function deriveAccomplishment(input: AccomplishmentInput): Accomplishment
     askFeedback: input.feedbackDue,
     events,
     surface: chooseSurface(events),
+    ladder: input.ladder ?? null,
   };
 }
 
