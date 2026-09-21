@@ -41,7 +41,10 @@ const json = `${JSON.stringify(stats, null, 2)}\n`;
 if (process.argv.includes('--check')) {
   let current = '';
   try { current = readFileSync(OUT, 'utf8'); } catch { /* missing counts as stale */ }
-  if (current !== json) {
+  // Git on Windows may check the file out with CRLF; line endings are not staleness.
+  if (current.replace(/
+/g, '
+') !== json) {
     console.error('corpus-stats.json is stale. Run: npm run corpus:stats -w @codelock/api');
     process.exit(1);
   }
