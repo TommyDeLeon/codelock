@@ -46,7 +46,7 @@ lives here.
 | `apps/desktop` | Electron. The dashboard and the kiosk lock shell. Only this enforces anything. |
 | `apps/mobile` | Expo client and a native Android overlay module. |
 | `packages/shared` | The cross-client type contract. |
-| `packages/ui` | Design tokens and the components the lock screen and the demo both render, so the demo cannot drift from the thing it demonstrates. |
+| `packages/ui` | The palette, design tokens, and the components the lock screen and the demo both render, so the demo cannot drift from the thing it demonstrates. See [docs/DESIGN.md](docs/DESIGN.md). |
 
 Postgres is the source of truth for timers, sessions, submissions, progress and
 history. Old account and integration columns remain in the migration history so

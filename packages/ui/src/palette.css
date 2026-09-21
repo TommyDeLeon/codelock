@@ -68,6 +68,10 @@
   --cl-warning: #79591f;     /* 5.65:1 */
   --cl-warning-soft: #f3e9d3;
 
+  /* The scrim behind a modal. Ink rather than black: a neutral-black veil over
+     warm paper reads as a colour cast, and this one is the page's own ink. */
+  --cl-scrim: rgb(12 12 10 / 0.82);
+
   --cl-shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --cl-shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
   --cl-glow: 0.04;
@@ -116,6 +120,7 @@
   --cl-dark-warning: #d8bf8e;
   --cl-dark-warning-soft: #3d3526;
 
+  --cl-dark-scrim: rgb(6 6 5 / 0.88);
   --cl-dark-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
   --cl-dark-shadow-raised: 0 4px 16px -4px rgb(0 0 0 / 0.6);
 
@@ -149,6 +154,7 @@
   --cl-danger-soft: var(--cl-dark-danger-soft);
   --cl-warning: var(--cl-dark-warning);
   --cl-warning-soft: var(--cl-dark-warning-soft);
+  --cl-scrim: var(--cl-dark-scrim);
   --cl-shadow-card: var(--cl-dark-shadow-card);
   --cl-shadow-raised: var(--cl-dark-shadow-raised);
   --cl-glow: var(--cl-dark-glow);
@@ -180,7 +186,8 @@
     --cl-danger-soft: var(--cl-dark-danger-soft);
     --cl-warning: var(--cl-dark-warning);
     --cl-warning-soft: var(--cl-dark-warning-soft);
-    --cl-shadow-card: var(--cl-dark-shadow-card);
+    --cl-scrim: var(--cl-dark-scrim);
+  --cl-shadow-card: var(--cl-dark-shadow-card);
     --cl-shadow-raised: var(--cl-dark-shadow-raised);
     --cl-glow: var(--cl-dark-glow);
     color-scheme: dark;

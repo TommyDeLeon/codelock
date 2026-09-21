@@ -19,6 +19,11 @@ FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
+# The shared UI package: design tokens, the palette, and the components the
+# lock screen and the demo both render. Added when those were lifted out of
+# apps/web; without it `next build` fails inside the image while succeeding on
+# a developer's machine, where the workspace is already on disk.
+COPY packages/ui/package.json packages/ui/
 RUN npm ci --workspace @codelock/web --include-workspace-root
 
 # --- build --------------------------------------------------------------
@@ -33,6 +38,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_REPO_URL=$NEXT_PUBLIC_REPO_URL \
     NEXT_TELEMETRY_DISABLED=1
 COPY packages/shared ./packages/shared
+COPY packages/ui ./packages/ui
 COPY apps/web ./apps/web
 RUN npm run build --workspace @codelock/web
 

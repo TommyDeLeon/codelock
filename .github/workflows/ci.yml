@@ -71,6 +71,13 @@ jobs:
       # The web app imports @codelock/shared as source, so a contract change
       # that breaks a client fails here rather than at runtime.
       - run: npm run typecheck --workspace @codelock/shared
+      # One palette, enforced. This repository carried four at once — pine
+      # green in the shared tokens, brick red on the site and the dashboard,
+      # peach on the dark lock screen — and the file arguing hardest for one of
+      # them was the file nobody else read. A comment cannot stop a second
+      # stylesheet being written; this can.
+      - run: node scripts/check-palette.mjs
+
       - run: npm run typecheck --workspace @codelock/ui
       - run: npm run typecheck --workspace @codelock/web
       - run: npm run build --workspace @codelock/web
