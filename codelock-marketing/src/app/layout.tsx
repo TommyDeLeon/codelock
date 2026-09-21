@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Mono, Literata, Source_Sans_3 } from 'next/font/google';
 import { EditorialShell } from '@/components/site/editorial-shell';
 import { Providers } from './providers';
+import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
 /**
@@ -48,12 +49,10 @@ const mono = IBM_Plex_Mono({
   fallback: ['Cascadia Mono', 'Consolas', 'Menlo', 'Courier New', 'monospace'],
 });
 
-// `||` rather than `??`: an unset build arg arrives as the empty string, not as
-// undefined, and `new URL('')` throws.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3100';
+// Resolved once in lib/site.ts, shared with the sitemap and robots.txt.
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: { default: 'CodeLock — earn your screen time', template: '%s · CodeLock' },
   description:
     'A focus timer that locks your device until you solve a programming problem — correctly and fast enough. Free, open source, and runs entirely on your own machine.',

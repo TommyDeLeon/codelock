@@ -26,6 +26,7 @@ lives here.
 - [Backups and recovery](#backups-and-recovery)
 - [Mobile over a private network](#mobile-over-a-private-network)
 - [Desktop packaging and trusted install](#desktop-packaging-and-trusted-install)
+- [Deploying the marketing site](#deploying-the-marketing-site)
 - [Security boundaries](#security-boundaries)
 - [Platform limits — what actually beats the lock](#platform-limits--what-actually-beats-the-lock)
 - [Data and removal](#data-and-removal)
@@ -283,6 +284,44 @@ For signing, supply `CSC_LINK` and `CSC_KEY_PASSWORD` at build time.
 If `publisherName` is ever set in `electron-builder.yml` it must exactly match
 the certificate's CN — electron-updater compares them and a mismatch makes
 every update fail *silently*.
+
+## Deploying the marketing site
+
+`codelock-marketing` is the only part of this repository meant to be public. It
+is seven static routes with no API client — the demo grades in the browser — so
+it deploys to Vercel as static output and needs no secrets.
+
+On Vercel, set the project's **Root Directory** to `codelock-marketing`. The
+rest is in [`codelock-marketing/vercel.json`](codelock-marketing/vercel.json),
+including an install command scoped to three workspaces:
+
+```
+npm install --workspace=@codelock/marketing --workspace=@codelock/ui   --workspace=@codelock/shared --include-workspace-root
+```
+
+The scope matters. A plain workspace install pulls in `apps/desktop`, whose
+Electron download is roughly 100 MB of build time and one more thing that can
+fail — on a deployment that never runs Electron. Measured on a clean tree: 28
+seconds and 525 MB scoped, against 2.2 GB unscoped.
+
+**Environment variables.** None are required. `NEXT_PUBLIC_SITE_URL` sets the
+canonical origin for Open Graph tags and the sitemap; leave it unset and the
+build falls back to Vercel's own production hostname, which is correct for a
+preview and correct for production until a custom domain is attached. Set it to
+the custom domain once there is one, or the sitemap will advertise the
+`.vercel.app` host. `NEXT_PUBLIC_RELEASE_TAG` turns the install page's download
+buttons into real links once a release is cut; unset, the page shows the
+build-from-source path instead.
+
+**Custom domain.** Add the domain in Vercel, then point DNS at it from wherever
+the domain is registered — an `A` record for the apex and a `CNAME` for `www`,
+using the values Vercel shows. Registrar and host are different jobs; buying the
+domain somewhere does not mean serving the site from there.
+
+**`apps/web` is not deployed publicly.** It serves the lock screen that the
+desktop shell loads from `http://localhost:3000` on the user's own machine,
+plus the in-app notices. Its metadata sets `robots: { index: false }`
+deliberately.
 
 ## Security boundaries
 
