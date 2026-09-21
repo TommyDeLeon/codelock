@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+:root { --cl-accent: #7a5c30; }
+@theme { --color-accent: var(--cl-accent); }
+.probe { @apply text-accent bg-accent; }

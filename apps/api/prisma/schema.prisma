@@ -42,6 +42,22 @@ enum SpeedGateMode {
   ALWAYS
 }
 
+/// Which palette every surface shows.
+///
+/// SYSTEM is a real choice rather than the absence of one: it means "keep
+/// following the operating system", which is different from having picked
+/// whatever the OS happens to be right now — Windows switches theme on a
+/// schedule, and a stored SYSTEM follows it while a stored DARK does not.
+///
+/// Stored per profile rather than per device so the dashboard and the lock
+/// screen agree. They are different origins with different local storage, so
+/// a choice made in one was previously invisible to the other.
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
 /// How far into the curriculum a problem sits.
 ///
 /// Not the same axis as `Difficulty`, and the difference matters: an EASY
@@ -239,6 +255,11 @@ model TimerConfig {
   timeBudgetMinutes  Int      @default(30)
   /// Whether the speed gate applies to a problem the learner has never solved.
   speedGateMode      SpeedGateMode @default(AFTER_FIRST_SOLVE)
+  /// The palette, shared by the dashboard and the lock screen.
+  ///
+  /// Light by default, deliberately: these screens are read, and a first run
+  /// should land on the theme the interface was designed in.
+  theme              ThemePreference @default(LIGHT)
   updatedAt          DateTime @updatedAt
 
   @@map("timer_configs")

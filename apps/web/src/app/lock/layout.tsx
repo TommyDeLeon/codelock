@@ -1,6 +1,7 @@
 import { ConnectionBanner } from '@/components/connection-banner';
 import type { Metadata } from 'next';
 import './lock.css';
+import { LockSurface } from '@/components/lock/lock-surface';
 
 // Pages under this route are client components and cannot export metadata
 // themselves, so each segment carries its own here.
@@ -18,30 +19,15 @@ export const metadata: Metadata = {
  * stranger reading the landing page was told the database was unreachable, and
  * the demo (which is deliberately database-free and works fine without one)
  * carried an alarming banner about a failure that did not affect it.
+ *
+ * The palette comes from LockSurface, which reads it from the profile so that
+ * this page and the dashboard cannot disagree about the theme.
  */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  /**
-   * The lock screen is always dark, whatever the theme preference says.
-   *
-   * This is the one page the user did not choose to open. It arrives full
-   * screen, unannounced, and often at night — and in light mode that is a
-   * white rectangle taking over the whole display. The rest of the site
-   * honours light, dark and system; this page is a takeover, and a takeover
-   * should not also be a flashbang.
-   *
-   * `dark` is a class variant here (`@custom-variant dark (&:where(.dark,
-   * .dark *))` in globals.css), so scoping it to a wrapper flips both the
-   * tokens and every `dark:` utility inside without touching the user's saved
-   * preference. The explicit background and min-height matter: the tokens only
-   * apply inside this subtree, so the light page background would otherwise
-   * still show through around it.
-   */
   return (
-    // One viewport-high column: when the outage banner appears it takes its
-    // height from the page below instead of pushing the escape hint off-screen.
-    <div className="lock-surface dark flex h-dvh flex-col bg-bg text-fg">
+    <LockSurface>
       <ConnectionBanner />
       <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
-    </div>
+    </LockSurface>
   );
 }

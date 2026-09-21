@@ -10,6 +10,18 @@
  * following the OS", which differs from having picked whatever the OS happens
  * to be right now, because the OS can change later — Windows switches theme on
  * a schedule — and a stored `system` follows it while a stored `dark` does not.
+ *
+ * ## Where the choice actually lives
+ *
+ * On the profile, served by /v1/settings/timer. The dashboard and the lock
+ * screen are different origins with different local storage, so a choice made
+ * in one used to be invisible to the other: the shell could be light while the
+ * screen it opened was dark.
+ *
+ * localStorage is kept, demoted to a cache. It is read before paint so the
+ * window does not flash the wrong palette while the request is in flight, and
+ * it is what the app falls back to when the API cannot be reached — a theme is
+ * not worth failing a launch over.
  */
 export type ThemePreference = 'light' | 'dark' | 'system';
 
@@ -69,4 +81,19 @@ export function writePreference(preference: ThemePreference): void {
 /** Put the choice on the document root, where the stylesheet can see it. */
 export function applyTheme(preference: ThemePreference): void {
   document.documentElement.setAttribute('data-theme', themeAttribute(preference));
+}
+
+/**
+ * The profile's stored value, and this module's names for it.
+ *
+ * The server speaks the Prisma enum (LIGHT/DARK/SYSTEM); the stylesheet and
+ * the attribute here are lowercase. Converting in one place keeps the mapping
+ * from being reinvented at each call site.
+ */
+export function fromStored(value: string | null | undefined): ThemePreference {
+  return value === 'DARK' ? 'dark' : value === 'SYSTEM' ? 'system' : 'light';
+}
+
+export function toStored(preference: ThemePreference): 'LIGHT' | 'DARK' | 'SYSTEM' {
+  return preference === 'dark' ? 'DARK' : preference === 'system' ? 'SYSTEM' : 'LIGHT';
 }

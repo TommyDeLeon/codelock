@@ -171,6 +171,12 @@ export interface TimerConfig {
    * ever behaved as ALWAYS.
    */
   speedGateMode?: SpeedGateMode;
+  /**
+   * The palette, shared by the dashboard and the lock screen so a choice made
+   * in one is honoured by the other. Optional for older servers, which had no
+   * shared value and left each surface to remember its own.
+   */
+  theme?: ThemePreference;
   focusDifficulty?: Difficulty | null;
 }
 
@@ -377,6 +383,15 @@ export interface TimeBudgetOption {
   problemCount: number;
   available: boolean;
 }
+
+/**
+ * Which palette every surface shows. Mirrors the Prisma enum.
+ *
+ * SYSTEM means "keep following the operating system", which is not the same
+ * as having picked whatever the OS is right now: the OS can change later, and
+ * a stored SYSTEM follows it while a stored DARK does not.
+ */
+export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
 
 /** When the speed gate applies. Mirrors the Prisma enum of the same name. */
 export type SpeedGateMode = 'AFTER_FIRST_SOLVE' | 'ALWAYS';

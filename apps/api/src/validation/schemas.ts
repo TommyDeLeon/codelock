@@ -41,6 +41,8 @@ export const timerConfigSchema = z.object({
   timeBudgetMinutes: z.number().int().min(3).max(180).optional(),
   /** Whether the speed gate applies to a problem never solved before. */
   speedGateMode: z.enum(['AFTER_FIRST_SOLVE', 'ALWAYS']).optional(),
+  /** The palette, shared by the dashboard and the lock screen. */
+  theme: z.enum(['LIGHT', 'DARK', 'SYSTEM']).optional(),
 }).refine(
   (v) =>
     v.activeFromMinute === undefined ||

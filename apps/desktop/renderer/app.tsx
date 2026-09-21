@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { OAuthProviderName } from '@codelock/shared';
 import { openExternal } from './bridge';
+import { api } from './api';
 import { DashboardScreen } from './screens/dashboard';
 import { SettingsScreen } from './screens/settings';
 import { LearnProgressScreen } from './screens/progress';
@@ -8,6 +9,8 @@ import { LockMark } from './lock-mark';
 import { ProviderMark } from './provider-mark';
 import {
   applyTheme,
+  fromStored,
+  toStored,
   readPreference,
   writePreference,
   THEME_ORDER,
@@ -37,10 +40,38 @@ const TAB_LABELS: Record<Tab, string> = {
 function ThemeToggle() {
   const [preference, setPreference] = useState<ThemePreference>(readPreference);
 
+  /*
+    The cached value painted the window; the profile decides what it should
+    be. Reconciling on mount is what makes a choice made on the lock screen
+    show up here, and it is deliberately quiet: a failure leaves the cached
+    theme in place, because an unreachable API is not a reason to repaint.
+  */
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .timer()
+      .then(({ timerConfig }) => {
+        if (cancelled || !timerConfig.theme) return;
+        const stored = fromStored(timerConfig.theme);
+        if (stored === readPreference()) return;
+        setPreference(stored);
+        writePreference(stored);
+        applyTheme(stored);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const choose = (next: ThemePreference) => {
+    // Applied first, saved second. The palette changes on the click rather
+    // than on the round trip, and a failed save costs the sync, not the
+    // choice — this window is already wearing it.
     setPreference(next);
     writePreference(next);
     applyTheme(next);
+    void api.saveTimer({ theme: toStored(next) }).catch(() => undefined);
   };
 
   const label: Record<ThemePreference, string> = {
