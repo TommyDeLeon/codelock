@@ -165,6 +165,16 @@ export const api = {
    */
   timeBudgets: () => request<{ budgets: TimeBudgetOption[] }>('/v1/settings/time-budgets'),
 
+  /**
+   * Why a session was stepped away from. Answered once, and only for a
+   * session that actually ended that way.
+   */
+  setAbandonReason: (sessionId: string, reason: string) =>
+    request<{ reason: string; countedAgainstLevel: boolean }>(`/v1/lock/${sessionId}/reason`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
   /** The learning log: what you met, what you tried, and how it went. */
   log: (params: { limit?: number; kind?: string[] } = {}) => {
     const q = new URLSearchParams();

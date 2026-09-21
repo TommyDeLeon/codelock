@@ -91,10 +91,23 @@ for (const file of cssFiles(ROOT)) {
 
   const source = readFileSync(file, 'utf8');
 
-  source.split('\n').forEach((line, i) => {
-    // Comments explain history and often quote the hexes that caused it. They
-    // are the record of why this check exists; flagging them would delete it.
-    const code = line.replace(/\/\*.*?\*\//g, '').split('/*')[0] ?? '';
+  /*
+    Block comments are blanked across the whole file before anything is read
+    line by line, with their newlines kept so reported line numbers stay true.
+
+    Doing this per line does not work, and failed twice in a row here: the
+    middle of a multi-line comment carries no `/*` of its own, so a sentence
+    *explaining* a colour was flagged as declaring one. Comments are where the
+    history lives — this very file quotes the hexes that caused the drift — and
+    a check that cannot read one without tripping over it would push people
+    into deleting the explanations to make it pass.
+  */
+  const blanked = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+  const lines = source.split('\n');
+
+  blanked.split('\n').forEach((codeLine, i) => {
+    const line = lines[i] ?? '';
+    const code = codeLine.split('//')[0] ?? '';
 
     // A mask reads only the alpha channel of whatever colour it is given, so
     // the colour itself carries no meaning: `#000` there is the conventional

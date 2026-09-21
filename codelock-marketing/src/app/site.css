@@ -129,6 +129,71 @@
 */
 .marketing-site .hero-facts { font-size: 13px; line-height: 1.9; color: var(--color-muted); }
 .marketing-site .lock-spread { background: var(--color-surface); color: var(--color-fg); padding-top: 28px; }
+
+/*
+  The hero figure as a scene rather than a picture.
+
+  Three things, and the order they are layered matters:
+
+    1. **A plate behind it.** A second surface, offset up and inset, carrying
+       nothing but an edge and a shadow. It is what makes the capture read as
+       the top of a stack instead of a single flat rectangle, and it costs no
+       second screenshot — there is nothing on it to see.
+    2. **Bleed.** The scene runs wider than the column of text above it and
+       off the right edge of the page, so the product continues past the crop.
+       A composition that stops politely inside the margins looks like a
+       diagram of the product; one that runs off the edge looks like a window
+       onto it.
+    3. **A fade at the edges.** The scene dissolves into the page rather than
+       ending in a hard line. This is the single largest part of the effect,
+       and the easiest to overdo: the mask only touches the outer few percent,
+       so nothing anyone is trying to read is ever under it.
+
+  None of it is animation. Depth is a static property and behaves like one.
+*/
+.marketing-site .lock-spread .reportage { position: relative; }
+
+.marketing-site .lock-spread .capture-link {
+  position: relative;
+  /* Past the right edge: the scene is a crop of something larger. Clamped so
+     it never pushes a horizontal scrollbar onto the page. */
+  width: min(114%, calc(100vw - var(--site-gutter)));
+  border-radius: var(--radius-md, 12px);
+  /* The outer 4% dissolves. Everything legible sits inside the other 92%. */
+  /* One declaration per line: the palette check reads line by line, and a
+     continuation line carrying a bare #000 looks exactly like a stray colour. */
+  mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%), linear-gradient(to bottom, #000 0%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%), linear-gradient(to bottom, #000 0%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* The plate. Empty on purpose — a second screenshot back here would compete
+   with the one in front for the reader's attention and win, because it is the
+   one they have not seen yet. */
+.marketing-site .lock-spread .capture-link::before {
+  content: '';
+  position: absolute;
+  inset: -18px 3% auto 3%;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-bottom: 0;
+  border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+  background: var(--color-surface-2);
+  box-shadow: var(--cl-shadow-raised);
+  z-index: -1;
+}
+
+@media (max-width: 900px) {
+  /* No bleed and no plate on a phone. There is no room for a scene, and a
+     masked edge on a narrow screen just looks like a rendering fault. */
+  .marketing-site .lock-spread .capture-link {
+    width: 100%;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .marketing-site .lock-spread .capture-link::before { display: none; }
+}
 .marketing-site .spread-heading { display: flex; justify-content: space-between; gap: 24px; align-items: baseline; padding-bottom: 26px; }
 .marketing-site .spread-heading .eyebrow { color: var(--color-muted); }
 .marketing-site .spread-heading > p:last-child { font-family: var(--font-display); font-size: 27px; }

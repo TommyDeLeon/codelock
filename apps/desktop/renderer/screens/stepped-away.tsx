@@ -142,6 +142,8 @@ export function SteppedAwayMoment({
             is worth more than a solve you guessed your way into.
           </p>
 
+          <ReasonPicker sessionId={sessionId} />
+
           {review.editorial && (
             <section className="rule" style={{ marginTop: 24, paddingTop: 16 }}>
               <p className="eyebrow" style={{ margin: '0 0 8px' }}>
@@ -218,5 +220,83 @@ export function SteppedAwayMoment({
         </>
       )}
     </div>
+  );
+}
+
+/** The four answers, in the order someone is most likely to mean them. */
+const REASONS = [
+  { value: 'NO_TIME', label: 'I ran out of time' },
+  { value: 'WRONG_MOMENT', label: 'Caught me mid-something' },
+  { value: 'TOO_HARD', label: 'This one was too hard' },
+  { value: 'NOT_TONIGHT', label: 'Not tonight' },
+] as const;
+
+/**
+ * One tap, and only one.
+ *
+ * Stepping away is counted against the difficulty ladder the moment it
+ * happens, because an exit that waits for an answer nobody has to give is a
+ * free exit. This is where that count gets *withdrawn*: three of these four
+ * answers describe a moment rather than a difficulty, and a device that makes
+ * the next problems easier because a timer fired at a bad time has learned
+ * the wrong thing.
+ *
+ * Nothing here blocks anything. There is no submit, no confirmation step, and
+ * skipping it is the default — the panel closes on Escape like it always did,
+ * and an unanswered session simply keeps the count it already had.
+ */
+function ReasonPicker({ sessionId }: { sessionId: string }) {
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<string | null>(null);
+
+  if (chosen) {
+    return (
+      <p style={{ margin: '18px 0 0', fontSize: 13, color: 'var(--muted)' }} role="status">
+        {outcome ?? 'Noted.'}
+      </p>
+    );
+  }
+
+  return (
+    <section style={{ marginTop: 22 }} aria-label="What happened">
+      <p style={{ margin: '0 0 8px', fontSize: 12.5, color: 'var(--faint)' }}>
+        Optional — what happened? It decides whether this counts toward your level.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {REASONS.map((reason) => (
+          <button
+            key={reason.value}
+            type="button"
+            onClick={() => {
+              setChosen(reason.value);
+              api
+                .setAbandonReason(sessionId, reason.value)
+                .then((r) =>
+                  setOutcome(
+                    r.countedAgainstLevel
+                      ? 'Noted — this one counts toward easing the level.'
+                      : 'Noted — this one will not count toward your level.',
+                  ),
+                )
+                // A reason that fails to save is not worth a word to someone
+                // who has just stepped away from a problem.
+                .catch(() => setOutcome('Noted.'));
+            }}
+            style={{
+              font: 'inherit',
+              fontSize: 12.5,
+              padding: '7px 13px',
+              cursor: 'pointer',
+              borderRadius: 999,
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--muted)',
+            }}
+          >
+            {reason.label}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }

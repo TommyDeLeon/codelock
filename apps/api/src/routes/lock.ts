@@ -6,6 +6,7 @@ import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
 import { lockActionLimiter } from '../middleware/rateLimit.js';
 import {
+  abandonReasonSchema,
   abandonSchema,
   shortenSchema,
   armSessionSchema,
@@ -451,6 +452,75 @@ lockRouter.post(
  * ends the evening, so routing "this is too hard" through it would ration
  * help and charge for saying something true.
  */
+lockRouter.post(
+  '/:id/reason',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const { id } = idParamSchema.parse(req.params);
+    const { reason } = abandonReasonSchema.parse(req.body ?? {});
+    const session = await requireOwnedSession(user.id, id);
+
+    if (session.state !== LockState.ABANDONED) {
+      throw ApiError.conflict('Only a session that was stepped away from has a reason');
+    }
+    // Asked once. A learner who could revise the answer could also revise the
+    // consequence, which would make "I ran out of time" a retroactive undo for
+    // any session that turned out to be hard.
+    if (session.abandonReason) {
+      throw ApiError.conflict('That session already has a reason');
+    }
+
+    await prisma.lockSession.update({ where: { id: session.id }, data: { abandonReason: reason } });
+
+    /*
+      Only TOO_HARD is about difficulty.
+
+      Stepping away is recorded against the ladder the moment it happens,
+      because the alternative — waiting for an answer that may never come —
+      makes an unanswered exit free, and a free exit is not a commitment
+      device. So the count is applied first and *withdrawn* here when the
+      learner says the problem was not the reason.
+
+      A demotion that already happened is left alone. It only means easier
+      problems for a while, which is a kindness rather than a penalty, and
+      unwinding a level change would be a far stranger thing to do to someone
+      than leaving it.
+    */
+    const counts = reason === 'TOO_HARD';
+    const progress = counts
+      ? null
+      : await prisma.userProgress.update({
+          where: { userId: user.id },
+          data: { consecutiveFailures: { decrement: 1 }, totalFailed: { decrement: 1 } },
+        });
+
+    // A decrement can only go below zero if two withdrawals raced. Clamping
+    // here rather than in the update keeps it a single round trip in the case
+    // that always happens.
+    if (progress && (progress.consecutiveFailures < 0 || progress.totalFailed < 0)) {
+      await prisma.userProgress.update({
+        where: { userId: user.id },
+        data: {
+          consecutiveFailures: Math.max(0, progress.consecutiveFailures),
+          totalFailed: Math.max(0, progress.totalFailed),
+        },
+      });
+    }
+
+    // SESSION_FLOW rather than a kind of its own, following this log's stated
+    // rule: one coarse kind with `detail.action` naming which control was
+    // used, because a permanent enum value is a poor way to record a fact that
+    // a field can carry.
+    void recordStep(user.id, {
+      kind: 'SESSION_FLOW',
+      sessionId: session.id,
+      detail: { action: 'abandon_reason', reason, countedAgainstLevel: counts },
+    });
+
+    res.json({ reason, countedAgainstLevel: counts });
+  }),
+);
+
 lockRouter.post(
   '/:id/flow',
   lockActionLimiter,

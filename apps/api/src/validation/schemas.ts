@@ -109,6 +109,17 @@ export const abandonSchema = z.object({
   reason: z.enum(['user_gave_up', 'kill_switch']).optional(),
 });
 
+/**
+ * Why the learner stepped away, in their own words.
+ *
+ * A closed set, and a small one: this is answered in one tap at a moment
+ * nobody wants to spend on a form, and every extra option is a decision asked
+ * of someone who has just given up on something.
+ */
+export const abandonReasonSchema = z.object({
+  reason: z.enum(['TOO_HARD', 'NO_TIME', 'WRONG_MOMENT', 'NOT_TONIGHT']),
+});
+
 export const submitSchema = z.object({
   problemId: z.string().uuid(),
   lockSessionId: z.string().uuid().optional(),

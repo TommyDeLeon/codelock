@@ -58,6 +58,24 @@ enum ThemePreference {
   SYSTEM
 }
 
+/// Why a session ended without a solve, in the learner's own words.
+///
+/// Distinct from `escapeReason`, which records *how* they left — the kill
+/// switch, a spent skip, giving up from another device. This is the question
+/// only the person can answer, and the two have different jobs: one is an
+/// audit trail, this decides whether the ladder should read anything into it.
+///
+/// TOO_HARD is the only one that counts against the level. The rest describe a
+/// moment rather than a difficulty: the timer fired while someone was in the
+/// middle of something, and a device that responds to that by making the next
+/// problems easier has learned the wrong lesson from it.
+enum AbandonReason {
+  TOO_HARD
+  NO_TIME
+  WRONG_MOMENT
+  NOT_TONIGHT
+}
+
 /// How far into the curriculum a problem sits.
 ///
 /// Not the same axis as `Difficulty`, and the difference matters: an EASY
@@ -501,6 +519,9 @@ model LockSession {
   /// particular would become an unlock button. Grading reads these, never the
   /// live TimerConfig.
   speedGateMode    SpeedGateMode  @default(AFTER_FIRST_SOLVE)
+  /// Why the learner stepped away, if they said. Null while unanswered, and
+  /// null forever on a session nobody was asked about.
+  abandonReason    AbandonReason?
   timeBudgetMinutes Int?
   /// True when no problem fitting the budget could be served and the selector
   /// relaxed past it. Such a session still opens the lock; it does not count
