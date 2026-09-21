@@ -153,6 +153,35 @@
   background-image: var(--capture-dark-jpg);
 }
 .marketing-site .capture-image[data-capture="codelock-app-lock"] { aspect-ratio: 1600 / 670; }
+
+/*
+  A captured surface sits *on* the page rather than being printed into it.
+
+  Every figure here was a flat rectangle butted against cream, which reads as
+  an illustration of the product rather than as the product. Three things fix
+  that, and none of them is animation:
+
+    - a hairline edge, so the surface has a boundary of its own;
+    - two shadows, one tight for contact and one long for distance;
+    - a slight lift on hover, because a thing with depth responds to being
+      approached.
+
+  The radius stays small. A product with square windows, photographed with
+  round corners, looks like a mockup of a different product.
+*/
+.marketing-site .capture-link {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  overflow: hidden;
+  box-shadow: var(--cl-shadow-scene);
+  transform: translateY(0);
+  transition: box-shadow 520ms var(--ease-editorial), transform 520ms var(--ease-editorial);
+}
+.marketing-site .capture-link:hover { transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site .capture-link,
+  .marketing-site .capture-link:hover { transition: none; transform: none; }
+}
 .marketing-site .reportage figcaption { display: grid; grid-template-columns: auto 1fr; gap: 12px 24px; padding-block: 20px; font-size: 12px; line-height: 1.65; color: var(--color-muted); }
 /*
   The figure number keeps the mono — it is a reference, like a page number, and

@@ -74,6 +74,10 @@
 
   --cl-shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
   --cl-shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
+  /* A product surface sitting on the page rather than printed into it.
+     Two shadows: a tight one that reads as contact, and a long soft one that
+     reads as distance. One alone looks either pasted on or blurry. */
+  --cl-shadow-scene: 0 2px 6px -2px rgb(23 22 20 / 0.10), 0 38px 70px -30px rgb(23 22 20 / 0.32);
   --cl-glow: 0.04;
 }
 
@@ -123,6 +127,7 @@
   --cl-dark-scrim: rgb(6 6 5 / 0.88);
   --cl-dark-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
   --cl-dark-shadow-raised: 0 4px 16px -4px rgb(0 0 0 / 0.6);
+  --cl-dark-shadow-scene: 0 2px 6px -2px rgb(0 0 0 / 0.5), 0 38px 70px -30px rgb(0 0 0 / 0.75);
 
   /* Nearly twice the light value, because this is the theme with the problem:
      a closing section with no light in it reads as the page having run out
@@ -157,6 +162,7 @@
   --cl-scrim: var(--cl-dark-scrim);
   --cl-shadow-card: var(--cl-dark-shadow-card);
   --cl-shadow-raised: var(--cl-dark-shadow-raised);
+  --cl-shadow-scene: var(--cl-dark-shadow-scene);
   --cl-glow: var(--cl-dark-glow);
   color-scheme: dark;
 }
@@ -189,6 +195,7 @@
     --cl-scrim: var(--cl-dark-scrim);
   --cl-shadow-card: var(--cl-dark-shadow-card);
     --cl-shadow-raised: var(--cl-dark-shadow-raised);
+  --cl-shadow-scene: var(--cl-dark-shadow-scene);
     --cl-glow: var(--cl-dark-glow);
     color-scheme: dark;
   }
