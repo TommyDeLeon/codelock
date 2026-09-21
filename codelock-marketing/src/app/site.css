@@ -571,3 +571,12 @@
   .dark .marketing-site .capture-image { background-image: var(--capture-dark); }
 }
   
+/* Beat 4: curriculum map. Bar length is corpus size; fill is only ever the visitor's own solve. */
+.marketing-site .curriculum-rows { list-style: none; margin: 0; padding: 8px 0 16px; }
+.marketing-site .curriculum-rows li { display: grid; grid-template-columns: 2.25rem minmax(9rem, 14rem) 1fr 4.5rem; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--color-rule); font-size: 13px; }
+.marketing-site .curriculum-index { font-family: var(--font-mono); color: var(--color-muted); }
+.marketing-site .curriculum-count { font-family: var(--font-mono); text-align: right; color: var(--color-muted); }
+.marketing-site .curriculum-bar { position: relative; height: 6px; width: var(--share); min-width: 2px; border-radius: 3px; background: var(--color-surface-2); box-shadow: inset 0 0 0 1px var(--color-rule); overflow: hidden; }
+.marketing-site .curriculum-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-success); }
+.marketing-site .curriculum-rows li.is-mine .curriculum-label, .marketing-site .curriculum-rows li.is-mine .curriculum-count { color: var(--color-success); }
+@media (max-width: 640px) { .marketing-site .curriculum-rows li { grid-template-columns: 1.75rem 1fr 3.5rem; } .marketing-site .curriculum-bar { grid-column: 2 / 4; grid-row: 2; } }

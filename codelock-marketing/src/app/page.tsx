@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GateMeter } from '@/components/site/gate-meter';
 import { Reportage } from '@/components/site/reportage';
+import { CurriculumMap } from '@/components/site/curriculum-map';
+import stats from '@/data/corpus-stats.json';
 import { ArrowOut } from '@codelock/ui';
 
 export const metadata: Metadata = {
@@ -59,6 +61,10 @@ export default function LandingPage() {
     <section className="gate-spread site-frame section-space">
       <div><p className="eyebrow">Try the arithmetic</p><h2 className="display display-lg">A threshold.<br /><em>Not a feeling.</em></h2><p className="prose-site">The default budget is best × 1.35 + 40ms, rounded up to a whole millisecond. Of two timed runs, the faster one counts.</p></div>
       <div className="hero-instrument"><div className="instrument-heading"><span>The unlock condition</span><span>Illustrative runs</span></div><GateMeter /><p className="instrument-caption">All three examples pass the tests. Only one clears the gate. Select an attempt to compare; these timings illustrate the calculation.</p></div>
+    </section>
+    <section className="gate-spread site-frame section-space">
+      <div><p className="eyebrow">The curriculum</p><h2 className="display display-lg">{stats.total.toLocaleString('en')} problems.<br /><em>None of them solved yet.</em></h2><p className="prose-site">Problems are grouped by the pattern they teach and climb from foundations upward. The ladder moves with you: clear problems and they harden, step away because a problem was too hard and they ease off.</p></div>
+      <div className="hero-instrument"><CurriculumMap /></div>
     </section>
     <section className="site-frame section-space mechanism-layout">
       <div><p className="eyebrow">Who decides</p><h2 className="display display-lg">The page does<br />not get a vote.</h2></div>

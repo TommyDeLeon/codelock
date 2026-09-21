@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { DemoGradeResult, Language } from '@codelock/shared';
 import { DEMO_PROBLEM, gradeLocally } from '@/lib/demo-local';
+import { recordDemoSolve } from '@/lib/demo-progress';
 import { CodeEditor } from '@codelock/ui';
 import { ProblemPanel } from '@codelock/ui';
 import { TestResults } from '@codelock/ui';
@@ -48,6 +49,11 @@ export default function DemoPage() {
     banner. The demo cannot fail to fetch something it never fetches.
   */
   const problem = DEMO_PROBLEM;
+
+  // Fills the demo's family on the landing page's curriculum map, and nothing else.
+  useEffect(() => {
+    if (result?.accepted) recordDemoSolve();
+  }, [result?.accepted]);
 
   // Seed the editor once per language, and never overwrite work in progress —
   // clobbering a half-written answer because a query refetched is the kind of

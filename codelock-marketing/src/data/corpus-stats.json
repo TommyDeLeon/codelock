@@ -1,0 +1,195 @@
+{
+  "total": 1219,
+  "families": [
+    {
+      "family": "FOUNDATIONS",
+      "label": "Foundations",
+      "total": 60,
+      "byDifficulty": {
+        "EASY": 60,
+        "MEDIUM": 0,
+        "HARD": 0
+      }
+    },
+    {
+      "family": "ARRAYS_HASHING",
+      "label": "Arrays & hashing",
+      "total": 385,
+      "byDifficulty": {
+        "EASY": 327,
+        "MEDIUM": 48,
+        "HARD": 10
+      }
+    },
+    {
+      "family": "TWO_POINTERS",
+      "label": "Two pointers",
+      "total": 72,
+      "byDifficulty": {
+        "EASY": 38,
+        "MEDIUM": 26,
+        "HARD": 8
+      }
+    },
+    {
+      "family": "SLIDING_WINDOW",
+      "label": "Sliding window",
+      "total": 44,
+      "byDifficulty": {
+        "EASY": 16,
+        "MEDIUM": 17,
+        "HARD": 11
+      }
+    },
+    {
+      "family": "STACK",
+      "label": "Stack",
+      "total": 46,
+      "byDifficulty": {
+        "EASY": 12,
+        "MEDIUM": 22,
+        "HARD": 12
+      }
+    },
+    {
+      "family": "BINARY_SEARCH",
+      "label": "Binary search",
+      "total": 38,
+      "byDifficulty": {
+        "EASY": 15,
+        "MEDIUM": 15,
+        "HARD": 8
+      }
+    },
+    {
+      "family": "LINKED_LIST",
+      "label": "Linked list",
+      "total": 35,
+      "byDifficulty": {
+        "EASY": 12,
+        "MEDIUM": 17,
+        "HARD": 6
+      }
+    },
+    {
+      "family": "TREES",
+      "label": "Trees",
+      "total": 44,
+      "byDifficulty": {
+        "EASY": 21,
+        "MEDIUM": 16,
+        "HARD": 7
+      }
+    },
+    {
+      "family": "TRIES",
+      "label": "Tries",
+      "total": 10,
+      "byDifficulty": {
+        "EASY": 4,
+        "MEDIUM": 4,
+        "HARD": 2
+      }
+    },
+    {
+      "family": "HEAP_PRIORITY_QUEUE",
+      "label": "Heap & priority queue",
+      "total": 35,
+      "byDifficulty": {
+        "EASY": 7,
+        "MEDIUM": 18,
+        "HARD": 10
+      }
+    },
+    {
+      "family": "BACKTRACKING",
+      "label": "Backtracking",
+      "total": 31,
+      "byDifficulty": {
+        "EASY": 3,
+        "MEDIUM": 20,
+        "HARD": 8
+      }
+    },
+    {
+      "family": "GRAPHS",
+      "label": "Graphs",
+      "total": 37,
+      "byDifficulty": {
+        "EASY": 9,
+        "MEDIUM": 25,
+        "HARD": 3
+      }
+    },
+    {
+      "family": "ADVANCED_GRAPHS",
+      "label": "Advanced graphs",
+      "total": 6,
+      "byDifficulty": {
+        "EASY": 0,
+        "MEDIUM": 5,
+        "HARD": 1
+      }
+    },
+    {
+      "family": "DP_1D",
+      "label": "Dynamic programming, 1D",
+      "total": 34,
+      "byDifficulty": {
+        "EASY": 10,
+        "MEDIUM": 20,
+        "HARD": 4
+      }
+    },
+    {
+      "family": "DP_2D",
+      "label": "Dynamic programming, 2D",
+      "total": 16,
+      "byDifficulty": {
+        "EASY": 1,
+        "MEDIUM": 14,
+        "HARD": 1
+      }
+    },
+    {
+      "family": "GREEDY",
+      "label": "Greedy",
+      "total": 63,
+      "byDifficulty": {
+        "EASY": 38,
+        "MEDIUM": 22,
+        "HARD": 3
+      }
+    },
+    {
+      "family": "INTERVALS",
+      "label": "Intervals",
+      "total": 33,
+      "byDifficulty": {
+        "EASY": 11,
+        "MEDIUM": 18,
+        "HARD": 4
+      }
+    },
+    {
+      "family": "MATH_GEOMETRY",
+      "label": "Maths & geometry",
+      "total": 124,
+      "byDifficulty": {
+        "EASY": 102,
+        "MEDIUM": 17,
+        "HARD": 5
+      }
+    },
+    {
+      "family": "BIT_MANIPULATION",
+      "label": "Bit manipulation",
+      "total": 51,
+      "byDifficulty": {
+        "EASY": 33,
+        "MEDIUM": 15,
+        "HARD": 3
+      }
+    }
+  ]
+}

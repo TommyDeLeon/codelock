@@ -55,6 +55,7 @@ jobs:
       # transitions. They existed and ran nowhere: CI typechecked the API and
       # never executed a single one of them.
       - run: npm run test --workspace @codelock/api
+      - run: npm run corpus:stats --workspace @codelock/api -- --check
 
   web:
     name: Web — typecheck and build
