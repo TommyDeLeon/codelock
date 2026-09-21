@@ -17,7 +17,8 @@
     "dist:store": "npm run icon && cross-env CODELOCK_BUILD_TARGET=store npm run build && node scripts/dist-store.mjs",
     "icon": "node ../../scripts/make-icons.mjs",
     "build:renderer": "vite build",
-    "dev:renderer": "vite"
+    "dev:renderer": "vite",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
@@ -29,7 +30,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^5.6.3",
-    "vite": "^6.4.3"
+    "vite": "^6.4.3",
+    "tsx": "^4.19.2"
   },
   "description": "Solve a programming problem to unlock your device",
   "author": {

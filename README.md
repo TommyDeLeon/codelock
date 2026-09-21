@@ -443,9 +443,11 @@ Written down rather than glossed over.
   and boot receiver exist in source and are unverified in practice.
 - **macOS and Linux are unverified.** Build configuration exists; no hardware.
 - **Signing and auto-update have not been exercised end to end.**
-- **The API has tests; the desktop shell, web and judge do not.** 420 tests
-  run under `npm run test -w @codelock/api`. Nothing covers the Electron lock
-  shell, which is the only workspace that enforces anything — see below.
+- **The API and the shell's decision logic have tests; the web app and judge
+  do not.** 420 tests in the API, 46 in the desktop shell, all run in CI. What
+  the shell's tests cover is what it *decides* — the escape hatch, the lock
+  file, unlock-token binding, the watchdog, the kiosk guards. Whether Windows
+  honours those decisions on real hardware is still unverified; see below.
 
 ### On tests
 
@@ -456,11 +458,21 @@ runner and now stands at **420 tests**, run with:
 
     npm run test -w @codelock/api
 
-What that leaves uncovered is the part that enforces anything. The Electron
-shell — kiosk behaviour, the ten-second escape, unlock-token verification,
-reboot recovery — has no automated tests at all, and neither do the web app or
-the judge. A silent defect there is a bypass or a trap rather than a bug, so
-that is where the next tests belong.
+The Electron shell now carries 46 of its own:
+
+    npm run test -w @codelock/desktop
+
+They cover the ten-second escape, the lock file and its twelve-hour backstop,
+the rule that an unlock token only opens the session it was earned for, the
+watchdog's fail-closed behaviour, and which shell events are intercepted while
+locked. All of it is pure decision logic, which is deliberate — those modules
+were written with no Electron imports so the thing deciding whether a machine
+opens could be tested.
+
+Two things remain uncovered. The web app and the judge have no tests. And no
+test here touches Electron or Windows: the shell provably *decides* correctly,
+and whether the operating system honours those decisions is the hardware gap
+above, which automated tests on a Linux runner cannot close.
 
 Also running automatically: `npm run typecheck` in each workspace, the
 production builds, the Prisma migration check in CI,

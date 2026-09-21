@@ -51,6 +51,11 @@ jobs:
 
       - run: npm run typecheck --workspace @codelock/api
 
+      # 420 tests covering grading, the speed gate, selection and session
+      # transitions. They existed and ran nowhere: CI typechecked the API and
+      # never executed a single one of them.
+      - run: npm run test --workspace @codelock/api
+
   web:
     name: Web — typecheck and build
     runs-on: ubuntu-latest
@@ -66,11 +71,15 @@ jobs:
       # The web app imports @codelock/shared as source, so a contract change
       # that breaks a client fails here rather than at runtime.
       - run: npm run typecheck --workspace @codelock/shared
+      - run: npm run typecheck --workspace @codelock/ui
       - run: npm run typecheck --workspace @codelock/web
-      # These cover the outage handling: a query whose retry is paused reports
-      # no error at all, and without a test that runs with the tab hidden the
-      # regression is invisible until a user hits it during a real outage.
       - run: npm run build --workspace @codelock/web
+
+      # The marketing site is a separate deployment and shares @codelock/ui
+      # with the lock screen, so a change to a shared component has to build
+      # both or the demo silently drifts from the thing it demonstrates.
+      - run: npm run typecheck --workspace @codelock/marketing
+      - run: npm run build --workspace @codelock/marketing
 
   clients:
     name: Judge, desktop, mobile
@@ -89,8 +98,16 @@ jobs:
       - run: npm run typecheck --workspace @codelock/mobile
       - run: npm run build --workspace @codelock/desktop
       - run: npm run build --workspace @codelock/judge
+
       # The lock state machine and the kill switch decide whether a machine
       # opens, so they are tested on every push, not only on tag.
+      #
+      # This comment sat here for a while with no command under it: the claim
+      # outlived the tests it described. The ten-second escape in particular is
+      # a promise made in the README and on the lock screen, and it is how a
+      # user gets out when anything else has gone wrong — so it is enforced
+      # here rather than trusted.
+      - run: npm run test --workspace @codelock/desktop
 
   docker:
     name: API image builds
