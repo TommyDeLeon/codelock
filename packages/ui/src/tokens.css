@@ -12,52 +12,71 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------------------
-   Design tokens.
+   Design tokens. One palette, every surface.
 
-   Consumer-retail structure on the original palette: a green promotional band,
-   a dark category strip, bright surfaces and softer corners, in the register of
-   a large storefront. Pine green remains the brand.
+   Ink on paper, with colour held in reserve. The page is cream, the type is
+   near-black, and the only saturated colour most screens show is none at all.
+   That restraint is the design: the previous system spent its accent on the
+   promotional band, primary buttons and illustrations at once, which is what
+   made a carefully built interface read as generic.
+
+   Three colours, three jobs, and no overlap:
+
+   - **Bronze** is the brand. Reserved for the single thing on a screen that
+     most wants attention. If two things are bronze, one of them is wrong.
+   - **Pine green** means one thing only: you cleared it. It appears at the
+     moment the machine is yours again and essentially nowhere else, which is
+     the strongest use a single colour can be put to.
+   - **Red** means failure, and nothing else ever borrows it.
+
+   This file is the only place any of them is defined. Four surfaces used to
+   carry four palettes — pine green here, brick red on the marketing site and
+   the dashboard, peach on the dark lock screen — and this file argued at
+   length for a green that three of the four had already abandoned. Worse, the
+   marketing site had `--color-danger` and `--color-accent` set to the same
+   hex, so a destructive state and a primary button were the same colour. See
+   docs/DESIGN.md, and the CI check that fails if a surface defines its own
+   accent.
 
    What changed from the earlier system is that colour is now decorative as well
    as functional — it is no longer held in reserve for a passing verdict, and
    "locked has no hue" no longer applies. docs/DESIGN.md was rewritten alongside
    this rather than left describing a product that no longer exists.
    --------------------------------------------------------------------------- */
+@import './palette.css';
+
 @theme {
-  --color-bg: #fbfaf8;
-  --color-surface: #ffffff;
-  --color-surface-2: #f4f2ee;
-  --color-border: #e4e1da;
-  --color-border-strong: #d3cfc6;
-  --color-fg: #171614;
-  --color-muted: #6b6862;
-  /* Was #98948c — 2.90:1 on warm paper, below AA even for large text, and it is
-     the colour every eyebrow and helper line uses. 4.33:1 now. */
-  --color-faint: #7a766e;
+  /* Colour is referenced, never redeclared.
+     The values live in palette.css, which plain CSS can also read — see the
+     note there about why that matters for the Electron renderer. */
+  --color-bg: var(--cl-bg);
+  --color-surface: var(--cl-surface);
+  --color-surface-2: var(--cl-surface-2);
+  --color-border: var(--cl-border);
+  --color-border-strong: var(--cl-border-strong);
+  --color-rule: var(--cl-rule);
 
-/* The brand, and "you cleared it". Pine green, unchanged: it is the one
-     thing the retail restyle did not touch. Used decoratively now as well as
-     functionally — the promotional band, illustration accents and primary
-     buttons all take it, where it used to be held in reserve. */
-  --color-accent: #1b6b4a;
-  --color-accent-fg: #ffffff;
-  --color-accent-soft: #e4efe9;
+  --color-fg: var(--cl-fg);
+  --color-prose: var(--cl-prose);
+  --color-muted: var(--cl-muted);
+  --color-faint: var(--cl-faint);
 
-  /* The promotional band across the top of every page. A deeper pine so white
-     text clears AA on it comfortably (7.4:1) and it reads as a band rather
-     than as another button. */
-  --color-promo: #14523a;
-  --color-promo-fg: #ffffff;
+  --color-accent: var(--cl-accent);
+  --color-accent-fg: var(--cl-accent-fg);
+  --color-accent-soft: var(--cl-accent-soft);
 
-  /* Same value as the accent, deliberately: one green, one meaning. Two greens
-     a shade apart measure 1.08:1 against each other — indistinguishable — and
-     would make "brand" and "passed" look identical. */
-  --color-success: #1b6b4a;
-  --color-success-soft: #e4efe9;
-  --color-danger: #a12d20;
-  --color-danger-soft: #fbe6e3;
-  --color-warning: #8a6410;
-  --color-warning-soft: #f8eed6;
+  --color-promo: var(--cl-promo);
+  --color-promo-fg: var(--cl-promo-fg);
+
+  --color-success: var(--cl-success);
+  --color-success-soft: var(--cl-success-soft);
+  --color-danger: var(--cl-danger);
+  --color-danger-soft: var(--cl-danger-soft);
+  --color-warning: var(--cl-warning);
+  --color-warning-soft: var(--cl-warning-soft);
+
+  /* Softer, friendlier corners
+  /* Softer, friendlier corners
 
   /* Softer, friendlier corners to match the illustrated blocks. Still varied
      by element weight rather than one value everywhere. */
@@ -74,58 +93,24 @@
   --font-display:
     var(--font-display-loaded), Georgia, Cambria, 'Times New Roman', serif;
 
-  --shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
-  --shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
-
-  /* Ink for long-form prose: slightly softer than --color-fg so a full column
-     of text does not vibrate against warm paper. */
-  --color-prose: #2a2723;
-  /* Hairlines for the editorial rules that carry the marketing pages. */
-  --color-rule: #ded9d0;
+  --shadow-card: var(--cl-shadow-card);
+  --shadow-raised: var(--cl-shadow-raised);
 
   /* Peak opacity of the marketing horizon glow (.code-field__glow). On paper
-     the page is already bright, so this only has to suggest warmth. 0.04 is
-     the measured ceiling that keeps --color-muted at 4.5:1 over
+     the page is already bright, so this only has to suggest warmth: the value
+     is the measured ceiling that keeps --color-muted above AA over
      --color-surface-2 with a code bar under the same glyph. */
-  --cf-glow: 0.04;
+  --cf-glow: var(--cl-glow);
 }
 
 .dark {
-  --color-bg: #0e0e0d;
-  --color-surface: #171716;
-  --color-surface-2: #1f1f1d;
-  --color-border: #2b2b28;
-  --color-border-strong: #3d3d38;
-  --color-fg: #f2f0ec;
-  --color-muted: #9a968e;
-  --color-faint: #706c65;
-
-  --color-accent: #4ed18f;
-  --color-accent-fg: #0d1a13;
-  --color-accent-soft: #10241b;
-
-  --color-promo: #12503a;
-  --color-promo-fg: #eafff4;
-
-  --color-success: #4ed18f;
-  --color-success-soft: #10241b;
-  --color-danger: #e0685a;
-  --color-danger-soft: #2b1613;
-  --color-warning: #d5a03f;
-  --color-warning-soft: #2a2113;
-
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-raised: 0 4px 16px -4px rgb(0 0 0 / 0.6);
-
-  --color-prose: #d9d5cd;
-  --color-rule: #302f2b;
-
-  /* Nearly twice the light value, because this is the theme with the problem:
-     against #0e0e0d a closing section with no light in it reads as the page
-     having run out rather than having ended. 0.07 is the measured ceiling that
-     keeps --color-muted at 4.70:1 over --color-surface-2 with a code bar under
-     the same glyph — the tightest case, not the average one. */
-  --cf-glow: 0.07;
+  /* Nothing here. The dark values live in palette.css under the same .dark
+     selector, so a theme switch moves one set of variables and every surface
+     — Tailwind or not — follows. This block is kept as the place to put a
+     dark-only token that is genuinely not a colour. */
+  --shadow-card: var(--cl-shadow-card);
+  --shadow-raised: var(--cl-shadow-raised);
+  --cf-glow: var(--cl-glow);
 }
 
 @layer base {

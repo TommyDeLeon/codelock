@@ -1,0 +1,188 @@
+/* The palette. One file, every surface, plain CSS.
+ *
+ * Plain CSS on purpose. The web apps read colour through Tailwind's `@theme`,
+ * but the Electron renderer is a Vite app with no Tailwind at all — `@theme`
+ * is a directive it would silently ignore. A palette that only one of the two
+ * can read is how this project ended up with four of them: pine green in the
+ * shared tokens, brick red on the marketing site and the dashboard, peach on
+ * the dark lock screen, and a `--color-danger` on marketing set to the very
+ * same hex as `--color-accent`.
+ *
+ * So the values live here as ordinary custom properties. `tokens.css` maps
+ * them into Tailwind's theme, the desktop's `theme.css` maps them onto its own
+ * names, and nothing anywhere else may declare a colour.
+ *
+ * ## The rule
+ *
+ * Ink on paper, colour held in reserve. Three colours, three jobs:
+ *
+ *   bronze  — the brand. The single thing on a screen that most wants
+ *             attention. If two things are bronze, one of them is wrong.
+ *   pine    — "you cleared it", and nothing else. It appears at the moment the
+ *             machine is yours again and essentially nowhere else.
+ *   red     — failure. Never borrowed for anything.
+ *
+ * Every value below was measured rather than chosen by eye. The ratios are
+ * against the surface each colour actually sits on, and the tightest case, not
+ * the average one.
+ */
+
+:root {
+  /* Paper. Warm rather than white: easier to read for long stretches, and it
+     is what the marketing site and the dashboard already used. */
+  --cl-bg: #f3f0e8;
+  --cl-surface: #f8f6f0;
+  --cl-surface-2: #eae6dc;
+  --cl-border: #cbc7ba;
+  --cl-border-strong: #999587;
+  --cl-rule: #cbc7ba;
+
+  /* Ink. This carries the design: headings, buttons, emphasis. Near-black
+     rather than pure black so it sits on cream without vibrating. 15.32:1. */
+  --cl-fg: #1a1a17;
+  --cl-prose: #45453c;   /* 8.50:1 */
+  --cl-muted: #656459;   /* 5.24:1 */
+  /* 4.58:1. Every eyebrow and helper line uses this, so it is held above AA
+     deliberately — an earlier value measured 2.90:1 and failed for all of it. */
+  --cl-faint: #6e6d61;
+
+  /* Bronze, the brand. #8a6a3b was the first choice and measured 4.38:1 on
+     cream: below AA, the same failure this palette already had to fix once.
+     This is 5.42:1 on the page, and 5.71:1 under cream text on a button. */
+  --cl-accent: #7a5c30;
+  --cl-accent-fg: #f8f6f0;
+  --cl-accent-soft: #ece5d6;
+
+  /* A full-width band is structure, not brand, so it takes ink. Spending the
+     one reserved colour across the top of every page is the habit this
+     palette exists to break. */
+  --cl-promo: #1a1a17;
+  --cl-promo-fg: #f3f0e8;
+
+  /* Pine green, kept from the original palette and finally given one job.
+     With the accent no longer green, this means exactly one thing. 5.68:1. */
+  --cl-success: #1b6b4a;
+  --cl-success-soft: #dfe9e2;
+  --cl-danger: #a12d20;      /* 6.33:1 */
+  --cl-danger-soft: #f7e4e1;
+  --cl-warning: #79591f;     /* 5.65:1 */
+  --cl-warning-soft: #f3e9d3;
+
+  --cl-shadow-card: 0 1px 2px rgb(23 22 20 / 0.05);
+  --cl-shadow-raised: 0 4px 16px -4px rgb(23 22 20 / 0.12);
+  --cl-glow: 0.04;
+}
+
+/* A warm dark, not a black one.
+ *
+ * The light theme is cream and ink; inverting to near-black would make the two
+ * themes feel like different products. The three surfaces that already had a
+ * dark mode all used this family, and the shared tokens were the outlier.
+ *
+ * The values are authored once here and then *mapped* by each selector below,
+ * because the two front ends select a theme differently: the web apps toggle a
+ * `.dark` class (next-themes), while the Electron renderer writes
+ * `data-theme` and falls back to a media query for `system`. Writing the
+ * values out under each selector would put three copies of the palette in the
+ * one file that exists to stop copies of the palette.
+ */
+:root {
+  --cl-dark-bg: #22231f;
+  --cl-dark-surface: #292a25;
+  --cl-dark-surface-2: #30312b;
+  --cl-dark-border: #515247;
+  --cl-dark-border-strong: #828373;
+  --cl-dark-rule: #515247;
+
+  --cl-dark-fg: #efecdf;      /* 13.35:1 */
+  --cl-dark-prose: #d2cfc3;   /* 10.13:1 */
+  --cl-dark-muted: #b4b2a5;   /*  7.42:1 */
+  --cl-dark-faint: #a3a195;   /*  6.09:1 */
+
+  /* Bronze, lifted. #a8874f measured 4.30:1 against --cl-dark-surface-2, so it
+     failed AA on exactly the raised panels it sits on. 4.95:1 there now,
+     5.96:1 on the page ground, and the same under ink on a button. */
+  --cl-dark-accent: #bb9a62;
+  --cl-dark-accent-fg: #22231f;
+  --cl-dark-accent-soft: #3a3225;
+
+  --cl-dark-promo: #16170f;
+  --cl-dark-promo-fg: #efecdf;
+
+  --cl-dark-success: #b4cfb7;
+  --cl-dark-success-soft: #364539;
+  --cl-dark-danger: #ec9b90;
+  --cl-dark-danger-soft: #442b28;
+  --cl-dark-warning: #d8bf8e;
+  --cl-dark-warning-soft: #3d3526;
+
+  --cl-dark-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --cl-dark-shadow-raised: 0 4px 16px -4px rgb(0 0 0 / 0.6);
+
+  /* Nearly twice the light value, because this is the theme with the problem:
+     a closing section with no light in it reads as the page having run out
+     rather than having ended. */
+  --cl-dark-glow: 0.07;
+}
+
+/* Web: next-themes toggles a class. Desktop: an explicit choice in the header. */
+.dark,
+:root[data-theme='dark'] {
+  --cl-bg: var(--cl-dark-bg);
+  --cl-surface: var(--cl-dark-surface);
+  --cl-surface-2: var(--cl-dark-surface-2);
+  --cl-border: var(--cl-dark-border);
+  --cl-border-strong: var(--cl-dark-border-strong);
+  --cl-rule: var(--cl-dark-rule);
+  --cl-fg: var(--cl-dark-fg);
+  --cl-prose: var(--cl-dark-prose);
+  --cl-muted: var(--cl-dark-muted);
+  --cl-faint: var(--cl-dark-faint);
+  --cl-accent: var(--cl-dark-accent);
+  --cl-accent-fg: var(--cl-dark-accent-fg);
+  --cl-accent-soft: var(--cl-dark-accent-soft);
+  --cl-promo: var(--cl-dark-promo);
+  --cl-promo-fg: var(--cl-dark-promo-fg);
+  --cl-success: var(--cl-dark-success);
+  --cl-success-soft: var(--cl-dark-success-soft);
+  --cl-danger: var(--cl-dark-danger);
+  --cl-danger-soft: var(--cl-dark-danger-soft);
+  --cl-warning: var(--cl-dark-warning);
+  --cl-warning-soft: var(--cl-dark-warning-soft);
+  --cl-shadow-card: var(--cl-dark-shadow-card);
+  --cl-shadow-raised: var(--cl-dark-shadow-raised);
+  --cl-glow: var(--cl-dark-glow);
+  color-scheme: dark;
+}
+
+/* Following the OS is opted into, never the state you land in with no
+   preference recorded — which is why this matches `system` alone. */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    --cl-bg: var(--cl-dark-bg);
+    --cl-surface: var(--cl-dark-surface);
+    --cl-surface-2: var(--cl-dark-surface-2);
+    --cl-border: var(--cl-dark-border);
+    --cl-border-strong: var(--cl-dark-border-strong);
+    --cl-rule: var(--cl-dark-rule);
+    --cl-fg: var(--cl-dark-fg);
+    --cl-prose: var(--cl-dark-prose);
+    --cl-muted: var(--cl-dark-muted);
+    --cl-faint: var(--cl-dark-faint);
+    --cl-accent: var(--cl-dark-accent);
+    --cl-accent-fg: var(--cl-dark-accent-fg);
+    --cl-accent-soft: var(--cl-dark-accent-soft);
+    --cl-promo: var(--cl-dark-promo);
+    --cl-promo-fg: var(--cl-dark-promo-fg);
+    --cl-success: var(--cl-dark-success);
+    --cl-success-soft: var(--cl-dark-success-soft);
+    --cl-danger: var(--cl-dark-danger);
+    --cl-danger-soft: var(--cl-dark-danger-soft);
+    --cl-warning: var(--cl-dark-warning);
+    --cl-warning-soft: var(--cl-dark-warning-soft);
+    --cl-shadow-card: var(--cl-dark-shadow-card);
+    --cl-shadow-raised: var(--cl-dark-shadow-raised);
+    --cl-glow: var(--cl-dark-glow);
+    color-scheme: dark;
+  }
+}

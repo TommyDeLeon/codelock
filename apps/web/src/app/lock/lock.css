@@ -1,24 +1,18 @@
-/* Always-dark product palette. Only colour and typography belong here. */
-.lock-surface.dark {
-  --color-bg: #22231f;
-  --color-surface: #292a25;
-  --color-surface-2: #30312b;
-  --color-fg: #efecdf;
-  --color-prose: #d2cfc3;
-  --color-muted: #b4b2a5;
-  --color-faint: #aaa899;
-  --color-rule: #515247;
-  --color-border: #515247;
-  --color-border-strong: #828373;
-  --color-accent: #e5a18b;
-  --color-accent-fg: #22231f;
-  --color-accent-soft: #443029;
-  /* Verdicts keep their established green / red / amber meanings. */
-  --color-success: #b4cfb7;
-  --color-success-soft: #364539;
-  --color-danger: #ec9b90;
-  --color-danger-soft: #442b28;
-  --color-warning: #d8bf8e;
-  --color-warning-soft: #3d3526;
+/* The lock surface.
+ *
+ * No palette. This file used to hold nineteen colour values — a fourth copy of
+ * the design system, and the one that introduced a peach accent nothing else
+ * in the product used.
+ *
+ * It is no longer needed at all. The wrapper in layout.tsx carries the `dark`
+ * class, and packages/ui/src/palette.css already answers to that selector, so
+ * every token inside this subtree resolves to the shared dark values without
+ * anything being restated here.
+ *
+ * What remains is a typographic choice rather than a colour one: the lock
+ * screen is where someone reads a problem statement and writes code under a
+ * clock, so it leads with the sans and lets the mono do the measuring.
+ */
+.lock-surface {
   font-family: var(--font-sans);
 }

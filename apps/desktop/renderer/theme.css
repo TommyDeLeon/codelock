@@ -1,25 +1,45 @@
-/* Palette values mirrored from apps/web/src/app/(site)/site.css.
- * Change the values in BOTH places when the publication palette changes.
- * Desktop aliases keep existing controls and theme selection intact.
+/* Desktop aliases over the shared palette.
+ *
+ * No colour is defined here. This file used to open with "Palette values
+ * mirrored from site.css — change the values in BOTH places", which is an
+ * instruction nobody followed: the dashboard kept brick red long after the
+ * shared tokens said pine green, and it carried `--danger` and `--accent` set
+ * to the same hex, so a destructive state and a primary button were the same
+ * colour.
+ *
+ * packages/ui/src/palette.css is plain CSS precisely so this renderer — a Vite
+ * app with no Tailwind — can read it. It already answers to `data-theme` and
+ * to the `system` media query, so theme selection needs nothing here either.
+ * All that is left is the rename: this app's controls were written against
+ * `--accent`, and the palette calls it `--cl-accent`.
  */
+@import '../../../packages/ui/src/palette.css';
 @import './fonts.css';
 
 :root {
-  --bg: #f3f0e8;
-  --surface: #f8f6f0;
-  --surface-2: #eae6dc;
-  --prose: #45453c;
-  --border: #cbc7ba;
-  --fg: #25251f;
-  --muted: #656459;
-  --faint: #656459;
-  --accent: #993d29;
-  --accent-fg: #f3f0e8;
-  --accent-soft: #eae6dc;
-  --promo: #993d29;
-  --promo-fg: #f3f0e8;
-  --danger: #993d29;
-  --warning: #79591f;
+  --bg: var(--cl-bg);
+  --surface: var(--cl-surface);
+  --surface-2: var(--cl-surface-2);
+  --prose: var(--cl-prose);
+  --border: var(--cl-border);
+  --border-strong: var(--cl-border-strong);
+  --rule: var(--cl-rule);
+  --fg: var(--cl-fg);
+  --muted: var(--cl-muted);
+  --faint: var(--cl-faint);
+  --accent: var(--cl-accent);
+  --accent-fg: var(--cl-accent-fg);
+  --accent-soft: var(--cl-accent-soft);
+  --promo: var(--cl-promo);
+  --promo-fg: var(--cl-promo-fg);
+  --success: var(--cl-success);
+  --success-soft: var(--cl-success-soft);
+  /* Its own colour at last. This was the accent's hex, which made a failure
+     and a primary action indistinguishable. */
+  --danger: var(--cl-danger);
+  --danger-soft: var(--cl-danger-soft);
+  --warning: var(--cl-warning);
+  --warning-soft: var(--cl-warning-soft);
 
   /* Matching the web app: varied by element weight, not one value. */
   --radius-xs: 4px;
@@ -30,92 +50,6 @@
   --display: 'Literata', Georgia, Cambria, serif;
   --sans: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
-
-  color-scheme: light;
-}
-
-/*
- * Dark is selected two ways, and the order matters.
- *
- * `prefers-color-scheme` applies only to a stored `system` choice: with no
- * choice at all the app stays light, for readability. `[data-theme]` is
- * the override, written by the header control, and it has to come *after* the
- * media query so an explicit choice wins — otherwise picking Light on a
- * dark-mode machine appears to do nothing at all.
- *
- * The media query matches [data-theme='system'] alone, so following the OS is
- * something the reader opts into rather than the state they land in with no
- * preference recorded.
- */
-@media (prefers-color-scheme: dark) {
-  :root[data-theme='system'] {
-    --bg: #22231f;
-    --surface: #292a25;
-    --surface-2: #30312b;
-    --prose: #d2cfc3;
-    --border: #515247;
-    --fg: #efecdf;
-    --muted: #b4b2a5;
-    --faint: #aaa899;
-    --accent: #e5a18b;
-    --accent-fg: #22231f;
-    --accent-soft: #30312b;
-    --promo: #e5a18b;
-    --promo-fg: #22231f;
-    --danger: #e5a18b;
-    --warning: #d8bf8e;
-
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --bg: #22231f;
-  --surface: #292a25;
-  --surface-2: #30312b;
-  --prose: #d2cfc3;
-  --border: #515247;
-  --fg: #efecdf;
-  --muted: #b4b2a5;
-  --faint: #aaa899;
-  --accent: #e5a18b;
-  --accent-fg: #22231f;
-  --accent-soft: #30312b;
-  --promo: #e5a18b;
-  --promo-fg: #22231f;
-  --danger: #e5a18b;
-  --warning: #d8bf8e;
-
-  color-scheme: dark;
-}
-
-/*
- * Light needs its own block even though these values repeat the :root
- * defaults. Without it, choosing Light on a dark-mode machine leaves the media
- * query matching and nothing changes.
- */
-:root[data-theme='light'] {
-  --bg: #f3f0e8;
-  --surface: #f8f6f0;
-  --surface-2: #eae6dc;
-  --prose: #45453c;
-  --border: #cbc7ba;
-  --fg: #25251f;
-  --muted: #656459;
-  --faint: #656459;
-  --accent: #993d29;
-  --accent-fg: #f3f0e8;
-  --accent-soft: #eae6dc;
-  --promo: #993d29;
-  --promo-fg: #f3f0e8;
-  --danger: #993d29;
-  --warning: #79591f;
-
-  color-scheme: light;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 body {

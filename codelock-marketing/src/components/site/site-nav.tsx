@@ -1,10 +1,10 @@
 "use client";
 
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { LockMark } from '@/components/ui/lock-mark';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const LINKS = [
   { href: '/how-it-works', label: 'How it works' },

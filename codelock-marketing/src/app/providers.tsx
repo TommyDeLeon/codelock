@@ -11,9 +11,15 @@ import { ThemeProvider } from 'next-themes';
  * marketing site a hard dependency on infrastructure its readers cannot reach
  * — the exact bug the app's own comments record having fixed.
  *
- * Light is the default rather than the system's choice for the same reason as
- * in the app: these pages are read. enableSystem stays on, so the System
- * segment in the toggle still resolves against the OS for anyone who picks it.
+ * Light is the default rather than the system's choice, for the same reason as
+ * in the app: these pages are read, and a first impression should be the one
+ * that was designed. enableSystem stays on, so the System segment in the
+ * toggle still resolves against the OS for anyone who picks it.
+ *
+ * What is no longer here is a palette. Dark mode on this site used to be
+ * seventeen colour tokens redefined in site.css, which is how the marketing
+ * site ended up advertising a product it did not resemble. It now takes the
+ * same .dark tokens as the dashboard and the lock screen.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
