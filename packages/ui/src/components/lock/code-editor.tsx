@@ -84,23 +84,49 @@ export function CodeEditor({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-border px-3 py-2">
-        <label htmlFor="language" className="text-[13px] text-muted">
+        <label
+          htmlFor="language"
+          className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint"
+        >
           Language
         </label>
-        <select
-          id="language"
-          value={language}
-          disabled={disabled}
-          onChange={(e) => onLanguageChange(e.target.value as Language)}
-          className="h-11 rounded-sm border border-border-strong bg-surface px-2 text-base disabled:opacity-50 sm:h-7 sm:text-[13px]"
-        >
-          {(languages ?? LANGUAGES).map((lang) => (
-            <option key={lang} value={lang}>
-              {LANGUAGE_LABELS[lang]}
-            </option>
-          ))}
-        </select>
-        <span className="ml-auto text-[13px] text-faint">
+        {/*
+          A styled native select, not a custom listbox.
+
+          It rendered as a raw operating-system dropdown — grey, rounded,
+          shaded, in an otherwise ink-on-paper interface — and a single
+          unstyled control is enough to make everything around it look
+          unfinished. `appearance-none` takes the chrome off and the caret is
+          drawn here instead.
+
+          Still a real <select>: keyboard behaviour, the mobile wheel, screen
+          reader semantics and the OS's own option list all come from the
+          platform. A hand-rolled dropdown would trade those for a chevron.
+        */}
+        <div className="relative">
+          <select
+            id="language"
+            value={language}
+            disabled={disabled}
+            onChange={(e) => onLanguageChange(e.target.value as Language)}
+            className="h-11 appearance-none rounded-none border-b border-border-strong bg-transparent pr-6 pl-0 font-mono text-base tracking-tight
+                       hover:border-fg focus-visible:border-fg disabled:opacity-50 sm:h-7 sm:text-[12.5px]"
+          >
+            {(languages ?? LANGUAGES).map((lang) => (
+              <option key={lang} value={lang}>
+                {LANGUAGE_LABELS[lang]}
+              </option>
+            ))}
+          </select>
+          <svg
+            aria-hidden
+            viewBox="0 0 10 6"
+            className="pointer-events-none absolute right-1 top-1/2 h-1.5 w-2.5 -translate-y-1/2 text-faint"
+          >
+            <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+        <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">
           <kbd className="font-mono">Ctrl</kbd>+<kbd className="font-mono">Enter</kbd> to submit
         </span>
       </div>

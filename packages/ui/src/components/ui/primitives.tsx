@@ -29,10 +29,23 @@ export function CardBody({ className, ...props }: React.HTMLAttributes<HTMLDivEl
   return <div className={cn('px-5 py-4', className)} {...props} />;
 }
 
+/**
+ * Difficulty is typographic, not chromatic.
+ *
+ * These were three filled pills — green for EASY, amber for MEDIUM, red for
+ * HARD — which spent two of the three reserved colours on a label. Green means
+ * "you cleared it" and red means "this failed"; lending them to a difficulty
+ * tag is how the one colour that should be unmistakable at the moment a lock
+ * opens turns into decoration seen on every screen.
+ *
+ * So difficulty is carried by weight instead: the same mark, getting darker.
+ * It still reads at a glance, it costs no colour, and it does not tell a
+ * beginner in red that the thing they are about to attempt is dangerous.
+ */
 const DIFFICULTY_STYLES: Record<Difficulty, string> = {
-  EASY: 'bg-success-soft text-success',
-  MEDIUM: 'bg-warning-soft text-warning',
-  HARD: 'bg-danger-soft text-danger',
+  EASY: 'border-border text-faint',
+  MEDIUM: 'border-border-strong text-muted',
+  HARD: 'border-fg text-fg',
 };
 
 export function DifficultyBadge({
@@ -45,7 +58,7 @@ export function DifficultyBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-xs px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider',
+        'inline-flex items-center rounded-none border px-2 py-0.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.14em]',
         DIFFICULTY_STYLES[difficulty],
         className,
       )}

@@ -47,9 +47,12 @@ export function ProblemPanel({
         <DifficultyBadge difficulty={problem.difficulty} />
       </div>
 
-      <h1 className="mt-2.5 text-lg font-semibold tracking-tight">{problem.title}</h1>
-      <p className="mt-1 text-[13px] text-muted">
-        Most people finish this in about {formatCompact(problem.avgSolveSeconds)}.
+      {/* The statement is the only thing on this screen that matters, so it is
+          allowed to be a heading rather than a label. Display serif, because
+          this is read rather than scanned. */}
+      <h1 className="mt-3 font-display text-2xl leading-tight tracking-tight">{problem.title}</h1>
+      <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-faint">
+        ~{formatCompact(problem.avgSolveSeconds)} typical
       </p>
       <FitNote eligible={skillEligible} note={skillNote} />
 
@@ -60,18 +63,28 @@ export function ProblemPanel({
       </div>
 
       {problem.sampleCases.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-[13px] font-semibold">Sample cases</h2>
-          <ul role="list" className="mt-2 space-y-2">
+        <section className="mt-8">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint">
+            Sample cases
+          </h2>
+          {/*
+            Hairlines, not boxes.
+
+            Each case used to be a filled grey card with a border and twelve
+            pixels of padding, and three of them stacked turned the lower half
+            of the statement into furniture. The data is already monospaced and
+            already aligned; a rule and a label are enough to separate them,
+            and the panel reads as a page instead of a form.
+          */}
+          <ul role="list" className="mt-3 divide-y divide-border border-y border-border">
             {problem.sampleCases.map((sample) => (
-              <li
-                key={sample.ordinal}
-                className="rounded-sm border border-border bg-surface-2 p-3 font-mono text-[12px]"
-              >
-                <div className="text-faint">input</div>
+              <li key={sample.ordinal} className="grid grid-cols-[4.5rem_1fr] gap-x-4 py-3 font-mono text-[12px]">
+                <span className="text-[10.5px] uppercase tracking-[0.12em] text-faint">input</span>
                 <pre className="whitespace-pre-wrap break-all">{sample.stdin}</pre>
-                <div className="mt-1.5 text-faint">expected</div>
-                <pre className="whitespace-pre-wrap break-all">{sample.expectedStdout}</pre>
+                <span className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-faint">
+                  expected
+                </span>
+                <pre className="mt-1.5 whitespace-pre-wrap break-all">{sample.expectedStdout}</pre>
               </li>
             ))}
           </ul>
