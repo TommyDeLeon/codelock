@@ -42,9 +42,7 @@ if (process.argv.includes('--check')) {
   let current = '';
   try { current = readFileSync(OUT, 'utf8'); } catch { /* missing counts as stale */ }
   // Git on Windows may check the file out with CRLF; line endings are not staleness.
-  if (current.replace(/
-/g, '
-') !== json) {
+  if (current.replace(/\r\n/g, '\n') !== json) {
     console.error('corpus-stats.json is stale. Run: npm run corpus:stats -w @codelock/api');
     process.exit(1);
   }
