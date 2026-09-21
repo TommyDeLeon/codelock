@@ -273,14 +273,32 @@ function Workspace({
           aria-label="Problem and help"
           className="flex min-h-0 flex-col overflow-hidden border-b border-border lg:border-b-0 lg:border-r"
         >
-          {/* The statement scrolls on its own, so it never pushes help away. */}
-          <div className="min-h-[3rem] flex-1 overflow-y-auto lg:min-h-[6rem]">
-            <ProblemPanel
-              problem={problem}
-              skillEligible={session.skillEligible}
-              skillNote={session.skillNote}
-            />
-            <SessionRules session={session} />
+          {/*
+            The statement scrolls on its own, so it never pushes help away —
+            and exactly one thing scrolls here.
+
+            This wrapper was `overflow-y-auto` while ProblemPanel already
+            carried `h-full overflow-y-auto` of its own: two nested scroll
+            containers for one piece of content. Harmless while the panel was
+            the only child and filled the wrapper exactly, and two scrollbars
+            side by side the moment anything joined it in here.
+
+            It is a column now. The statement takes the free space and scrolls
+            within itself; the session's rules sit under it as a fixed footer.
+            `min-h-0` on the scrolling child is what lets it shrink below its
+            content instead of forcing the wrapper to grow.
+          */}
+          <div className="flex min-h-[3rem] flex-1 flex-col overflow-hidden lg:min-h-[6rem]">
+            <div className="min-h-0 flex-1">
+              <ProblemPanel
+                problem={problem}
+                skillEligible={session.skillEligible}
+                skillNote={session.skillNote}
+              />
+            </div>
+            <div className="shrink-0">
+              <SessionRules session={session} />
+            </div>
           </div>
           {/* Help and "not the right problem" are pinned under the statement:
               always on screen, no tab to find and nothing to scroll to. When a
