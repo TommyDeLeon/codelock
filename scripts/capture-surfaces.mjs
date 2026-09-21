@@ -44,6 +44,19 @@ const VIEWPORT = { width: 1600, height: 1000 };
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Poll the page for a selector, because a fixed delay is a guess about the network. */
+async function waitFor(win, selector, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const found = await win.webContents.executeJavaScript(
+      `Boolean(document.querySelector(${JSON.stringify(selector)}))`,
+    );
+    if (found) return true;
+    await wait(250);
+  }
+  return false;
+}
+
 /**
  * The surfaces the marketing site asks for, by the names it asks for them by.
  *
@@ -60,7 +73,15 @@ const SURFACES = [
     url: 'http://localhost:3000/lock',
     needsLock: true,
     themeVia: 'profile',
-    settle: 2500,
+    settle: 1500,
+    /**
+     * Monaco loads lazily, and the cold cache each pass forces it to download
+     * again, so a fixed delay photographed the light lock screen with an empty
+     * editor — no code, not even line numbers — while the dark pass, a few
+     * seconds later, happened to catch it. Waiting for rendered lines is the
+     * only honest settle for a surface whose main content arrives late.
+     */
+    ready: '.monaco-editor .view-line',
   },
   {
     name: 'codelock-demo',
@@ -138,11 +159,19 @@ async function main() {
     height: VIEWPORT.height,
     useContentSize: true,
     webPreferences: {
-      // A hidden window is throttled, and a throttled window paints its first
-      // frame and then stops. The lock screen applies its palette *after* it
-      // has read the profile, so the capture kept the frame from before that
-      // update — a "dark" capture and a "light" capture with identical
-      // brightness, of a page that was rendering correctly the whole time.
+      /*
+        Offscreen rendering: the page paints continuously into a buffer that
+        is never shown, which is the mode Electron provides for exactly this.
+
+        A plain hidden window does not repaint reliably. It captured one of
+        the demo editor's fifteen lines, and a light lock screen with *no*
+        editor at all — Monaco had rendered, then been asked to switch theme
+        once the profile arrived, and the hidden window never painted the
+        result. The same switch in a visible window was verified to render
+        correctly, so this was only ever a capture fault; but a capture fault
+        on a marketing page is a picture of the product with a broken editor.
+      */
+      offscreen: true,
       backgroundThrottling: false,
     },
   });
@@ -194,6 +223,16 @@ async function main() {
       await win.webContents.reload();
       await wait(surface.settle ?? 1200);
       if (surface.arm) await surface.arm(win);
+
+      if (surface.ready) {
+        const seen = await waitFor(win, surface.ready, 15_000);
+        // A capture of a half-loaded screen is worse than none: it goes on the
+        // website as a picture of the product. So a timeout is a failure, not
+        // a shrug.
+        if (!seen) throw new Error(`${surface.name}: ${surface.ready} never rendered`);
+        // Monaco paints its text a frame or two after the lines exist.
+        await wait(400);
+      }
 
       const image = await win.capturePage();
       const base = join(OUT, `${surface.name}${suffix}`);
