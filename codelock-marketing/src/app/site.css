@@ -151,7 +151,11 @@
 
   None of it is animation. Depth is a static property and behaves like one.
 */
-.marketing-site .lock-spread .reportage { position: relative; }
+/* A stacking context of its own. Without it the plate's `z-index: -1` escapes
+   this figure entirely and lands behind the section's background, which paints
+   straight over it — the plate was drawn and hidden, a second time, by a
+   different cause from the first. */
+.marketing-site .lock-spread .reportage { position: relative; isolation: isolate; }
 
 .marketing-site .lock-spread .capture-link {
   position: relative;
@@ -168,14 +172,24 @@
   -webkit-mask-composite: source-in;
 }
 
-/* The plate. Empty on purpose — a second screenshot back here would compete
-   with the one in front for the reader's attention and win, because it is the
-   one they have not seen yet. */
-.marketing-site .lock-spread .capture-link::before {
+/* The plate.
+ *
+ * On the figure, not on the capture, because the capture clips its own
+ * overflow — which is how this was written first, and it meant the plate was
+ * drawn and then immediately cut away. The layering was invisible and all that
+ * remained of the effect was the image itself shifting on hover, which reads
+ * as jitter rather than as depth. The hover movement is gone with it: a scene
+ * whose layers cannot move together should not move at all.
+ *
+ * Empty on purpose. A second screenshot back here would compete with the one
+ * in front for the reader's attention and win, because it is the one they have
+ * not seen yet.
+ */
+.marketing-site .lock-spread .reportage::before {
   content: '';
   position: absolute;
-  inset: -18px 3% auto 3%;
-  height: 40px;
+  inset: -16px 3% auto 3%;
+  height: 38px;
   border: 1px solid var(--color-border);
   border-bottom: 0;
   border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
@@ -192,7 +206,7 @@
     mask-image: none;
     -webkit-mask-image: none;
   }
-  .marketing-site .lock-spread .capture-link::before { display: none; }
+  .marketing-site .lock-spread .reportage::before { display: none; }
 }
 .marketing-site .spread-heading { display: flex; justify-content: space-between; gap: 24px; align-items: baseline; padding-bottom: 26px; }
 .marketing-site .spread-heading .eyebrow { color: var(--color-muted); }
@@ -239,13 +253,6 @@
   border-radius: var(--radius-sm, 8px);
   overflow: hidden;
   box-shadow: var(--cl-shadow-scene);
-  transform: translateY(0);
-  transition: box-shadow 520ms var(--ease-editorial), transform 520ms var(--ease-editorial);
-}
-.marketing-site .capture-link:hover { transform: translateY(-3px); }
-@media (prefers-reduced-motion: reduce) {
-  .marketing-site .capture-link,
-  .marketing-site .capture-link:hover { transition: none; transform: none; }
 }
 .marketing-site .reportage figcaption { display: grid; grid-template-columns: auto 1fr; gap: 12px 24px; padding-block: 20px; font-size: 12px; line-height: 1.65; color: var(--color-muted); }
 /*
