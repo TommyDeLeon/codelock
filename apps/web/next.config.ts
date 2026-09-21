@@ -15,8 +15,8 @@ const config: NextConfig = {
   // build. They are not part of this project, so opt out at the source rather
   // than ignoring the files after the fact.
   agentRules: false,
-  // The shared contract package ships TypeScript source, not a build.
-  transpilePackages: ['@codelock/shared'],
+  // The shared packages ship TypeScript source, not a build.
+  transpilePackages: ['@codelock/shared', '@codelock/ui'],
   async headers() {
     return [
       {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ComplexityFeedback, ComplexityVerdict } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@codelock/ui';
 
 /**
  * How the solution scales, after a solve.

@@ -1,12 +1,15 @@
-import { EditorialShell } from '@/components/site/editorial-shell';
-
 /**
  * Shared chrome for the legal pages.
  *
- * They use the marketing nav, not AppHeader: these are public routes reachable
- * while signed out, and AppHeader assumes an authenticated user. They used to
- * carry a bespoke cut-down header, which made the two pages a reader reaches
- * from the footer the only ones with no navigation and no theme control.
+ * They carry their own header rather than the marketing nav. They used to use
+ * EditorialShell, which was right while one Next app served both the site and
+ * the lock surface; it is wrong now that the marketing site is its own
+ * deployment, because every link in that nav — how it works, install, limits —
+ * points at routes this deployment does not serve. A shell that renders four
+ * dead links is worse than no shell.
+ *
+ * Deliberately plain: these are the notices an installed copy shows about
+ * itself, reachable offline on a machine with no marketing site in front of it.
  */
 export function LegalPage({
   title,
@@ -18,15 +21,24 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <EditorialShell>
+    <div className="min-h-dvh bg-bg">
+      <header className="border-b border-border px-4 py-3">
+        <p className="text-[13px] font-semibold tracking-tight">CodeLock</p>
+      </header>
 
-      <main id="main" className="legal-main">
-        <h1 className="display">{title}</h1>
+      {/*
+        Utilities rather than the `.legal-main` class these pages used to wear.
+        That rule is scoped under `.marketing-site` in the marketing app's own
+        stylesheet, so it no longer reaches here at all — the pages would have
+        rendered unstyled, and nothing in a typecheck would have said so. The
+        unscoped `.legal` and `.display` rules in the shared tokens still apply.
+      */}
+      <main id="main" className="mx-auto w-full max-w-[900px] px-5 pb-24 pt-12">
+        <h1 className="display text-4xl">{title}</h1>
         <p className="mt-1 text-[13px] text-faint">Last updated {updated}</p>
         <div className="legal mt-7">{children}</div>
       </main>
-
-    </EditorialShell>
+    </div>
   );
 }
 

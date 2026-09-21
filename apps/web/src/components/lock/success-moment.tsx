@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import type { Accomplishment, FeedbackFeeling } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '@codelock/ui';
+import { Button } from '@codelock/ui';
 import { ComplexityPanel } from './complexity-panel';
 
 /**

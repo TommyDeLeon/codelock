@@ -12,17 +12,17 @@ import {
   type RunResult,
 } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@codelock/ui';
 import { isDesktop } from '@/lib/desktop-bridge';
 import { useProfile } from '@/lib/profile-store';
-import { Button } from '@/components/ui/button';
-import { CodeEditor } from './code-editor';
+import { Button } from '@codelock/ui';
+import { CodeEditor } from '@codelock/ui';
 import { ConsolePanel } from './console-panel';
 import { HintsPanel } from './hints-panel';
-import { ProblemPanel } from './problem-panel';
+import { ProblemPanel } from '@codelock/ui';
 import { SessionFlowPanel } from './session-flow-panel';
 import { SessionRules } from './session-rules';
-import { TestResults } from './test-results';
+import { TestResults } from '@codelock/ui';
 
 /**
  * The lock screen itself.

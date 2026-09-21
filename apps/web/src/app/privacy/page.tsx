@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { LegalPage, Section } from '@/components/legal-page';
-import { CONTACT_EMAIL } from '@/lib/contact';
+import { CONTACT_EMAIL } from '@codelock/ui';
 
 export const metadata: Metadata = {
   title: 'Privacy',

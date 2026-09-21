@@ -8,9 +8,9 @@ import { api } from '@/lib/api';
 import { useLockSession } from '@/hooks/use-lock-session';
 import { LockWorkspace } from '@/components/lock/lock-workspace';
 import { KillSwitchHint } from '@/components/lock/kill-switch-hint';
-import { Button } from '@/components/ui/button';
-import { ErrorState, Skeleton } from '@/components/ui/primitives';
-import { formatDuration } from '@/lib/utils';
+import { Button } from '@codelock/ui';
+import { ErrorState, Skeleton } from '@codelock/ui';
+import { formatDuration } from '@codelock/ui';
 import {
   engageDesktopLock,
   releaseDesktopLock,

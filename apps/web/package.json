@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@codelock/shared": "*",
+    "@codelock/ui": "*",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-query": "^5.101.4",
     "class-variance-authority": "^0.7.1",

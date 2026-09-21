@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@codelock/ui';
 
 /**
  * Route-level error boundary.

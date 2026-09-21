@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+/* The same tokens the lock surface uses. Shared rather than copied: a
+   marketing site that slowly stops looking like the product is worse than no
+   marketing site, and a copy is how that starts. */
+@import '../../../packages/ui/src/tokens.css';
+
+/* Tailwind scans this app automatically. The shared components live outside
+   it, so their class names have to be named explicitly or every utility they
+   use is dropped from the build as unused. */
+@source '../../../packages/ui/src';

@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { isDesktop } from '@/lib/desktop-bridge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@codelock/ui';
 
 /** Mirrors the server bound, so the field refuses before the request does. */
 const RESPONSE_LIMIT = 400;

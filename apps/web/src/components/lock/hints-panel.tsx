@@ -12,8 +12,8 @@ import {
   type Language,
 } from '@codelock/shared';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '@codelock/ui';
+import { Button } from '@codelock/ui';
 
 /**
  * Graduated help, built from what the learner's code actually does.

@@ -2,8 +2,8 @@
 
 import { Check, Play, X } from 'lucide-react';
 import type { RunResult } from '@codelock/shared';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@codelock/ui';
+import { cn } from '@codelock/ui';
 
 /**
  * The console: run your code and read what it printed.
