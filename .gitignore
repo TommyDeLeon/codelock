@@ -38,4 +38,4 @@ brag-output/
 # Scratch output from local probes. Two commits have accidentally carried
 # these; ignoring them is cheaper than remembering not to stage them.
 .tmp/
-*/.tmp-*.ts
+**/.tmp-*.ts
