@@ -39,11 +39,13 @@ lives here.
 | Path | Responsibility |
 |---|---|
 | `apps/api` | Node 24, Express, Prisma, Postgres. Timers, lock sessions, grading, hints, progression, the learning log, and unlock proofs. |
-| `apps/web` | Next.js 16 / React 19. The marketing site, the demo, and the lock screen the desktop shell loads. |
+| `apps/web` | Next.js 16 / React 19. The lock screen the desktop shell loads, plus the in-app privacy and terms notices. |
+| `codelock-marketing` | Next.js 16 / React 19. The public site and the browser demo, deployed separately. Makes no API call: the demo grades in the browser. |
 | `apps/judge` | A Judge0-compatible service that starts one throwaway Docker container per submission. |
 | `apps/desktop` | Electron. The dashboard and the kiosk lock shell. Only this enforces anything. |
 | `apps/mobile` | Expo client and a native Android overlay module. |
 | `packages/shared` | The cross-client type contract. |
+| `packages/ui` | Design tokens and the components the lock screen and the demo both render, so the demo cannot drift from the thing it demonstrates. |
 
 Postgres is the source of truth for timers, sessions, submissions, progress and
 history. Old account and integration columns remain in the migration history so
