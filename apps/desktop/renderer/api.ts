@@ -15,6 +15,7 @@ import type {
   TimerConfig,
   DifficultyFocusInput,
   ComplexityFeedback,
+  TimeBudgetOption,
 } from '@codelock/shared';
 
 /**
@@ -155,6 +156,13 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(focus),
     }),
+
+  /**
+   * Which time budgets this learner can choose, and how many problems sit
+   * under each. A snapshot: the repetition rule can empty a band later in the
+   * day, which is why the server relaxes rather than refusing.
+   */
+  timeBudgets: () => request<{ budgets: TimeBudgetOption[] }>('/v1/settings/time-budgets'),
 
   /** The learning log: what you met, what you tried, and how it went. */
   log: (params: { limit?: number; kind?: string[] } = {}) => {

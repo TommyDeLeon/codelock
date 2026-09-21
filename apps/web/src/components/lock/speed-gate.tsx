@@ -16,18 +16,29 @@ export function SpeedGate({ verdict }: { verdict: PerformanceVerdict }) {
   // a readable (full) bar instead of overflowing the container.
   const fill = Math.min(100, (verdict.runtimeMs / verdict.gateMs) * 100);
 
+  // Measured, shown, not enforced: a first solve under the AFTER_FIRST_SOLVE
+  // setting. It is neither a pass nor a failure of the gate, and painting it
+  // green would teach the wrong bar — the number is over budget, and next time
+  // that will hold. So it reads in the ordinary ink, with the budget beside it.
+  const waived = verdict.waived === true;
+
   return (
     <div className="px-4 py-3">
       <div className="flex items-center gap-2">
         <Gauge
-          className={cn('size-4', verdict.passed ? 'text-success' : 'text-danger')}
+          className={cn(
+            'size-4',
+            waived ? 'text-muted' : verdict.passed ? 'text-success' : 'text-danger',
+          )}
           aria-hidden
         />
-        <span className="text-[13px] font-semibold">Speed gate</span>
+        <span className="text-[13px] font-semibold">
+          {waived ? 'Speed gate — not applied' : 'Speed gate'}
+        </span>
         <span
           className={cn(
             'tabular ml-auto text-[13px] font-semibold',
-            verdict.passed ? 'text-success' : 'text-danger',
+            waived ? 'text-muted' : verdict.passed ? 'text-success' : 'text-danger',
           )}
         >
           {verdict.runtimeMs} ms / {verdict.gateMs} ms
@@ -43,7 +54,10 @@ export function SpeedGate({ verdict }: { verdict: PerformanceVerdict }) {
         className="relative mt-2 h-1.5 w-full overflow-hidden rounded-xs bg-surface-2"
       >
         <div
-          className={cn('h-full transition-[width]', verdict.passed ? 'bg-success' : 'bg-danger')}
+          className={cn(
+            'h-full transition-[width]',
+            waived ? 'bg-muted' : verdict.passed ? 'bg-success' : 'bg-danger',
+          )}
           style={{ width: `${fill}%` }}
         />
       </div>
@@ -57,9 +71,15 @@ export function SpeedGate({ verdict }: { verdict: PerformanceVerdict }) {
         </span>
       </div>
 
-      <p className={cn('mt-2 text-[13px]', verdict.passed ? 'text-muted' : 'text-danger')}>
+      <p className={cn('mt-2 text-[13px]', !waived && !verdict.passed ? 'text-danger' : 'text-muted')}>
         {verdict.reason}
       </p>
+
+      {waived && (
+        <p className="mt-1 text-[13px] text-muted">
+          First solve of this problem, so the budget did not hold you. Meet it again and it will.
+        </p>
+      )}
 
       {!verdict.passed && (
         <p className="mt-1 text-[13px] text-muted">

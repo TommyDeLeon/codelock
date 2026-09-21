@@ -7,7 +7,8 @@ attribution. It is licensed separately from the source code, and deliberately so
 Why the split
 -------------
 
-The code in this repository is free software by the usual definition. Some of
+The code in this repository is MIT-licensed; see `LICENSE` at the repository
+root. Some of
 the corpora that are genuinely useful to a learning tool are not: they carry
 non-commercial or share-alike terms, which are perfectly usable for CodeLock —
 it is free and non-commercial — but are **not free by OSI standards**.

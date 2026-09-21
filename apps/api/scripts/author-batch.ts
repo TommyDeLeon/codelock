@@ -878,7 +878,7 @@ function emit(accepted: Draft[]): void {
 /**
  * Generated batch \`${out}\`${anchorsPath ? ' (anchored to a public problem index; metadata only)' : ` — ${family}, ${tier}, ${difficulty}`}.
  *
- * Drafted with ${model} on ${new Date().toISOString().slice(0, 10)} and admitted only after
+ * Machine-drafted on ${new Date().toISOString().slice(0, 10)} and admitted only after
  * every reference solution passed every test on the judge
  * (\`scripts/author-batch.ts\`). Statements are original; provenance says so.
  */

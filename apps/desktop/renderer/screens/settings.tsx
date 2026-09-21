@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Difficulty, DifficultyFocusInput, TimerConfig } from '@codelock/shared';
+import { SpeedGateSettings, TimeBudgetSettings } from './session-rules';
 import { api, ApiError } from '../api';
 import { openExternal } from '../bridge';
 import {
@@ -263,6 +264,10 @@ export function SettingsScreen() {
 
       {/* --- difficulty focus ------------------------------------------- */}
       <DifficultyFocusSettings timer={timer} onSaved={setTimer} />
+
+      {/* --- how long, and whether speed counts --------------------------- */}
+      <TimeBudgetSettings timer={timer} onSaved={setTimer} />
+      <SpeedGateSettings timer={timer} onSaved={setTimer} />
 
       {/* --- after a solve ----------------------------------------------- */}
       <CelebrationSettings />

@@ -29,6 +29,18 @@ export const timerConfigSchema = z.object({
   /// column existed, was read on every solve, and could not be turned on by
   /// any client — the feature was unreachable rather than missing.
   autoRearm: z.boolean().optional(),
+  /**
+   * The time budget, in minutes, as a ceiling on how long a served problem is
+   * expected to take. Bounded to match the CHECK constraint on the column, so
+   * a bad value is a 400 here rather than a 500 from Postgres.
+   *
+   * Not restricted to TIME_BUDGET_CHOICES: the dashboard offers those bands,
+   * but a stored value outside them is coherent and must survive a round trip
+   * through this schema rather than being rejected on read-modify-write.
+   */
+  timeBudgetMinutes: z.number().int().min(3).max(180).optional(),
+  /** Whether the speed gate applies to a problem never solved before. */
+  speedGateMode: z.enum(['AFTER_FIRST_SOLVE', 'ALWAYS']).optional(),
 }).refine(
   (v) =>
     v.activeFromMinute === undefined ||

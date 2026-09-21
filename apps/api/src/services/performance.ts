@@ -38,6 +38,16 @@ export interface PerformanceVerdict {
   ratio: number;
   /** UI copy explaining the verdict in one sentence. */
   reason: string;
+  /**
+   * True when the runtime was measured but not enforced, because this is the
+   * learner's first solve of this problem and their gate mode is
+   * AFTER_FIRST_SOLVE.
+   *
+   * `passed` is true in that case, and the numbers above are still real: the
+   * screen shows the measurement so the learner sees where they landed and
+   * what the bar will be next time. The gate is not hidden, only not applied.
+   */
+  waived: boolean;
 }
 
 /**
@@ -80,11 +90,25 @@ export function evaluatePerformance(params: {
   reference: RuntimeMap;
   best: RuntimeMap;
   language: Language;
+  /**
+   * Whether the gate is enforced for this submission. Defaults to true, which
+   * is what every caller meant before the setting existed.
+   *
+   * False does not mean "no measurement" — the runtime, target and budget are
+   * computed exactly as always and returned. It means the learner is not held
+   * behind them, because on a problem nobody has solved before, a speed gate
+   * asks for the recall of a solution they are still forming, and the
+   * reachable answer to that is to hold Escape.
+   */
+  gateApplies?: boolean;
 }): PerformanceVerdict {
   const targetMs = targetRuntimeMs(params.reference, params.best, params.language);
 
+  const gateApplies = params.gateApplies ?? true;
   const gateMs = gateFor(targetMs);
-  const passed = params.runtimeMs <= gateMs;
+  const withinGate = params.runtimeMs <= gateMs;
+  const passed = withinGate || !gateApplies;
+  const waived = !gateApplies && !withinGate;
   const ratio = targetMs === 0 ? 1 : params.runtimeMs / targetMs;
 
   return {
@@ -93,10 +117,14 @@ export function evaluatePerformance(params: {
     gateMs,
     passed,
     ratio: Number(ratio.toFixed(2)),
-    reason: passed
+    waived,
+    reason: withinGate
       ? `${params.runtimeMs} ms — within the ${gateMs} ms budget.`
-      : `${params.runtimeMs} ms against a ${gateMs} ms budget. Correct, but roughly ` +
-        `${ratio.toFixed(1)}x slower than the best known solution. Look for a better algorithm.`,
+      : gateApplies
+        ? `${params.runtimeMs} ms against a ${gateMs} ms budget. Correct, but roughly ` +
+          `${ratio.toFixed(1)}x slower than the best known solution. Look for a better algorithm.`
+        : `${params.runtimeMs} ms, against a ${gateMs} ms budget that does not apply to a first ` +
+          `solve. Solved — and now you know the bar for next time.`,
   };
 }
 

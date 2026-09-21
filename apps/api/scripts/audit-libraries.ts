@@ -61,7 +61,9 @@ export const RULES: Record<Lang, Rule[]> = {
       what: 'Arrays/Collections helper',
     },
     { pattern: /\bnew\s+PriorityQueue\b/, what: 'PriorityQueue' },
-    { pattern: /\b(?:stream|Stream|Collectors)\b/, what: 'streams' },
+    // Anchored on the call, not the bare word: `stream` is a perfectly good
+    // name for a parameter, and the loose version flagged those as offenders.
+    { pattern: /\.stream\s*\(|\bCollectors\.|\b(?:Stream|IntStream)\s*[.<]/, what: 'streams' },
     { pattern: /\b(?:Pattern|Matcher)\b/, what: 'regular expression' },
     { pattern: /\bMath\.(?:hypot|cbrt|log10|floorMod|floorDiv)\b/, what: 'Math helper' },
   ],

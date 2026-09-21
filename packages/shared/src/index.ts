@@ -77,6 +77,19 @@ export interface PublicProblem {
 }
 
 export interface LockSessionView {
+  /**
+   * The rules this session was armed with, snapshotted so that changing them
+   * mid-lock cannot affect the lock holding the screen. The lock screen shows
+   * them read-only. Optional for older servers.
+   */
+  speedGateMode?: SpeedGateMode;
+  timeBudgetMinutes?: number | null;
+  /**
+   * True when nothing fitting the budget could be served and the selector
+   * relaxed past it. Such a session opens the lock but does not move the
+   * ladder.
+   */
+  overBudget?: boolean;
   id: string;
   state: LockState;
   difficulty: Difficulty;
@@ -145,6 +158,19 @@ export interface TimerConfig {
    * applied from the next armed session. Optional for older servers.
    */
   difficultyMode?: DifficultyMode;
+  /**
+   * The time budget, in minutes: a ceiling on how long a served problem is
+   * expected to take, not a target. Snapshotted onto the session at arm time,
+   * so a session already running keeps the budget it was armed with.
+   * Optional for older servers.
+   */
+  timeBudgetMinutes?: number;
+  /**
+   * Whether the speed gate applies to a problem never solved before.
+   * AFTER_FIRST_SOLVE is the default. Optional for older servers, which only
+   * ever behaved as ALWAYS.
+   */
+  speedGateMode?: SpeedGateMode;
   focusDifficulty?: Difficulty | null;
 }
 
@@ -326,7 +352,40 @@ export interface PerformanceVerdict {
   /** 1.0 = exactly on target, 2.0 = twice as slow as the best known answer. */
   ratio: number;
   reason: string;
+  /**
+   * The runtime was measured and shown, but not enforced: a first solve under
+   * the AFTER_FIRST_SOLVE gate mode. Optional so older clients and stored
+   * verdicts read as enforced, which is what they were.
+   */
+  waived?: boolean;
 }
+
+/**
+ * One selectable time budget and whether the learner can actually use it.
+ *
+ * `available` is false when nothing in their curriculum fits under it. The
+ * dashboard greys those out rather than letting a band be chosen and then
+ * quietly relaxed by the selector.
+ */
+export interface TimeBudgetOption {
+  minutes: number;
+  problemCount: number;
+  available: boolean;
+}
+
+/** When the speed gate applies. Mirrors the Prisma enum of the same name. */
+export type SpeedGateMode = 'AFTER_FIRST_SOLVE' | 'ALWAYS';
+
+/**
+ * The time budget a learner may choose, in minutes, as a ceiling on how long
+ * a served problem is expected to take.
+ *
+ * A fixed ladder rather than free entry: these are the bands the corpus is
+ * authored against, and a free number invites 1-minute budgets that no problem
+ * can satisfy. The dashboard greys out any band with nothing under it.
+ */
+export const TIME_BUDGET_CHOICES = [3, 10, 30, 60] as const;
+export type TimeBudgetMinutes = (typeof TIME_BUDGET_CHOICES)[number];
 
 /**
  * Identity providers this product can sign users in with.

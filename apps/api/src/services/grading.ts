@@ -295,11 +295,36 @@ export async function gradeSubmission(params: {
   }
 
   const runtimeMs = bestOfRuns(runs);
+
+  // Does the speed gate hold this submission behind it?
+  //
+  // Only ever relaxed inside a lock, and only on a problem this learner has
+  // never got all the way through. A correct-but-too-slow answer counts as
+  // having solved it: the solution existed, it was just slow, and the gate is
+  // exactly the thing that should apply the next time they meet it.
+  //
+  // The mode comes off the session, snapshotted at arm time, so flipping the
+  // setting while the screen is held changes nothing about the screen being
+  // held. Submissions outside a lock keep the gate, which is what they had.
+  const solvedBefore =
+    session === null
+      ? true
+      : (await prisma.submission.count({
+          where: {
+            userId,
+            problemId,
+            id: { not: submission.id },
+            status: { in: [SubmissionStatus.ACCEPTED, SubmissionStatus.ACCEPTED_TOO_SLOW] },
+          },
+        })) > 0;
+  const gateApplies = session === null || session.speedGateMode === 'ALWAYS' || solvedBefore;
+
   const performance = evaluatePerformance({
     runtimeMs,
     reference: problem.referenceRuntimeMs as RuntimeMap,
     best: problem.bestRuntimeMs as RuntimeMap,
     language,
+    gateApplies,
   });
 
   const status = performance.passed
@@ -432,7 +457,13 @@ export async function gradeSubmission(params: {
     // Read from the session row loaded when this submission began. That is
     // current, not stale: the release above required the same revision, and
     // `adjusted` only ever changes in the statement that changes the revision.
-    adjusted: session.adjusted,
+    //
+    // A session served past the learner's time budget reads the same way, and
+    // for a neighbouring reason: the ladder asked for one thing and the corpus
+    // could only offer something shorter. Counting it toward promotion would
+    // make the smallest budget the cheapest way to climb — solve three-minute
+    // problems, arrive at Tier 3, meet something you were never prepared for.
+    adjusted: session.adjusted || session.overBudget,
     // The session's own snapshot, not the current preference: a focus chosen
     // or cleared after this lock armed must not change how it is read.
     manualFocus: session.difficultySource === DifficultyMode.MANUAL,
@@ -515,14 +546,22 @@ export async function recordFailure(
     adjusted: boolean;
     /** Whether the session was armed under a manual focus, from its snapshot. */
     manualFocus: boolean;
+    /**
+     * Whether the selector had to relax past the learner's time budget to
+     * serve this problem. Optional, because callers predating the budget had
+     * no such sessions and every stored row defaults to false.
+     */
+    overBudget?: boolean;
   },
 ): Promise<ProgressUpdate> {
-  const { adjusted, manualFocus } = session;
+  const { manualFocus } = session;
   return advanceProgress(userId, {
     solved: false,
     problemAvgSeconds,
     firstTry: false,
-    adjusted,
+    // Same rule as the solved path above: a problem the budget could not fit
+    // does not move the ladder in either direction.
+    adjusted: session.adjusted || session.overBudget,
     manualFocus,
   });
 }

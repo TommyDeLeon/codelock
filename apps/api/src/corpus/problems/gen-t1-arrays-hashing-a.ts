@@ -3,7 +3,7 @@ import { GENERATED, type ProblemDefinition } from '../problem.js';
 /**
  * Generated batch `gen-t1-arrays-hashing-a` — ARRAYS_HASHING, TIER_1, EASY.
  *
- * Drafted with gemini-3.1-pro-low on 2026-09-16 and admitted only after
+ * Machine-drafted on 2026-09-16 and admitted only after
  * every reference solution passed every test on the judge
  * (`scripts/author-batch.ts`). Statements are original; provenance says so.
  */

@@ -370,23 +370,23 @@ carry the user-facing notices.
 
 ## Licensing
 
-**This repository has no root software licence.** Access to the source does not
-by itself grant permission to copy, modify, or redistribute it. Adding a
-deliberate root licence is an outstanding decision, and until it is made the
-project must not be described as open source.
+**The source code is MIT-licensed.** See [`LICENSE`](LICENSE) at the repository
+root. You may use, modify and redistribute it, including commercially, provided
+the copyright notice travels with it.
 
 Problem content is licensed separately in [`data/LICENSE`](data/LICENSE), with
 the generated attribution record in [`data/NOTICE`](data/NOTICE). Those files
-must stay with the corpus. The notice currently records 728 CodeLock-authored
-problems under CC0, so no third-party attribution is outstanding — keep that
-claim only while provenance review supports it. Never copy LeetCode problem
-statements, and exclude any material whose licence cannot be confirmed from its
-primary source. Creative Commons describes CC0 at
+must stay with the corpus. **`data/NOTICE` is the authoritative record of what
+the corpus contains and under what terms** — it is generated from the provenance
+columns, so this README deliberately quotes no counts of its own; read the file.
+Never copy LeetCode problem statements, and exclude any material whose licence
+cannot be confirmed from its primary source. Creative Commons describes CC0 at
 [creativecommons.org/public-domain/cc0](https://creativecommons.org/public-domain/cc0/).
 
-Note that `data/LICENSE` currently describes the code as "free software by the
-usual definition", which contradicts the paragraph above. That sentence should
-be corrected, or a licence chosen; both are decisions for the repository owner.
+Machine-drafted problems are recorded as machine-drafted and judge-verified.
+The notice names no model: CC0 requires no attribution, and the claim that
+matters is that the statements are original and every reference solution passed
+the judge.
 
 ## Verification gaps
 
@@ -402,20 +402,26 @@ Written down rather than glossed over.
   and boot receiver exist in source and are unverified in practice.
 - **macOS and Linux are unverified.** Build configuration exists; no hardware.
 - **Signing and auto-update have not been exercised end to end.**
-- **There is no automated test suite.** Removed deliberately; see below.
+- **The API has tests; the desktop shell, web and judge do not.** 420 tests
+  run under `npm run test -w @codelock/api`. Nothing covers the Electron lock
+  shell, which is the only workspace that enforces anything — see below.
 
 ### On tests
 
-This repository previously carried 1219 automated tests across the API, web,
-desktop and judge workspaces. They were removed at the owner's explicit request
-after being used to validate the changes that preceded their removal.
+This repository previously carried 1219 Vitest tests across the API, web,
+desktop and judge workspaces. The Vitest suites were removed at the owner's
+explicit request; the API's coverage was later rebuilt against the Node test
+runner and now stands at **420 tests**, run with:
 
-The practical consequence: the Vitest suites are gone, so there is no automated
-regression protection for grading, the speed gate, session state transitions, or
-the unlock path — precisely the paths where a silent defect is a bypass rather
-than a bug.
+    npm run test -w @codelock/api
 
-What still runs automatically: `npm run typecheck` in each workspace, the
-production builds, the Prisma migration check in CI, `scripts/test-runtime-config.sh`
-(which asserts the web app's runtime API origin and its CSP), and an advisory
-`npm audit`. None of those touch lock correctness.
+What that leaves uncovered is the part that enforces anything. The Electron
+shell — kiosk behaviour, the ten-second escape, unlock-token verification,
+reboot recovery — has no automated tests at all, and neither do the web app or
+the judge. A silent defect there is a bypass or a trap rather than a bug, so
+that is where the next tests belong.
+
+Also running automatically: `npm run typecheck` in each workspace, the
+production builds, the Prisma migration check in CI,
+`scripts/test-runtime-config.sh` (which asserts the web app's runtime API
+origin and its CSP), and an advisory `npm audit`.

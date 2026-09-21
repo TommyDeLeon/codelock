@@ -93,6 +93,16 @@ export interface ProblemSelection {
    * relief rule and the replay can read it back.
    */
   pool: Pool | null;
+  /**
+   * False when no problem fitting the learner's time budget could be served
+   * and the selector relaxed past it.
+   *
+   * The lock still opens — that invariant outranks the budget, as it outranks
+   * the skill gate. But the caller records it, and a session served this way
+   * does not count toward ladder advancement: otherwise the shortest budget
+   * would be the cheapest way to climb.
+   */
+  withinBudget: boolean;
 }
 
 /** How many recent locks the relief rule reads. It only ever needs two. */
@@ -178,6 +188,14 @@ export async function pickProblem(
   difficulty: Difficulty,
   tiers?: Tier[],
   families?: PatternFamily[],
+  /**
+   * The learner's time budget, in seconds, as a ceiling on `avgSolveSeconds`.
+   *
+   * Optional because callers that are not serving a lock — the practice route
+   * — have no budget to apply. Omitted means unconstrained, which is what
+   * every caller did before the budget existed.
+   */
+  budgetSeconds?: number,
 ): Promise<ProblemSelection> {
   const snapshot = await loadSkillSnapshot(userId);
 
@@ -240,6 +258,23 @@ export async function pickProblem(
   };
 
   /**
+   * The time budget, as a filter that every rung inherits.
+   *
+   * A ceiling on `avgSolveSeconds`, not a target: a 30-minute budget leaves
+   * every shorter problem eligible and lets the ladder choose among them. It
+   * narrows what may be served and decides nothing about difficulty.
+   *
+   * Mutable because the budget is the *first* thing relaxed when the ladder
+   * runs dry. Every other filter here protects the quality of the ask; this
+   * one protects the learner's evening, and an unopenable lock is worse than
+   * a problem that runs long. When it is dropped, `withinBudget` says so and
+   * the session stops counting toward the ladder.
+   */
+  let budgetActive = typeof budgetSeconds === 'number' && budgetSeconds > 0;
+  const budgeted = (where: Prisma.ProblemWhereInput): Prisma.ProblemWhereInput =>
+    budgetActive ? { ...where, avgSolveSeconds: { lte: budgetSeconds } } : where;
+
+  /**
    * Try one rung. Returns true when it produced a problem the learner is ready
    * for, which stops the ladder.
    *
@@ -254,9 +289,9 @@ export async function pickProblem(
    * a 25-problem sample of mostly-mastered rows decide the pool by accident.
    */
   const rung = async (where: Prisma.ProblemWhereInput): Promise<boolean> => {
-    const rows = await candidateRows(where);
+    const rows = await candidateRows(budgeted(where));
     if (rows.length === 0) return false;
-    if (fallback.pool === null) fallback.pool = { where, ids: rows.map((row) => row.id) };
+    if (fallback.pool === null) fallback.pool = { where: budgeted(where), ids: rows.map((row) => row.id) };
 
     const pools = splitPools(rows, snapshot);
     const chosen = choosePool(
@@ -266,7 +301,7 @@ export async function pickProblem(
     if (chosen === null) return false;
 
     eligible = await sampleFrom(
-      where,
+      budgeted(where),
       pools[chosen].map((row) => row.id),
     );
     pool = eligible.length > 0 ? chosen : null;
@@ -317,6 +352,27 @@ export async function pickProblem(
     }
   }
 
+  // Every rung is dry and a budget is still applied. Drop it and walk the
+  // ladder again.
+  //
+  // This is the case the dashboard tries to prevent by greying out a budget
+  // with nothing under it, but the dashboard reads the corpus, not this
+  // learner's exclusions — a budget that was selectable this morning can be
+  // empty by tonight once the repetition rule has taken its share. So the
+  // server relaxes rather than refusing: "you said three minutes, so you are
+  // not locked at all" would be the cheapest bypass in the product.
+  const relaxedPastBudget = !served && budgetActive;
+  if (relaxedPastBudget) {
+    logger.info(
+      { userId, difficulty, budgetSeconds },
+      'selection relaxed: time budget dropped; session will not count toward the ladder',
+    );
+    budgetActive = false;
+    served = await rung({ difficulty, isActive: true, ...curriculum, id: { notIn: seen } });
+    if (!served) served = await rung({ difficulty, isActive: true, ...curriculum });
+    if (!served) served = await rung({ isActive: true });
+  }
+
   // Nothing fair anywhere in the corpus. The gate does not get to win here: an
   // unopenable lock is the one outcome this function must never produce, so a
   // problem is served and the return value says plainly that it is out of
@@ -334,11 +390,40 @@ export async function pickProblem(
       { userId, difficulty, slug: problem.slug, reason: fit.reason },
       'no problem matches this learner yet; serving an out-of-depth problem',
     );
-    return { problem, skillEligible: false, skillNote: fit.reason, pool: null };
+    return { problem, skillEligible: false, skillNote: fit.reason, pool: null, withinBudget: !relaxedPastBudget };
   }
 
-  const problem = bucketedPick(eligible);
-  return { problem, skillEligible: true, skillNote: fitForLearner(problem, snapshot).reason, pool };
+  // Within budget the value ranker chooses, as it always has. Past it, the
+  // shortest problem wins outright: the learner has already been served
+  // something longer than they agreed to, and every extra minute past that is
+  // a minute they said they did not have.
+  const problem = relaxedPastBudget ? shortestOf(eligible) : bucketedPick(eligible);
+  return {
+    problem,
+    skillEligible: true,
+    skillNote: fitForLearner(problem, snapshot).reason,
+    pool,
+    withinBudget: !relaxedPastBudget,
+  };
+}
+
+/**
+ * The quickest of the candidates, ties broken by the value ranker.
+ *
+ * Only used once the budget has already been missed, where "shortest" is the
+ * whole point and a weighted pick would trade the learner's stated time for
+ * a marginally more valuable problem.
+ */
+function shortestOf(candidates: Problem[]): Problem {
+  let best = candidates[0] as Problem;
+  const tied: Problem[] = [];
+  for (const candidate of candidates) {
+    if (candidate.avgSolveSeconds < best.avgSolveSeconds) best = candidate;
+  }
+  for (const candidate of candidates) {
+    if (candidate.avgSolveSeconds === best.avgSolveSeconds) tied.push(candidate);
+  }
+  return tied.length > 1 ? bucketedPick(tied) : best;
 }
 
 /**

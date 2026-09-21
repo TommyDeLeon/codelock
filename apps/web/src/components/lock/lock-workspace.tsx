@@ -21,6 +21,7 @@ import { ConsolePanel } from './console-panel';
 import { HintsPanel } from './hints-panel';
 import { ProblemPanel } from './problem-panel';
 import { SessionFlowPanel } from './session-flow-panel';
+import { SessionRules } from './session-rules';
 import { TestResults } from './test-results';
 
 /**
@@ -278,6 +279,7 @@ function Workspace({
               skillEligible={session.skillEligible}
               skillNote={session.skillNote}
             />
+            <SessionRules session={session} />
           </div>
           {/* Help and "not the right problem" are pinned under the statement:
               always on screen, no tab to find and nothing to scroll to. When a

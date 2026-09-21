@@ -3,7 +3,7 @@ import { GENERATED, type ProblemDefinition } from '../problem.js';
 /**
  * Generated batch `gen-lc-w4-055` (anchored to a public problem index; metadata only).
  *
- * Drafted with gemini-3.1-pro-low on 2026-09-16 and admitted only after
+ * Machine-drafted on 2026-09-16 and admitted only after
  * every reference solution passed every test on the judge
  * (`scripts/author-batch.ts`). Statements are original; provenance says so.
  */

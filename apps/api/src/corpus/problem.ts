@@ -84,6 +84,7 @@ export const GENERATED: Provenance = {
   source: 'codelock-generated',
   sourceUrl: 'https://github.com/TommyDeLeon/codelock',
   sourceLicense: 'CC0-1.0',
-  attributionText: 'Drafted with Gemini for CodeLock; verified against the judge.',
+  attributionText:
+    'Machine-drafted for CodeLock; statements original; every reference solution verified against the judge.',
   sourceRef: 'codelock-generated',
 };

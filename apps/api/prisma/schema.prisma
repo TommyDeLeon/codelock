@@ -27,6 +27,21 @@ enum DifficultyMode {
   MANUAL
 }
 
+/// When the speed gate applies.
+///
+/// AFTER_FIRST_SOLVE is the default: the first accepted solve of a problem is
+/// graded on correctness alone, and the gate applies only on later attempts at
+/// a problem already solved. Gating an unfamiliar problem on speed measures
+/// recall of a solution you have not formed yet, and the reachable way out of
+/// that is to abandon the session.
+///
+/// ALWAYS restores the original behaviour for learners who want the pressure
+/// from the first attempt.
+enum SpeedGateMode {
+  AFTER_FIRST_SOLVE
+  ALWAYS
+}
+
 /// How far into the curriculum a problem sits.
 ///
 /// Not the same axis as `Difficulty`, and the difference matters: an EASY
@@ -213,6 +228,17 @@ model TimerConfig {
   /// is set exactly when the mode is MANUAL.
   difficultyMode     DifficultyMode @default(AUTOMATIC)
   focusDifficulty    Difficulty?
+  /// The most time the learner is willing to spend on one lock, as a ceiling.
+  ///
+  /// A ceiling, not a target: a 30-minute budget makes every problem at or
+  /// under 30 minutes eligible, and the ladder still chooses within that. The
+  /// budget narrows what may be served; it never decides difficulty.
+  ///
+  /// Chosen on the dashboard, ahead of time, and snapshot onto the session at
+  /// arm time so it cannot be lowered from inside a lock that is going badly.
+  timeBudgetMinutes  Int      @default(30)
+  /// Whether the speed gate applies to a problem the learner has never solved.
+  speedGateMode      SpeedGateMode @default(AFTER_FIRST_SOLVE)
   updatedAt          DateTime @updatedAt
 
   @@map("timer_configs")
@@ -447,6 +473,19 @@ model LockSession {
   /// is counted in the totals but never moves the automatic ladder, and the
   /// snapshot means a later preference change cannot reinterpret it.
   difficultySource DifficultyMode @default(AUTOMATIC)
+  /// Snapshot, at arm time, of the settings this session is judged by.
+  ///
+  /// Same reason as `difficultySource`: a setting the learner can reach while
+  /// the screen is held is a negotiation under duress, and the speed gate in
+  /// particular would become an unlock button. Grading reads these, never the
+  /// live TimerConfig.
+  speedGateMode    SpeedGateMode  @default(AFTER_FIRST_SOLVE)
+  timeBudgetMinutes Int?
+  /// True when no problem fitting the budget could be served and the selector
+  /// relaxed past it. Such a session still opens the lock; it does not count
+  /// toward ladder advancement, or a small budget would be a way to climb on
+  /// problems the tier never asked for.
+  overBudget       Boolean        @default(false)
   /// Set when state = BYPASSED: "skip_allowance" | "low_energy_activity" | "admin" | "emergency".
   escapeReason    String?
   /// SHA-256 of the issued unlock token. The raw JWT is returned exactly once.

@@ -83,6 +83,14 @@ export async function armSession(params: {
         deviceId: deviceId ?? null,
         difficulty: effective.difficulty,
         difficultySource: effective.source,
+        // Snapshotted for the same reason as the difficulty above, and with
+        // sharper teeth: the speed gate reachable from a settings screen while
+        // the screen is held is an unlock button, and a time budget that can be
+        // lowered mid-lock buys a three-minute problem out of a bad thirty.
+        // Both are chosen calm, in advance, and this session is judged by what
+        // was chosen then.
+        speedGateMode: config.speedGateMode,
+        timeBudgetMinutes: config.timeBudgetMinutes,
         fireAt: new Date(Date.now() + minutes * 60_000),
       },
     });
@@ -102,7 +110,13 @@ export async function armSession(params: {
   void recordStep(userId, {
     kind: 'TIMER_ARMED',
     sessionId: session.id,
-    detail: { minutes, difficulty: effective.difficulty, difficultySource: effective.source },
+    detail: {
+      minutes,
+      difficulty: effective.difficulty,
+      difficultySource: effective.source,
+      timeBudgetMinutes: config.timeBudgetMinutes,
+      speedGateMode: config.speedGateMode,
+    },
   });
   return toView(session, null);
 }
@@ -136,7 +150,12 @@ export async function engageLock(params: {
     throw ApiError.conflict('Timer has not expired yet');
   }
 
-  const claimed = await claimDueSession(session.id, session.userId, session.difficulty);
+  const claimed = await claimDueSession(
+    session.id,
+    session.userId,
+    session.difficulty,
+    session.timeBudgetMinutes,
+  );
   if (!claimed) {
     // Someone else engaged it between the read above and the write: the
     // background sweep, or a second client. Report their result rather than
@@ -432,6 +451,14 @@ async function claimDueSession(
   sessionId: string,
   userId: string,
   difficulty: Difficulty,
+  /**
+   * The budget snapshotted on this session at arm time, in minutes.
+   *
+   * Read from the session rather than the live config on purpose: the fire can
+   * happen an hour after the arm, and the budget that governs the ask is the
+   * one the learner agreed to when they armed it.
+   */
+  timeBudgetMinutes: number | null,
 ): Promise<{
   session: LockSession;
   problem: Problem;
@@ -444,11 +471,12 @@ async function claimDueSession(
   const snapshot = await loadProgressSnapshot(userId);
   const tiers = availableTiers(snapshot);
   const families = availableFamiliesForTiers(snapshot, tiers);
-  const { problem, skillEligible, skillNote, pool } = await pickProblem(
+  const { problem, skillEligible, skillNote, pool, withinBudget } = await pickProblem(
     userId,
     difficulty,
     tiers,
     families,
+    timeBudgetMinutes === null ? undefined : timeBudgetMinutes * 60,
   );
   const lockedAt = new Date();
 
@@ -459,7 +487,7 @@ async function claimDueSession(
       pausedAt: null,
       fireAt: { lte: lockedAt },
     },
-    data: { state: LockState.LOCKED, lockedAt, problemId: problem.id },
+    data: { state: LockState.LOCKED, lockedAt, problemId: problem.id, overBudget: !withinBudget },
   });
   if (claimed.count !== 1) return null;
 
@@ -510,7 +538,7 @@ async function claimDueSession(
 export async function engageDueSessions(): Promise<number> {
   const due = await prisma.lockSession.findMany({
     where: { state: LockState.ARMED, pausedAt: null, fireAt: { lte: new Date() } },
-    select: { id: true, userId: true, difficulty: true },
+    select: { id: true, userId: true, difficulty: true, timeBudgetMinutes: true },
   });
 
   let engaged = 0;
@@ -518,7 +546,15 @@ export async function engageDueSessions(): Promise<number> {
     // One failure must not strand the rest: a user whose problem pool is empty
     // should not keep everyone else's timer from firing.
     try {
-      if (await claimDueSession(session.id, session.userId, session.difficulty)) engaged++;
+      if (
+        await claimDueSession(
+          session.id,
+          session.userId,
+          session.difficulty,
+          session.timeBudgetMinutes,
+        )
+      )
+        engaged++;
     } catch {
       // Reported by the caller's logger via the count mismatch; nothing here
       // can usefully recover, and the next sweep tries again.
@@ -706,6 +742,13 @@ async function toView(session: LockSession, problem: Problem | null): Promise<Lo
     state: session.state,
     difficulty: session.difficulty,
     difficultySource: session.difficultySource,
+    // The rules this session is judged by, as snapshotted when it armed. Sent
+    // so the lock screen can state them: being held to a gate you cannot see
+    // is what makes "correct, but still locked" feel arbitrary. Read-only
+    // there — the place to change them is the dashboard, before the next lock.
+    speedGateMode: session.speedGateMode,
+    timeBudgetMinutes: session.timeBudgetMinutes,
+    overBudget: session.overBudget,
     fireAt: session.fireAt.toISOString(),
     serverNow: new Date(now).toISOString(),
     pausedAt: session.pausedAt?.toISOString() ?? null,

@@ -401,7 +401,7 @@ lockRouter.post(
     // the audit row would claim a lock held for no time over no problem.
     const resolved = await prisma.lockSession.findUnique({
       where: { id: session.id },
-      select: { lockedAt: true, problemId: true, adjusted: true, difficultySource: true },
+      select: { lockedAt: true, problemId: true, adjusted: true, difficultySource: true, overBudget: true },
     });
     const problemId = resolved?.problemId ?? session.problemId;
 
@@ -429,6 +429,9 @@ lockRouter.post(
             adjusted: resolved?.adjusted ?? session.adjusted,
             // Immutable after arm, so either read is the session's own snapshot.
             manualFocus: (resolved?.difficultySource ?? session.difficultySource) === 'MANUAL',
+            // Set when the lock engaged, and never after; either read is the
+            // same fact.
+            overBudget: resolved?.overBudget ?? session.overBudget,
           },
         )
       : null;

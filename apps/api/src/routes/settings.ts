@@ -2,6 +2,12 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
+import { TIME_BUDGET_CHOICES } from '@codelock/shared';
+import {
+  availableFamiliesForTiers,
+  availableTiers,
+  loadProgressSnapshot,
+} from '../services/progression.js';
 import {
   difficultyFocusSchema,
   profileSchema,
@@ -105,6 +111,52 @@ settingsRouter.put(
       update: data,
     });
     res.json({ timerConfig: config });
+  }),
+);
+
+/**
+ * GET /settings/time-budgets
+ *
+ * Which budgets this learner can actually choose, and how many problems sit
+ * under each.
+ *
+ * The dashboard greys out a band with nothing under it rather than letting it
+ * be picked and then quietly relaxed by the selector. "Three minutes" that
+ * silently serves a twenty-minute problem teaches the learner that the setting
+ * is decorative, and the next thing they stop believing is the lock.
+ *
+ * Counted inside the learner's own curriculum gate, not across the whole
+ * corpus: a three-minute Tier 3 problem is no use to someone on Tier 0, and
+ * counting it would offer a band that selection cannot honour.
+ *
+ * This is a snapshot, not a promise. The repetition rule excludes problems
+ * seen recently, so a band that is selectable now can be empty tonight — which
+ * is why the server still relaxes rather than refusing.
+ */
+settingsRouter.get(
+  '/time-budgets',
+  asyncHandler(async (req, res) => {
+    const user = currentUser(req);
+    const snapshot = await loadProgressSnapshot(user.id);
+    const tiers = availableTiers(snapshot);
+    const families = availableFamiliesForTiers(snapshot, tiers);
+
+    const curriculum = {
+      isActive: true,
+      ...(tiers.length > 0 ? { tier: { in: tiers } } : {}),
+      ...(families.length > 0 ? { patternFamily: { in: families } } : {}),
+    };
+
+    const budgets = await Promise.all(
+      TIME_BUDGET_CHOICES.map(async (minutes) => ({
+        minutes,
+        problemCount: await prisma.problem.count({
+          where: { ...curriculum, avgSolveSeconds: { lte: minutes * 60 } },
+        }),
+      })),
+    );
+
+    res.json({ budgets: budgets.map((b) => ({ ...b, available: b.problemCount > 0 })) });
   }),
 );
 
