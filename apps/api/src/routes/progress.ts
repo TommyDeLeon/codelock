@@ -1,11 +1,9 @@
 import { Router } from 'express';
-import {
-  FAMILY_LABELS,
-  PATTERN_FAMILIES,
-  type AccomplishmentKind,
-  type FamilyProgress,
-  type PatternFamily,
-  type ProgressView,
+import type {
+  AccomplishmentKind,
+  FamilyProgress,
+  PatternFamily,
+  ProgressView,
 } from '@codelock/shared';
 import { prisma } from '../lib/prisma.js';
 import { ApiError } from '../lib/errors.js';
@@ -28,6 +26,64 @@ progressRouter.use(withLocalUser);
 
 /** Absence long enough that the page says hello again, without any guilt. */
 const WELCOME_BACK_DAYS = 7;
+/**
+ * The curriculum's families, in the order they are met, and what to call them.
+ *
+ * Defined here rather than imported from @codelock/shared, and the reason is
+ * not taste. The API compiles to JavaScript and ships without the shared
+ * package's source, so a *value* imported from it resolves to a TypeScript
+ * file Node cannot require. Every other import from that package in this app
+ * is `import type`, which erases at compile time; the one runtime import added
+ * here crashed the container on boot with MODULE_NOT_FOUND — a failure that
+ * cannot happen in development, where tsx reads the TypeScript directly.
+ *
+ * The labels belong on this side anyway: the route serves them, so no client
+ * has to know the mapping.
+ */
+const PATTERN_FAMILIES = [
+  'FOUNDATIONS',
+  'ARRAYS_HASHING',
+  'TWO_POINTERS',
+  'SLIDING_WINDOW',
+  'STACK',
+  'BINARY_SEARCH',
+  'LINKED_LIST',
+  'TREES',
+  'TRIES',
+  'HEAP_PRIORITY_QUEUE',
+  'BACKTRACKING',
+  'GRAPHS',
+  'ADVANCED_GRAPHS',
+  'DP_1D',
+  'DP_2D',
+  'GREEDY',
+  'INTERVALS',
+  'MATH_GEOMETRY',
+  'BIT_MANIPULATION',
+] as const satisfies readonly PatternFamily[];
+
+const FAMILY_LABELS: Record<PatternFamily, string> = {
+  FOUNDATIONS: 'Foundations',
+  ARRAYS_HASHING: 'Arrays & hashing',
+  TWO_POINTERS: 'Two pointers',
+  SLIDING_WINDOW: 'Sliding window',
+  STACK: 'Stack',
+  BINARY_SEARCH: 'Binary search',
+  LINKED_LIST: 'Linked list',
+  TREES: 'Trees',
+  TRIES: 'Tries',
+  HEAP_PRIORITY_QUEUE: 'Heap & priority queue',
+  BACKTRACKING: 'Backtracking',
+  GRAPHS: 'Graphs',
+  ADVANCED_GRAPHS: 'Advanced graphs',
+  DP_1D: 'Dynamic programming, 1D',
+  DP_2D: 'Dynamic programming, 2D',
+  GREEDY: 'Greedy',
+  INTERVALS: 'Intervals',
+  MATH_GEOMETRY: 'Maths & geometry',
+  BIT_MANIPULATION: 'Bit manipulation',
+};
+
 const KINDS: AccomplishmentKind[] = ['independent', 'assisted', 'worked_solution', 'recall', 'transfer'];
 
 /**

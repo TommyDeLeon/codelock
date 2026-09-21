@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/error.js';
 import { withLocalUser, currentUser } from '../middleware/localUser.js';
-import { TIME_BUDGET_CHOICES } from '@codelock/shared';
 import {
   availableFamiliesForTiers,
   availableTiers,
@@ -14,6 +13,16 @@ import {
   registerDeviceSchema,
   timerConfigSchema,
 } from '../validation/schemas.js';
+
+/**
+ * The budgets offered, mirrored from @codelock/shared.
+ *
+ * A literal rather than an import for the same reason the family labels are:
+ * the API ships compiled JavaScript without the shared package's source, so a
+ * runtime import from it is a MODULE_NOT_FOUND on boot rather than a type
+ * error at build time.
+ */
+const TIME_BUDGET_CHOICES = [3, 10, 30, 60] as const;
 
 export const settingsRouter = Router();
 settingsRouter.use(withLocalUser);

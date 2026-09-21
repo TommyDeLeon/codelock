@@ -55,7 +55,16 @@ COPY --from=build /app/apps/web/public ./apps/web/public
 USER node
 EXPOSE 3000
 
+# Probes /lock, not /.
+#
+# This app used to serve the marketing site at the root. That moved to its own
+# deployment, so `/` is a 404 here now, and a healthcheck pointed at it reports
+# the container unhealthy while every route it actually serves is fine — which
+# is exactly what happened on the first rebuild after the split.
+#
+# /lock is the better probe regardless: it is the reason this service exists,
+# and it renders without a session.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:3000/lock').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "apps/web/server.js"]
