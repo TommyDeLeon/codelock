@@ -22,6 +22,7 @@ import { HintsPanel } from './hints-panel';
 import { ProblemPanel } from '@codelock/ui';
 import { SessionFlowPanel } from './session-flow-panel';
 import { SessionRules } from './session-rules';
+import { useLockIsDark } from './lock-surface';
 import { TestResults } from '@codelock/ui';
 
 /**
@@ -55,6 +56,9 @@ function Workspace({
 }) {
   const problem = session.problem!;
   const preferred = useProfile((s) => s.profile?.preferredLanguage);
+  // Monaco paints its own surface, so it is told which theme this lock
+  // resolved to rather than reading the site's.
+  const lockIsDark = useLockIsDark();
 
   /*
     Hydrated here rather than in the root Providers.
@@ -327,7 +331,7 @@ function Workspace({
               disabled={busy}
               // The lock screen is dark regardless of the site theme, and
               // Monaco paints its own surface rather than inheriting the page's.
-              alwaysDark
+              alwaysDark={lockIsDark}
             />
           </div>
           {/* Two panes, one at a time, because they answer different questions:

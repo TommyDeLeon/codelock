@@ -104,10 +104,44 @@
 }
 
 .dark {
-  /* Nothing here. The dark values live in palette.css under the same .dark
-     selector, so a theme switch moves one set of variables and every surface
-     — Tailwind or not — follows. This block is kept as the place to put a
-     dark-only token that is genuinely not a colour. */
+  /* The colour tokens are re-mapped here, not just in palette.css, and the
+     reason is a subtle one about how custom properties resolve.
+     `--color-bg: var(--cl-bg)` is declared at :root, so it resolves *there*,
+     against :root's value of --cl-bg. A nested element that redefines
+     --cl-bg — the lock screen, which scopes `dark` to a wrapper rather than
+     to <html> — changes nothing, because --color-bg was already computed and
+     merely inherits down.
+
+     Redeclaring the mapping inside this selector makes the resolution happen
+     at the dark element instead. Without it, scoped dark themes silently
+     render light: the class is applied, the tokens are overridden, and the
+     page looks exactly as it did before. */
+  --color-bg: var(--cl-bg);
+  --color-surface: var(--cl-surface);
+  --color-surface-2: var(--cl-surface-2);
+  --color-border: var(--cl-border);
+  --color-border-strong: var(--cl-border-strong);
+  --color-rule: var(--cl-rule);
+
+  --color-fg: var(--cl-fg);
+  --color-prose: var(--cl-prose);
+  --color-muted: var(--cl-muted);
+  --color-faint: var(--cl-faint);
+
+  --color-accent: var(--cl-accent);
+  --color-accent-fg: var(--cl-accent-fg);
+  --color-accent-soft: var(--cl-accent-soft);
+
+  --color-promo: var(--cl-promo);
+  --color-promo-fg: var(--cl-promo-fg);
+
+  --color-success: var(--cl-success);
+  --color-success-soft: var(--cl-success-soft);
+  --color-danger: var(--cl-danger);
+  --color-danger-soft: var(--cl-danger-soft);
+  --color-warning: var(--cl-warning);
+  --color-warning-soft: var(--cl-warning-soft);
+
   --shadow-card: var(--cl-shadow-card);
   --shadow-raised: var(--cl-shadow-raised);
   --cf-glow: var(--cl-glow);

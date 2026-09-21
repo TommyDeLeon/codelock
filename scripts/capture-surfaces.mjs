@@ -137,6 +137,14 @@ async function main() {
     width: VIEWPORT.width,
     height: VIEWPORT.height,
     useContentSize: true,
+    webPreferences: {
+      // A hidden window is throttled, and a throttled window paints its first
+      // frame and then stops. The lock screen applies its palette *after* it
+      // has read the profile, so the capture kept the frame from before that
+      // update — a "dark" capture and a "light" capture with identical
+      // brightness, of a page that was rendering correctly the whole time.
+      backgroundThrottling: false,
+    },
   });
 
   const wanted = SURFACES.filter((s) => !only || only.includes(s.name));
@@ -172,10 +180,18 @@ async function main() {
         await win.webContents.executeJavaScript(
           `try { localStorage.setItem('theme', '${theme.toLowerCase()}'); } catch {}`,
         );
-        await win.webContents.reload();
-        await wait(600);
       }
 
+      // Every surface is reloaded before it is photographed, not just the ones
+      // that needed localStorage written first.
+      //
+      // A hidden window hands capturePage() the frame it last painted, and the
+      // lock screen paints once on load and again after it has read its theme
+      // from the profile — so the capture kept the first frame and produced a
+      // "dark" image identical to the "light" one, of a page whose DOM was
+      // correct the entire time. Reloading makes the themed render the first
+      // paint rather than the second.
+      await win.webContents.reload();
       await wait(surface.settle ?? 1200);
       if (surface.arm) await surface.arm(win);
 

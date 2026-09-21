@@ -1,7 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+
+/**
+ * Whether this lock surface resolved to dark.
+ *
+ * Monaco paints its own surface rather than inheriting the page's, so it has
+ * to be *told*. It used to be told `alwaysDark`, on the reasoning that the
+ * lock screen was dark whatever the theme said — true until the screen started
+ * following the profile, and wrong from that moment on: a light lock screen
+ * with a dark editor dropped into the middle of it.
+ */
+const LockThemeContext = createContext(true);
+
+export function useLockIsDark(): boolean {
+  return useContext(LockThemeContext);
+}
 
 /**
  * The lock screen's palette, taken from the profile rather than decided here.
@@ -70,8 +85,10 @@ export function LockSurface({ children }: { children: React.ReactNode }) {
     screen.
   */
   return (
-    <div className={`lock-surface flex h-dvh flex-col bg-bg text-fg${dark ? ' dark' : ''}`}>
-      {children}
-    </div>
+    <LockThemeContext.Provider value={dark}>
+      <div className={`lock-surface flex h-dvh flex-col bg-bg text-fg${dark ? ' dark' : ''}`}>
+        {children}
+      </div>
+    </LockThemeContext.Provider>
   );
 }
